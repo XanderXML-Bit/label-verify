@@ -10,6 +10,20 @@
   `*.vercel.app` URL if DNS propagation slips before the deadline.
 - **Region:** `iad1` (us-east-1, same coast as Treasury / DC reviewers — minimizes RTT).
 
+### 1.1 Provision-Today Checklist
+
+DNS + SSL can eat half a day. The provisioning happens *before* the first
+extractor is written, so the URL is live and warm by the time the demo
+exists. From `TODO.md` Phase 1:
+
+- [ ] Create Vercel project linked to the GitHub repo
+- [ ] First push triggers a deploy; the placeholder home page should
+      respond within minutes
+- [ ] Add the `labelverify.zendren.net` CNAME in Cloudflare
+- [ ] Add the domain in Vercel → Domains; wait for SSL
+- [ ] Smoke-test from a clean browser
+- [ ] Record both URLs (custom + `*.vercel.app`) in the submission
+
 ## 2. Why Vercel
 
 - Next.js is first-class on Vercel — zero-config builds.
@@ -62,11 +76,18 @@ both.
 ## 6. Cold-Start & Latency Considerations
 
 - Next.js API routes on Vercel are serverless functions. First request after
-  idle has a cold start (~500–1500 ms for Node).
-- Mitigation: a tiny "warmup" pinger on the deployed page that hits
-  `/api/health` on load. Keeps the function warm during a demo session.
-- Tesseract.js WASM is large. We load it on the server only when needed; the
-  browser bundle stays slim.
+  idle has a cold start (~500–1500 ms for Node, more if `sharp` /
+  `tesseract.js` are first-loaded on the same call).
+- Mitigation: a tiny **warmup pinger** on the deployed home page that hits
+  `/api/health` and `/api/warmup-tesseract` on load. Keeps the function and
+  the OCR engine warm during a demo session.
+- `sharp` and `tesseract.js` are declared in
+  [`next.config.js`](../next.config.js) under `serverExternalPackages` so
+  Next's bundler does not try to inline their native / WASM payloads.
+- Hard 5 s `AbortSignal` on every vision call (see `ARCHITECTURE.md` §4.3).
+  If the call exceeds budget, we fall back to OCR-only validation instead of
+  blocking the user; the UI surfaces this as a `REVIEW` outcome with a
+  "Run again with stronger model" CTA.
 
 ## 7. Observability
 

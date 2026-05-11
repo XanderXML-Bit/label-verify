@@ -14,31 +14,49 @@ We will not guess. We will benchmark.
 
 ## 2. Candidate Techniques
 
-### 2.1 Individual Techniques
+### 2.1 Scope cut — what we will actually benchmark
 
-| ID | Technique | Description |
+The first draft of this document listed 10 individual techniques and 6
+combinations. The post-review pass (see `REVIEW-PASS.md`) showed that 16
+contenders × 100 labels gives ≈ 6 labels per cell — the predicted accuracy
+gaps are inside the Wilson 95 % CI noise floor and the choice would be
+unfalsifiable. We are deliberately benchmarking **four contenders**:
+
+| ID | Technique | Why this one |
+|----|-----------|--------------|
+| **T1** | **Tesseract OCR** baseline | Free, offline, no API. The "could the simplest thing work?" honest baseline a regulator will want to see compared against. |
+| **T4** | **GPT-4o-mini Vision** | Fast-tier hosted VLM. Default candidate for the cost/speed Pareto front. |
+| **T6** | **Gemini 2.0 Flash Vision** | Alternative fast tier; competing provider so we are not single-vendor in our claim. |
+| **C1** | **OCR + Vision (combined)** | Working hypothesis. T1 output is concatenated into the T4 (or T6, whichever wins) prompt; the vision model is told to cross-reference. |
+
+If C1 wins, we may also implement the **tiered escalation** wrapper (call
+it C5) — a fast call first, a stronger model only when confidence is low —
+*time permitting after the vertical slice ships*.
+
+### 2.2 Techniques we explicitly chose not to benchmark (and why)
+
+| ID | Technique | Why dropped |
 |----|-----------|-------------|
-| T1 | **Tesseract OCR** | Local, classical OCR. Free, offline, no API. |
-| T2 | **PaddleOCR** | Heavier local OCR, generally stronger on dense layouts. |
-| T3 | **GPT-4o Vision** | Hosted multimodal LLM, structured-output mode. |
-| T4 | **GPT-4o-mini Vision** | Cheaper / faster tier of T3. |
-| T5 | **Claude Sonnet Vision** | Hosted, alternative provider. |
-| T6 | **Gemini 2.0 Flash Vision** | Hosted, fastest tier on benchmarks. |
-| T7 | **Florence-2 (local)** | Microsoft open-source vision-language model, runnable via Transformers.js / ONNX. |
-| T8 | **moondream2 (local)** | Small open VLM, runs on commodity hardware. |
-| T9 | **Google Document AI** | Specialized document-understanding API. |
-| T10 | **AWS Textract** | Specialized document API. |
+| T2 | PaddleOCR | No first-class Node binding; would force shelling to Python and break the "one Next.js artifact" deploy thesis. |
+| T3 | GPT-4o (full) | Same family as T4 — keeping T4 is enough for an OpenAI signal. T3 is reserved as the escalation target if C5 is implemented. |
+| T5 | Claude Sonnet Vision | Strong model, but adding a third hosted provider widens the matrix without changing the decision. Reserved as a fallback if T4/T6 both underperform. |
+| T7 | Florence-2 | Will not fit a Vercel serverless function (Hobby 250 MB / Pro 500 MB limit; Florence-2 base ≈ 460 MB). On CPU realistic cold latency is 20–120 s — outside the 5 s budget. Would require a hosted GPU endpoint, which defeats the "local" framing. |
+| T8 | moondream2 | Same as T7 — 1.8 GB quantized, CPU latency 5–30 s warm. Not Vercel-deployable in a way that helps R1. |
+| T9 | Google Document AI | Specialized for *documents* (forms, tables) — labels are visual art, not structured documents. Reviewer would correctly ask why we chose a forms tool. |
+| T10 | AWS Textract | Same reasoning as T9; both are out-of-paradigm. |
+| C2 | Multi-OCR consensus | Two OCRs do not solve the dominant failure mode (stylized fonts), and we already dropped PaddleOCR. |
+| C3 | OCR + ML classifier | Equivalent to C1 with extra moving parts. |
+| C4 | Multi-model consensus | Doubles cost and latency for an accuracy delta we cannot show with 100 labels. |
+| C6 | Local-first w/ hosted fallback | Predicated on T7/T8 working in a Vercel function — see above. Honest replacement is **OCR-only graceful degradation**: if the hosted call times out or 5xxs, we fall back to Tesseract + rule-based validators (Gov Warning text + brand fuzzy match), surfacing the rest as `REVIEW`. This is now part of the architecture, not a benchmark contender. |
 
-### 2.2 Combination Variants
+### 2.3 Variants kept in scope (P2 backlog)
 
-| ID | Combination | Hypothesis |
-|----|-------------|------------|
-| C1 | **OCR + Vision (model sees both)** | Vision model + OCR text in the same prompt outperforms either alone — model cross-references rather than re-reads. |
-| C2 | **Multi-OCR consensus** | T1 + T2 reconciled = higher recall on imperfect images. |
-| C3 | **OCR + ML classifier** | OCR extracts text; small classifier (e.g., heuristic + LLM) maps to fields. |
-| C4 | **Multi-model consensus** | Two vision models run, a third model (or rule-based judge) reconciles. Highest accuracy, highest cost. |
-| C5 | **Tiered escalation** | Fast model first (T4/T6); only escalate to T3/T5 when confidence < threshold. Optimizes the cost/accuracy frontier. |
-| C6 | **Local-first with hosted fallback** | T7 or T8 by default, hosted model only when the local model declines. Hedges against network blocks. |
+- **C5 Tiered escalation** — fast model first, strong model on low
+  confidence. Implementable in a few hours once C1 lands, so it stays as a
+  stretch goal in `TODO.md` Phase 3.5.
+- **T5 Claude Sonnet** — a one-line provider swap if T4/T6 both lose to
+  unrelated factors. Adapter code is parameterized to support this without
+  benchmark scope expansion.
 
 ## 3. Evaluation Dimensions
 
@@ -59,28 +77,50 @@ speed second, everything else far behind.
 
 ## 4. Expected Performance Matrix (Pre-Benchmark Hypotheses)
 
-These are predictions, recorded before measurement, so we can see how wrong
-our priors were.
+These are pre-registered predictions, recorded *before* the benchmark runs,
+so the post-run write-up can show priors-vs-reality. Falsifiable
+hypotheses, not "we will pick whatever wins."
 
-| ID | Predicted Accuracy | Predicted P50 | Cost / 1k | Network-free? | Deploy Complexity |
-|----|--------------------|---------------|-----------|----------------|--------------------|
-| T1 Tesseract | 60–70% (struggles on stylized fonts) | 0.5 s | $0 | Yes | 1 |
-| T2 PaddleOCR | 70–80% | 1.0 s | $0 | Yes | 2 |
-| T3 GPT-4o | 90–95% | 3–5 s | ~$3 | No | 1 |
-| T4 GPT-4o-mini | 85–90% | 1.5–2.5 s | ~$0.50 | No | 1 |
-| T5 Claude Sonnet | 90–95% | 2–4 s | ~$3 | No | 1 |
-| T6 Gemini Flash | 85–92% | 1–2 s | ~$0.10 | No | 1 |
-| T7 Florence-2 (local) | 75–85% | 2–4 s (CPU) | $0 | Yes | 4 |
-| T8 moondream2 (local) | 70–80% | 3–5 s (CPU) | $0 | Yes | 4 |
-| T9 Google Doc AI | 85–90% (general docs, not labels) | 2–3 s | ~$1.50 | No | 3 |
-| T10 AWS Textract | 80–85% | 2–3 s | ~$1.50 | No | 3 |
-| C1 OCR + Vision | **92–97%** | 2–3 s | ~$0.10–3 | Partial | 1 |
-| C5 Tiered | ~95% | 1.5 s (typical) | ~$0.30 | No | 2 |
-| C6 Local-first | 80% solo, 90% with fallback | 3 s (local) / 4 s (fallback) | ~$0.10 amortized | Yes (degraded) | 4 |
+| ID | Predicted Accuracy (overall) | Predicted Gov-Warning Acc. | Predicted P50 | Cost / 1k labels | Network-free? |
+|----|------------------------------|-----------------------------|---------------|-------------------|----------------|
+| T1 Tesseract | 55–70 % | 30–50 % | 1.0–1.8 s | $0 | Yes |
+| T4 GPT-4o-mini Vision | 82–90 % | 75–90 % | 1.8–3.0 s | ≈ $0.50 | No |
+| T6 Gemini 2.0 Flash Vision | 85–92 % | 80–92 % | 1.2–2.2 s | ≈ $0.10 | No |
+| C1 OCR + Vision (T1 + T4 or T6) | 90–96 % | 88–96 % | 1.8–3.0 s | ≈ $0.10–0.50 | No |
 
-**Working hypothesis:** **C1 with Gemini Flash + Tesseract** is the
-likely winner on the joint axes. **C6** is the contingency if we can't rely
-on hosted API availability. The benchmark will confirm or overturn this.
+### 4.1 The hypothesis (falsifiable)
+
+**Working hypothesis:** C1 beats the best single hosted model on
+Gov-Warning accuracy *and* on overall accuracy.
+
+**Predicted delta** (this is the falsifiable claim, not the absolute
+levels): C1 Gov-Warning accuracy ≥ best-single + **3 pp**, with no
+worse than +0.5 s P50 latency. If the measured delta is smaller than
+3 pp or the latency cost exceeds 0.5 s, we cannot defend the added
+complexity; we ship the single-model winner instead.
+
+### 4.2 Kill criterion
+
+**We reject C1 if:** vision-only matches it within 2 pp accuracy AND
+runs ≥ 30 % faster. In that case the simpler architecture wins and the
+take-home submission says so explicitly. The pre-registered kill
+criterion is itself a quality signal: it says we will *follow the data*,
+not the prior.
+
+### 4.3 What would surprise us (we want to find these)
+
+- Tesseract on its own outperforming a hosted model on
+  Gov-Warning-text-match because hosted models paraphrase. (Plausible —
+  large language models love to "fix" misspellings, including
+  *correct* regulatory language.)
+- Gemini Flash beating GPT-4o-mini by more than 5 pp at half the cost.
+  (Plausible — Gemini Flash has been ahead on vision benchmarks recently.)
+- OCR text *hurting* the vision call because the model defers to the OCR
+  on stylized text where OCR is wrong. (Plausible — would invalidate the
+  C1 thesis entirely.)
+
+The post-run section §6 will record what surprised us. If nothing did, we
+either learned nothing or wrote priors that conveniently fit the result.
 
 ## 5. Benchmark Methodology
 

@@ -26,22 +26,34 @@ End-to-end target: **≤ 5 seconds per label** (the previous vendor's
 
 ## Why this layout
 
-This repo is documentation-first because the decisions matter more than the
-code for a take-home. Read in this order:
+This repo is documentation-first because, for a take-home, the *decisions*
+demonstrate the candidate more than half-built features do. Read in this
+order:
 
 1. [`docs/evaluation-brief.md`](docs/evaluation-brief.md) — the requirements
    that drive everything. The "bible."
-2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design and stack
-   choices with justification.
-3. [`docs/APPROACH.md`](docs/APPROACH.md) — the scientific comparison
-   framework we use to pick the verification engine instead of guessing.
-4. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — how we generate
-   labels with known ground truth so accuracy claims are defensible.
-5. [`docs/UI-SPEC.md`](docs/UI-SPEC.md) — UI/UX spec for a non-technical
-   reviewer audience.
-6. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — how the live URL is built
+2. [`docs/REVIEW-PASS.md`](docs/REVIEW-PASS.md) — **the foundation review
+   pass.** Eight independent critics (six Claude sub-agents + two Hermes
+   sessions, one Treasury-persona and one skeptic) audited the v1
+   foundation; this doc records what they said, what we changed, and what
+   we deliberately did not.
+3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design, latency
+   budget (honest P50 + P95), and per-item batch design.
+4. [`docs/APPROACH.md`](docs/APPROACH.md) — the scientific framework for
+   picking the verification engine. Includes a pre-registered kill
+   criterion so the hypothesis can lose.
+5. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — corpus design,
+   ground-truth validation, Wilson CIs, stratified scoring, OOD reporting.
+6. [`docs/government-warning-cases.md`](docs/government-warning-cases.md) —
+   enumerated non-compliance test taxonomy for the strictest field
+   (27 CFR § 16.21 + § 16.22).
+7. [`docs/UI-SPEC.md`](docs/UI-SPEC.md) — UI/UX spec for a non-technical
+   reviewer audience, with the Image-Quality / Verdict split that
+   separates "your photo was bad" from "the label is non-compliant."
+8. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — how the live URL is built
    and maintained.
-7. [`TODO.md`](TODO.md) — prioritized backlog through 2026-05-18.
+9. [`TODO.md`](TODO.md) — prioritized backlog through 2026-05-18, with a
+   **vertical slice first** philosophy after the review pass.
 
 ## Quick start (local)
 

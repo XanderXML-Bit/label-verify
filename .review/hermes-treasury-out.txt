@@ -1,0 +1,38 @@
+
+session_id: 20260511_151134_7f623b
+1. FIRST RED FLAG:
+README says “Live demo: TBD” and “implementation underway,” while TODO shows nearly every P0 item unchecked and src/lib is mostly interfaces/stubs. A Treasury reviewer opens this and sees a proposal, not a prototype.
+
+2. Docs-first: strength or stalling?
+Both, but currently reads more like stalling. The docs are organized and requirement-aware, but the ratio is bad: extensive architecture/test/UI/deploy theory, almost no executable evidence. For a take-home, “docs-first” only works if the repo quickly proves the core loop runs.
+
+3. 5-second latency claim:
+The ARCHITECTURE.md budget is optimistic P50 math, not a credible reviewer-facing guarantee.
+
+Likely blowups:
+- Vercel cold start: +500–1500ms, already acknowledged in DEPLOYMENT.md.
+- Tesseract server/WASM startup and OCR on degraded/large images: 600ms is optimistic.
+- Hosted vision call: 2.5s assumes fast provider, warm path, small payload, no queueing, no retry, no structured-output overhead.
+- Low-confidence escalation: “upgrade only on low confidence” can instantly double latency.
+- Batch concurrency of 8 on serverless + external model APIs risks throttling/timeouts.
+- PDF/page extraction and URL fetch path omitted from budget.
+
+Realistic P95 likely exceeds 5s unless the implementation aggressively limits image size, avoids escalation inline, and benchmarks real deployed latency.
+
+4. Technique-comparison matrix:
+It reads like scientific window-dressing until benchmarks exist. The structure is good, but the numbers are mostly guessed, unsourced, and internally convenient: C1/C5 magically land as winners before any corpus exists. “We will benchmark” is credible only once there is a committed corpus, runnable harness, raw outputs, and at least one surprising result or rejected prior.
+
+5. Government Warning validator:
+The BODY string matches the 27 CFR 16.21 body text from the regulation. No discrepancy in the body text itself.
+
+But the file is not a validator. It only exports constants and an interface. It does not check exact full statement, prefix, casing, normalization rules, line breaks, OCR artifacts, or boldness. Also the regulated full warning includes the prefix; the body constant intentionally excludes it, so any full-string comparison must concatenate prefix + space + body correctly.
+
+6. Single highest-leverage improvement:
+Ship one end-to-end vertical slice: upload one sample label + declared fields → extract/compare Government Warning and brand/ABV → show pass/fail UI → deployed URL → tests/benchmark evidence. One working narrow path beats ten planned adapters.
+
+7. Scores:
+- Documentation quality: 8/10. Clear, organized, requirement-linked. Too much “future tense.”
+- Technical rigor: 5/10. Good framing, weak evidence. No benchmark data, no implemented validators, optimistic latency.
+- Scope discipline: 6/10. Says “prototype,” but TODO includes too many models, batch, PDF, CSV, SSE, reports, local fallback, benchmarks, custom domain.
+- Deployment plan: 5/10. Sensible Vercel plan, but not deployed; serverless batch/latency risks under-addressed.
+- UX plan: 7/10. Strong accessibility instincts and reviewer empathy, but still wireframes/spec only, no usability proof.

@@ -1,0 +1,14 @@
+You are a pragmatic senior engineer doing a skeptical pre-flight check on a take-home project foundation. The project is an AI label verification prototype for the U.S. TTB (Treasury). Repo at C:\Users\xande\OneDrive\Desktop\Zendren LLC\LabelVerify\.
+
+Read: docs/ARCHITECTURE.md, docs/APPROACH.md, docs/TEST-STRATEGY.md, docs/DEPLOYMENT.md, package.json, src/lib/vision/types.ts, src/lib/validation/government-warning.ts, benchmarks/run.ts.
+
+Now answer with specifics and file:line references where you can. Be HONEST, not polite.
+
+A. What does the foundation get RIGHT — name the three strongest decisions and why.
+B. What does the foundation get WRONG, weak, or risky — name the five biggest issues, prioritized.
+C. The plan to benchmark 10 techniques before picking — is this realistic for a candidate working in about 1 week to 2026-05-18, or is it scope creep that will sink the implementation? What would you cut from the technique list to make it shippable?
+D. The local-model fallback (Florence-2 / moondream2) — on a Vercel serverless function with no GPU, what is the actual latency you would expect for one inference? Will it fit the 5-second budget at all?
+E. The corpus generation plan via Puppeteer-rendered HTML/CSS labels — what is the risk that synthetic labels do not resemble real COLA submissions enough to grade extractors meaningfully?
+F. What is the SINGLE most likely scenario where the candidate misses the deadline?
+
+Be terse. Under 700 words total. Direct, no sycophancy. Quote file:line.

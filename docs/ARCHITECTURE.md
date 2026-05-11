@@ -71,37 +71,99 @@ For one label image:
 
 ## 4. Latency Budget (R1: ≤ 5s end-to-end)
 
-Per-image, target P50:
+Per-image, target latency. **OCR runs in parallel with the vision call**, so
+it is off the critical path; the budget below is the *critical-path sum*,
+not the work-sum.
 
-| Stage | Budget | Notes |
-|-------|--------|-------|
-| Network upload (1 image, ~2MB) | 400 ms | Compress client-side before send. |
-| Pre-process (sharp) | 150 ms | Server-side, hot worker. |
-| OCR (tesseract) | 600 ms | Parallel with vision call. |
-| Vision call (hosted) | 2,500 ms | The big one. We pin to fastest tier (Gemini Flash / GPT-4o-mini) by default; upgrade only on low confidence. |
-| Matching + validation | 100 ms | Pure CPU. |
-| Stream + render | 250 ms | First-byte streaming. |
-| **Total P50** | **~4.0 s** | Headroom for P95. |
+### 4.1 P50 critical path
 
-Strategies to stay under budget:
+| Stage | Budget | Off critical path? | Notes |
+|-------|--------|--------------------|-------|
+| Client compress + upload (~2 MB image, ~400 KB after browser compress) | 350 ms | — | Client-side JPEG re-encode at quality 0.7 keeps payload small. |
+| Server pre-process (`sharp`) | 150 ms | — | EXIF orient, resize to ≤ 1600 px long edge, optional auto-contrast. Hot worker. |
+| Vision call (hosted, fast tier) | 2,400 ms | — | Gemini Flash / GPT-4o-mini, structured-output JSON-schema mode. |
+| OCR (`tesseract`) | 1,200 ms | **yes** — parallel with vision | Tesseract on Vercel Node is 1.0–1.8 s realistic; honest number, not the prior 600 ms. Result is fed into the vision prompt only if it lands before the vision call returns. |
+| Matching + validation | 100 ms | — | Pure CPU. |
+| Stream first byte + UI paint | 250 ms | — | SSE; UI starts rendering as fields arrive. |
+| **Critical-path P50** | **~3.25 s** | | Comfortable under 5 s. |
 
-- **Parallelize** OCR and vision (they don't depend on each other).
-- **Stream** partial results — user sees brand name before warning check finishes.
-- **Tiered model selection** — start with a fast model, only escalate if
-  confidence < threshold on critical fields.
-- **Skip OCR for batches** if vision-only is good enough (decided by
-  benchmark, not by guess).
+### 4.2 P95 critical path (honest)
+
+| Stage | P95 | Driver |
+|-------|-----|--------|
+| Cold-start (`sharp` + tesseract.js bundle on a cold serverless function) | +1,500 ms | Vercel cold-starts after idle. Mitigated by a warmup pinger on `/` page load (see `DEPLOYMENT.md` §6) but not eliminated. |
+| Vision call tail | 4,500 ms | Structured-output mode serializes token gen; provider tail behavior is the dominant risk. |
+| Upload tail (slow proxy / federal network) | 1,200 ms | TTB office connections behind a proxy. Outside our control. |
+| **Critical-path P95** | **~6.5–7.5 s** | Will exceed 5 s on cold + slow-network + provider-tail. |
+
+**We are honest about this:** P50 under 5 s is achievable and is what the
+demo shows. P95 above 5 s is real. The mitigations are below.
+
+### 4.3 Mitigations and budget defense
+
+- **Streaming results.** The UI renders fields one-by-one as the SSE pipe
+  delivers them. The user sees brand-name PASS at ~2 s even if the full
+  envelope takes 5 s. *Perceived* latency stays under budget.
+- **Hard timeout.** The vision call has a 5 s `AbortSignal`; if it fires, we
+  return whatever fields the OCR-only path can validate (Gov Warning text +
+  brand fuzzy match) and mark the rest `REVIEW`. The user is never left
+  staring at a spinner past 5 s.
+- **Warmup pinger.** `/api/health` is hit on page load to warm the function
+  before the user clicks Verify.
+- **Tiered escalation runs *off-path*.** If field confidence is low after
+  the primary call, a stronger model re-checks — but only after the user
+  has already seen the primary result. The reviewer is not blocked.
+- **Skip OCR for batches when benchmark shows it doesn't help.** Decision
+  made by data in `benchmarks/results/`, not by guess.
+- **Parallelize OCR and vision.** They do not depend on each other; OCR is
+  *only* useful if it returns *before* the vision call. If OCR is slower
+  than the vision call, we drop its output rather than wait.
+
+### 4.4 What we measure live
+
+Every `/api/verify` response includes a `timings` object: `{ upload,
+preprocess, ocr, vision, match, total }`. The deployed UI surfaces
+`"Verified in N.N s"` from this. If a reviewer reports slowness, we have
+the trace; if the deployed P95 starts drifting, the regression is visible.
 
 ## 5. Batch Processing (R3: 200–300 labels)
 
-- Upload triggers a job; the API returns a job ID immediately.
-- Server processes in a bounded concurrency pool (default 8 workers).
-- UI polls or subscribes via Server-Sent Events for per-item status.
-- Results table is virtualized (R2: must stay usable at 300 rows).
-- CSV export of full results table.
+Vercel Hobby serverless functions cap execution at 10–60 s. A single
+long-running orchestrator function will time out before 300 labels finish.
+The batch design is **per-item function invocations, not a worker pool**.
 
-300 labels × 4s with 8 concurrent workers = ~150s total. That's the right
-order of magnitude — minutes, not hours.
+### 5.1 Flow
+
+1. **Upload.** Client posts a folder of images + one CSV/XLSX of declared
+   field values. Server stores them transiently in `/tmp` and returns a
+   `batchId` immediately (one short function call, well under the timeout).
+2. **Worker fan-out.** A second client request opens an SSE connection to
+   `GET /api/verify/batch/:batchId/stream`. That endpoint reads the manifest
+   and *fires one `fetch` to `/api/verify` per item*, with bounded
+   concurrency (default 8). Each `/api/verify` call is its own function
+   invocation, so each item gets its own timeout budget.
+3. **Stream-back.** As each per-item function returns, the orchestrator
+   forwards the result over SSE to the client. The UI renders a virtualized
+   table whose rows fill in as results stream.
+4. **Resume.** If the SSE connection drops, the client re-opens with
+   `?cursor=<lastIdx>` and the server picks up from there. Job state is
+   in-memory but indexed by `batchId` so reconnects within the session
+   work.
+
+### 5.2 Math
+
+300 labels ÷ 8 concurrency × 4 s P50 ≈ 150 s wall time. Minutes, not
+hours, and no single function call exceeds the per-item budget.
+
+### 5.3 What we do not implement
+
+- A real queue (Redis, SQS, etc.). The in-memory `batchId → state` map is
+  sufficient for a prototype that does not survive process restart. The
+  brief says no persistent storage; we abide by that.
+- Cross-session resumability. Refresh-and-resume after browser close is
+  out of scope.
+- CSV export and PDF report are P1, not P0. The vertical slice ships
+  without them.
 
 ## 6. Imperfect-Image Tolerance (R4)
 

@@ -1,0 +1,46 @@
+
+session_id: 20260511_151332_da70fa
+A. Gets right — strongest decisions
+
+1. Simple deploy shape. Single Next.js app, no separate backend, no DB: ARCHITECTURE.md:19-21, 129-135; DEPLOYMENT.md:100-105. Good for take-home reviewability. Fewer moving parts.
+
+2. Correct architecture instinct: OCR + vision + rules, not “just ask GPT.” Pipeline explicitly combines OCR text with image in one structured vision pass: ARCHITECTURE.md:47-54. That is the right prototype bet.
+
+3. Treats Government Warning as a strict rule, not vibes. Hand-rolled validation is called out: ARCHITECTURE.md:35, 55-66. The constant body appears textually aligned with 27 CFR 16.21: government-warning.ts:4-10.
+
+B. Biggest issues, prioritized
+
+1. Benchmarking is mostly vapor right now. APPROACH promises full corpus/3 trials/results: APPROACH.md:89-104, but benchmarks/run.ts only prints “runner not yet implemented”: benchmarks/run.ts:1-11. This is the first hard red flag.
+
+2. Scope is bloated. Ten individual techniques plus six combinations: APPROACH.md:15-41. That is not one-week implementation scope; it is a research plan.
+
+3. Local VLM fallback is unrealistic on Vercel. Docs claim Florence-2/moondream2 via Transformers.js/ONNX: ARCHITECTURE.md:33, and predict 2-5s CPU: APPROACH.md:73-79. On serverless cold CPU, that is fantasy.
+
+4. 5s latency budget is optimistic. It budgets OCR at 600ms and hosted vision at 2.5s: ARCHITECTURE.md:78-84, while deployment admits Vercel cold start 500-1500ms and Tesseract WASM is large: DEPLOYMENT.md:62-69. P95 will blow past 5s.
+
+5. Corpus validity risk is underplayed. Plan says “We don’t need real submissions” and uses ~70 synthetic renders: TEST-STRATEGY.md:32-44, with only ~10 real labels: TEST-STRATEGY.md:58-64. That may benchmark template overfitting, not COLA-like extraction.
+
+C. Benchmark 10 techniques?
+
+Scope creep. It will sink implementation.
+
+Cut to:
+- Tesseract baseline.
+- One fast hosted VLM: Gemini Flash or GPT-4o-mini.
+- One stronger hosted VLM fallback: GPT-4o or Claude Sonnet.
+- One combined path: OCR + fast vision.
+- Optional smoke only: local fallback as documented non-production contingency, not benchmark winner.
+
+Cut PaddleOCR, AWS Textract, Google Doc AI, multi-model consensus, multi-OCR consensus, local-first default. They add setup drag without improving the demo enough.
+
+D. Local fallback latency on Vercel no-GPU
+
+Expected: cold inference likely 20-120s or OOM/timeout once model download/load/ONNX init is included. Warm CPU inference might still be 5-30s depending model/quantization/image size. It does not reliably fit a 5-second budget. The C6 “3s local / 4s fallback” claim is not credible: APPROACH.md:79.
+
+E. Synthetic corpus risk
+
+High. HTML/CSS labels are too clean structurally: predictable fonts, DOM-originated text, rectangular layout, perfect ground truth. Real COLA submissions include scans/photos, compression, curved bottles, reflective labels, weird typography, regulator-upload artifacts, back-label clutter. With only ~10 real labels: TEST-STRATEGY.md:58-64, the benchmark may reward extractors that exploit synthetic regularity and fail on real labels.
+
+F. Single most likely missed-deadline scenario
+
+Candidate spends 3-4 days building the benchmark/corpus/technique matrix, then discovers the harness is nontrivial, local VLMs don’t run within Vercel constraints, and there is no polished end-to-end demo. The repo then looks like ambitious docs plus stubs — exactly what benchmarks/run.ts currently signals.
