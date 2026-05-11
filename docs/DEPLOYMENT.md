@@ -121,6 +121,9 @@ npm run gen:corpus   # regenerate synthetic test labels
 ## 10. What We Are Not Deploying
 
 - A database. Stateless prototype.
-- A queue (Redis, etc.). In-memory worker pool is sufficient.
+- A queue (Redis, etc.). The per-item function-invocation pattern in
+  `ARCHITECTURE.md` §5 plus an in-memory `batchId` index is sufficient.
 - A separate API service. The Next.js app is the API.
+- A local VLM container. The network-restricted contingency is OCR-only
+  graceful degradation, not a heavy local model.
 - A staging environment beyond per-PR preview deploys.

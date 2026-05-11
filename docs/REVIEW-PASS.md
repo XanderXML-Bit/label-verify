@@ -1,9 +1,9 @@
 # Foundation Review Pass — 2026-05-11
 
 > **Purpose:** Before any extractor or UI code is written, the foundation was
-> reviewed by seven independent critics: six Claude sub-agents (each on a
-> dedicated axis) and one Hermes session adopting a Treasury hiring-manager
-> persona. A second Hermes session ran in skeptic mode for a pre-flight check.
+> reviewed by eight independent critics: six Claude sub-agents (each on a
+> dedicated axis) plus two Hermes sessions — one adopting a Treasury
+> hiring-manager persona, one running in pragmatic-skeptic mode.
 >
 > This file records *what they said*, *what we changed*, and *what we
 > intentionally did not change*. Intellectual-honesty signal: a take-home that
@@ -13,9 +13,12 @@
 ## 1. Why a Review Pass at All
 
 The brief explicitly says **"a working core beats an ambitious incomplete
-attempt."** Two weeks before the deadline, the right move is not to start
-typing — it is to find the design defects that would have cost a week to
-undo later.
+attempt."** Foundation defects (latency math errors, an undefined
+prefix-bold contract, an unfalsifiable hypothesis matrix, a local-VLM
+fallback that physically cannot run on Vercel) would have cost a week of
+rework if discovered after the working slice was wired against them.
+A short review pass at this point trades a few hours for the rework
+delta. That is the entire rationale.
 
 ## 2. The Critics
 
@@ -113,12 +116,14 @@ container size) and visual separation. Foundation did not check size.
 - Added §16.22 constants: `MIN_TYPE_MM_LARGE = 2`, `MIN_TYPE_MM_SMALL = 1`,
   `SMALL_CONTAINER_THRESHOLD_ML = 237`.
 - `GovernmentWarningCheck` now returns `confidence: number` and
-  `subscores: { text, caps, bold, size }`. The aggregate confidence is the
-  **minimum** across subscores — one weak signal poisons a strict rule,
-  which is the right semantic.
+  `subscores: { text, caps, bold, size }`. Each subscore carries its own
+  `{ status, confidence }`. The aggregate `status` is the worst across
+  subscores via `aggregateStatus()` (fail < review < pass); the aggregate
+  `confidence` is the minimum across subscores — one weak signal poisons a
+  strict rule, which is the right semantic.
 - Bold is documented as a relative check: prefix stroke width ≥ 1.4× body
   stroke width on the same image. Ambiguous middle (1.2×–1.4×) returns
-  `pass = null` for human review rather than a guess.
+  `status = "review"` (human resolves), not a guess.
 - Added a `normalize()` helper that handles NFKC, smart-quotes, and
   whitespace collapse before exact match.
 
@@ -129,10 +134,13 @@ container size) and visual separation. Foundation did not check size.
 T4 (predicted 85–90 %) — the gaps are inside the noise floor.
 
 **Change:** scope cut. We are no longer benchmarking 13 techniques. The
-post-review benchmark plan is **three techniques** (one OCR baseline, one
-frontier vision call, one combined OCR+vision) plus an optional tiered
-escalation if time allows. With three contenders, 100 labels gives ±5 pp
-CI per cell — defensible.
+post-review benchmark plan is **four contenders** (`APPROACH.md` §2.1):
+T1 Tesseract baseline, T4 GPT-4o-mini Vision, T6 Gemini 2.0 Flash Vision,
+and C1 OCR + Vision combined — one OCR baseline, two competing fast-tier
+hosted vision models for provider parity, and one combined approach. The
+optional tiered-escalation wrapper (C5) is P2 if implementation time
+remains. With four contenders, 100 labels gives ≈ ±5 pp Wilson CI per
+cell — defensible.
 
 `TEST-STRATEGY.md` now also requires **Wilson confidence intervals** and
 **McNemar's test** for technique-vs-technique comparisons, and reports
@@ -249,7 +257,7 @@ subsequent phase is a horizontal expansion of that working slice.
 
 ## 7. What This Tells the Evaluator
 
-A take-home that ships its first draft is one signal. A take-home that
-ships **its first draft, then a documented review pass, then the iterated
-foundation, then the working slice** is a stronger signal. We are
-showing the work.
+This document is not the deliverable; the working slice is. This document
+exists because a reviewer who asks "did the candidate think before they
+typed?" can read it and see exactly what was reconsidered and why. The
+*working slice* is what proves the rework was worth doing.

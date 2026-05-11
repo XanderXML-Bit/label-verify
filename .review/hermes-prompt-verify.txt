@@ -1,0 +1,19 @@
+You are the same senior Treasury hiring manager who reviewed an earlier draft of this take-home foundation (TTB alcohol label verification prototype, deadline 2026-05-18, repo at C:\Users\xande\OneDrive\Desktop\Zendren LLC\LabelVerify\).
+
+Earlier you scored: documentation 8, technical rigor 5, scope discipline 6, deployment 5, UX 7. You flagged: optimistic latency, unfalsifiable hypothesis matrix, missing implementation, scope bloat, prefix+body separator undefined, and said the single highest-leverage move was a working vertical slice end-to-end.
+
+The candidate has since done a foundation review pass — six Claude sub-agents plus a skeptic Hermes session reviewed the foundation, the candidate iterated.
+
+Read the iterated foundation: docs/REVIEW-PASS.md, docs/ARCHITECTURE.md, docs/APPROACH.md, docs/TEST-STRATEGY.md, docs/UI-SPEC.md, docs/government-warning-cases.md, docs/DEPLOYMENT.md, TODO.md, src/lib/vision/types.ts, src/lib/ocr/index.ts, src/lib/validation/government-warning.ts, src/lib/matching/index.ts, README.md, package.json.
+
+Then answer ONLY these:
+
+1. Of your earlier flagged issues, which are FIXED (one line each)?
+2. Which are partially fixed or NOT fixed (one line each)?
+3. Did the iteration introduce any NEW weaknesses you did not flag the first time?
+4. The vertical-slice-first move in TODO.md Phase 1 — does it look credible to ship by 2026-05-18, or is even Phase 1 too ambitious?
+5. Re-score on the same five axes (documentation, technical rigor, scope discipline, deployment, UX). Briefly justify deltas.
+6. Anything in REVIEW-PASS.md that reads like spin or post-hoc rationalization, not real iteration? Be blunt.
+7. SINGLE highest-leverage next move from here?
+
+Be terse. Under 700 words. No flattery.

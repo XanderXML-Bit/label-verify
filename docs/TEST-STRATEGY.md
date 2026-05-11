@@ -177,8 +177,8 @@ a benchmark run (manual at first, GitHub Action later).
   - `text`: normalized exact match against `GOVERNMENT_WARNING_BODY`.
   - `caps`: prefix is all-caps after Unicode-fold.
   - `bold`: prefix stroke width ≥ 1.4 × body stroke width (relative, not
-    absolute). Ambiguous middle (1.2–1.4×) returns `null` → counted as
-    REVIEW, not pass.
+    absolute). Ambiguous middle (1.2–1.4×) returns `status = "review"`
+    → counted as REVIEW, not pass.
   - `size`: prefix glyph height ≥ §16.22 minimum (1 mm or 2 mm depending
     on inferred container size).
   - Aggregate `pass = min(subscores)`; aggregate confidence = `min`

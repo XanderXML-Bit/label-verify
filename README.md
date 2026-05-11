@@ -105,8 +105,10 @@ label-verify/
 - **Tailwind** + **shadcn/ui** for accessible UI primitives
 - **sharp** for image preprocessing
 - **tesseract.js** for local OCR
-- **OpenAI / Anthropic / OpenRouter** for hosted vision
-- **Florence-2** / **moondream2** as network-free fallback
+- **Google Gemini / OpenAI / Anthropic** for hosted vision
+- **OCR + rule-based validators** as network-free graceful degradation
+  (replaces the earlier Florence-2 / moondream2 local-VLM plan — see
+  [`docs/REVIEW-PASS.md`](docs/REVIEW-PASS.md) §3.3 for why)
 - **vitest** for tests
 - **Vercel** for deployment
 
@@ -115,9 +117,11 @@ Each choice is justified in
 
 ## How we pick the verification engine
 
-We benchmark, then decide. Ten candidate techniques (and six combinations)
-are evaluated against a 100+ label corpus on accuracy, latency, cost, and
-network-independence. See
+We benchmark, then decide. **Four contenders** (post-review-pass scope cut)
+are evaluated against a 100-label corpus on accuracy, latency, cost, and
+network-independence — T1 Tesseract baseline, T4 GPT-4o-mini Vision,
+T6 Gemini 2.0 Flash Vision, C1 combined OCR + Vision. The hypothesis is
+pre-registered with a kill criterion so the choice can lose. See
 [`docs/APPROACH.md`](docs/APPROACH.md) for the methodology and
 [`benchmarks/results/`](benchmarks/results/) for the data once runs land.
 

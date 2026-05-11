@@ -16,7 +16,8 @@ Legend: **P0** = must ship · **P1** = strongly want · **P2** = nice to have.
 
 - [x] Project skeleton + typed stubs
 - [x] Docs: `evaluation-brief.md`, `ARCHITECTURE.md`, `APPROACH.md`,
-      `TEST-STRATEGY.md`, `DEPLOYMENT.md`, `UI-SPEC.md`
+      `TEST-STRATEGY.md`, `DEPLOYMENT.md`, `UI-SPEC.md`,
+      `government-warning-cases.md`, `REVIEW-PASS.md`
 - [x] Public GitHub repo + first commit
 - [x] Multi-agent review pass — six sub-agent critiques + two Hermes
       independent reviews → `docs/REVIEW-PASS.md`
@@ -24,6 +25,9 @@ Legend: **P0** = must ship · **P1** = strongly want · **P2** = nice to have.
       (latency math, kill criterion, structured extractor interface,
       split prefix-bold constants, §16.22 size check, drag-folder
       batch UX, verdict/quality split, 4-technique scope cut)
+- [x] Coherence-check pass + Hermes Treasury verification pass on the
+      iteration; remaining seams cleaned up (Florence-2 refs,
+      worker-pool refs, technique counts, validator type alignment)
 - [x] `.eslintrc.json`, `next.config.js` (sharp / tesseract external),
       dependencies for the chosen path installed
 

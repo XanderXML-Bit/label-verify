@@ -17,10 +17,11 @@ We will not guess. We will benchmark.
 ### 2.1 Scope cut — what we will actually benchmark
 
 The first draft of this document listed 10 individual techniques and 6
-combinations. The post-review pass (see `REVIEW-PASS.md`) showed that 16
-contenders × 100 labels gives ≈ 6 labels per cell — the predicted accuracy
-gaps are inside the Wilson 95 % CI noise floor and the choice would be
-unfalsifiable. We are deliberately benchmarking **four contenders**:
+combinations (16 candidates total). The post-review pass
+(see `REVIEW-PASS.md`) showed that 16 contenders against 100 labels gives
+roughly 6 labels per cell — the predicted accuracy gaps are inside the
+Wilson 95 % CI noise floor and the choice would be unfalsifiable. We are
+deliberately benchmarking **four contenders**:
 
 | ID | Technique | Why this one |
 |----|-----------|--------------|
@@ -127,13 +128,21 @@ either learned nothing or wrote priors that conveniently fit the result.
 See `TEST-STRATEGY.md` for the test corpus. Pipeline:
 
 1. **Fix the corpus** — 100+ labeled images with JSON ground truth.
-2. **Implement each technique** behind a uniform interface:
+2. **Implement each technique** behind the uniform interface declared in
+   [`src/lib/vision/types.ts`](../src/lib/vision/types.ts):
    ```ts
    interface Extractor {
-     id: string;
-     extract(image: Buffer, ocrHint?: string): Promise<ExtractedFields>;
+     readonly id: string;
+     readonly networkRequired: boolean;
+     extract(image: Buffer, ctx?: ExtractorContext): Promise<ExtractorResult>;
    }
    ```
+   `ExtractorContext` carries optional OCR text + word bounding boxes
+   (for the C1 OCR+vision combined path) and an `AbortSignal` for the
+   5 s timeout enforcement. `ExtractorResult` carries fields *and* the
+   metadata the harness needs for honest reporting: `latencyMs`,
+   `modelVersion`, `promptHash`, `cost { inputTokens, outputTokens,
+   costUsd }`. Without these, §7 reproducibility is a claim, not a fact.
 3. **Run each extractor** across the full corpus, 3 trials per image to
    measure variance.
 4. **Score** field-by-field against ground truth. Compute the weighted

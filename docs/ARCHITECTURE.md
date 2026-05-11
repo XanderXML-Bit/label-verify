@@ -30,7 +30,7 @@ deployment (R8), keeps the prototype legible to reviewers (eval criteria #2).
 | Image preprocessing | **sharp** | Native, fast resize/normalize/orient before any model call. Trims payload sent to vision API. |
 | OCR (local) | **tesseract.js** (browser) and **tesseract** binary (server) | Zero-network fallback (R4 robustness, network-blocked TTB risk). |
 | Hosted vision | **OpenAI Vision** via direct API or **OpenRouter** | Same access pattern Splitful uses; OpenRouter lets us A/B GPT-4o, Claude Sonnet, Gemini Flash without rewriting. |
-| Local vision (fallback) | **Florence-2** or **moondream2** via Transformers.js / ONNX | Runs without third-party network — important per `evaluation-brief.md` §10. |
+| Network-free degradation | **OCR + rule-based validators only** | Per `APPROACH.md` §2.2, local VLMs (Florence-2, moondream2) won't fit a Vercel serverless function and are deferred to P2 with a hosted GPU endpoint as the realistic delivery vehicle. The honest contingency is: Tesseract + Gov-Warning text validator + brand fuzzy match keep working when the hosted vision API is unreachable; the rest of the fields return `REVIEW`. |
 | Fuzzy matching | **fast-fuzzy** or hand-rolled normalized Levenshtein | Tiny dep; brand normalization is straightforward (R6). |
 | Validation | Hand-rolled rules + zod schemas | Government Warning rule is too strict and too specific to outsource (R5). |
 | Tests | **vitest** | Same as Splitful; ESM-friendly, fast. |
@@ -192,6 +192,10 @@ Layered defense:
 
 - User accounts / SSO.
 - A database. Sessions live in memory; the prototype is stateless.
-- Webhooks / queue infrastructure. A simple worker pool is enough for 300
-  labels.
+- Webhooks / external queue infrastructure (Redis / SQS). The batch design
+  in §5 uses per-item function invocations orchestrated by an in-memory
+  job index — sufficient for 300-label batches without persistence.
 - A custom-trained model. We benchmark, we pick, we ship.
+- A local VLM fallback. The honest network-restricted contingency is the
+  OCR-only graceful-degradation path described in §2 and `APPROACH.md`
+  §2.2.

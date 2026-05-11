@@ -41,38 +41,70 @@ export const MIN_TYPE_HEIGHT_MM_SMALL = 1;
 
 /**
  * Bold is inherently relative. We measure the prefix stroke width on the
- * same image as the body stroke width and require:
- *   stroke_ratio = prefix / body  ≥ BOLD_RATIO_PASS  → bold
- *   stroke_ratio                  ≤ BOLD_RATIO_FAIL  → not bold
- *   between                                            → REVIEW (human)
+ * same image as the body stroke width and bucket the ratio:
+ *   ratio ≥ BOLD_RATIO_PASS     → bold (pass)
+ *   ratio ≤ BOLD_RATIO_FAIL     → not bold (fail)
+ *   in between                  → ambiguous → REVIEW (human resolves)
  */
 export const BOLD_RATIO_PASS = 1.4;
 export const BOLD_RATIO_FAIL = 1.2;
 
 // ─── Validator output ───────────────────────────────────────────────────────
 
+/**
+ * Tri-state used for every subscore and for the aggregate verdict.
+ * Ordering for min-aggregation (see status priorities below):
+ *   fail < review < pass
+ */
 export type SubscoreStatus = "pass" | "fail" | "review";
 
+/** Strict ordering so we can take the "min" across subscores. */
+const STATUS_RANK: Record<SubscoreStatus, number> = {
+  fail: 0,
+  review: 1,
+  pass: 2,
+};
+
+/**
+ * Aggregate the per-subscore statuses by taking the *worst* one.
+ * One weak signal poisons the field — which is the right semantic for a
+ * strict regulatory rule. Exported so the harness and the API route share
+ * the same aggregation logic.
+ */
+export function aggregateStatus(subs: SubscoreStatus[]): SubscoreStatus {
+  let worst: SubscoreStatus = "pass";
+  for (const s of subs) {
+    if (STATUS_RANK[s] < STATUS_RANK[worst]) worst = s;
+  }
+  return worst;
+}
+
+export interface SubscoreResult {
+  status: SubscoreStatus;
+  /** 0–1; per-subscore self-confidence. */
+  confidence: number;
+}
+
 export interface GovernmentWarningSubscores {
-  text: SubscoreStatus;
-  caps: SubscoreStatus;
-  bold: SubscoreStatus;
-  size: SubscoreStatus;
+  text: SubscoreResult;
+  caps: SubscoreResult;
+  bold: SubscoreResult;
+  size: SubscoreResult;
 }
 
 export interface GovernmentWarningCheck {
   /**
-   * Aggregate verdict. Equals min(subscores) — one weak signal poisons
-   * the field, which is the right semantic for a strict rule.
+   * Aggregate verdict — `aggregateStatus(subscore statuses)`. One weak
+   * signal poisons the field.
    */
   status: SubscoreStatus;
   /**
-   * Aggregate confidence = min(per-subscore confidence). Same reasoning.
+   * Aggregate confidence = minimum confidence across all four subscores.
+   * Same reasoning as `status`: the field is only as confident as its
+   * weakest subscore.
    */
   confidence: number;
   subscores: GovernmentWarningSubscores;
-  /** Per-subscore confidence so the UI can show why a REVIEW is REVIEW. */
-  subscoreConfidence: Record<keyof GovernmentWarningSubscores, number>;
   /** Specific reason on FAIL or REVIEW. Empty on PASS. */
   reason?: string;
 }
@@ -81,8 +113,9 @@ export interface GovernmentWarningCheck {
 
 /**
  * Normalize text for the strict text-match subscore. Folds Unicode
- * compatibility forms, smart-quote variants, and excess whitespace —
- * without ever touching letter case (the caps subscore needs the original).
+ * compatibility forms, smart-quote variants, dash variants, and excess
+ * whitespace — without ever touching letter case (the caps subscore needs
+ * the original).
  */
 export function normalizeForTextMatch(input: string): string {
   return input
@@ -95,11 +128,33 @@ export function normalizeForTextMatch(input: string): string {
 }
 
 /**
+ * Latin small-capital codepoints in the U+1D00 block (ᴀ, ʙ, ᴄ, …) print
+ * uppercase-shaped but compare lowercase under simple `===` toUpperCase
+ * checks. Map them to their uppercase Latin equivalents before the caps
+ * check so a small-caps font does not silently fail.
+ *
+ * Source: Unicode Phonetic Extensions block (U+1D00 – U+1D2B).
+ */
+const SMALL_CAPS_TO_UPPER: Record<string, string> = {
+  "ᴀ": "A", "ᴁ": "Æ", "ᴃ": "B", "ᴄ": "C", "ᴅ": "D",
+  "ᴇ": "E", "ᴈ": "Ǝ", "ᴉ": "I", "ᴊ": "J", "ᴋ": "K",
+  "ᴌ": "L", "ᴍ": "M", "ᴎ": "N", "ᴏ": "O", "ᴐ": "Ɔ",
+  "ᴑ": "Ø", "ᴒ": "Ǫ", "ᴓ": "Ơ", "ᴔ": "Œ", "ᴕ": "ȢȚ",
+  "ᴖ": "Ɵ", "ᴗ": "ʘ", "ᴘ": "P", "ᴙ": "Ⱳ", "ᴚ": "R",
+  "ᴛ": "T", "ᴜ": "U", "ᴝ": "Ʉ", "ᴞ": "Ʋ", "ᴟ": "Ǝ",
+  "ᴠ": "V", "ᴡ": "W", "ᴢ": "Z",
+};
+
+/**
  * True iff the prefix is all caps after Unicode-folding small-caps
- * codepoints (U+1D00–U+1D2C and friends) into their uppercase Latin
- * equivalents. Stub for Phase 5 — tested in src/tests/.
+ * codepoints (U+1D00 – U+1D2B) into their uppercase Latin equivalents.
+ * Tested in `src/tests/` against the C1–C3 caps cases in
+ * `docs/government-warning-cases.md`.
  */
 export function isPrefixAllCaps(prefix: string): boolean {
-  const folded = prefix.normalize("NFKC");
+  let folded = "";
+  for (const ch of prefix.normalize("NFKC")) {
+    folded += SMALL_CAPS_TO_UPPER[ch] ?? ch;
+  }
   return folded === folded.toUpperCase() && /[A-Z]/.test(folded);
 }
