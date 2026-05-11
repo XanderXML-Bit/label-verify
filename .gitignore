@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+.env
+.env.local
+.env.*.local
+
+.vercel
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# Generated outputs that aren't worth checking in
+benchmarks/results/scratch/
+test-data/labels/_generated_tmp/
