@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { OcrWord } from "../ocr";
 
+export type { OcrWord };
+
 // A single extracted field plus the model's self-reported confidence.
 // Wrapping every field this way lets the matcher and the UI distinguish
 // "the model is sure it is X" from "the model is guessing it is X."

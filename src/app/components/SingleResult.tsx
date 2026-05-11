@@ -1,0 +1,237 @@
+"use client";
+
+import { useMemo } from "react";
+import type { VerifyResponse } from "@/lib/types";
+import type { FieldComparison } from "@/lib/matching";
+import { VerdictChip, QualityChip } from "./StatusChip";
+
+interface SingleResultProps {
+  readonly result: VerifyResponse;
+  readonly imagePreviewUrl: string;
+  readonly onAnother: () => void;
+}
+
+export function SingleResult({
+  result,
+  imagePreviewUrl,
+  onAnother,
+}: SingleResultProps) {
+  // Sort fields: failures first, then review, then pass. The bordered
+  // emphasis on FAIL rows comes from `FieldRow` below.
+  const fields = useMemo(() => orderedFields(result), [result]);
+  const gov = result.governmentWarning;
+
+  return (
+    <section aria-labelledby="results-heading" className="space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="results-heading" className="text-xl font-semibold text-slate-800">
+          Verification result
+        </h2>
+        <span className="text-sm text-slate-500" aria-live="polite">
+          Verified in {(result.timings.total / 1000).toFixed(1)} s
+        </span>
+      </header>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-1">
+          {imagePreviewUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image */
+            <img
+              src={imagePreviewUrl}
+              alt="Submitted label preview"
+              className="h-full max-h-96 w-full rounded-md object-contain"
+            />
+          ) : (
+            <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+              No preview
+            </div>
+          )}
+        </div>
+        <div className="space-y-4 sm:col-span-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center gap-3">
+                <span className="text-label font-medium text-slate-600">
+                  Image quality:
+                </span>
+                <QualityChip quality={result.imageQuality} size="md" />
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-label font-medium text-slate-600">
+                  Verdict:
+                </span>
+                <VerdictChip verdict={result.verdict} size="lg" />
+              </div>
+            </div>
+            {result.imageQuality !== "good" && (
+              <p className="mt-3 text-sm text-slate-600">
+                <strong>Image quality is independent of compliance.</strong>{" "}
+                {result.imageQuality === "bad"
+                  ? "Re-photograph the label in better light and resubmit. This does not mean the label is non-compliant."
+                  : "Some fields had low extractor confidence; consider a better photo. The compliance verdict above is separate."}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500">
+              Government Warning (27 CFR §16.21)
+            </h3>
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <SubscoreRow
+                label="Exact text matches federal language?"
+                status={gov.subscores.text.status}
+                confidence={gov.subscores.text.confidence}
+              />
+              <SubscoreRow
+                label="Prefix all caps?"
+                status={gov.subscores.caps.status}
+                confidence={gov.subscores.caps.confidence}
+              />
+              <SubscoreRow
+                label="Prefix bold (vs body)?"
+                status={gov.subscores.bold.status}
+                confidence={gov.subscores.bold.confidence}
+              />
+              <SubscoreRow
+                label="Type size meets §16.22 minimum?"
+                status={gov.subscores.size.status}
+                confidence={gov.subscores.size.confidence}
+              />
+              {gov.reason && (
+                <p className="mt-2 text-sm text-slate-600">{gov.reason}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500">
+              Other declared fields
+            </h3>
+            <div className="rounded-lg border border-slate-200 bg-white">
+              {fields.map((f) => (
+                <FieldRow key={f.field} cmp={f} />
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onAnother}
+            className="rounded-md bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+          >
+            Verify another label
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function orderedFields(r: VerifyResponse): FieldComparison[] {
+  const all = [
+    r.fields.brand_name,
+    r.fields.class_type,
+    r.fields.abv_percent,
+    r.fields.net_contents,
+    r.fields.producer,
+    r.fields.country_of_origin,
+  ];
+  const rank: Record<string, number> = { fail: 0, review: 1, pass: 2 };
+  return all.sort((a, b) => rank[a.status]! - rank[b.status]!);
+}
+
+function FieldRow({ cmp }: { readonly cmp: FieldComparison }) {
+  const borderClass =
+    cmp.status === "fail"
+      ? "border-l-4 border-l-red-500"
+      : cmp.status === "review"
+        ? "border-l-4 border-l-yellow-500"
+        : "border-l-4 border-l-green-500";
+  return (
+    <div className={`border-b border-slate-100 p-4 last:border-b-0 ${borderClass}`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="font-medium capitalize text-slate-800">
+          {cmp.field.replace(/_/g, " ")}
+        </div>
+        <VerdictChip verdict={cmp.status} size="sm" />
+      </div>
+      <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="inline text-slate-500">Expected: </dt>
+          <dd className="inline font-mono">{stringify(cmp.expected)}</dd>
+        </div>
+        <div>
+          <dt className="inline text-slate-500">Found: </dt>
+          <dd className="inline font-mono">{stringify(cmp.actual)}</dd>
+        </div>
+      </dl>
+      {cmp.reason && (
+        <p className="mt-2 text-sm text-slate-600">{cmp.reason}</p>
+      )}
+      {cmp.components && (
+        <details className="mt-2 text-sm">
+          <summary className="cursor-pointer text-slate-600 hover:text-slate-900">
+            Per-component breakdown
+          </summary>
+          <ul className="mt-1 space-y-0.5 pl-4 text-slate-600">
+            {Object.entries(cmp.components).map(([k, v]) => (
+              <li key={k}>
+                <span className="capitalize">{k.replace(/_/g, " ")}</span>:{" "}
+                <span className={statusColor(v)}>{v}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function SubscoreRow({
+  label,
+  status,
+  confidence,
+}: {
+  readonly label: string;
+  readonly status: "pass" | "fail" | "review";
+  readonly confidence: number;
+}) {
+  return (
+    <div className="flex items-center justify-between border-b border-slate-100 py-2 last:border-b-0">
+      <span className="text-sm text-slate-800">{label}</span>
+      <span className="flex items-center gap-2">
+        <span className="text-xs text-slate-400">
+          conf {confidence.toFixed(2)}
+        </span>
+        <VerdictChip verdict={status} size="sm" />
+      </span>
+    </div>
+  );
+}
+
+function statusColor(s: "pass" | "fail" | "review"): string {
+  switch (s) {
+    case "pass":
+      return "text-green-700";
+    case "fail":
+      return "text-red-700";
+    case "review":
+      return "text-yellow-700";
+  }
+}
+
+function stringify(v: unknown): string {
+  if (v == null) return "—";
+  if (typeof v === "string") return v;
+  if (typeof v === "number") return String(v);
+  if (typeof v === "object") {
+    // Render NetContents nicely.
+    const o = v as Record<string, unknown>;
+    if ("value" in o && "unit" in o) {
+      return `${o.value} ${String(o.unit).replace("_", " ")}`;
+    }
+    return JSON.stringify(o);
+  }
+  return String(v);
+}

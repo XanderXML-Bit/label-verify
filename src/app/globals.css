@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Respect prefers-reduced-motion globally. UI-SPEC §3. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus styles — visible enough for a reviewer who tabs through. */
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Drop-zone shimmer (disabled under reduced-motion via the rule above). */
+@keyframes dropzone-pulse {
+  0%, 100% { background-color: rgba(59, 130, 246, 0.04); }
+  50%      { background-color: rgba(59, 130, 246, 0.10); }
+}
+.dropzone-active {
+  animation: dropzone-pulse 1.6s ease-in-out infinite;
+}

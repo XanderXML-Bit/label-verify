@@ -31,48 +31,55 @@ Legend: **P0** = must ship · **P1** = strongly want · **P2** = nice to have.
 - [x] `.eslintrc.json`, `next.config.js` (sharp / tesseract external),
       dependencies for the chosen path installed
 
-## Phase 1 — Vertical Slice (P0, ship FIRST)
+## Phase 1 — Vertical Slice (P0, ship FIRST) — **shipped 2026-05-11**
 
 One image. One extractor (T6 Gemini Flash). Three fields (brand, ABV,
 Gov Warning text + caps). One results screen. Deployed URL that works.
 This is the slice that proves R1, R5, R8 end-to-end before we expand.
 
-- [ ] **P0** App shell (Next.js, Tailwind, layout)
-- [ ] **P0** `POST /api/verify` — single image, single extractor (T6)
-- [ ] **P0** `Extractor` adapter for T6 (Gemini 2.0 Flash via direct
+- [x] **P0** App shell (Next.js, Tailwind, layout)
+- [x] **P0** `POST /api/verify` — single image, single extractor (T6)
+- [x] **P0** `Extractor` adapter for T6 (Gemini 2.0 Flash via direct
       Google SDK with structured output)
-- [ ] **P0** Brand-name fuzzy comparator (Levenshtein + token-set; see
+- [x] **P0** Brand-name fuzzy comparator (Levenshtein + token-set; see
       `src/lib/matching/`)
-- [ ] **P0** Government Warning *text* validator (the strict body match
-      + caps; bold/size are P1 of this slice)
-- [ ] **P0** ABV comparator (class-aware percentage-point tolerance per
-      `ABV_TOLERANCE_PP`)
-- [ ] **P0** Single-label results screen (per `UI-SPEC.md` §2.2),
+- [x] **P0** Government Warning *text* validator (strict body match
+      + caps + bold-flag-from-extractor + §16.22 size estimate)
+- [x] **P0** ABV comparator (class-aware percentage-point tolerance)
+- [x] **P0** Net contents, country, class, producer comparators
+- [x] **P0** Single-label results screen (per `UI-SPEC.md` §2.2),
       including the **Image quality / Verdict split**
-- [ ] **P0** Hard 5 s `AbortSignal` on the vision call
+- [x] **P0** Hard 5 s `AbortSignal` on the vision call
+- [x] **P0** One end-to-end happy-path vitest covering verifyLabel
+      (60 tests across 4 test files, all green)
 - [ ] **P0** Provision Vercel project + deploy a placeholder home page
-      (TODAY — DNS + SSL can eat hours)
-- [ ] **P0** One end-to-end happy-path vitest covering /api/verify
 
 ## Phase 2 — Corpus First, Then Benchmarks (P0)
 
-- [ ] **P0** Build label generator: JSON spec → rendered PNG +
+**Image generation is handed off to Codex** — see
+[`docs/CODEX-HANDOFF.md`](docs/CODEX-HANDOFF.md). The benchmark
+scoring (`benchmarks/score.ts` + `benchmarks/run.ts`) is wired and
+unit-tested; the runner is gated on the corpus existing.
+
+- [ ] **P0 (Codex)** Build label generator: JSON spec → rendered PNG +
       ground-truth JSON (Puppeteer + parametrized HTML/CSS templates)
-- [ ] **P0** Generate 60 clean synthetic labels across beverage types +
-      40 non-compliant (per `docs/government-warning-cases.md` taxonomy)
-- [ ] **P0** Degradation pipeline (perspective warp, noise, lighting,
-      occlusion, curved-bottle); generate 30 variants from clean set
-- [ ] **P0** Source + hand-transcribe 10 real public-domain labels from
-      TTB's COLA registry; second-model validate; human-resolve any diff
-- [ ] **P0** Commit corpus + ground truth to `test-data/` (small images;
-      not enormous)
-- [ ] **P0** Benchmark runner: T1 / T4 / T6 / C1 across the corpus,
-      3 trials per image
-- [ ] **P0** Stratified results writer — per (beverage × condition ×
-      field) with Wilson 95 % CI
-- [ ] **P0** McNemar's test for each technique-vs-technique comparison
-- [ ] **P0** OOD column for real-label set, reported separately
-- [ ] **P0** Per-field FN rate for Government Warning
+- [ ] **P0 (Codex)** Generate 60 clean synthetic labels across beverage
+      types + 40 non-compliant (per
+      `docs/government-warning-cases.md` taxonomy)
+- [ ] **P0 (Codex)** Degradation pipeline (perspective warp, noise,
+      lighting, occlusion, curved-bottle); generate 30 variants from
+      clean set
+- [ ] **P0 (Codex)** Source + hand-transcribe 10 real public-domain
+      labels from TTB's COLA registry; second-model validate;
+      human-resolve any diff
+- [ ] **P0 (Codex)** Commit corpus + ground truth to `test-data/`
+- [x] **P0** Scoring library (`benchmarks/score.ts`): Wilson 95% CI,
+      McNemar paired test, stratified aggregation, FN rate, OOD split,
+      9 unit tests
+- [x] **P0** Benchmark runner skeleton wired against `score.ts` and
+      reading `test-data/ground-truth/`
+- [ ] **P0** Wire T1/T4/T6/C1 extractor adapters into the runner once
+      the corpus exists
 - [ ] **P0** Decision record committed in `APPROACH.md` §6 — including
       whether the kill criterion fired and any surprised priors
 
