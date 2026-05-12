@@ -76,7 +76,8 @@ disagree, the human resolves. Where they *agree*, we still spot-check
 (LLMs can share correlated errors on stylized text — see §5).
 
 If we land time for a v2 corpus expansion, the priority is more real
-labels (target 25–30) rather than more synthetic. P1 in `TODO.md`.
+labels (target 25–30) rather than more synthetic. P1 in
+`docs/archive/TODO.md`.
 
 ## 4. Ground Truth Format
 

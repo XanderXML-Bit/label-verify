@@ -166,7 +166,7 @@ stylised fonts. We ship vision-only.
 
 The decisions in
 [`MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4 and
-[`APPROACH.md`](docs/APPROACH.md) §4 are pre-registered — predictions
+[`APPROACH.md`](docs/archive/APPROACH.md) §4 are pre-registered — predictions
 written before measurements so we can show priors-vs-reality. After
 the run, [`MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.3 records
 what we got wrong (the C1 hypothesis was the biggest miss). McNemar
@@ -370,17 +370,26 @@ reproducibility.
 
 ## Documentation map
 
-- [`docs/evaluation-brief.md`](docs/evaluation-brief.md) — the brief, verbatim
-- [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) — bake-off winner + justification
-- [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) — non-LLM methods considered
-- [`docs/APPROACH.md`](docs/APPROACH.md) — pre-registered hypotheses
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design + latency budget
-- [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — corpus + Wilson CIs + stratification
-- [`docs/government-warning-cases.md`](docs/government-warning-cases.md) — §16.21/§16.22 taxonomy
-- [`docs/UI-SPEC.md`](docs/UI-SPEC.md) — UI/UX spec
-- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — production runbook
-- [`docs/archive/CODEX-BATCH-02-HANDOFF.md`](docs/archive/CODEX-BATCH-02-HANDOFF.md) — next-batch corpus prompt
-- [`docs/PROJECT-TODO.md`](docs/PROJECT-TODO.md) — locked-in overnight TODO + acceptance criteria
+**Read these in order:**
+
+1. [`docs/evaluation-brief.md`](docs/evaluation-brief.md) — the brief, verbatim
+2. [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) — bake-off winner + justification (the headline report)
+3. [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) — non-LLM methods considered
+4. [`docs/FAILURE-MODES.md`](docs/FAILURE-MODES.md) — what the verifier gets wrong and why
+5. [`docs/government-warning-cases.md`](docs/government-warning-cases.md) — §16.21/§16.22 non-compliance taxonomy
+6. [`docs/REMAINING-IMPROVEMENTS.md`](docs/REMAINING-IMPROVEMENTS.md) — what we'd do next
+7. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) + [`docs/DEPLOYMENT-CHECKLIST.md`](docs/DEPLOYMENT-CHECKLIST.md) + [`docs/PRODUCTION-SMOKE.md`](docs/PRODUCTION-SMOKE.md) — production runbook
+8. [`docs/openapi.yaml`](docs/openapi.yaml) — public API surface
+9. [`SECURITY.md`](SECURITY.md) — threat model + mitigations
+10. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points
+11. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline
+
+**Pre-implementation planning docs** (kept for the audit trail; the
+current state of the code is the authority):
+- [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) — pre-registered hypotheses
+- [`docs/archive/PROJECT-TODO.md`](docs/archive/PROJECT-TODO.md) — overnight sprint plan
+- [`docs/archive/TODO.md`](docs/archive/TODO.md) — phase 1–8 work plan
+- [`docs/archive/CODEX-HANDOFF.md`](docs/archive/CODEX-HANDOFF.md) + [`CODEX-BATCH-02-HANDOFF.md`](docs/archive/CODEX-BATCH-02-HANDOFF.md) — corpus generation prompts
 
 The repo is documentation-first because, for a take-home, the
 *decisions* demonstrate the candidate more than half-built features

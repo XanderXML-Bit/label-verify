@@ -22,7 +22,7 @@
 
 DNS + SSL can eat half a day. The provisioning happens *before* the first
 extractor is written, so the URL is live and warm by the time the demo
-exists. From `TODO.md` Phase 1:
+exists. From the archived `docs/archive/TODO.md` Phase 1:
 
 - [ ] Create Vercel project linked to the GitHub repo
 - [ ] First push triggers a deploy; the placeholder home page should
