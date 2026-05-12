@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { DeclaredFields } from "@/lib/types";
 
 interface DeclaredFormProps {
@@ -57,6 +57,42 @@ export function DeclaredForm({
       : initial?.producer?.name ?? "",
   );
   const [country, setCountry] = useState(initial?.country_of_origin ?? "USA");
+
+  // When `initial` updates AFTER the form has mounted (e.g. a background
+  // application parse lands while the user is on the single-pending
+  // screen), merge it in WITHOUT clobbering anything the user has
+  // already typed. Rule: per field, if the user's state is still the
+  // initial-empty value AND the new prefill has a value, apply it;
+  // otherwise leave the user's input alone. This means a late-arriving
+  // prefill can populate a blank form but won't steamroller a user who
+  // started typing while the parse was in flight.
+  useEffect(() => {
+    if (!initial) return;
+    if (!brand && initial.brand_name) setBrand(initial.brand_name);
+    if (!classType && initial.class_type) setClassType(initial.class_type);
+    if (classCategory === "beer" && initial.class_category) {
+      setClassCategory(initial.class_category);
+    }
+    if (!abv && initial.abv_percent != null) setAbv(String(initial.abv_percent));
+    if (!ncValue && initial.net_contents?.value != null) {
+      setNcValue(String(initial.net_contents.value));
+    }
+    if (ncUnit === "fl_oz" && initial.net_contents?.unit) {
+      setNcUnit(initial.net_contents.unit);
+    }
+    if (!producer) {
+      const incoming =
+        typeof initial.producer === "string"
+          ? initial.producer
+          : initial.producer?.name;
+      if (incoming) setProducer(incoming);
+    }
+    if (country === "USA" && initial.country_of_origin) {
+      setCountry(initial.country_of_origin);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial]);
+
   const [errors, setErrors] = useState<string[]>([]);
   // Per-field error keys so each input can render aria-invalid + an
   // adjacent message. Mirrors `errors` for the summary block but lets

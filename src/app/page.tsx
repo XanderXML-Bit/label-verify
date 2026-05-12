@@ -83,6 +83,18 @@ export default function Home() {
     version: number;
   } | null>(null);
 
+  // Background-parse status for the unified drop flow. When the user
+  // drops an image + an application file together, parseAppInBackground
+  // fires the parse asynchronously; the form opens immediately so the
+  // user can start filling manually if they prefer. This state lets us
+  // surface a "Parsing <filename>…" indicator next to the form so the
+  // user knows the fields will populate in a moment.
+  const [bgAppParse, setBgAppParse] = useState<
+    | { kind: "idle" }
+    | { kind: "parsing"; filename: string }
+    | { kind: "failed"; filename: string }
+  >({ kind: "idle" });
+
   // Warm the function + Tesseract worker on page load (DEPLOYMENT.md §6).
   useEffect(() => {
     fetch("/api/warmup").catch(() => undefined);
@@ -184,14 +196,20 @@ export default function Home() {
   }
 
   /** Parse an application file via /api/application/parse and feed the
-   *  result into the existing pre-fill state. Failures degrade
+   *  result into the existing pre-fill state. Surfaces a `bgAppParse`
+   *  status the form panel can render as a "Parsing …" pill so the
+   *  user knows fields will land in a moment. Failures degrade
    *  silently — the reviewer can still fill the form manually. */
   async function parseAppInBackground(file: File) {
+    setBgAppParse({ kind: "parsing", filename: file.name });
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/application/parse", { method: "POST", body: fd });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setBgAppParse({ kind: "failed", filename: file.name });
+        return;
+      }
       const body = (await res.json()) as ApplicationParsePayload & {
         fields?: Partial<DeclaredFields>;
       };
@@ -203,9 +221,12 @@ export default function Home() {
           warnings: body.warnings ?? [],
           confidence: body.confidence,
         });
+        setBgAppParse({ kind: "idle" });
+      } else {
+        setBgAppParse({ kind: "failed", filename: file.name });
       }
     } catch {
-      // ignore — manual fill is always a fallback.
+      setBgAppParse({ kind: "failed", filename: file.name });
     }
   }
 
@@ -407,6 +428,7 @@ export default function Home() {
     revokeIfPreview(stage);
     setStage({ kind: "idle" });
     setAppPrefill(null);
+    setBgAppParse({ kind: "idle" });
   }
 
   function handleApplicationParsed(payload: ApplicationParsePayload) {
@@ -462,6 +484,25 @@ export default function Home() {
 
       {stage.kind === "single-pending" && (
         <div className="space-y-6">
+          {bgAppParse.kind === "parsing" && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-200"
+            >
+              <span aria-hidden className="mr-1">⏳</span>
+              Parsing <span className="font-mono">{bgAppParse.filename}</span> — the form will pre-fill the empty fields in a moment. Feel free to start typing; any field you fill in yourself wins over the prefill.
+            </div>
+          )}
+          {bgAppParse.kind === "failed" && (
+            <div
+              role="alert"
+              className="rounded-lg border-l-4 border-yellow-500 bg-yellow-50 p-3 text-sm text-yellow-900 dark:border-yellow-400 dark:bg-yellow-950/60 dark:text-yellow-200"
+            >
+              <span aria-hidden className="mr-1">⚠</span>
+              Couldn&apos;t auto-parse <span className="font-mono">{bgAppParse.filename}</span>. Try a different format, upload via the field below, or fill the form manually.
+            </div>
+          )}
           <ApplicationUpload onParsed={handleApplicationParsed} />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-3">
@@ -485,7 +526,6 @@ export default function Home() {
               </button>
             </div>
             <DeclaredForm
-              key={appPrefill ? `prefill-${appPrefill.version}` : "manual"}
               onSubmit={submitSingle}
               initial={appPrefill?.fields}
               onExtractOnly={submitExtractOnly}

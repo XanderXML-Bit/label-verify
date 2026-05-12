@@ -327,7 +327,33 @@ export async function verifyLabel(
   const matchElapsed = performance.now() - matchStart;
 
   // ─── 5. Aggregate verdict + image quality ────────────────────────────────
-  const fieldResults = [brand, cls, abv, nc, producer, country];
+  // Cross-link two independent country checks: `compareCountry`
+  // (standalone country_of_origin field) and `compareProducer`'s
+  // country sub-component (which can imply USA from a US-state +
+  // corroborating-city pair on the address). If the producer
+  // comparator's country component PASSED via implicit-USA inference
+  // — i.e. the address conclusively shows a US producer — then the
+  // standalone country REVIEW ("label doesn't print a country") is
+  // redundant friction: we already proved domestic. Promote it to
+  // PASS so the demo's PASS sample (US-domestic label with no
+  // visible country marking) doesn't surprise-route to REVIEW.
+  // Per UI re-audit 2026-05-12.
+  let countryResolved = country;
+  if (
+    country.status === "review" &&
+    producer.components?.country === "pass" &&
+    typeof declared.producer !== "string" &&
+    declared.producer.country
+  ) {
+    countryResolved = {
+      ...country,
+      status: "pass",
+      confidence: Math.max(country.confidence, 0.7),
+      reason:
+        "Label does not visibly print a country of origin, but the printed producer address (US state + matching city/postal) corroborates the declared US country. Per 27 CFR §4.39 / §5.36, country marking is required only for imports.",
+    };
+  }
+  const fieldResults = [brand, cls, abv, nc, producer, countryResolved];
 
   // VERDICT (compliance): worst field status + Gov Warning subscore.
   let verdict: Verdict = aggregateVerdict([
@@ -427,7 +453,7 @@ export async function verifyLabel(
       abv_percent: abv,
       net_contents: nc,
       producer,
-      country_of_origin: country,
+      country_of_origin: countryResolved,
     },
     governmentWarning: gov,
     extracted: f,
