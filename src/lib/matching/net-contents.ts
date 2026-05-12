@@ -9,11 +9,36 @@ const TO_ML: Record<NetContents["unit"], number> = {
   fl_oz: 29.5735, // US customary fluid ounce
 };
 
-/** Acceptable rounding band on the ml conversion (TEST-STRATEGY §7). */
-const ML_TOLERANCE = 1.5;
+/**
+ * Acceptable rounding band on the ml conversion. The floor is 1.5 ml
+ * (preserves the original tight pass on 12 fl oz / 355 ml rounding); for
+ * larger containers we scale to ~0.5% so a 1.5 L bottle gets ±7.5 ml of
+ * slack rather than the unrealistic ±1.5 ml the original constant gave.
+ * See TEST-STRATEGY §7.
+ */
+const ML_TOLERANCE_BASE = 1.5;
+function mlTolerance(refMl: number): number {
+  return Math.max(ML_TOLERANCE_BASE, refMl * 0.005);
+}
 
 export function toMl(nc: NetContents): number {
   return nc.value * TO_ML[nc.unit];
+}
+
+/**
+ * Approximate label-face height in mm given the declared net contents.
+ * Used by the Government Warning size subscore (and the corpus
+ * generator) to convert pixel heights to physical mm. Very rough heuristic
+ * — see government-warning-validator.ts §size for the caveats.
+ */
+export function labelHeightMmFor(nc: NetContents): number {
+  const ml = toMl(nc);
+  if (ml <= 50) return 30;
+  if (ml <= 200) return 60;
+  if (ml <= 375) return 80;
+  if (ml <= 750) return 100;
+  if (ml <= 1000) return 120;
+  return 140;
 }
 
 export function compareNetContents(
@@ -33,7 +58,8 @@ export function compareNetContents(
   }
   const dMl = toMl(declared);
   const eMl = toMl(extracted);
-  const pass = Math.abs(dMl - eMl) <= ML_TOLERANCE;
+  const tol = mlTolerance(Math.max(dMl, eMl));
+  const pass = Math.abs(dMl - eMl) <= tol;
   // Floor bumped from 0.60 → 0.70 to align with the intelligence-first
   // deferral policy in verify.ts: when the extractor isn't confident,
   // prefer a human reviewer over a possibly-wrong PASS.

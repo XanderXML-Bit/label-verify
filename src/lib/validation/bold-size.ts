@@ -11,7 +11,7 @@
 import sharp from "sharp";
 import type { OcrWord } from "../ocr";
 import type { NetContents } from "../vision/types";
-import { toMl } from "../matching/net-contents";
+import { labelHeightMmFor, toMl } from "../matching/net-contents";
 import {
   MIN_TYPE_HEIGHT_MM_LARGE,
   MIN_TYPE_HEIGHT_MM_SMALL,
@@ -419,13 +419,4 @@ function minTypeHeightMm(nc: NetContents): number {
     : MIN_TYPE_HEIGHT_MM_LARGE;
 }
 
-// Duplicated locally (not exported from validator). Keep in sync.
-function labelHeightMmFor(nc: NetContents): number {
-  const ml = toMl(nc);
-  if (ml <= 50) return 30;
-  if (ml <= 200) return 60;
-  if (ml <= 375) return 80;
-  if (ml <= 750) return 100;
-  if (ml <= 1000) return 120;
-  return 140;
-}
+// labelHeightMmFor imported from ../matching/net-contents (single source).

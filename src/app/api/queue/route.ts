@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkDebugBearer } from "@/lib/debug-token";
 import { getStats, peekQueue } from "@/lib/review-queue";
 
 export const runtime = "nodejs";
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const auth = req.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${token}`) {
+  if (!checkDebugBearer(auth, token)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

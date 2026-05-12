@@ -27,7 +27,7 @@ function friendlyError(raw: string, status?: number): string {
     return "We've hit the per-minute request limit. Wait a moment and try again.";
   }
   if (status === 413) {
-    return "That image is too large. Try a smaller file (under 10 MB) or compress it before uploading.";
+    return "That file is too large. Try a smaller upload (under 10 MB) or compress it first.";
   }
   if (status === 415) {
     return "That file type isn't supported. Use a JPEG, PNG, WebP, or PDF.";
@@ -66,7 +66,7 @@ type Stage =
        *  generic "Try again" that just dumps the user back to idle. */
       retrySample?: Sample;
     }
-  | { kind: "batch-pending"; files: File[] }
+  | { kind: "batch-pending"; files: File[]; submitError?: string }
   | { kind: "batch-running"; batchId: string; rows: BatchRow[] };
 
 export default function Home() {
@@ -87,7 +87,25 @@ export default function Home() {
     fetch("/api/warmup").catch(() => undefined);
   }, []);
 
+  function revokeIfPreview(s: Stage): void {
+    if (
+      s.kind === "single-pending" ||
+      s.kind === "single-verifying" ||
+      s.kind === "single-extracting" ||
+      s.kind === "single-done" ||
+      s.kind === "single-extract-done" ||
+      s.kind === "single-error"
+    ) {
+      try {
+        URL.revokeObjectURL(s.previewUrl);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   function handleFiles(files: File[]) {
+    revokeIfPreview(stage);
     if (files.length === 1) {
       const f = files[0]!;
       const url = URL.createObjectURL(f);
@@ -100,9 +118,7 @@ export default function Home() {
   async function handleSample(sample: Sample, file: File) {
     // Sample affordance: skip the form and verify immediately so the
     // reviewer sees an end-to-end result in one click (UI-SPEC.md §4).
-    // Tracks the originating sample on `single-error` so a runtime
-    // failure offers a "retry this sample" affordance instead of
-    // dumping the user back to idle.
+    revokeIfPreview(stage);
     const url = URL.createObjectURL(file);
     setStage({ kind: "single-verifying", file, previewUrl: url });
     try {
@@ -130,7 +146,7 @@ export default function Home() {
         file,
         previewUrl: url,
         retrySample: sample,
-        message: (e as Error).message,
+        message: friendlyError((e as Error).message),
       });
     }
   }
@@ -152,7 +168,7 @@ export default function Home() {
           kind: "single-error",
           file: stage.file,
           previewUrl: stage.previewUrl,
-          message: err.error ?? `HTTP ${res.status}`,
+          message: friendlyError(err.error ?? `HTTP ${res.status}`, res.status),
         });
         return;
       }
@@ -168,7 +184,7 @@ export default function Home() {
         kind: "single-error",
         file: stage.file,
         previewUrl: stage.previewUrl,
-        message: (e as Error).message,
+        message: friendlyError((e as Error).message),
       });
     }
   }
@@ -187,7 +203,7 @@ export default function Home() {
           kind: "single-error",
           file: stage.file,
           previewUrl: stage.previewUrl,
-          message: err.error ?? `HTTP ${res.status}`,
+          message: friendlyError(err.error ?? `HTTP ${res.status}`, res.status),
         });
         return;
       }
@@ -203,7 +219,7 @@ export default function Home() {
         kind: "single-error",
         file: stage.file,
         previewUrl: stage.previewUrl,
-        message: (e as Error).message,
+        message: friendlyError((e as Error).message),
       });
     }
   }
@@ -213,33 +229,78 @@ export default function Home() {
     const fd = new FormData();
     fd.append("manifest", manifestText);
     for (const f of stage.files) fd.append(f.name, f);
-    const res = await fetch("/api/verify/batch", { method: "POST", body: fd });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(`Batch upload failed: ${err.error ?? `HTTP ${res.status}`}`);
-      return;
+    try {
+      const res = await fetch("/api/verify/batch", { method: "POST", body: fd });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        setStage({
+          kind: "batch-pending",
+          files: stage.files,
+          submitError: friendlyError(
+            err.error ?? `HTTP ${res.status}`,
+            res.status,
+          ),
+        });
+        return;
+      }
+      const body = (await res.json()) as {
+        batchId: string;
+        count: number;
+        pairingErrors?: string[];
+      };
+      const rows: BatchRow[] = Array.from({ length: body.count }, (_, i) => ({
+        index: i,
+        filename: stage.files[i]?.name ?? `item-${i}`,
+        status: "pending" as const,
+      }));
+      setStage({ kind: "batch-running", batchId: body.batchId, rows });
+    } catch (e) {
+      setStage({
+        kind: "batch-pending",
+        files: stage.files,
+        submitError: friendlyError((e as Error).message),
+      });
     }
-    const body = (await res.json()) as {
-      batchId: string;
-      count: number;
-      pairingErrors?: string[];
+  }
+
+  // ExtractionOnly → continue-to-verify. Pre-fills DeclaredForm with the
+  // values the extractor read off the label, so the user can edit and
+  // submit against /api/verify without re-uploading the image.
+  function continueToVerification() {
+    if (stage.kind !== "single-extract-done") return;
+    const e = stage.result.extracted;
+    const fields: Partial<DeclaredFields> = {
+      brand_name: typeof e.brand_name.value === "string" ? e.brand_name.value : undefined,
+      class_type: typeof e.class_type.value === "string" ? e.class_type.value : undefined,
+      abv_percent: typeof e.abv_percent.value === "number" ? e.abv_percent.value : undefined,
+      net_contents:
+        e.net_contents.value && typeof e.net_contents.value === "object"
+          ? e.net_contents.value
+          : undefined,
+      producer:
+        typeof e.producer.value === "string" || (e.producer.value && typeof e.producer.value === "object")
+          ? (e.producer.value as DeclaredFields["producer"])
+          : undefined,
+      country_of_origin:
+        typeof e.country_of_origin.value === "string"
+          ? e.country_of_origin.value
+          : undefined,
     };
-    const rows: BatchRow[] = Array.from({ length: body.count }, (_, i) => ({
-      index: i,
-      filename: stage.files[i]?.name ?? `item-${i}`,
-      status: "pending" as const,
+    setAppPrefill((prev) => ({
+      fields,
+      source: "image-vision",
+      filename: stage.file.name,
+      version: (prev?.version ?? 0) + 1,
     }));
-    setStage({ kind: "batch-running", batchId: body.batchId, rows });
+    setStage({
+      kind: "single-pending",
+      file: stage.file,
+      previewUrl: stage.previewUrl,
+    });
   }
 
   function reset() {
-    if (
-      stage.kind === "single-pending" ||
-      stage.kind === "single-done" ||
-      stage.kind === "single-extract-done"
-    ) {
-      URL.revokeObjectURL(stage.previewUrl);
-    }
+    revokeIfPreview(stage);
     setStage({ kind: "idle" });
     setAppPrefill(null);
   }
@@ -272,13 +333,6 @@ export default function Home() {
         <>
           <UploadZone onFiles={handleFiles} />
           <SampleAffordance onPick={handleSample} />
-          {/* Mode picker removed 2026-05-12: the bake-off
-              (docs/MODEL-SELECTION.md §4) showed three of the five
-              previously-offered modes were strictly worse than the
-              default on this corpus. Offering them mis-leads
-              non-technical reviewers. Underlying model-modes catalogue
-              + /api/verify?mode= parameter retained for the benchmark
-              harness and operator A/B testing. */}
           <ReviewQueuePanel />
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
@@ -326,10 +380,6 @@ export default function Home() {
               </button>
             </div>
             <DeclaredForm
-              // Re-mount when a new application file is parsed so the
-              // controlled inputs pick up the prefilled values via `initial`.
-              // Without the key bump the inputs stay on whatever the user
-              // last typed and silently swallow the new application data.
               key={appPrefill ? `prefill-${appPrefill.version}` : "manual"}
               onSubmit={submitSingle}
               initial={appPrefill?.fields}
@@ -363,6 +413,7 @@ export default function Home() {
           result={stage.result}
           imagePreviewUrl={stage.previewUrl}
           onAnother={reset}
+          onContinueToVerification={continueToVerification}
         />
       )}
 
@@ -418,6 +469,16 @@ export default function Home() {
               <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">country_of_origin</code>.
               Filenames are paired by stem (case-insensitive).
             </p>
+            {stage.submitError && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950/60 dark:text-red-200"
+              >
+                <p className="font-semibold">Batch upload failed</p>
+                <p className="mt-0.5">{stage.submitError}</p>
+              </div>
+            )}
             <textarea
               rows={8}
               value={manifestText}

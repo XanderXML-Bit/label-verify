@@ -165,14 +165,18 @@ describe("validateGovernmentWarning", () => {
     expect(r.status).toBe("review");
   });
 
-  it("FAIL on type-size below §16.22 minimum (S1)", async () => {
+  it("REVIEW on type-size below §16.22 minimum (S1) — size subscore is advisory (D11)", async () => {
+    // Per the 2026-05-12 audit (D11), the pixel→mm conversion has no
+    // aspect-ratio correction, so a too-small size subscore is REVIEW
+    // (advisory) rather than FAIL. A genuinely too-small Gov Warning
+    // will still fail on text + caps + bold subscores in most cases.
     const r = await validateGovernmentWarning({
       extracted: { ...fullyCompliant, prefix_bbox: BBOX_TINY },
       declaredNetContents: LARGE_CONTAINER,
       imageDimsPx: IMG_DIMS,
     });
-    expect(r.subscores.size.status).toBe("fail");
-    expect(r.status).toBe("fail");
+    expect(r.subscores.size.status).toBe("review");
+    expect(r.status).toBe("review");
   });
 
   it("uses the SMALL container minimum (1mm) for ≤237ml containers", async () => {

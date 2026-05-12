@@ -32,6 +32,13 @@ interface VerifyOptions {
   /** Hard wall-clock budget for the vision call in ms. */
   visionTimeoutMs?: number;
   /**
+   * External abort signal. When aborted (e.g. SSE client disconnect),
+   * the per-item timeout controller is aborted too — stopping any
+   * in-flight vision call so we don't keep billing after the user has
+   * navigated away.
+   */
+  abortSignal?: AbortSignal;
+  /**
    * Optional sink for a {@link VerifyTrace} describing this run. Invoked once
    * after the response is built. Default is no-op. Used by /api/debug/last to
    * populate the in-memory ring buffer; never affects the response.
@@ -163,6 +170,15 @@ export async function verifyLabel(
   // ─── 2. OCR + vision in parallel ─────────────────────────────────────────
   const ctrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
+  // Forward an external signal (e.g. SSE-client disconnect) into the
+  // per-call controller so the vision SDK sees a real abort and can
+  // tear down the in-flight HTTP request.
+  const externalAbort = opts.abortSignal;
+  const onExternalAbort = () => ctrl.abort();
+  if (externalAbort) {
+    if (externalAbort.aborted) ctrl.abort();
+    else externalAbort.addEventListener("abort", onExternalAbort, { once: true });
+  }
 
   // Extractor selection precedence:
   //   1. opts.extractor — explicit instance (tests, custom callers)
@@ -271,6 +287,9 @@ export async function verifyLabel(
     }
   } finally {
     clearTimeout(timeoutHandle);
+    if (externalAbort) {
+      externalAbort.removeEventListener("abort", onExternalAbort);
+    }
   }
 
   // ─── 3. Match per-field ──────────────────────────────────────────────────

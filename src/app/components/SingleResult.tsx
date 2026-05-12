@@ -61,13 +61,20 @@ export function SingleResult({
             const usd = approximateCostUsd(result.modelId);
             if (usd === null) return null;
             const per1k = usd * 1000;
+            // Sub-penny costs read as "$0.00025" — visually noisy and
+            // misleading for a non-technical reviewer. Show the
+            // friendlier per-1k figure when we're under a cent.
+            const displayCost =
+              usd < 0.01
+                ? `≈ ${per1k < 100 ? `$${per1k.toFixed(2)}` : `$${per1k.toFixed(0)}`} per 1,000 labels`
+                : `≈ $${usd.toFixed(4)} per call`;
             return (
               <>
                 {" · "}
                 <span
                   title={`Approximate per-call cost from ${result.modelId}. Extrapolates to ≈ $${per1k.toFixed(2)} per 1,000 labels.`}
                 >
-                  ≈ ${usd.toFixed(5)} per call
+                  {displayCost}
                 </span>
               </>
             );

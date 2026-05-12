@@ -2,6 +2,14 @@
 
 > The reviewer must be able to click a link and use the prototype. This
 > document is the operational plan to make that link reliable.
+>
+> **For the click-by-click runbook**, see
+> [`DEPLOYMENT-CHECKLIST.md`](./DEPLOYMENT-CHECKLIST.md) — every Vercel
+> action spelled out. **For the six-check smoke after deploy**, see
+> [`PRODUCTION-SMOKE.md`](./PRODUCTION-SMOKE.md). This file
+> (`DEPLOYMENT.md`) covers the architectural rationale: region choice,
+> function-memory budget, fallback behavior. Together they form the
+> deployment guide.
 
 ## 1. Target
 

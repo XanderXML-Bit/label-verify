@@ -111,8 +111,10 @@ body {
 }
 
 /* Mobile: shrink the largest headings a touch so they don't crowd 360 px
- * viewports. Body stays at the 16 px floor. */
+ * viewports. h1 must stay >= body 16 px (visual hierarchy + a11y); the
+ * previous 1.125rem was actually equal to body and shrank below where
+ * Tailwind sets h1 with its own `text-xl` (1.25rem) class. */
 @media (max-width: 480px) {
-  h1 { font-size: 1.125rem; }
+  h1 { font-size: 1.25rem; }
   h2 { font-size: 1.25rem; }
 }

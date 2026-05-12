@@ -119,9 +119,11 @@ describe("a11y — UploadZone", () => {
   it("every button has an accessible name and the dropzone is labelled", () => {
     const { container } = render(<UploadZone onFiles={() => {}} />);
     assertButtonsHaveNames(container);
-    const dropzone = container.querySelector('[role="button"]');
-    expect(dropzone).not.toBeNull();
-    expect(accessibleName(dropzone!)).toMatch(/upload|drag|drop/i);
+    // The interactive element is the single inner <button>. The outer
+    // wrapper is no longer focusable (D6 — fixed double-affordance).
+    const trigger = container.querySelector("button[aria-label]");
+    expect(trigger).not.toBeNull();
+    expect(accessibleName(trigger!)).toMatch(/upload|drag|drop/i);
   });
 
   it("exposes a polite live region for file announcements", () => {

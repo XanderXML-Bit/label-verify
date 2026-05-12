@@ -41,9 +41,9 @@ You will paste these into Vercel in Step 2. Have them ready first.
 | `GOOGLE_API_KEY` | **Yes** — primary vision path | https://aistudio.google.com → "Get API key" |
 | `OPENAI_API_KEY` | Optional fallback | https://platform.openai.com/api-keys |
 | `ANTHROPIC_API_KEY` | Optional fallback | https://console.anthropic.com → Settings → API Keys |
-| `MODEL_PRIMARY` | Yes | Set to `gemini-2.0-flash-001` |
-| `MODEL_FALLBACK` | Yes | Set to `gpt-4o-mini` |
-| `VISION_TIMEOUT_MS` | Yes | Set to `4500` |
+| `MODEL_PRIMARY` | Yes | Set to `gemini-3.1-flash-lite` |
+| `MODEL_FALLBACK` | Yes | Set to `gpt-5.4-nano` |
+| `VISION_TIMEOUT_MS` | Yes | Set to `60000` |
 | `RATE_LIMIT_PER_MIN` | Yes | Set to `60` |
 | `MAX_BATCH_SIZE` | Yes | Set to `300` |
 | `DEBUG_TOKEN` | Optional | Any random string. Enables `/api/debug/last`. Leave unset to hide that route. |

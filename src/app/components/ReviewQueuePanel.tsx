@@ -44,6 +44,9 @@ export function ReviewQueuePanel({
   const [state, setState] = useState<PanelState>({ kind: "empty" });
   const [open, setOpen] = useState(false);
   const [hasToken, setHasToken] = useState(false);
+  /** Inline token entry — replaces the previous `window.prompt()` call. */
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [tokenDraft, setTokenDraft] = useState("");
 
   // Auto-load on mount if a token is already stashed from a prior session.
   useEffect(() => {
@@ -69,20 +72,30 @@ export function ReviewQueuePanel({
   function handleOpenQueue() {
     if (typeof window === "undefined") return;
     const existing = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
-    let token = existing;
-    if (!token) {
-      // eslint-disable-next-line no-alert -- prototype affordance for reviewers
-      const entered = window.prompt(
-        "Reviewer access — paste the DEBUG_TOKEN configured in the deployment.",
-      );
-      if (!entered || !entered.trim()) return;
-      token = entered.trim();
-      window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+    if (existing) {
+      setHasToken(true);
+      setOpen(true);
+      setState({ kind: "loading" });
+      void loadQueue(fetchFn, existing).then(setState);
+      return;
     }
+    // No token yet — surface an inline password input rather than a
+    // browser modal. The input mounts below the panel header.
+    setShowTokenInput(true);
+    setTokenDraft("");
+  }
+
+  function submitToken(e: React.FormEvent) {
+    e.preventDefault();
+    if (typeof window === "undefined") return;
+    const t = tokenDraft.trim();
+    if (!t) return;
+    window.sessionStorage.setItem(TOKEN_STORAGE_KEY, t);
+    setShowTokenInput(false);
     setHasToken(true);
     setOpen(true);
     setState({ kind: "loading" });
-    void loadQueue(fetchFn, token).then(setState);
+    void loadQueue(fetchFn, t).then(setState);
   }
 
   const pending = state.data?.stats.pending ?? 0;
@@ -150,6 +163,47 @@ export function ReviewQueuePanel({
           </button>
         </div>
       </header>
+
+      {showTokenInput && !hasToken && (
+        <form
+          onSubmit={submitToken}
+          className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60"
+        >
+          <label
+            htmlFor={`${TOKEN_STORAGE_KEY}-input`}
+            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+          >
+            Reviewer access — paste the DEBUG_TOKEN configured in the deployment
+          </label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input
+              id={`${TOKEN_STORAGE_KEY}-input`}
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              value={tokenDraft}
+              onChange={(e) => setTokenDraft(e.target.value)}
+              autoFocus
+              className="min-h-[44px] flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+              placeholder="DEBUG_TOKEN"
+            />
+            <button
+              type="submit"
+              disabled={!tokenDraft.trim()}
+              className="min-h-[44px] rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-500"
+            >
+              Submit
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTokenInput(false)}
+              className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       {open && state.kind === "loaded" && recent.length > 0 && (
         <ul className="mt-4 divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">

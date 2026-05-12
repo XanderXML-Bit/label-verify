@@ -101,6 +101,8 @@ export default function RootLayout({
           <a
             className="underline hover:text-slate-600 dark:hover:text-slate-300"
             href="https://github.com/XanderXML-Bit/label-verify"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             github.com/XanderXML-Bit/label-verify
           </a>

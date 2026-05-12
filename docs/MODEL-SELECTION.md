@@ -114,8 +114,8 @@ result. Routine catches regressions; the bake-off picks the winner.
 | **Primary** | **T6 — Gemini 3.1 Flash Lite (Google direct SDK)** |
 | **Fallback (tiered escalation, off critical path)** | T7b — GPT-5.4-nano (OpenAI direct SDK) |
 | Run ID | `benchmarks/results/2026-05-12T05-18-48-405Z.{json,md}` (T1–T12 + C1 main run) + `2026-05-12T05-42-10-912Z.{json,md}` (Anthropic + open-weight rerun via OpenRouter) |
-| Corpus | `test-data-v2` routine subset (12 of 90 curated images covering compliant baselines, Government-Warning failure modes, and degradation classes) |
-| Trials per image | 1 (routine subset) |
+| Corpus | `test-data-v2` routine subset (12 of 90 curated images covering compliant baselines, Government-Warning failure modes, and degradation classes). See §4.3a for the 170-image combined-corpus rerun that confirmed the winner on the broader set. |
+| Trials per image | 1 (routine subset); §4.3a reruns with 1 trial per image across the combined 170-image corpus. |
 
 ### 4.2 Why this winner
 

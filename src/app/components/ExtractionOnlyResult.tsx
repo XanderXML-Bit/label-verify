@@ -36,12 +36,20 @@ interface Props {
   };
   readonly imagePreviewUrl: string;
   readonly onAnother: () => void;
+  /**
+   * Optional callback that promotes the extraction result back into the
+   * verification flow with the extracted values pre-filled. Provides a
+   * "Now compare against application data" path so the user doesn't
+   * have to re-upload the image.
+   */
+  readonly onContinueToVerification?: () => void;
 }
 
 export function ExtractionOnlyResult({
   result,
   imagePreviewUrl,
   onAnother,
+  onContinueToVerification,
 }: Props) {
   const { extracted, governmentWarning: gov } = result;
   const formatField = (v: unknown): string => {
@@ -209,13 +217,24 @@ export function ExtractionOnlyResult({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onAnother}
-            className="min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
-          >
-            Verify another label
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {onContinueToVerification && (
+              <button
+                type="button"
+                onClick={onContinueToVerification}
+                className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+              >
+                Now compare against application data
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onAnother}
+              className="min-h-[44px] rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              Verify another label
+            </button>
+          </div>
         </div>
       </div>
     </section>
