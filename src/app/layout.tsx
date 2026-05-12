@@ -103,8 +103,11 @@ export default function RootLayout({
           Prototype for the U.S. Department of the Treasury, Alcohol and
           Tobacco Tax and Trade Bureau. Not a production verification
           service. See{" "}
+          {/* Touch target ≥ 44 px tall on mobile (inline-block + py-2) so
+              tapping it on a phone meets WCAG 2.5.5 / Apple HIG guidance.
+              UI audit P-4. */}
           <a
-            className="underline hover:text-slate-600 dark:hover:text-slate-300"
+            className="inline-block py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
             href="https://github.com/XanderXML-Bit/label-verify"
             rel="noopener noreferrer"
             target="_blank"

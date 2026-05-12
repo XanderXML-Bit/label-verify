@@ -95,38 +95,53 @@ If any step fails, the deployment is **not** ready to ship. See
 
 ## Check 4 — 3-item batch (90 seconds)
 
-1. Navigate to the batch upload page (link from the home page).
-2. Upload the manifest CSV at `test-data/batch-smoke-3.csv` (if it
-   doesn't exist, build a quick one with three rows referencing three
-   images you know the ground truth for).
-3. Upload the three corresponding image files.
-4. Click **Run batch**.
-5. **Expected:** Within ~15 seconds:
+The batch flow uses the SAME upload dropzone as single-verify — no
+separate batch page. Drop 2 or more images and the UI flips to batch
+mode automatically.
+
+1. On the home page, drag three label images (e.g. three from
+   `test-data-combined/labels/`) into the upload area. The state
+   transitions to "Batch upload — 3 images".
+2. Either:
+   - **Auto-pair path:** drop three application files (PDF / JSON /
+     CSV / MD / TXT) with matching filename stems. The pairing
+     summary in the response will show 3 pairs matched.
+   - **Manifest path:** click **Generate manifest template** to seed
+     the CSV manifest with one row per image, then fill in the
+     declared fields by hand.
+3. Click **Verify batch**.
+4. **Expected:** Within ~15 seconds:
    - A virtualized table renders three rows.
    - Each row populates with a verdict, one after the other, as the
      SSE stream emits per-item events.
-   - "Export CSV" button appears once all three finish.
-6. **Failure looks like:**
+   - **Download JSON** and **Download CSV** buttons appear once all
+     three finish.
+5. **Failure looks like:**
    - Stream stalls after 1–2 rows → likely Hobby plan timeout (see
      plan note in checklist). Either reduce batch size for the demo
      or upgrade to Pro.
    - All three rows error → either the vision key is broken or the
-     CSV manifest is malformed.
+     manifest is malformed.
 
 ---
 
-## Check 5 — URL-input verify (45 seconds)
+## Check 5 — URL-input verify (skipped in current UI)
 
-1. Back to the home page, switch to the **From URL** input mode.
-2. Paste a publicly-reachable image URL (any image on imgur,
-   Wikipedia, etc.).
-3. Fill declared values, click **Verify**.
-4. **Expected:** Same 5-second flow as Check 3, with a result screen.
-5. **Failure looks like:**
-   - "SSRF blocked" → the SSRF filter is doing its job for private/local
-     URLs. Try a different public URL.
-   - "URL fetch failed" with a public URL → check the function logs;
-     might be a transient remote 503.
+The deployed UI does not surface a URL-input mode; the public surface
+is drag-and-drop + file picker only. The `/api/verify` route still
+accepts a JSON body with `{url, declared}` (see `docs/openapi.yaml`)
+for programmatic use; covered by the unit tests in
+`src/tests/api-verify.test.ts`, not by manual smoke.
+
+If you need an end-to-end URL probe, curl the API directly:
+
+```bash
+curl -X POST https://label-verify-six.vercel.app/api/verify \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://example.com/label.jpg","declared":{ ... }}'
+```
+
+Expected: same `VerifyResponse` shape as the multipart path.
 
 ---
 

@@ -7,7 +7,7 @@
 // value (0.55) was set by intuition in `src/lib/verify.ts`; this script
 // sweeps τ ∈ [0.30, 0.95] against the real corpus and reports the loss-
 // minimising value under the pre-registered weights in
-// `docs/PROJECT-TODO.md`:
+// `docs/archive/PROJECT-TODO.md`:
 //
 //     loss(τ) = 3 · false_positive_defers + 5 · missed_wrong_passes
 //
@@ -325,7 +325,7 @@ async function main(): Promise<void> {
   const lines: string[] = [];
   lines.push(`# REVIEW_CONFIDENCE_THRESHOLD calibration`, "");
   lines.push(`Corpus: ${truthFiles.length} images. Generated ${new Date().toISOString()}`, "");
-  lines.push(`Loss function (pre-registered in docs/PROJECT-TODO.md):`, "");
+  lines.push(`Loss function (pre-registered in docs/archive/PROJECT-TODO.md):`, "");
   lines.push(`    loss(τ) = 3 · false_positive_defers + 5 · missed_wrong_PASSes`, "");
   lines.push(
     "Only images whose base verdict is PASS (no comparator returned FAIL/REVIEW) are affected by τ; ",

@@ -41,9 +41,15 @@ const QUALITY_LABEL: Record<ImageQuality, string> = {
 export function VerdictChip({
   verdict,
   size = "md",
+  ariaLabel,
 }: {
   readonly verdict: Verdict;
   readonly size?: "sm" | "md" | "lg";
+  /** Override the default "Verdict PASS/FAIL/REVIEW" aria-label. Used by
+   *  the Gov-Warning subscore rows so a screen reader hears
+   *  "Caps verdict PASS", "Bold verdict PASS", etc. rather than four
+   *  identical "Verdict PASS" announcements. UI audit C-5. */
+  readonly ariaLabel?: string;
 }) {
   const sizing =
     size === "lg"
@@ -53,7 +59,7 @@ export function VerdictChip({
         : "text-sm px-3 py-1";
   return (
     <span
-      aria-label={`Verdict ${VERDICT_LABEL[verdict]}`}
+      aria-label={ariaLabel ?? `Verdict ${VERDICT_LABEL[verdict]}`}
       className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${VERDICT_STYLES[verdict]} ${sizing}`}
     >
       <span aria-hidden>{VERDICT_ICON[verdict]}</span>

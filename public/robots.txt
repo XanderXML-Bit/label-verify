@@ -1,0 +1,6 @@
+# LabelVerify prototype — not for public indexing.
+# This is a take-home demo for a TTB hiring committee; if it ever
+# surfaces in search results, redirect the question to the README at
+# https://github.com/XanderXML-Bit/label-verify .
+User-agent: *
+Disallow: /

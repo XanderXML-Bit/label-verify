@@ -70,7 +70,7 @@ export function UploadZone({
     const names = rejected.map((f) => f.name).join(", ");
     setRejection(
       `Rejected ${rejected.length} file${rejected.length === 1 ? "" : "s"} ` +
-        `with unsupported type: ${names}. Use JPEG, PNG, WebP, or PDF.`,
+        `with unsupported type: ${names}. Accepted: JPEG, PNG, WebP, HEIC (label images); PDF, JSON, CSV, MD, TXT, DOCX (application files).`,
     );
   }, []);
 
@@ -135,7 +135,7 @@ export function UploadZone({
           Drop a label image (+ application file, optional)
         </div>
         <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          or use the button below · images: JPEG, PNG, WebP · applications: PDF, JSON, CSV, MD, TXT
+          or use the button below · images: JPEG, PNG, WebP, HEIC · applications: PDF, JSON, CSV, MD, TXT, DOCX
         </div>
         <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           Drop one image to verify single; image + matching application file to pre-fill the form; or N image/application pairs for batch.

@@ -158,21 +158,25 @@ export function SingleResult({
               <div className="hidden sm:block">
                 <SubscoreRow
                   label="Exact text matches federal language?"
+                  scoreName="Text"
                   status={gov.subscores.text.status}
                   confidence={gov.subscores.text.confidence}
                 />
                 <SubscoreRow
                   label="Prefix all caps?"
+                  scoreName="Caps"
                   status={gov.subscores.caps.status}
                   confidence={gov.subscores.caps.confidence}
                 />
                 <SubscoreRow
                   label="Prefix bold (vs body)?"
+                  scoreName="Bold"
                   status={gov.subscores.bold.status}
                   confidence={gov.subscores.bold.confidence}
                 />
                 <SubscoreRow
                   label="Type size meets §16.22 minimum?"
+                  scoreName="Size"
                   status={gov.subscores.size.status}
                   confidence={gov.subscores.size.confidence}
                 />
@@ -190,21 +194,25 @@ export function SingleResult({
                 <div className="mt-2">
                   <SubscoreRow
                     label="Exact text matches federal language?"
+                    scoreName="Text"
                     status={gov.subscores.text.status}
                     confidence={gov.subscores.text.confidence}
                   />
                   <SubscoreRow
                     label="Prefix all caps?"
+                    scoreName="Caps"
                     status={gov.subscores.caps.status}
                     confidence={gov.subscores.caps.confidence}
                   />
                   <SubscoreRow
                     label="Prefix bold (vs body)?"
+                    scoreName="Bold"
                     status={gov.subscores.bold.status}
                     confidence={gov.subscores.bold.confidence}
                   />
                   <SubscoreRow
                     label="Type size meets §16.22 minimum?"
+                    scoreName="Size"
                     status={gov.subscores.size.status}
                     confidence={gov.subscores.size.confidence}
                   />
@@ -334,10 +342,16 @@ function SubscoreRow({
   label,
   status,
   confidence,
+  scoreName,
 }: {
   readonly label: string;
   readonly status: "pass" | "fail" | "review";
   readonly confidence: number;
+  /** Short field name (e.g. "Text", "Caps") used to differentiate the
+   *  chip's aria-label from the other three subscores on the same
+   *  panel. Without this, a screen reader hears four identical
+   *  "Verdict PASS" announcements. UI audit C-5. */
+  readonly scoreName: string;
 }) {
   return (
     <div className="flex items-center justify-between border-b border-slate-100 py-2 last:border-b-0 dark:border-slate-800">
@@ -353,7 +367,11 @@ function SubscoreRow({
         >
           conf {confidence.toFixed(2)}
         </span>
-        <VerdictChip verdict={status} size="sm" />
+        <VerdictChip
+          verdict={status}
+          size="sm"
+          ariaLabel={`${scoreName} subscore: ${status.toUpperCase()}`}
+        />
       </span>
     </div>
   );

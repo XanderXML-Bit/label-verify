@@ -31,7 +31,7 @@ function friendlyError(raw: string, status?: number): string {
     return "That file is too large. Try a smaller upload (under 10 MB) or compress it first.";
   }
   if (status === 415) {
-    return "That file type isn't supported. Use a JPEG, PNG, WebP, or PDF.";
+    return "That file type isn't supported. Accepted label images: JPEG, PNG, WebP, HEIC, PDF.";
   }
   if (status === 504 || /timeout|TIMEOUT/.test(raw)) {
     return "The verification took too long to respond. The service may be cold-starting — try again in a few seconds.";
@@ -41,6 +41,18 @@ function friendlyError(raw: string, status?: number): string {
   }
   if (status === 500) {
     return "Something went wrong on our side. Try again — if it keeps happening, take a screenshot and let the team know.";
+  }
+  // No HTTP status — typically a browser-level fetch failure (offline,
+  // DNS, CORS preflight). Match the common TypeError messages and
+  // humanise them instead of echoing the raw browser exception. UI
+  // audit C-2 (2026-05-12).
+  if (status === undefined) {
+    if (/failed to fetch|networkerror|net::|load failed/i.test(raw)) {
+      return "We couldn't reach the verifier — check your network connection and try again.";
+    }
+    if (/abort/i.test(raw)) {
+      return "The request was cancelled. Try again.";
+    }
   }
   return raw;
 }
@@ -62,6 +74,10 @@ type Stage =
       file: File;
       previewUrl: string;
       message: string;
+      /** Override the default "Verification failed" heading — used for
+       *  pre-flight rejections (e.g. "Label image required") where no
+       *  verification was attempted. UI audit C-4. */
+      title?: string;
       /** Set when the failed flow originated from a sample button — lets
        *  the UI offer a "retry this sample" affordance instead of the
        *  generic "Try again" that just dumps the user back to idle. */
@@ -147,6 +163,7 @@ export default function Home() {
         // stage shape is satisfied; reset() clears it.
         file: apps[0] ?? new File([], "missing.txt"),
         previewUrl: "",
+        title: "Label image required",
         message:
           "Please include at least one label image (JPEG, PNG, WebP, HEIC, or PDF). " +
           (apps.length
@@ -569,7 +586,7 @@ export default function Home() {
           aria-live="assertive"
           className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
         >
-          <h2 className="text-base font-semibold">Verification failed</h2>
+          <h2 className="text-base font-semibold">{stage.title ?? "Verification failed"}</h2>
           <p className="mt-1">{stage.message}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {stage.retrySample && (
