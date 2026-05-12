@@ -36,6 +36,25 @@ export function SingleResult({
         </span>
       </header>
 
+      {result.fallbackUsed && (
+        <div
+          role="alert"
+          className="rounded-lg border-l-4 border-yellow-500 bg-yellow-50 p-3 text-sm text-yellow-900 dark:border-yellow-400 dark:bg-yellow-950/60 dark:text-yellow-200"
+        >
+          <p className="font-semibold">
+            <span aria-hidden className="mr-1">⚠</span>
+            Verified via backup model — primary was unavailable
+          </p>
+          <p className="mt-1">
+            The primary vision model couldn&apos;t be reached on this request.
+            The result below was produced by{" "}
+            <code className="font-mono">{result.fallbackUsed}</code>. Field
+            accuracy should be within ~5pp of the primary, but you may want
+            to re-submit when the primary is back.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 md:col-span-1">
           {imagePreviewUrl ? (

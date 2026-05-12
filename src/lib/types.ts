@@ -108,6 +108,13 @@ export interface VerifyResponse {
    * concatenates them into a bullet list.
    */
   reviewReasons: string[];
+  /**
+   * Set when the primary vision provider was unreachable and the
+   * orchestrator fell back to a different model (e.g. GPT-5.4-nano).
+   * The UI renders a yellow "verified via backup model" banner when
+   * this is present. Omitted on normal primary-path verifications.
+   */
+  fallbackUsed?: string;
 }
 
 // ─── Review queue types ─────────────────────────────────────────────────────

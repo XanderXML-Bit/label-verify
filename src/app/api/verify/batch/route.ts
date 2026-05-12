@@ -6,7 +6,7 @@ import { createBatch, type BatchItem } from "@/lib/batch-store";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_BATCH = Number(process.env.MAX_BATCH_SIZE ?? 300);
+const MAX_BATCH = Number(process.env.MAX_BATCH_SIZE ?? 1000);
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 const ACCEPTED_MIME = new Set([

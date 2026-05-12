@@ -203,8 +203,38 @@ export async function verifyLabel(
   };
 
   let extracted: ExtractorResult;
+  let fallbackUsed: string | null = null;
   try {
-    extracted = await extractor.extract(pre.buffer, visionCtx);
+    try {
+      extracted = await extractor.extract(pre.buffer, visionCtx);
+    } catch (primaryErr) {
+      // Primary vision provider is unreachable / 5xx / rate-limited /
+      // timed out. Try a cross-provider fallback (GPT-5.4-nano via the
+      // OpenAI SDK) if its key is wired. The fallback runs against the
+      // SAME image and prompt, so the response shape is identical and
+      // the rest of the pipeline doesn't know the difference — except
+      // for the `fallbackUsed` flag we surface on the response so the
+      // UI can render a "verified via backup" banner.
+      const fallbackKey = process.env.OPENAI_API_KEY;
+      const fallbackModel = process.env.MODEL_FALLBACK ?? "gpt-5.4-nano";
+      if (!fallbackKey) {
+        throw primaryErr;
+      }
+      try {
+        const mod = await import("./vision/openai");
+        const fallbackExtractor = new mod.GPT4oMiniExtractor({
+          apiKey: fallbackKey,
+          modelVersion: fallbackModel,
+        });
+        extracted = await fallbackExtractor.extract(pre.buffer, visionCtx);
+        fallbackUsed = fallbackModel;
+      } catch (_fallbackErr) {
+        // Both providers failed. Surface the primary error — it's more
+        // diagnostic than the fallback (the user can fix the primary,
+        // the fallback is best-effort).
+        throw primaryErr;
+      }
+    }
   } finally {
     clearTimeout(timeoutHandle);
   }
@@ -379,6 +409,7 @@ export async function verifyLabel(
     requiresHumanReview: verdict === "review",
     reviewReasons: verdict === "review" ? reviewReasons : [],
     ...(imageQualityReason ? { imageQualityReason } : {}),
+    ...(fallbackUsed ? { fallbackUsed } : {}),
   };
 
   // Hand the trace to the optional sink (used by /api/debug/last). Wrapped

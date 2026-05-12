@@ -7,6 +7,8 @@ import { UploadZone } from "./components/UploadZone";
 import { DeclaredForm } from "./components/DeclaredForm";
 import { SingleResult } from "./components/SingleResult";
 import { ExtractionOnlyResult } from "./components/ExtractionOnlyResult";
+import { VerifyProgress } from "./components/VerifyProgress";
+import { ApiStatusBanner } from "./components/ApiStatusBanner";
 import { BatchView, type BatchRow } from "./components/BatchView";
 import { SampleAffordance } from "./components/SampleAffordance";
 import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
@@ -214,6 +216,7 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
+      <ApiStatusBanner />
       <header>
         <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Verify a label against application data
@@ -299,19 +302,13 @@ export default function Home() {
 
       {(stage.kind === "single-verifying" ||
         stage.kind === "single-extracting") && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
-          <p
-            className="text-base text-slate-700 dark:text-slate-200"
-            aria-live="polite"
-          >
-            {stage.kind === "single-verifying"
-              ? "Checking the label… usually under 5 seconds."
-              : "Extracting from the label… usually under 5 seconds."}
-          </p>
-          <div className="mt-3 h-2 w-full overflow-hidden rounded bg-slate-200 dark:bg-slate-700">
-            <div className="h-full w-1/3 animate-pulse bg-blue-500 dark:bg-blue-400" />
-          </div>
-        </div>
+        <VerifyProgress
+          verb={
+            stage.kind === "single-verifying"
+              ? "Checking the label"
+              : "Extracting from the label"
+          }
+        />
       )}
 
       {stage.kind === "single-done" && (

@@ -135,6 +135,15 @@ export async function validateGovernmentWarning(input: {
 
 // ─── text subscore ──────────────────────────────────────────────────────────
 
+// Regulator-strict text comparison. We DO NOT relax to REVIEW on
+// paraphrase-class differences: from text alone we cannot distinguish
+// "model misread compliant label" from "label actually says X" — and
+// 27 CFR §16.21 requires the exact regulatory text, so any deviation
+// is a FAIL by the rule the reviewer must enforce. The model-misread
+// case shows up at a layer above: it pulls the WHOLE verdict to
+// REVIEW via the per-field-confidence deferral path (`REVIEW_
+// CONFIDENCE_THRESHOLD` in verify.ts), where a human compares the
+// printed label to the canonical text directly.
 function scoreText(raw: string | null): SubscoreResult {
   if (!raw) {
     return {
