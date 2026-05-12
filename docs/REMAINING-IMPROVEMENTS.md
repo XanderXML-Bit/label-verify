@@ -133,13 +133,19 @@ copy it from a toast. Tests in `src/tests/middleware-request-id.test.ts`.
 Documented but I haven't manually verified it produces useful output
 for a 100-row batch. Quick Playwright e2e.
 
-### R4. Rate-limit on `/api/application/parse` symmetric to `/api/verify` — **DONE 2026-05-12**
-The application-parse route did NOT have rate-limiting at all on
-audit — a real gap, not just a documentation one. Fixed in
-`src/app/api/application/parse/route.ts`: `app-parse:${ip}` bucket
-at 60/min default, separate from `verify:` and `extract:` so the
-image-of-application vision-billed path can't piggyback. Regression
-test in `src/tests/api-application-parse-rate-limit.test.ts`.
+### R4. Rate-limit on every state-changing endpoint, per-endpoint bucket — **DONE 2026-05-12**
+Two real gaps were closed:
+- `/api/application/parse` had NO rate-limit at all on audit. Fixed
+  in this file: `app-parse:${ip}` bucket at 60/min, separate from
+  `verify:` and `extract:`. Regression test in
+  `src/tests/api-application-parse-rate-limit.test.ts`.
+- `/api/verify/batch` ALSO had no rate-limit on audit (caught
+  during sibling Claude session merge). Fixed: `batch:${ip}` bucket
+  at 60/min, separate from the other three. Bacc632 consolidation.
+
+All four mutating endpoints now have distinct per-IP buckets so
+exhausting one cannot starve the others. Buckets sweep stale entries
+after 60 minutes idle.
 
 ### R5. Vercel Pro upgrade — document the deltas — **DONE 2026-05-12**
 Added `docs/DEPLOYMENT.md` §7a: Hobby → Pro table covering function

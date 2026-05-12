@@ -117,19 +117,41 @@ and the per-route handlers for the exact implementations.
   reporting a failure. See `src/middleware.ts`.
 
 ### Debug surfaces
-- `/api/debug/last` (in-memory verify trace ring buffer) is gated
-  on `Authorization: Bearer ${DEBUG_TOKEN}`. When `DEBUG_TOKEN` is
-  unset, the endpoint refuses ALL access — secure-by-default.
-- `/api/health` returns a minimal `{ok, service, ready}` shape to
-  cross-origin / anonymous callers; same-origin callers and
-  Bearer-authed callers get the detailed shape with provider keys
-  status.
+- `/api/debug/last` (in-memory verify trace ring buffer),
+  `/api/queue` (pending human-review items), and
+  `/api/queue/:id/resolve` are all gated on
+  `Authorization: Bearer ${DEBUG_TOKEN}` via a constant-time
+  comparison (`crypto.timingSafeEqual` in `src/lib/debug-token.ts`).
+  When `DEBUG_TOKEN` is unset, these endpoints refuse all access —
+  secure-by-default.
+- `/api/health` returns a minimal `{ok, service, ready, notes}`
+  shape to anonymous callers. The detailed shape (provider matrix,
+  model id, git SHA) is gated on the same Bearer token; when
+  `DEBUG_TOKEN` is unset the detailed shape is unreachable —
+  closing a deployment-fingerprint leak. The earlier same-origin
+  Referer shortcut was deliberately removed (Referer is spoofable
+  via cross-origin `fetch`).
 
 ### Dependency posture
 - TypeScript strict mode; no `any` in production code paths
   (verified by tsc).
 - Next.js 15 + React 19 + Vitest 2 — kept current as of
-  2026-05-12. No known-CVE dependencies in `npm audit`.
+  2026-05-12.
+- `npm audit --omit=dev`: 2 moderate findings, both in `postcss`
+  reached transitively via `next`. PostCSS's "XSS via unescaped
+  `</style>`" advisory only matters when an attacker controls the
+  CSS input stream that PostCSS stringifies — in our build pipeline,
+  PostCSS only ever runs against the developer-controlled CSS in
+  `src/app/globals.css`, never against user-supplied input. The
+  upgrade path (`npm audit fix --force`) would downgrade Next.js to
+  9.x, which we will NOT do. Documented for the next maintainer.
+- Dependabot has open PRs (`origin/dependabot/...`) for npm major
+  (TypeScript 6, Vitest 4, Tailwind 4, pdfjs-dist 5, tesseract.js 7,
+  zod 4) and npm minor (@anthropic-ai/sdk 0.95, @google/generative-
+  ai 0.24, sharp 0.34). The major bumps are deferred until after the
+  take-home submission window — they're all in critical paths that
+  would need a full regression cycle. The Anthropic SDK 0.30 → 0.95
+  jump is especially load-bearing.
 
 ## Known unmitigated gaps
 

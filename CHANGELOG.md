@@ -96,6 +96,98 @@
   `<run-id>-per-image.json` alongside the summary so per-(image,field)
   outcomes can be re-analysed offline without rerunning the bench.
 
+## [Sibling-session consolidation] — 2026-05-12 evening
+
+Audited and merged the kind-banzai Claude worktree's "Audit fixes"
+commit hypercritically. Most changes were real improvements; took
+the merge with three deliberate amendments.
+
+### Validation
+
+- Full test suite at 359 passing (up from 353; +6 from new UI specs).
+  `tsc + lint + build` all green after the merge.
+
+### Security
+
+- **`crypto.timingSafeEqual`** bearer check (`src/lib/debug-token.ts`)
+  on every DEBUG_TOKEN-gated route (`/api/debug/last`, `/api/queue`,
+  `/api/queue/:id/resolve`, `/api/health`). Replaces inline string
+  comparison; closes a timing-attack surface that the earlier
+  session left open.
+- **`/api/queue` and `/api/queue/:id/resolve`** are now Bearer-gated
+  on the API. Pre-merge: anyone could read pending human-review
+  items. Post-merge: same auth contract as `/api/debug/last`.
+- **`/api/health`** drops the spoofable Referer same-origin
+  shortcut. Detailed payload only with a valid Bearer token; when
+  `DEBUG_TOKEN` is unset the detailed shape is unreachable. Closes
+  a deployment-fingerprint leak the earlier same-origin path
+  shipped.
+- **`/api/verify/batch`** gains a per-IP `batch:` rate-limit bucket
+  (60/min default, distinct from the other three endpoint buckets)
+  + BatchStoreFullError 503 handling + Content-Length pre-check at
+  5 GB (reconciled from bacc632's 1.2 GB to match MAX_BATCH=1000).
+- **`lib/rate-limit.ts`** `callerKey()` now prefers
+  `x-vercel-forwarded-for` over the spoofable `x-forwarded-for`.
+
+### Added
+
+- **PDF rasterization** via `@napi-rs/canvas` + pdfjs canvasFactory
+  (`src/lib/pdf.ts`). Without this fix the vision model didn't see
+  real glyphs on PDF uploads; Government Warning bold detection
+  was silently broken on PDFs.
+- **SSE-abort plumbing**: batch-stream client disconnect now
+  aborts in-flight vision calls via an external `AbortSignal`
+  threaded into `verifyLabel`. Stops billing once the user
+  navigates away.
+- **Cross-batch memory ceiling** (2 GB) + 30-minute TTL sweep in
+  `lib/batch-store.ts` with a typed `BatchStoreFullError`.
+
+### Changed
+
+- **Class comparator**: `pilsner`/`lager`, `imperial stout`/`stout`
+  now return REVIEW (was PASS). TTB distinguishes these styles for
+  the class designation; surfacing as REVIEW lets a human confirm
+  rather than silently treating them as identical.
+- **Government Warning size subscore**: no longer FAILs alone. The
+  px-to-mm conversion has no aspect-ratio correction so a cropped
+  photo would otherwise drive false-FAILs. Worst case is now
+  REVIEW; a truly non-compliant warning will FAIL on text + caps +
+  bold anyway.
+- **UK constituent countries** (Scotland, Wales, Northern Ireland)
+  now alias to "United Kingdom" in the country comparator.
+- **BatchView** drilldown renders `SingleResult` instead of raw
+  JSON; SSE disconnect surfaces an inline "connection dropped"
+  banner with reconnect; `friendlyError()` everywhere.
+- **ReviewQueuePanel** replaces `window.prompt()` with an inline
+  password input (kept the new empty-state copy).
+- **UploadZone** collapses the double-affordance into a single
+  interactive button.
+- **VerifyProgress** aria-live announces only on threshold
+  crossings, not 10 Hz (no more screen-reader spam).
+- **ExtractionOnlyResult** adds a "Now compare against application
+  data" button that pre-fills DeclaredForm.
+- **SettingsPanel.tsx** and its test deleted (dead code; the
+  mode-picker UI was removed in an earlier session).
+
+### Documentation
+
+- `SECURITY.md` updated for the new auth contract on `/api/health`
+  + queue routes; `npm audit` posture documented (2 moderate findings
+  in postcss via next, both build-time-only false-positives).
+- `docs/openapi.yaml`: `/api/queue` now requires `debugBearer`;
+  `/api/health` description reflects no-same-origin gate.
+- `docs/MODEL-SELECTION.md`, `.env.example`, `DEPLOYMENT-CHECKLIST`,
+  `TODO.md`: env-var contract reconciliation; MAX_BATCH=1000 across
+  the board.
+- Older handoff docs moved to `docs/archive/` (CODEX-HANDOFF,
+  CODEX-BATCH-02-HANDOFF, REVIEW-PASS).
+
+### `.gitignore`
+
+- `.claude/worktrees/` and `.review/calibrate-log.txt` added so
+  agent worktrees and per-run logs don't accidentally end up
+  staged.
+
 ## [Submission polish] — 2026-05-12 afternoon
 
 ### Validation

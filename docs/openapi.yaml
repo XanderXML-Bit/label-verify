@@ -406,10 +406,14 @@ paths:
     get:
       summary: Liveness / readiness probe
       description: |
-        Returns a minimal `{ok, service, ready}` shape to anonymous /
-        cross-origin callers, and a detailed `{model, providers,
-        version, timestamp, ready}` shape to same-origin callers or
-        callers presenting `Authorization: Bearer ${DEBUG_TOKEN}`.
+        Returns a minimal `{ok, service, ready, notes}` shape to all
+        anonymous callers (the page-load banner consumes this to warn
+        about missing provider keys without leaking which provider
+        drives the primary path). The detailed shape (`model`,
+        `fallbackModel`, `providers`, `version`, `timestamp`, `notes`)
+        is gated on `Authorization: Bearer ${DEBUG_TOKEN}` via a
+        constant-time comparison. When `DEBUG_TOKEN` is unset the
+        detailed shape is unreachable.
       responses:
         "200":
           description: OK (minimal or detailed depending on caller)
@@ -479,11 +483,13 @@ paths:
   /api/queue:
     get:
       summary: List pending human-review queue items
+      security:
+        - debugBearer: []
       description: |
         In-memory queue of labels where the verifier deferred to a
         human. Same wipe-on-cold-start semantics as /api/debug/last.
-        Read-only; no auth on the prototype but a production fork
-        would add it.
+        Gated on `Authorization: Bearer ${DEBUG_TOKEN}` — when the
+        token is unset, the endpoint is unreachable.
       responses:
         "200":
           description: Queue listing
@@ -496,3 +502,7 @@ paths:
                     type: array
                     items:
                       type: object
+        "401":
+          description: Wrong / missing bearer token
+        "404":
+          description: DEBUG_TOKEN unset on the deployment

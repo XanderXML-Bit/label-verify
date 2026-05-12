@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifyLabel } from "@/lib/verify";
 import { DeclaredFieldsSchema } from "@/lib/types";
+import type { DeclaredFields } from "@/lib/types";
 import { UrlFetchError, fetchUrlImage } from "@/lib/input-handlers";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
+import type { RateLimitResult } from "@/lib/rate-limit";
 import { recordTrace } from "@/lib/debug-trace";
 import { enqueueForReview, makeReviewItemId } from "@/lib/review-queue";
 import {
@@ -251,8 +253,8 @@ function pdfErrorMessage(err: PdfExtractError): string {
 
 async function runVerify(
   buffer: Buffer,
-  declared: import("@/lib/types").DeclaredFields,
-  rl: import("@/lib/rate-limit").RateLimitResult,
+  declared: DeclaredFields,
+  rl: RateLimitResult,
   filename?: string,
   mode?: string,
   requestId?: string,

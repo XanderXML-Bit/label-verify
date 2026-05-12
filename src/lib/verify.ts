@@ -276,7 +276,7 @@ export async function verifyLabel(
         });
         extracted = await fallbackExtractor.extract(pre.buffer, fallbackCtx);
         fallbackUsed = fallbackModel;
-      } catch (_fallbackErr) {
+      } catch {
         // Both providers failed. Surface the primary error — it's more
         // diagnostic than the fallback (the user can fix the primary,
         // the fallback is best-effort).
@@ -504,7 +504,7 @@ export interface ExtractOnlyResponse {
   extracted: ExtractedFields;
   imageQuality: ImageQuality;
   imageQualityReason?: string;
-  governmentWarning: import("./types").VerifyResponse["governmentWarning"];
+  governmentWarning: VerifyResponse["governmentWarning"];
   timings: {
     preprocess: number;
     ocr: number | null;
