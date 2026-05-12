@@ -43,14 +43,17 @@ minus 3 images that the extractor failed to parse on the run). Wilson
 model OCRs cleanly). The photo-realistic OOD subset is closer to real
 TTB submissions and gives the more conservative 88 % accuracy. The
 5.1 % Gov-Warning FN-rate is the regulator-dangerous direction (a
-non-compliant warning slipping through as PASS); it's well inside the
-pre-registered ≤ 10 % criterion. Source result file:
-`benchmarks/results/2026-05-12T17-10-53-642Z.md`. A side-by-side
-test of Gemini **3 Flash Preview** at the same time scored 94.3 %
-but failed the GW FN criterion (10.8 %) and cost 10× more per call,
-so 3.1 Flash Lite stays the deployed primary — see
-[`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.3a for the
-detailed comparison.
+non-compliant warning slipping through as PASS). The **point
+estimate** is inside the pre-registered ≤ 10 % criterion, but the
+**Wilson 95 % CI upper bound is 10.2 %** — meaning the corpus is too
+small (n=137 non-compliant labels) to conclude the criterion holds at
+95 % confidence. A federal deploy would want a larger
+human-adjudicated holdout before signing off on this number. Source
+result file: `benchmarks/results/2026-05-12T17-10-53-642Z.md`. A side-
+by-side test of Gemini **3 Flash Preview** scored 94.3 % overall but
+failed the GW FN criterion outright (10.8 % point estimate), so 3.1
+Flash Lite stays the deployed primary — see
+[`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.3a.
 
 This is the **bare-extractor** number — what the model alone gets
 right. The orchestrator above the extractor adds:
@@ -128,7 +131,7 @@ Full decision trail in
 | Specialised Document AI (Textract, Google DocAI) | 98 % on clean forms | Out-of-paradigm — labels are graphic design |
 | Custom CNN trained on TTB labels | Could approach 99 % with data | Need ~10 k labelled labels we don't have |
 | Hybrid (YOLO + PaddleOCR + small classifier + LLM glue) | High ceiling, ~2 weeks engineering | Production choice; wrong for a 7-day prototype |
-| **Hosted LLM vision (Gemini 3.1 Flash Lite)** | **96.0 % ID / 88.3 % OOD measured** | **Chosen — Pareto-dominant on accuracy/latency/cost** |
+| **Hosted LLM vision (Gemini 3.1 Flash Lite)** | **95.8 % ID / 88.4 % OOD measured** | **Chosen — Pareto-dominant on accuracy/latency/cost** |
 
 The brief explicitly permits cloud APIs (§8 Latitude: "free choice of
 model provider"). §10 asks for graceful degradation when the hosted
@@ -173,6 +176,16 @@ honestly. The bench harness writes to
 reproducible: same script, same corpus, comparable numbers.
 
 ## Validation methodology
+
+> **Proxy validation, not field validation.** The corpus is built
+> from SVG-rendered synthetic labels and AI-generated photo-realistic
+> labels. A federal deploy would require an additional
+> human-adjudicated holdout of real-world COLA submissions before
+> signing off — the numbers below are a credible *proxy* of the
+> system's behaviour, not a substitute for that holdout. Source
+> documents are in `test-data-v2/` (SVG) and
+> `test-data/ai-generated/` (Codex photos); the ground-truth
+> generation method is below.
 
 - **Corpus.** 170 images. The 90 v2 labels are SVG-rendered from
   deterministic templates with hand-controlled
@@ -319,7 +332,7 @@ re-hosting needed — DNS routes to the Vercel deployment.
 
 ```bash
 npm run typecheck    # tsc --noEmit, zero output expected
-npm run test         # vitest run, ~340 tests
+npm run test         # vitest run, ~370 tests
 npm run lint         # next lint, only pre-existing warnings allowed
 npm run bench:routine # quick bake-off sanity check (~15 min, ~$0.30)
 npm run test:e2e:install && npm run test:e2e
