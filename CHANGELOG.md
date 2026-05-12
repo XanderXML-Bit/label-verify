@@ -44,7 +44,7 @@
   photo-quality stress, novel beverage categories like sake / cider /
   bilingual) generated via the handoff in
   `docs/CODEX-BATCH-02-HANDOFF.md`.
-- **Batch endpoint cap raised** from 300 to 1000 with a 5 GB
+- **Batch endpoint cap raised** from 300 to a quota-derived default of 100 with a 256 MiB
   `Content-Length` pre-check before `formData()` buffering.
 
 ### Changed
@@ -56,8 +56,7 @@
 - **README** rewritten as the submission report. Leads with corpus
   composition; per-field results, methodology, security posture, and
   self-host instructions all in one document.
-- **`/api/health`** gated detailed output behind same-origin referer
-  or Bearer DEBUG_TOKEN. Anonymous callers get the minimal
+- **Detailed health output hardened** to require `Authorization: Bearer DEBUG_TOKEN`; spoofable same-origin referers no longer unlock provider/model/version diagnostics.
   `{ ok, ready, service }` only — closes a deployment-fingerprint
   leak.
 

@@ -13,13 +13,13 @@
 The deployed extractor in `verify.ts` is selected at runtime via env vars:
 
 ```
-MODEL_PRIMARY = <model id>          # the workhorse
+Primary production model: gemini-3.1-flash-lite (pinned in code)
 MODEL_FALLBACK = <model id>         # tiered-escalation target (optional)
 ```
 
 The decision below settles the default values shipped in `.env.example`
 and the `vercel.json` environment block. A reviewer who reads the
-deployed `/api/health` response will see this `MODEL_PRIMARY` and should
+deployed `/api/health` response will see this pinned primary model and should
 be able to trace it directly back to this document.
 
 ## 2. Candidate set
@@ -112,7 +112,7 @@ result. Routine catches regressions; the bake-off picks the winner.
 | | |
 |---|---|
 | **Primary** | **T6 — Gemini 3.1 Flash Lite (Google direct SDK)** |
-| **Fallback (tiered escalation, off critical path)** | T7b — GPT-5.4-nano (OpenAI direct SDK) |
+| **Backup on primary failure** | T7b — GPT-5.4-nano (OpenAI direct SDK) |
 | Run ID | `benchmarks/results/2026-05-12T05-18-48-405Z.{json,md}` (T1–T12 + C1 main run) + `2026-05-12T05-42-10-912Z.{json,md}` (Anthropic + open-weight rerun via OpenRouter) |
 | Corpus | `test-data-v2` routine subset (12 of 90 curated images covering compliant baselines, Government-Warning failure modes, and degradation classes) |
 | Trials per image | 1 (routine subset) |
@@ -195,21 +195,21 @@ Result files committed: `benchmarks/results/2026-05-12T16-55-38-735Z.{md,json}`
 (initial T6 run), `2026-05-12T17-09-38-237Z.{md,json}` (T6f), and
 `2026-05-12T17-10-53-642Z.{md,json}` (T6 rerun for variance check).
 
-### 4.4 Fallback chain (C5 tiered escalation)
+### 4.4 Backup chain
 
 The orchestrator in `src/lib/verify.ts` defers to a fallback model when
 the primary's per-field confidence is below
 `REVIEW_CONFIDENCE_THRESHOLD = 0.55`. The chain is:
 
 ```
-T6 (primary, default mode)
+T6 (single primary path)
   ↓ (any field returns confidence < 0.55)
 T7b (fallback, off critical path — does not block the response)
   ↓ (network unreachable)
 T1 (network-blocked degradation: Tesseract + rule-based validators)
 ```
 
-The fallback runs *off* the critical path so the deferral does not add
+The fallback runs only when the primary provider fails; it is not a low-confidence mode and does not add
 latency to the response the user sees. The review-queue surfaces the
 deferred verdict for human inspection regardless.
 
@@ -248,7 +248,7 @@ smoke mode it's about 90 seconds.
 - [ ] Cost criterion (3.4) met OR accuracy delta defensible (McNemar
       p < 0.01)
 - [ ] Pareto frontier table actually includes the winner
-- [ ] `.env.example` updated with the new `MODEL_PRIMARY`
+- [ ] Runtime primary path remains pinned; benchmark candidates stay out of `.env.example`
 - [ ] `vercel.json` env block (if present) updated
 - [ ] [`APPROACH.md`](APPROACH.md) §6 Decision Record table updated
 - [ ] Markdown report committed to `benchmarks/results/`

@@ -39,12 +39,10 @@ Stored in Vercel project settings (never in the repo):
 
 | Var | Purpose |
 |-----|---------|
-| `OPENROUTER_API_KEY` | Vision model access via OpenRouter (multi-provider). |
-| `OPENAI_API_KEY` | Direct OpenAI fallback. |
-| `ANTHROPIC_API_KEY` | Direct Claude fallback. |
-| `MODEL_PRIMARY` | Model identifier for the primary tier (e.g. `google/gemini-2.0-flash-001`). |
-| `MODEL_FALLBACK` | Higher-quality model for low-confidence escalation. |
-| `MAX_BATCH_SIZE` | Hard cap on uploads per request (default 300). |
+| `OPENAI_API_KEY` | Optional direct OpenAI backup used only if Gemini primary fails. |
+| `MODEL_FALLBACK` | Optional backup model override; defaults to `gpt-5.4-nano`. |
+| `GEMINI_RPM_LIMIT` | Optional verified Gemini project RPM from AI Studio; derives interactive batch cap. |
+| `RATE_LIMIT_BATCH_PER_MIN` | Optional batch-create rate limit; defaults to 3/min/IP. |
 | `RATE_LIMIT_PER_MIN` | Per-IP cap on the public demo. |
 
 A `.env.example` documents every var. The README explains how to obtain
@@ -84,17 +82,16 @@ both.
 - `sharp` and `tesseract.js` are declared in
   [`next.config.js`](../next.config.js) under `serverExternalPackages` so
   Next's bundler does not try to inline their native / WASM payloads.
-- Hard 5 s `AbortSignal` on every vision call (see `ARCHITECTURE.md` §4.3).
-  If the call exceeds budget, we fall back to OCR-only validation instead of
-  blocking the user; the UI surfaces this as a `REVIEW` outcome with a
-  "Run again with stronger model" CTA.
+- Hard 60 s `AbortSignal` on every vision call. If the call exceeds budget,
+  `/api/verify` returns 504 with a clear timeout message; the UI does not
+  expose a stronger-model or OCR-only alternate mode.
 
 ## 7. Observability
 
 Bare minimum for a prototype:
 
 - Vercel built-in request logs.
-- `/api/health` returns `{ ok: true, model: MODEL_PRIMARY, version: SHA }`.
+- Anonymous `/api/health` returns only `{ ok, service, ready }`; detailed model/provider/version diagnostics require `Authorization: Bearer DEBUG_TOKEN`.
 - **`GET /api/debug/last`** — reviewer introspection for the most recent
   verification(s).
   - **Auth.** Gated by the `DEBUG_TOKEN` env var. Callers send
@@ -123,9 +120,9 @@ reasons relevant to this app:
 
 | Limit | Hobby (current) | Pro | Why it matters here |
 |---|---|---|---|
-| Function timeout | 30 s | up to 300 s | Cold-start + a Smart-tier (Gemini 3.1 Pro Preview) verify call can flirt with 30 s. Pro removes the worry. |
+| Function timeout | 30 s | up to 300 s | The batch SSE stream needs the longer window; single verifications stay on one fixed path. |
 | Function memory | 2 GB | up to 3 GB (per-function override) | The vision call is small; the ceiling matters only if we ever introduce a local VLM. Headroom for `sharp` + `tesseract.js-core` is already comfortable at 2 GB. |
-| Concurrency | best-effort | provisioned concurrency available | Reduces cold starts during a batch upload of 1,000 labels. |
+| Concurrency | best-effort | provisioned concurrency available | Reduces cold starts during batch upload/streaming. |
 | Bandwidth | 100 GB / mo | 1 TB / mo | Batch CSV / image traffic could plausibly exceed Hobby for a real ops team. |
 | Team seats | 1 | configurable | TTB review teams will want > 1 maintainer. |
 | Analytics | n/a | included | Useful for monitoring real-user verify latency. |
@@ -169,6 +166,6 @@ npm run gen:corpus   # regenerate synthetic test labels
 - A queue (Redis, etc.). The per-item function-invocation pattern in
   `ARCHITECTURE.md` §5 plus an in-memory `batchId` index is sufficient.
 - A separate API service. The Next.js app is the API.
-- A local VLM container. The network-restricted contingency is OCR-only
+- A local VLM container. The network-restricted contingency is a clear 5xx/504 plus optional OpenAI backup
   graceful degradation, not a heavy local model.
 - A staging environment beyond per-PR preview deploys.

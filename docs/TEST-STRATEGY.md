@@ -215,7 +215,7 @@ Even after picking a technique, the corpus stays alive:
 
 - Adversarial labels designed to fool the model.
 - Non-English-character labels (out of scope for prototype).
-- Live load tests beyond the 300-image batch case (which the architecture
+- Live load tests beyond the quota-derived interactive batch case (which the architecture
   already handles).
 
 ## 10. Reproducibility Checklist

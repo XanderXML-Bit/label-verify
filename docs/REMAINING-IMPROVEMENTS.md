@@ -56,7 +56,7 @@ when it doesn't. ~50 images × 30 s = ~25 min of manual review.
 `T6f = gemini-3-flash-preview` added to the bench techniques. Result
 file lands as `benchmarks/results/<iso>-T6f.{json,md}` once the run
 completes. If T6f beats T6 on either accuracy or latency at acceptable
-cost, switch `MODEL_PRIMARY`. If T6 still wins, document the
+cost, benchmark the candidate out of band. If T6 still wins, document the
 comparison and leave the choice.
 
 ### A7. Optional: Stroke Width Transform (SWT) verification for the Gov-Warning prefix

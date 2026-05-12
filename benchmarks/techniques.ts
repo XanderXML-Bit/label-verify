@@ -398,7 +398,7 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new GeminiFlashExtractor({
         apiKey,
-        modelVersion: process.env.MODEL_PRIMARY ?? undefined,
+        modelVersion: process.env.BENCHMARK_MODEL_PRIMARY ?? undefined,
       });
       return new VisionExtractorRunner("T6", extractor, false);
     },
@@ -415,7 +415,7 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new GeminiFlashExtractor({
         apiKey,
-        modelVersion: process.env.MODEL_PRIMARY ?? undefined,
+        modelVersion: process.env.BENCHMARK_MODEL_PRIMARY ?? undefined,
       });
       return new VisionExtractorRunner("C1", extractor, true);
     },

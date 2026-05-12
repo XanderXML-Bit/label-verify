@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { parse as parseCsv } from "csv-parse/sync";
 import { DeclaredFieldsSchema } from "@/lib/types";
 import { createBatch, type BatchItem } from "@/lib/batch-store";
+import {
+  configuredMaxBatchItems,
+  MAX_BATCH_BODY_BYTES,
+} from "@/lib/batch-capacity";
+import { callerKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export const MAX_BATCH_ITEMS = 1000;
+export const MAX_BATCH_ITEMS = configuredMaxBatchItems();
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const RATE_LIMIT_BATCH_PER_MIN = Number(process.env.RATE_LIMIT_BATCH_PER_MIN ?? 3);
 
 const ACCEPTED_MIME = new Set([
   "image/jpeg",
@@ -30,25 +36,52 @@ const ACCEPTED_MIME = new Set([
  * which streams per-item verifications back through this route.
  */
 // Upper production capacity for the current in-memory/serverless design.
-// The evaluator asked for the highest practical cap, not an arbitrary 300.
-// We allow up to 1000 items, but reject aggregate request bodies above 1 GiB
-// before `req.formData()` buffers them into memory. With the 10 MB per-image
-// ceiling, very large source files must be split/compressed; normal labels can
-// use the full 1000-item batch.
-export const MAX_BATCH_BYTES = 1024 * 1024 * 1024;
+// We do NOT use Google's offline Batch API here; this route submits an
+// interactive batch that is processed by one SSE worker with a small amount of
+// parallelism. The cap is derived from documented Gemini project-level RPM and
+// the 300s Vercel stream window, not from the old 200-300 brief number.
+export const MAX_BATCH_BYTES = MAX_BATCH_BODY_BYTES;
 
 export async function POST(req: Request) {
-  const lenHeader = req.headers.get("content-length");
-  if (lenHeader) {
-    const declared = Number(lenHeader);
-    if (Number.isFinite(declared) && declared > MAX_BATCH_BYTES) {
-      return NextResponse.json(
-        {
-          error: `Batch body exceeds ${MAX_BATCH_BYTES} bytes. Split the upload into multiple smaller batches.`,
+  const key = callerKey(req.headers);
+  const rl = rateLimit(`batch-create:${key}`, {
+    perMinute: RATE_LIMIT_BATCH_PER_MIN,
+    burst: RATE_LIMIT_BATCH_PER_MIN,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Batch creation rate limit exceeded. Try again in ${rl.resetSeconds}s.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.resetSeconds),
+          "X-RateLimit-Remaining": "0",
         },
-        { status: 413 },
-      );
-    }
+      },
+    );
+  }
+
+  const lenHeader = req.headers.get("content-length");
+  if (!lenHeader) {
+    return NextResponse.json(
+      { error: "Batch uploads require a Content-Length header." },
+      { status: 411 },
+    );
+  }
+  const declaredLength = Number(lenHeader);
+  if (!Number.isFinite(declaredLength) || declaredLength < 0) {
+    return NextResponse.json(
+      { error: "Invalid Content-Length header." },
+      { status: 400 },
+    );
+  }
+  if (declaredLength > MAX_BATCH_BYTES) {
+    return NextResponse.json(
+      {
+        error: `Batch body exceeds ${MAX_BATCH_BYTES} bytes. Split the upload into multiple smaller batches.`,
+      },
+      { status: 413 },
+    );
   }
 
   let form: FormData;

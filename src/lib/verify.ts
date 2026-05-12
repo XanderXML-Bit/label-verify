@@ -193,7 +193,7 @@ export async function verifyLabel(
         });
         extracted = await fallbackExtractor.extract(pre.buffer, fallbackCtx);
         fallbackUsed = fallbackModel;
-      } catch (_fallbackErr) {
+      } catch {
         // Both providers failed. Surface the primary error — it's more
         // diagnostic than the fallback (the user can fix the primary,
         // the fallback is best-effort).
@@ -429,6 +429,7 @@ export interface ExtractOnlyResponse {
   modelId: string;
   modelVersion: string;
   modeUsed: string;
+  fallbackUsed?: string;
   /** Always present: tells the UI to show the no-application banner. */
   note: string;
 }
@@ -473,8 +474,38 @@ export async function extractOnly(
   };
 
   let extracted: ExtractorResult;
+  let fallbackUsed: string | null = null;
   try {
-    extracted = await extractor.extract(pre.buffer, visionCtx);
+    try {
+      extracted = await extractor.extract(pre.buffer, visionCtx);
+    } catch (primaryErr) {
+      const fallbackKey = process.env.OPENAI_API_KEY;
+      const fallbackModel = process.env.MODEL_FALLBACK ?? "gpt-5.4-nano";
+      if (!fallbackKey) throw primaryErr;
+      const remainingMs = Math.min(
+        25_000,
+        Math.max(5_000, visionTimeoutMs - (performance.now() - startTotal)),
+      );
+      const fbCtrl = new AbortController();
+      const fbTimer = setTimeout(() => fbCtrl.abort(), remainingMs);
+      try {
+        const mod = await import("./vision/openai");
+        const fallbackExtractor = new mod.GPT4oMiniExtractor({
+          apiKey: fallbackKey,
+          modelVersion: fallbackModel,
+        });
+        extracted = await fallbackExtractor.extract(pre.buffer, {
+          ocrText,
+          ocrWords,
+          signal: fbCtrl.signal,
+        });
+        fallbackUsed = fallbackModel;
+      } catch {
+        throw primaryErr;
+      } finally {
+        clearTimeout(fbTimer);
+      }
+    }
   } finally {
     clearTimeout(timeoutHandle);
   }
@@ -551,6 +582,7 @@ export async function extractOnly(
     note:
       "Application data was not provided. Extracted fields are shown for reference only — no PASS/FAIL/REVIEW verdict against declared values. The Government Warning subscore is still computed (federal regulation, not application-derived).",
     ...(imageQualityReason ? { imageQualityReason } : {}),
+    ...(fallbackUsed ? { fallbackUsed } : {}),
   };
 }
 
@@ -587,9 +619,6 @@ function buildDefaultExtractor(): GeminiFlashExtractor {
         "See docs/DEPLOYMENT-CHECKLIST.md §2.",
     );
   }
-  cachedExtractor = new GeminiFlashExtractor({
-    apiKey,
-    modelVersion: process.env.MODEL_PRIMARY ?? undefined,
-  });
+  cachedExtractor = new GeminiFlashExtractor({ apiKey });
   return cachedExtractor;
 }

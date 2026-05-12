@@ -70,7 +70,7 @@ and the per-route handlers for the exact implementations.
   - Application routes: above + `application/pdf`,
     `application/json`, `text/csv`, `text/markdown`, `text/plain`.
 - Per-file size caps: 10 MB images, 5 MB application PDFs, 1 MB
-  text inputs. Batch route additionally enforces a 5 GB
+  text inputs. Batch route additionally enforces a 256 MiB
   Content-Length pre-check before buffering the multipart body
   (DoS guard).
 - PDF text is extracted via pdfjs-dist with a hard page cap; only
@@ -121,9 +121,8 @@ and the per-route handlers for the exact implementations.
   on `Authorization: Bearer ${DEBUG_TOKEN}`. When `DEBUG_TOKEN` is
   unset, the endpoint refuses ALL access — secure-by-default.
 - `/api/health` returns a minimal `{ok, service, ready}` shape to
-  cross-origin / anonymous callers; same-origin callers and
-  Bearer-authed callers get the detailed shape with provider keys
-  status.
+  anonymous callers; only Bearer-authed callers get the detailed shape with
+  provider-key status.
 
 ### Dependency posture
 - TypeScript strict mode; no `any` in production code paths

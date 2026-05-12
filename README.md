@@ -79,8 +79,8 @@ Open the live URL and choose one of three flows:
    does NOT render a PASS / FAIL / REVIEW chip — a yellow banner
    makes the "not a verification" status unmissable.
 
-Batch verification accepts up to **1,000 labels** with a CSV/JSON manifest;
-results stream back over SSE with a virtualised table and CSV export. Very large uploads are bounded by a 1 GiB aggregate request cap to keep the in-memory serverless worker safe.
+Batch verification accepts up to the **quota-derived interactive cap** (100 labels by default) with a CSV/JSON manifest;
+results stream back over SSE with a virtualised table and CSV export. Very large uploads are bounded by a 256 MiB aggregate request cap to keep the in-memory serverless worker safe.
 
 ## Architecture at a glance
 
@@ -262,7 +262,7 @@ Mitigations applied (full audit trail in commit messages, last review
 - Auto-fallback uses a fresh AbortController + remaining-budget timer
   — won't reuse an already-aborted signal from the primary call.
 - Batch endpoint pre-checks `Content-Length` before buffering the
-  multipart body (DoS guard at 5 GB upper bound, with per-file 10 MB
+  multipart body (DoS guard at 256 MiB upper bound, with per-file 10 MB
   enforced inside the loop).
 - Security headers in `vercel.json`: HSTS,
   `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
@@ -297,11 +297,10 @@ the deployment expects:
 | `GOOGLE_API_KEY` | yes | Primary vision (Gemini 3.1 Flash Lite) |
 | `OPENAI_API_KEY` | recommended | Auto-fallback (GPT-5.4-nano) on Gemini outage |
 | `OPENROUTER_API_KEY` | optional | Bake-off harness for the long tail |
-| `MODEL_PRIMARY` | optional | Defaults to `gemini-3.1-flash-lite` |
 | `MODEL_FALLBACK` | optional | Defaults to `gpt-5.4-nano` |
-| `VISION_TIMEOUT_MS` | optional | Defaults to 60000 (per-mode policy in verify.ts) |
+| `VISION_TIMEOUT_MS` | no | Fixed at 60000 in `verify.ts` for the single production path |
 | `RATE_LIMIT_PER_MIN` | optional | Defaults to 60 |
-| `MAX_BATCH_SIZE` | optional | Defaults to 1000 |
+| `GEMINI_RPM_LIMIT` | optional | Defaults to 30; batch cap is derived from this project-level Gemini RPM |
 | `DEBUG_TOKEN` | optional | Gates `/api/debug/last` ring buffer |
 
 For a custom hostname (e.g. `labelverify.yourdomain.com`): Vercel

@@ -9,12 +9,8 @@ export const runtime = "nodejs";
  * The page-load ApiStatusBanner only needs `ready` to know whether to
  * render a warning.
  *
- * Detailed response (gated by `Authorization: Bearer <DEBUG_TOKEN>`):
- * model + fallback IDs, git SHA, provider matrix, notes. This is the
- * same info the front-page banner-pinger used to consume directly —
- * we keep that working by ALSO accepting the request from the
- * Next.js page's own origin (same-host). When DEBUG_TOKEN is unset,
- * the detailed response stays on for development convenience.
+ * Detailed response (gated by `Authorization: Bearer ***`) includes
+ * model + fallback IDs, git SHA, provider matrix, notes.
  *
  * Why: the previous payload leaked deployment fingerprint (git SHA +
  * exact provider matrix) to anonymous callers, which a determined
@@ -35,20 +31,8 @@ export async function GET(req: Request) {
   //      on requests routed through its CDN.)
   const auth = req.headers.get("authorization") ?? "";
   const tokenOk =
-    !hasDebugToken ||
-    auth === `Bearer ${process.env.DEBUG_TOKEN}`;
-  const sameOrigin = (() => {
-    const referer = req.headers.get("referer");
-    const host = req.headers.get("host");
-    if (!referer || !host) return false;
-    try {
-      const u = new URL(referer);
-      return u.host === host;
-    } catch {
-      return false;
-    }
-  })();
-  const detailedOk = tokenOk || sameOrigin;
+    hasDebugToken && auth === `Bearer ${process.env.DEBUG_TOKEN}`;
+  const detailedOk = tokenOk;
 
   if (!detailedOk) {
     // Public response — just enough for the banner.
@@ -62,8 +46,8 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     service: "label-verify",
-    model: process.env.MODEL_PRIMARY ?? "gemini-3.1-flash-lite",
-    fallback: process.env.MODEL_FALLBACK ?? null,
+    model: "gemini-3.1-flash-lite",
+    fallback: process.env.MODEL_FALLBACK ?? "gpt-5.4-nano",
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev",
     timestamp: new Date().toISOString(),
     providers: {

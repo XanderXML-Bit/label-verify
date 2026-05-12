@@ -39,14 +39,12 @@ You will paste these into Vercel in Step 2. Have them ready first.
 | Variable | Required? | Where to get it |
 |---|---|---|
 | `GOOGLE_API_KEY` | **Yes** — primary vision path | https://aistudio.google.com → "Get API key" |
-| `OPENAI_API_KEY` | Optional fallback | https://platform.openai.com/api-keys |
-| `ANTHROPIC_API_KEY` | Optional fallback | https://console.anthropic.com → Settings → API Keys |
-| `MODEL_PRIMARY` | Yes | Set to `gemini-2.0-flash-001` |
-| `MODEL_FALLBACK` | Yes | Set to `gpt-4o-mini` |
-| `VISION_TIMEOUT_MS` | Yes | Set to `4500` |
-| `RATE_LIMIT_PER_MIN` | Yes | Set to `60` |
-| `MAX_BATCH_SIZE` | Yes | Set to `300` |
-| `DEBUG_TOKEN` | Optional | Any random string. Enables `/api/debug/last`. Leave unset to hide that route. |
+| `OPENAI_API_KEY` | Recommended backup | https://platform.openai.com/api-keys |
+| `MODEL_FALLBACK` | Optional | Defaults to `gpt-5.4-nano` |
+| `RATE_LIMIT_PER_MIN` | Optional | Defaults to `60` |
+| `RATE_LIMIT_BATCH_PER_MIN` | Optional | Defaults to `3` |
+| `GEMINI_RPM_LIMIT` | Optional | Set from AI Studio active project RPM; default `30` |
+| `DEBUG_TOKEN` | Optional | Any random string. Enables detailed health/debug routes. Leave unset to hide them. |
 
 A populated `.env.local` (locally, never committed) is the easiest source —
 copy each line into Vercel.
@@ -82,7 +80,7 @@ Still on the import screen, expand the **Environment Variables** section.
    automatically marks them as encrypted secrets. You will not be able to
    read them back after saving.
 3. Double-check spelling. `GOOGLE_API_KEY` with a typo silently breaks
-   the primary path and the app falls back to OCR-only.
+   the primary path and the app returns a clear configuration error.
 
 (If you already deployed and need to add a variable later: Project →
 Settings → Environment Variables → Add. You **must redeploy** for new

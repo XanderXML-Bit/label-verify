@@ -62,7 +62,7 @@
   image gets one row, the CSV/XLSX is auto-paired by filename stem, and
   every row is editable inline. "Download template CSV" is one click.
   CSV mismatches (extra rows, missing columns, header typos) surface
-  with a row-level "?" marker rather than silently misaligning 300
+  with a row-level "?" marker rather than silently misaligning a batch
   verifications.
 - The **Verify** button is always enabled, but on click it shows
   per-field validation if anything is missing — so the user sees what is
@@ -142,7 +142,7 @@ keeping it.
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│  Batch verification     217 / 300 complete    ~3 min remaining │
+│  Batch verification     73 / 100 complete    ~3 min remaining │
 │  ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░  72%                                    │
 │                                                                │
 │  Filter: [ All ▾ ] [ Failed ▾ ] [ Needs review ▾ ]            │
@@ -159,7 +159,7 @@ keeping it.
 └────────────────────────────────────────────────────────────────┘
 ```
 
-- Virtualized table for performance at 300 rows.
+- Virtualized table for performance at the quota-derived batch cap.
 - Clicking any row drills into the single-label results view.
 - The progress bar updates as the SSE stream delivers per-item results.
 
@@ -189,9 +189,8 @@ keeping it.
   prefix not bold), and a REVIEW (intentionally low-light photo). App
   data is pre-populated; the user sees end-to-end value in one click.
 - **API error** ("we can't reach the vision service"): a clear sentence
-  with a Retry button. The error never includes a stack trace; in the
-  graceful-degradation path the UI offers "Run OCR-only check" so the
-  reviewer at least gets brand, ABV, and Gov Warning text.
+  with a Retry button. The error never includes a stack trace and the UI
+  does not expose alternate verification modes.
 - **Bad image**: per-row error with the file name and reason ("Image too
   small — minimum 400 px on long edge.").
 - **Network drop mid-batch**: the SSE-reconnect path picks up from the
@@ -209,8 +208,7 @@ keeping it.
 - **URL fetch blocked**: if the upstream URL is unreachable (CORS, gov
   firewall, 404), the UI prompts the reviewer to download the image
   locally and drag it in instead.
-- **Vision call timeout** (> 5 s): the partial OCR-only verdict surfaces
-  with a "Run again with stronger model" CTA. The reviewer is never
+- **Vision call timeout**: show a clear retry message. The reviewer is never
   stuck on a spinner.
 
 ## 5. Out of Scope for v1

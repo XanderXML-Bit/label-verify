@@ -109,8 +109,8 @@ export, SSE stream wiring.
 
 - [x] Vercel project linked, auto-deploys on push to `main`
 - [x] Env vars set in Vercel (`GOOGLE_API_KEY`, `OPENAI_API_KEY`,
-      `ANTHROPIC_API_KEY`, `MODEL_PRIMARY`, `MODEL_FALLBACK`,
-      `VISION_TIMEOUT_MS`, `RATE_LIMIT_PER_MIN`, `DEBUG_TOKEN` optional)
+      `OPENAI_API_KEY`, `MODEL_FALLBACK`, `GEMINI_RPM_LIMIT`,
+      `RATE_LIMIT_PER_MIN`, `RATE_LIMIT_BATCH_PER_MIN`, `DEBUG_TOKEN` optional)
 - [x] `vercel.json` (region `iad1`, per-route memory + maxDuration,
       security headers)
 - [x] Production smoke (live demo at

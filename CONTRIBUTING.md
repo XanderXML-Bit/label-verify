@@ -88,7 +88,7 @@ The bench harness automatically derives stratification keys
 (`beverage_type`, `condition`) from each ground-truth file. Wilson
 95% CIs and ID/OOD partitioning come for free.
 
-### 3. Add a new test mode
+### 3. Add a new benchmark candidate
 
 If you want to test against a corpus subset (e.g. "all PDFs only"),
 add a selector function in `benchmarks/routine.ts` and a new CLI

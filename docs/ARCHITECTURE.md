@@ -105,13 +105,13 @@ demo shows. P95 above 5 s is real. The mitigations are below.
   delivers them. The user sees brand-name PASS at ~2 s even if the full
   envelope takes 5 s. *Perceived* latency stays under budget.
 - **Hard timeout.** The vision call has a 5 s `AbortSignal`; if it fires, we
-  return whatever fields the OCR-only path can validate (Gov Warning text +
+  return a clear timeout error rather than switching to an OCR-only path (
   brand fuzzy match) and mark the rest `REVIEW`. The user is never left
   staring at a spinner past 5 s.
 - **Warmup pinger.** `/api/health` is hit on page load to warm the function
   before the user clicks Verify.
 - **Tiered escalation runs *off-path*.** If field confidence is low after
-  the primary call, a stronger model re-checks — but only after the user
+  the primary call, the configured backup provider retries once automatically — only when
   has already seen the primary result. The reviewer is not blocked.
 - **Skip OCR for batches when benchmark shows it doesn't help.** Decision
   made by data in `benchmarks/results/`, not by guess.
@@ -126,10 +126,10 @@ preprocess, ocr, vision, match, total }`. The deployed UI surfaces
 `"Verified in N.N s"` from this. If a reviewer reports slowness, we have
 the trace; if the deployed P95 starts drifting, the regression is visible.
 
-## 5. Batch Processing (R3: 200–300 labels)
+## 5. Batch Processing (R3: 200–300 labels; current interactive cap is quota-derived)
 
 Vercel Hobby serverless functions cap execution at 10–60 s. A single
-long-running orchestrator function will time out before 300 labels finish.
+long-running orchestrator function can time out before large batches finish.
 The batch design is **per-item function invocations, not a worker pool**.
 
 ### 5.1 Flow
@@ -152,7 +152,7 @@ The batch design is **per-item function invocations, not a worker pool**.
 
 ### 5.2 Math
 
-300 labels ÷ 8 concurrency × 4 s P50 ≈ 150 s wall time. Minutes, not
+Default cap: 100 labels from 30 RPM × 80% utilization × 255 usable seconds. Minutes, not
 hours, and no single function call exceeds the per-item budget.
 
 ### 5.3 What we do not implement
@@ -194,8 +194,8 @@ Layered defense:
 - A database. Sessions live in memory; the prototype is stateless.
 - Webhooks / external queue infrastructure (Redis / SQS). The batch design
   in §5 uses per-item function invocations orchestrated by an in-memory
-  job index — sufficient for 300-label batches without persistence.
+  job index — sufficient for quota-derived interactive batches without persistence.
 - A custom-trained model. We benchmark, we pick, we ship.
 - A local VLM fallback. The honest network-restricted contingency is the
-  OCR-only graceful-degradation path described in §2 and `APPROACH.md`
+  single-path timeout/error behavior described in §2
   §2.2.

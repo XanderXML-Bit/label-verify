@@ -253,7 +253,7 @@ async function callOpenAI(
 // ─── GPT-4o-mini extractor (T4) ─────────────────────────────────────────────
 
 // User directive (2026-05-12): default to current GPT-5 nano tier. The
-// older gpt-4o-mini default remains available via MODEL_PRIMARY override
+// older gpt-4o-mini default remains available via explicit benchmark wiring
 // for A/B comparison.
 const MODEL_DEFAULT = "gpt-5-nano";
 

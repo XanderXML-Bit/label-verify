@@ -173,7 +173,7 @@ components:
         reviewReasons:
           type: array
           items: { type: string }
-        fallbackUsed: { type: boolean }
+        fallbackUsed: { type: string }
     Error:
       type: object
       required: [error]
@@ -207,9 +207,6 @@ paths:
                 declared:
                   type: string
                   description: JSON-encoded DeclaredFields
-                mode:
-                  type: string
-                  description: Optional model-mode id (e.g. "default").
           application/json:
             schema:
               type: object
@@ -217,7 +214,6 @@ paths:
               properties:
                 url: { type: string, format: uri }
                 declared: { $ref: "#/components/schemas/DeclaredFields" }
-                mode: { type: string }
       responses:
         "200":
           description: Verification succeeded
@@ -361,10 +357,11 @@ paths:
     post:
       summary: Submit a batch of labels for asynchronous verification
       description: |
-        Accepts up to MAX_BATCH (default 1000) labels via multipart
-        upload. Returns a `batchId`. Stream individual results via
-        the `/api/verify/batch/{id}/stream` Server-Sent Events
-        endpoint.
+        Accepts up to the quota-derived interactive cap (default 100)
+        labels via multipart upload. Returns a `batchId`. Stream individual
+        results via the `/api/verify/batch/{id}/stream` Server-Sent Events
+        endpoint. Requires `Content-Length`; aggregate upload body is capped
+        at 256 MiB on the current serverless path.
       requestBody:
         content:
           multipart/form-data:
@@ -406,10 +403,9 @@ paths:
     get:
       summary: Liveness / readiness probe
       description: |
-        Returns a minimal `{ok, service, ready}` shape to anonymous /
-        cross-origin callers, and a detailed `{model, providers,
-        version, timestamp, ready}` shape to same-origin callers or
-        callers presenting `Authorization: Bearer ${DEBUG_TOKEN}`.
+        Returns a minimal `{ok, service, ready}` shape to anonymous callers,
+        and a detailed `{model, providers, version, timestamp, ready}` shape
+        only to callers presenting `Authorization: Bearer DEBUG_TOKEN`.
       responses:
         "200":
           description: OK (minimal or detailed depending on caller)
