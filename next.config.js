@@ -7,7 +7,7 @@ const nextConfig = {
   output: "standalone",
   // sharp and tesseract.js carry native or large WASM payloads that Next's
   // bundler should leave out of the server bundle (DEPLOYMENT.md §6).
-  serverExternalPackages: ["sharp", "tesseract.js"],
+  serverExternalPackages: ["sharp", "tesseract.js", "@napi-rs/canvas"],
   // Next.js's build-trace does NOT auto-include tesseract.js-core's WASM
   // artefacts when tesseract.js is marked external. On Vercel this means
   // `/var/task/node_modules/tesseract.js-core/tesseract-core-simd.wasm`

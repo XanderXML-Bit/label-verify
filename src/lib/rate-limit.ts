@@ -73,21 +73,31 @@ function sweepStale(now: number): void {
 }
 
 /**
- * Best-effort caller identity from request headers. Vercel sets
- * `x-forwarded-for`; fall back to the remote-address header. Returns
- * `"anonymous"` if neither is present.
+ * Best-effort caller identity from request headers.
+ *
+ * Priority:
+ *   1. `x-vercel-forwarded-for` — set by Vercel's edge from the real
+ *      TCP peer. Cannot be spoofed by a client header.
+ *   2. `x-real-ip` — set by trusted reverse-proxies (eg. nginx with
+ *      `set_real_ip_from`). Trusted in private deploys.
+ *   3. `x-forwarded-for` — last resort. Clients CAN set this header
+ *      directly, so it's only safe behind a known proxy that
+ *      overwrites it. Vercel-deployed surfaces should never reach this
+ *      branch; keeping it for local dev compatibility.
+ *
+ * Returns `"anonymous"` if none is present.
  */
 export function callerKey(headers: Headers): string {
-  const xff = headers.get("x-forwarded-for");
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
+  const vff = headers.get("x-vercel-forwarded-for");
+  if (vff) {
+    const first = vff.split(",")[0]?.trim();
     if (first) return first;
   }
   const realIp = headers.get("x-real-ip");
   if (realIp) return realIp.trim();
-  const remote = headers.get("x-vercel-forwarded-for");
-  if (remote) {
-    const first = remote.split(",")[0]?.trim();
+  const xff = headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
     if (first) return first;
   }
   return "anonymous";

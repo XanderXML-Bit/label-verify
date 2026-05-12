@@ -1,9 +1,16 @@
-// ─── Multi-model selectable modes (Settings panel) ──────────────────────────
+// ─── Multi-model selectable modes ──────────────────────────────────────────
 //
-// Declarative catalogue of extractor "modes" the user can pick from the
-// SettingsPanel. The list is *intentionally* short and human-readable: the
-// bake-off (benchmarks/techniques.ts) covers the full provider matrix; this
-// file is the UX-facing curation of that matrix into five clear choices.
+// Declarative catalogue of extractor "modes" the verifier can use. The
+// public UI no longer surfaces a mode picker (the routine bake-off in
+// docs/MODEL-SELECTION.md §4 showed three of the five offered modes
+// were strictly worse than the default on the corpus, so the picker
+// was retired — see src/app/page.tsx). The catalogue is retained for:
+//   - benchmark harness selection (benchmarks/run.ts --mode=…)
+//   - the optional /api/verify?mode= query parameter for operators
+//     running internal A/B tests
+//
+// The list is intentionally short and human-readable; the full
+// provider matrix lives in benchmarks/techniques.ts.
 //
 // Each mode owns:
 //   - a stable `id` (persisted in localStorage as `labelverify:mode`)
@@ -21,8 +28,9 @@
 // Client-bundle hygiene: this module is intentionally `import type`-only at
 // the top level, and the extractor wrapper classes defer their heavy
 // dependencies (vision adapters, tesseract.js) to dynamic `import()` calls
-// inside `extract()`. That keeps the SettingsPanel client component from
-// dragging the OCR/SDK bundles into the browser build.
+// inside `extract()`. Importing this catalogue from a client component
+// (if a future feature reintroduces a mode picker) won't drag the
+// OCR/SDK bundles into the browser build.
 
 import type {
   ExtractedFields,

@@ -64,17 +64,7 @@ export function UploadZone({
       className="space-y-2"
     >
       <div
-        role="button"
-        tabIndex={0}
         aria-disabled={disabled}
-        aria-label="Upload label images: drag and drop, or press Enter to browse"
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            inputRef.current?.click();
-          }
-        }}
         onDragOver={(e) => {
           e.preventDefault();
           if (!disabled) setDragOver(true);
@@ -85,25 +75,23 @@ export function UploadZone({
           dragOver
             ? "border-blue-500 dropzone-active dark:border-blue-400"
             : "border-slate-300 hover:border-slate-400 dark:border-slate-600 dark:hover:border-slate-500"
-        } ${disabled ? "opacity-60" : "cursor-pointer"}`}
+        } ${disabled ? "opacity-60" : ""}`}
       >
         <div className="text-lg font-medium text-slate-800 dark:text-slate-100 sm:text-xl">
           Drop label images here
         </div>
         <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          or click to browse · JPEG, PNG, WebP, PDF
+          or use the button below · JPEG, PNG, WebP, PDF
         </div>
         <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           Single image, batch upload, or a folder
         </div>
         <button
           type="button"
+          aria-label="Upload label images: drag and drop, or press Enter to browse"
           className="mt-5 min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-500"
           disabled={disabled}
-          onClick={(e) => {
-            e.stopPropagation();
-            inputRef.current?.click();
-          }}
+          onClick={() => inputRef.current?.click()}
         >
           Choose files
         </button>

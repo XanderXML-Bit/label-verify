@@ -3,10 +3,10 @@ import { DEFAULT_MODE_ID, MODES, getMode } from "@/lib/model-modes";
 
 // ─── model-modes ────────────────────────────────────────────────────────────
 //
-// The catalogue is the single source of truth for the SettingsPanel and the
-// verify orchestrator's mode lookup. These tests pin the *contract* (stable
-// IDs, exactly five modes, lookup helper, "local" is offline) — they do not
-// pin the cost/latency display strings, which are allowed to drift.
+// The catalogue is the single source of truth for the verify orchestrator's
+// mode lookup (the public UI no longer surfaces a mode picker). These tests
+// pin the *contract* (stable IDs, exactly five modes, lookup helper, "local"
+// is offline) — they do not pin cost/latency display strings, which drift.
 
 describe("MODES catalogue", () => {
   it("contains the five expected modes by stable ID", () => {

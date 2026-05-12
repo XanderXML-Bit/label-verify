@@ -2,6 +2,14 @@
 
 > The reviewer must be able to click a link and use the prototype. This
 > document is the operational plan to make that link reliable.
+>
+> **For the click-by-click runbook**, see
+> [`DEPLOYMENT-CHECKLIST.md`](./DEPLOYMENT-CHECKLIST.md) — every Vercel
+> action spelled out. **For the six-check smoke after deploy**, see
+> [`PRODUCTION-SMOKE.md`](./PRODUCTION-SMOKE.md). This file
+> (`DEPLOYMENT.md`) covers the architectural rationale: region choice,
+> function-memory budget, fallback behavior. Together they form the
+> deployment guide.
 
 ## 1. Target
 
@@ -44,7 +52,7 @@ Stored in Vercel project settings (never in the repo):
 | `ANTHROPIC_API_KEY` | Direct Claude fallback. |
 | `MODEL_PRIMARY` | Model identifier for the primary tier (e.g. `google/gemini-2.0-flash-001`). |
 | `MODEL_FALLBACK` | Higher-quality model for low-confidence escalation. |
-| `MAX_BATCH_SIZE` | Hard cap on uploads per request (default 300). |
+| `MAX_BATCH_SIZE` | Hard cap on uploads per request (default 1000). |
 | `RATE_LIMIT_PER_MIN` | Per-IP cap on the public demo. |
 
 A `.env.example` documents every var. The README explains how to obtain

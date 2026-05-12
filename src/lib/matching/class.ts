@@ -11,28 +11,50 @@ import { normalizeBrand } from "./brand";
  *
  * Strategy:
  *  - Normalize both sides.
- *  - Accept short-form aliases (IPA ↔ India Pale Ale, etc.).
+ *  - SAFE aliases (synonyms / abbreviations) → PASS.
+ *  - AMBIGUOUS aliases (meaningfully-distinct styles that some labels
+ *    use interchangeably) → REVIEW. A pilsner is not a lager from a
+ *    TTB labeling-truth perspective, but legacy taxonomies treated
+ *    them as equivalent. Defer to a human.
  *  - Else Levenshtein ratio ≥ 0.85 → PASS.
  */
 
-const ALIASES: Record<string, string[]> = {
+// Pure abbreviations / spelling variants. Always safe to treat as PASS.
+const SAFE_ALIASES: Record<string, string[]> = {
   "india pale ale": ["ipa"],
-  "double india pale ale": ["dipa", "imperial ipa"],
+  "double india pale ale": ["dipa"],
   "pale ale": ["apa", "american pale ale"],
-  "lager": ["pilsner", "pils"],
-  "stout": ["imperial stout"],
   "cabernet sauvignon": ["cab", "cabernet"],
   "chardonnay": ["chard"],
   "pinot noir": ["pinot"],
   "sauvignon blanc": ["sauv blanc"],
+  // Whisk(e)y spelling variants — Scottish/Irish-style spelling vs
+  // American/Canadian, but the controlled term is the same product.
   "whiskey": ["whisky"],
   "bourbon whiskey": ["bourbon"],
   "scotch whisky": ["scotch"],
 };
 
-function canonical(s: string): string {
+// Ambiguous aliases — different styles that some labels use loosely.
+// Imperial IPA ≠ DIPA exactly; pilsner ≠ lager; imperial stout ≠ stout.
+// These get REVIEW, not PASS, so a reviewer can confirm.
+const REVIEW_ALIASES: Record<string, string[]> = {
+  "double india pale ale": ["imperial ipa"],
+  "lager": ["pilsner", "pils"],
+  "stout": ["imperial stout"],
+};
+
+function safeCanonical(s: string): string {
   const n = normalizeBrand(s);
-  for (const [canon, aliases] of Object.entries(ALIASES)) {
+  for (const [canon, aliases] of Object.entries(SAFE_ALIASES)) {
+    if (n === canon || aliases.includes(n)) return canon;
+  }
+  return n;
+}
+
+function reviewCanonical(s: string): string {
+  const n = normalizeBrand(s);
+  for (const [canon, aliases] of Object.entries(REVIEW_ALIASES)) {
     if (n === canon || aliases.includes(n)) return canon;
   }
   return n;
@@ -53,8 +75,8 @@ export function compareClass(
       reason: "No class / type found on the label.",
     };
   }
-  const a = canonical(declared);
-  const b = canonical(extracted);
+  const a = safeCanonical(declared);
+  const b = safeCanonical(extracted);
   if (a === b) {
     return {
       field: "class_type",
@@ -62,6 +84,24 @@ export function compareClass(
       expected: declared,
       actual: extracted,
       confidence: extractedConfidence,
+    };
+  }
+  // Check ambiguous aliases — pilsner/lager, imperial stout/stout, etc.
+  // These print interchangeably on real labels but are not literally the
+  // same style. Surface as REVIEW so a human confirms.
+  const ambiguous = (() => {
+    const dRev = reviewCanonical(declared);
+    const eRev = reviewCanonical(extracted);
+    return dRev === eRev && dRev !== safeCanonical(declared);
+  })();
+  if (ambiguous) {
+    return {
+      field: "class_type",
+      status: "review",
+      expected: declared,
+      actual: extracted,
+      confidence: Math.min(0.7, extractedConfidence),
+      reason: `Declared "${declared}" and printed "${extracted}" are commonly used as synonyms but refer to meaningfully different styles — please confirm.`,
     };
   }
   const r = ratio(a, b);

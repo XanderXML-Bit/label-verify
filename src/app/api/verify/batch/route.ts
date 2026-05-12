@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import { parse as parseCsv } from "csv-parse/sync";
 import { DeclaredFieldsSchema } from "@/lib/types";
-import { createBatch, type BatchItem } from "@/lib/batch-store";
+import {
+  BatchStoreFullError,
+  createBatch,
+  type BatchItem,
+} from "@/lib/batch-store";
+import { callerKey, rateLimit } from "@/lib/rate-limit";
+import { rowToDeclared } from "@/lib/application/row-to-declared";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// Default cap raised to 1000 per project lead's explicit ask
+// (2026-05-12). Operators can override via the MAX_BATCH_SIZE env var.
+// The brief's stated 200–300 range is the conservative floor; 1000 is
+// reachable in practice because per-item Vercel function invocations
+// avoid the 30 s per-batch SSE wall-clock cap.
 const MAX_BATCH = Number(process.env.MAX_BATCH_SIZE ?? 1000);
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
 const ACCEPTED_MIME = new Set([
   "image/jpeg",
@@ -27,20 +39,35 @@ const ACCEPTED_MIME = new Set([
  *
  * Returns { batchId }. The client then opens an SSE connection to
  *   GET /api/verify/batch/<id>/stream
- * which kicks off per-item verifications (one Vercel function invocation
- * per item) and streams results back.
+ * which kicks off per-item verifications and streams results back.
  */
-// Aggregate batch-size cap (DoS guard). With MAX_BATCH=1000 and
-// per-file MAX_IMAGE_BYTES=10MB, a client could theoretically post a
-// 10GB body before any per-file check runs; `await req.formData()`
-// buffers the whole body into the 2GB Vercel function memory and
-// either OOMs or starves every concurrent invocation. We pre-check the
-// Content-Length header and reject anything that's clearly outside a
-// reasonable batch. The cap is intentionally generous (5GB) — it just
-// has to be SOMETHING. 2026-05-12 security audit finding #1.
-const MAX_BATCH_BYTES = 5 * 1024 * 1024 * 1024;
+// Per-batch body cap. MAX_BATCH=1000 × 10 MB/image = 10 GB theoretical
+// worst-case, but real-world labels average ~1 MB, so legitimate
+// 1000-image batches typically run ~1-2 GB. The 5 GB cap absorbs the
+// 99th-percentile legitimate workload while keeping a DoS guard
+// against pathologically large bodies before `formData()` buffers
+// them into the 2 GB Vercel function memory. Anything bigger gets a
+// 413 from the Content-Length pre-check below — no buffering, no
+// OOM. Clients hitting this cap should split their upload.
+const MAX_BATCH_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
 
 export async function POST(req: Request) {
+  // ─── Rate limit ──────────────────────────────────────────────────────────
+  const key = callerKey(req.headers);
+  const rl = rateLimit(`batch:${key}`, { perMinute: RATE_LIMIT_PER_MIN });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Rate limit exceeded. Try again in ${rl.resetSeconds}s.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.resetSeconds),
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
+  }
+
   const lenHeader = req.headers.get("content-length");
   if (lenHeader) {
     const declared = Number(lenHeader);
@@ -147,7 +174,7 @@ export async function POST(req: Request) {
       );
       continue;
     }
-    // Build the DeclaredFields object from the row.
+    // Build the DeclaredFields object from the row using the shared shim.
     const declaredCandidate = rowToDeclared(row);
     const parsed = DeclaredFieldsSchema.safeParse(declaredCandidate);
     if (!parsed.success) {
@@ -177,7 +204,15 @@ export async function POST(req: Request) {
     );
   }
 
-  const job = createBatch(items);
+  let job;
+  try {
+    job = createBatch(items);
+  } catch (err) {
+    if (err instanceof BatchStoreFullError) {
+      return NextResponse.json({ error: err.message }, { status: 503 });
+    }
+    throw err;
+  }
   return NextResponse.json({
     batchId: job.id,
     count: items.length,
@@ -189,43 +224,4 @@ function stem(filename: string): string {
   const base = filename.split(/[\\/]/).pop() ?? filename;
   const dot = base.lastIndexOf(".");
   return (dot > 0 ? base.slice(0, dot) : base).toLowerCase();
-}
-
-/**
- * Map a manifest row to the DeclaredFields shape. CSV columns can use
- * either snake_case or human names; we accept common variants.
- */
-function rowToDeclared(row: Record<string, string>): unknown {
-  const get = (...keys: string[]): string | undefined => {
-    for (const k of keys) {
-      const v = row[k];
-      if (v != null && v !== "") return v;
-    }
-    return undefined;
-  };
-  const ncRaw = get("net_contents", "netContents", "net contents") ?? "";
-  // Accept "12 fl_oz", "12 fl oz", "355 ml", "750ml", etc.
-  const ncMatch = ncRaw.match(/^\s*(\d+(?:\.\d+)?)\s*(fl\s*oz|fl_oz|ml|cl|l)\s*$/i);
-  return {
-    brand_name: get("brand_name", "brand", "brand name"),
-    class_type: get("class_type", "class", "type", "class/type"),
-    class_category: (get("class_category", "category") ?? "beer").toLowerCase(),
-    abv_percent: numOrUndef(get("abv_percent", "abv", "abv%", "alcohol")),
-    net_contents: ncMatch
-      ? {
-          value: Number(ncMatch[1]),
-          unit: ncMatch[2]!.toLowerCase().replace(/\s/g, "_") === "fl_oz"
-            ? "fl_oz"
-            : (ncMatch[2]!.toLowerCase() as "ml" | "L" | "cl"),
-        }
-      : undefined,
-    producer: get("producer", "producer_name_address", "producer name"),
-    country_of_origin: get("country", "country_of_origin", "origin"),
-  };
-}
-
-function numOrUndef(s: string | undefined): number | undefined {
-  if (s == null) return undefined;
-  const n = Number(String(s).replace(/%/g, "").trim());
-  return Number.isFinite(n) ? n : undefined;
 }

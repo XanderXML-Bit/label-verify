@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkDebugBearer } from "@/lib/debug-token";
 import {
   getRecentTraces,
   getTraceById,
@@ -45,10 +46,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Constant-ish bearer check. Avoid logging the supplied header anywhere.
+  // Constant-time bearer check. Avoid logging the supplied header anywhere.
   const auth = req.headers.get("authorization") ?? "";
-  const expected = `Bearer ${token}`;
-  if (auth !== expected) {
+  if (!checkDebugBearer(auth, token)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

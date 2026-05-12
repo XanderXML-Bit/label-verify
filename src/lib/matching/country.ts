@@ -9,7 +9,19 @@ import { normalizeBrand } from "./brand";
 
 const ALIASES: Record<string, string[]> = {
   "united states": ["usa", "us", "u.s.", "u.s.a.", "united states of america"],
-  "united kingdom": ["uk", "u.k.", "great britain", "england"],
+  // Scotland / Wales / Northern Ireland are UK constituent countries —
+  // a label that prints "Product of Scotland" should match a UK
+  // declaration without a false FAIL. England was already listed for
+  // the same reason; adding the other three closes the gap.
+  "united kingdom": [
+    "uk",
+    "u.k.",
+    "great britain",
+    "england",
+    "scotland",
+    "wales",
+    "northern ireland",
+  ],
   france: ["fr"],
   italy: ["it"],
   spain: ["es"],

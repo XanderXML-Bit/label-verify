@@ -64,16 +64,29 @@ export function VerifyProgress({
   // for the user than ms.
   const elapsedSec = (elapsed / 1000).toFixed(1);
 
+  // aria-live announcement: only on threshold crossings, not every tick.
+  // Without this throttle the screen reader would chatter "2.3 s … 2.4 s
+  // … 2.5 s …" 10×/s and drown out everything else.
+  const announcement = veryLongWait
+    ? `${verb} — still working. A cold start can take up to 30 seconds.`
+    : longWait
+      ? `${verb} — taking longer than usual; larger or more detailed images take a moment.`
+      : `${verb}…`;
+
   return (
     <div
       className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
       aria-busy="true"
     >
+      {/* Visually-hidden live region. Updates only on threshold crossings
+          (immediate/long/very-long). The visible elapsed-time counter
+          below is NOT inside any live region, so the screen reader does
+          not get a 10 Hz announcement stream. */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p
-          className="text-base text-slate-700 dark:text-slate-200"
-          aria-live="polite"
-        >
+        <p className="text-base text-slate-700 dark:text-slate-200">
           {verb}…{" "}
           <span className="font-mono text-slate-500 dark:text-slate-400">
             {elapsedSec} s

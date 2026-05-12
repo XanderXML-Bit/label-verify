@@ -24,3 +24,12 @@ eng.traineddata
 *.traineddata
 
 .vercel
+
+# Claude Code agent worktrees (live inside the repo but should not be
+# tracked as nested git directories).
+.claude/worktrees/
+
+# Per-run bench log transcripts. The *.json/.md sibling files in
+# benchmarks/results/ + .review/threshold-calibration-*.{json,md} are
+# the durable artifacts.
+.review/calibrate-log.txt

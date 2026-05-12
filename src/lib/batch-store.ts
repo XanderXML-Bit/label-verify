@@ -35,9 +35,44 @@ export interface BatchJob {
 
 const STORE = new Map<string, BatchJob>();
 const MAX_BATCHES = 32;
+// Aggregate in-memory cap across all live batches. Each batch holds raw
+// image bytes in memory until its SSE stream consumes them; without an
+// aggregate cap a few concurrent large batches can OOM the function.
+const MAX_AGGREGATE_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
+// Time-to-live for a batch with no active stream. Streams pull items via
+// `getBatch(id)` repeatedly so an actively-running batch refreshes its
+// `createdAt` implicitly (lookup); once the stream closes, the batch sits
+// in memory holding image bytes until the next eviction sweep. The TTL
+// caps that window so an abandoned batch doesn't pin memory for hours.
+const BATCH_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function aggregateBytes(): number {
+  let total = 0;
+  for (const job of STORE.values()) {
+    for (const it of job.items) total += it.imageBytes.byteLength;
+  }
+  return total;
+}
+
+export class BatchStoreFullError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BatchStoreFullError";
+  }
+}
 
 export function createBatch(items: Omit<BatchItem, "status">[]): BatchJob {
+  sweepExpired();
   evictOldest();
+  const incoming = items.reduce(
+    (s, it) => s + it.imageBytes.byteLength,
+    0,
+  );
+  if (aggregateBytes() + incoming > MAX_AGGREGATE_BYTES) {
+    throw new BatchStoreFullError(
+      "Aggregate batch memory cap reached. Try again in a few minutes once running batches finish.",
+    );
+  }
   const job: BatchJob = {
     id: randomUUID(),
     createdAt: Date.now(),
@@ -46,6 +81,13 @@ export function createBatch(items: Omit<BatchItem, "status">[]): BatchJob {
   };
   STORE.set(job.id, job);
   return job;
+}
+
+function sweepExpired(): void {
+  const now = Date.now();
+  for (const [id, job] of STORE.entries()) {
+    if (now - job.createdAt > BATCH_TTL_MS) STORE.delete(id);
+  }
 }
 
 export function getBatch(id: string): BatchJob | undefined {

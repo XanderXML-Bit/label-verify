@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UploadZone } from "@/app/components/UploadZone";
 
-const DROPZONE_LABEL = "Upload label images: drag and drop, or press Enter to browse";
+const TRIGGER_LABEL =
+  "Upload label images: drag and drop, or press Enter to browse";
 
 function getHiddenFileInput(container: HTMLElement): HTMLInputElement {
   const input = container.querySelector<HTMLInputElement>('input[type="file"]');
@@ -12,11 +13,15 @@ function getHiddenFileInput(container: HTMLElement): HTMLInputElement {
 }
 
 describe("UploadZone", () => {
-  it("renders the dropzone label and 'Choose files' button", () => {
+  it("renders the dropzone copy and the 'Choose files' trigger", () => {
     render(<UploadZone onFiles={() => {}} />);
-    expect(screen.getByLabelText(DROPZONE_LABEL)).toBeInTheDocument();
+    expect(screen.getByLabelText(TRIGGER_LABEL)).toBeInTheDocument();
     expect(screen.getByText("Drop label images here")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Choose files" })).toBeInTheDocument();
+    // The trigger button carries the descriptive aria-label; its visible
+    // text remains "Choose files".
+    expect(
+      screen.getByRole("button", { name: TRIGGER_LABEL }),
+    ).toBeInTheDocument();
   });
 
   it("calls onFiles with the array when a file is selected via the hidden input", async () => {
@@ -36,14 +41,14 @@ describe("UploadZone", () => {
     expect(arg[0]?.type).toBe("image/png");
   });
 
-  it("Enter on the dropzone forwards to the hidden file input via a click", async () => {
+  it("Enter on the trigger forwards to the hidden file input via a click", async () => {
     const user = userEvent.setup();
     const { container } = render(<UploadZone onFiles={() => {}} />);
-    const dropzone = screen.getByLabelText(DROPZONE_LABEL);
+    const trigger = screen.getByLabelText(TRIGGER_LABEL);
     const input = getHiddenFileInput(container);
     const clickSpy = vi.spyOn(input, "click");
 
-    dropzone.focus();
+    trigger.focus();
     await user.keyboard("{Enter}");
 
     expect(clickSpy).toHaveBeenCalled();
@@ -53,8 +58,7 @@ describe("UploadZone", () => {
     const onFiles = vi.fn();
     render(<UploadZone onFiles={onFiles} disabled />);
     expect(onFiles).not.toHaveBeenCalled();
-    // The disabled "Choose files" button is also non-interactive.
-    const button = screen.getByRole("button", { name: "Choose files" });
+    const button = screen.getByRole("button", { name: TRIGGER_LABEL });
     expect(button).toBeDisabled();
   });
 });

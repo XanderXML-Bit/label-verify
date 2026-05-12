@@ -18,7 +18,7 @@ import {
   normalizeForTextMatch,
   canonicalStatement,
 } from "./government-warning";
-import { toMl } from "../matching/net-contents";
+import { labelHeightMmFor, toMl } from "../matching/net-contents";
 import {
   findPrefixWords,
   findBodyWords,
@@ -354,10 +354,21 @@ function scoreSize(
 }
 
 /**
- * Apply the size threshold bands:
+ * Apply the size threshold bands. ADVISORY — the size subscore is the
+ * weakest evidence on this validator: the pixel-to-mm conversion
+ * assumes the long edge of the image equals the label face height for
+ * the declared net contents, which has no aspect-ratio correction (a
+ * cropped photo and a full-bottle photo of the same label can read out
+ * very different `prefixMm`).
+ *
+ * Bands:
  *   - ≥ minMm * 0.8 → pass
- *   - ≥ minMm * 0.5 → review
- *   - else            fail
+ *   - else            review (never FAIL — see above)
+ *
+ * A genuinely too-small Gov Warning will FAIL on the text + caps + bold
+ * subscores in most cases. Driving a FAIL purely from a pixel-height
+ * estimate causes too many false-FAILs on the photo-realistic OOD
+ * corpus. Documented as advisory in README + SECURITY.
  */
 function sizeFromMm(
   prefixMm: number,
@@ -367,23 +378,10 @@ function sizeFromMm(
   if (prefixMm >= minMm * 0.8) {
     return { status: "pass", confidence };
   }
-  if (prefixMm >= minMm * 0.5) {
-    return { status: "review", confidence };
-  }
-  return { status: "fail", confidence };
+  return { status: "review", confidence: Math.min(confidence, 0.5) };
 }
 
-function labelHeightMmFor(nc: NetContents): number {
-  const ml = toMl(nc);
-  // Very rough: scale with container volume. 750ml ≈ 100mm label height
-  // is a common front-label dimension.
-  if (ml <= 50) return 30;
-  if (ml <= 200) return 60;
-  if (ml <= 375) return 80;
-  if (ml <= 750) return 100;
-  if (ml <= 1000) return 120;
-  return 140;
-}
+// labelHeightMmFor lives in src/lib/matching/net-contents.ts (single source).
 
 // Re-export for convenience.
 export type { SubscoreStatus, SubscoreResult } from "./government-warning";

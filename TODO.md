@@ -1,9 +1,6 @@
 # TODO — Prioritized Backlog
 
 > Source of truth for what's left. Updated as work lands. Deadline 2026-05-18.
->
-> See [`docs/STATUS.md`](docs/STATUS.md) for the live-state snapshot — what
-> works today and what's deployed. This file is the *backlog*: what remains.
 
 Legend: **P0** = must ship · **P1** = strongly want · **P2** = nice to have.
 
@@ -101,7 +98,8 @@ export, SSE stream wiring.
       manifest at `test-data-v2/routine-manifest.json`)
 - [x] CI uses `bench-routine` (cost-conscious regression guard)
 - [x] Confidence-first deferral logic (`REVIEW_CONFIDENCE_THRESHOLD =
-      0.75` in `verify.ts`)
+      0.55` in `verify.ts`, calibrated against the 170-image corpus —
+      see `docs/REMAINING-IMPROVEMENTS.md` A2)
 - [x] `docs/MODEL-SELECTION.md` decision-record template
 - [ ] **P0** Run the formal bake-off and fill in §4
 

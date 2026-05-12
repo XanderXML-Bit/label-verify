@@ -34,8 +34,15 @@ interface Props {
   readonly disabled?: boolean;
 }
 
+// HEIC/HEIF intentionally excluded — sharp builds shipped with Vercel
+// don't include libheif and reject them with a confusing decode error.
+// Users on iOS should set Camera → Formats → "Most Compatible" or
+// re-export via Photos to a JPEG.
 const ACCEPT_HINT =
-  ".pdf,.json,.csv,.tsv,.md,.markdown,.txt,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,application/json,text/csv,text/plain,text/markdown,image/*";
+  ".pdf,.json,.csv,.tsv,.md,.markdown,.txt,.jpg,.jpeg,.png,.webp,application/pdf,application/json,text/csv,text/plain,text/markdown,image/jpeg,image/png,image/webp";
+
+const REJECTED_HEIC_TYPES = new Set(["image/heic", "image/heif"]);
+const REJECTED_HEIC_EXTS = [".heic", ".heif"];
 
 const SOURCE_LABEL: Record<ParseSource, string> = {
   txt: "plain text",
@@ -58,6 +65,18 @@ export function ApplicationUpload({ onParsed, disabled }: Props) {
   >({ kind: "idle" });
 
   async function handleFile(file: File): Promise<void> {
+    const lowerName = file.name.toLowerCase();
+    if (
+      REJECTED_HEIC_TYPES.has(file.type) ||
+      REJECTED_HEIC_EXTS.some((ext) => lowerName.endsWith(ext))
+    ) {
+      setStatus({
+        kind: "error",
+        message:
+          "HEIC/HEIF images aren't supported by the server-side image library. Re-export the photo as JPEG or PNG (on iPhone: Settings → Camera → Formats → Most Compatible).",
+      });
+      return;
+    }
     setStatus({ kind: "parsing", filename: file.name });
     try {
       const fd = new FormData();

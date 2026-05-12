@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { VerifyResponse } from "@/lib/types";
 import { VerdictChip, QualityChip } from "./StatusChip";
+import { SingleResult } from "./SingleResult";
 
 export type BatchRow =
   | { index: number; filename: string; status: "pending" }
@@ -35,11 +36,18 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
   const [done, setDone] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [drilled, setDrilled] = useState<BatchRow | null>(null);
+  // SSE connection state. Surfaced as a banner so a user whose
+  // network drops mid-batch sees an actionable "reconnect" affordance
+  // rather than a silently-stalled progress bar.
+  const [connectionLost, setConnectionLost] = useState(false);
+  const [reconnectKey, setReconnectKey] = useState(0);
 
-  // Open SSE on mount.
+  // Open SSE on mount; refreshed when the user clicks reconnect.
   useEffect(() => {
     const es = new EventSource(`/api/verify/batch/${batchId}/stream`);
+    let closed = false;
     es.addEventListener("item", (ev: MessageEvent<string>) => {
+      setConnectionLost(false);
       const data = JSON.parse(ev.data) as {
         index: number;
         filename: string;
@@ -66,15 +74,27 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
       });
     });
     es.addEventListener("done", (ev: MessageEvent<string>) => {
+      closed = true;
       setDone(true);
+      setConnectionLost(false);
       onDone(JSON.parse(ev.data) as BatchSummary);
       es.close();
     });
     es.onerror = () => {
-      // Connection drop — leave the partial UI in place; user can reload.
+      // EventSource fires onerror both for transient hiccups (auto-
+      // reconnect kicks in) and for terminal drops (readyState ===
+      // CLOSED). Surface a banner only on terminal drops; transient
+      // ones will reconnect themselves.
+      if (closed) return;
+      if (es.readyState === EventSource.CLOSED) {
+        setConnectionLost(true);
+      }
     };
-    return () => es.close();
-  }, [batchId, onDone]);
+    return () => {
+      closed = true;
+      es.close();
+    };
+  }, [batchId, onDone, reconnectKey]);
 
   const counts = useMemo(() => {
     let passed = 0;
@@ -107,7 +127,13 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
     }
   }, [rows, filter]);
 
-  const pct = Math.round((counts.finished / rows.length) * 100);
+  // Guard against `rows.length === 0` to avoid the historical "NaN%"
+  // bug surfacing in the progress header when an empty batch lands
+  // (e.g. after every row paired with a pairingError).
+  const pct =
+    rows.length === 0
+      ? 0
+      : Math.round((counts.finished / rows.length) * 100);
 
   return (
     <section aria-labelledby="batch-heading" className="space-y-4">
@@ -119,6 +145,33 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
           {counts.finished} / {rows.length} complete · {done ? "Done" : `${pct}%`}
         </div>
       </header>
+
+      {connectionLost && !done && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-900 dark:border-yellow-700 dark:bg-yellow-950/60 dark:text-yellow-200"
+        >
+          <p className="font-semibold">
+            <span aria-hidden className="mr-1">⚠</span>
+            Connection to the batch stream dropped
+          </p>
+          <p className="mt-1">
+            Already-completed rows are still shown. The remaining items
+            won&apos;t update until you reconnect.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setConnectionLost(false);
+              setReconnectKey((k) => k + 1);
+            }}
+            className="mt-2 min-h-[44px] rounded-md bg-yellow-700 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-800 dark:bg-yellow-600 dark:hover:bg-yellow-500"
+          >
+            Reconnect
+          </button>
+        </div>
+      )}
 
       <div
         className="h-2 w-full overflow-hidden rounded bg-slate-200 dark:bg-slate-700"
@@ -246,20 +299,32 @@ function DrilldownPanel({
       aria-labelledby={headingId}
       className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
     >
-      <h3 id={headingId} className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-        {row.filename}
-      </h3>
-      <pre className="mt-2 max-h-96 overflow-auto rounded bg-slate-100 p-2 text-xs text-slate-800 dark:bg-slate-800 dark:text-slate-200">
-        {JSON.stringify(row.result, null, 2)}
-      </pre>
-      <button
-        ref={closeBtnRef}
-        type="button"
-        onClick={onClose}
-        className="mt-3 min-h-[44px] rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
-      >
-        Close
-      </button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3
+          id={headingId}
+          className="text-lg font-semibold text-slate-800 dark:text-slate-100"
+        >
+          {row.filename}
+        </h3>
+        <button
+          ref={closeBtnRef}
+          type="button"
+          onClick={onClose}
+          className="min-h-[44px] rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
+        >
+          Close
+        </button>
+      </div>
+      <div className="mt-4">
+        {/* Batch view doesn't have an image preview to show — pass an
+            empty URL so SingleResult renders the "No preview" stub. We
+            also no-op onAnother since the parent owns reset. */}
+        <SingleResult
+          result={row.result}
+          imagePreviewUrl=""
+          onAnother={onClose}
+        />
+      </div>
     </div>
   );
 }
@@ -346,8 +411,26 @@ function downloadCsv(rows: BatchRow[]): void {
     "total_ms",
     "vision_ms",
   ];
+  // Always emit the full column shape so a spreadsheet import doesn't
+  // shift columns up for error/pending rows. Missing cells become "".
   const body = rows.map((r) => {
-    if (r.status !== "done") return [r.index, r.filename, r.status];
+    if (r.status !== "done") {
+      return [
+        r.index,
+        r.filename,
+        r.status, // pending | running | error — slot under "verdict"
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ];
+    }
     const f = r.result.fields;
     return [
       r.index,
