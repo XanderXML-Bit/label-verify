@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0049",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0049.jpg",
+  "degradations": [
+    "mini bottle, tiny text"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Ember Vale",
+    "class_type": "Cinnamon Liqueur",
+    "class_category": "distilled_spirits",
+    "abv_percent": 32,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": "Ember Vale Spirits, Louisville, KY",
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "S2_MINI_TINY_TEXT",
+  "notes": "Mini bottle tiny curved warning; keep robustness-only.",
+  "_converted_from_ai": true,
+  "_usage_tier": "robustnessOnly"
+}

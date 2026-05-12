@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0010",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0010.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "neck",
+  "container_size_ml": 187,
+  "fields": {
+    "brand_name": "Mill Creek",
+    "class_type": "Hazy IPA",
+    "class_category": "beer",
+    "abv_percent": 4.8,
+    "net_contents": {
+      "value": 187,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Mill Creek Beverage Co.",
+      "street": "1190 Mission Ave",
+      "city": "San Antonio",
+      "state": "TX",
+      "postal_code": "78210",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T4",
+  "notes": "neck label, multi brand pattern, 187 ml container. Archetype: vintage-classical. Government Warning case: T4."
+}

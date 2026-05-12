@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0027",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0027.jpg",
+  "degradations": [
+    "wine bottle"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Argenton",
+    "class_type": "Riesling",
+    "class_category": "wine",
+    "abv_percent": 11.5,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": "Argenton Beverage Co., Walla Walla, WA",
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C0",
+  "notes": "Wine bottle; compliant warning confirmed.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0001",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-wine-0001.png",
+  "degradations": [
+    "glare:0.75"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 187,
+  "fields": {
+    "brand_name": "Calder Estates",
+    "class_type": "Rose",
+    "class_category": "wine",
+    "abv_percent": 12.7,
+    "net_contents": {
+      "value": 187,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Calder Estates Beverage Co.",
+      "street": "7 Forge Alley",
+      "city": "Charleston",
+      "state": "SC",
+      "postal_code": "29401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-wine-0003. glare:0.75."
+}

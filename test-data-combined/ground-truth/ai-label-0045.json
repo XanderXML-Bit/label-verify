@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0045",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0045.jpg",
+  "degradations": [
+    "thumb partially covers producer address"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Valle D'Oro",
+    "class_type": "Pinot Grigio",
+    "class_category": "wine",
+    "abv_percent": 12.5,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": "Valle D'Oro USA, New York, NY",
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "Q3_PARTIAL_OCCLUSION",
+  "notes": "Thumb occlusion covers part of importer/producer line; keep robustness-only.",
+  "_converted_from_ai": true,
+  "_usage_tier": "robustnessOnly"
+}

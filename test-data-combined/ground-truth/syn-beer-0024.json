@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0024",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0024.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "neck",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Mill Creek",
+    "class_type": "Wheat Beer",
+    "class_category": "beer",
+    "abv_percent": 6.4,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Mill Creek Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "neck label, multi brand pattern, 355 ml container. Archetype: vintage-classical. Government Warning case: X1."
+}

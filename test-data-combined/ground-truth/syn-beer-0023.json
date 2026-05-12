@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0023",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0023.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Fieldstone",
+    "class_type": "Wheat Beer",
+    "class_category": "beer",
+    "abv_percent": 4.4,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Fieldstone Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "front label, single brand pattern, 355 ml container. Archetype: vintage-classical. Government Warning case: X1."
+}

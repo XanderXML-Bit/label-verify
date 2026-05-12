@@ -1,0 +1,37 @@
+{
+  "id": "syn-fortified_wine-0007",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-fortified_wine-0007.png",
+  "degradations": [],
+  "beverage_type": "fortified_wine",
+  "label_face": "back",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Cave Marin",
+    "class_type": "Sherry",
+    "class_category": "fortified_wine",
+    "abv_percent": 18.1,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Cave Marin Beverage Co.",
+      "street": "14 Mill St",
+      "city": "Asheville",
+      "state": "NC",
+      "postal_code": "28801",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "back label, multi brand pattern, 50 ml container. Archetype: modern-minimal. Government Warning case: X1."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0018",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0018.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "OLD CYPRESS",
+    "class_type": "Stout",
+    "class_category": "beer",
+    "abv_percent": 5,
+    "net_contents": {
+      "value": 25,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "OLD CYPRESS Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": false,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T1/B2",
+  "notes": "back label, stylized brand pattern, 750 ml container. Archetype: premium-dark. Government Warning case: T1/B2."
+}

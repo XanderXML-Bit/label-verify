@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0009",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0009.jpg",
+  "degradations": [
+    "missing government warning"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Cote du Soir",
+    "class_type": "Rose",
+    "class_category": "wine",
+    "abv_percent": 12.6,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": "Cote du Soir Beverage Co., Sonoma, CA",
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1_MISSING_WARNING",
+  "notes": "Missing government warning defect clearly confirmed.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

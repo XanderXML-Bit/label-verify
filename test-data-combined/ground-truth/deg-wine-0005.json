@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0005",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-wine-0005.png",
+  "degradations": [
+    "noise:gauss:15.8"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 1000,
+  "fields": {
+    "brand_name": "Five Sisters",
+    "class_type": "Zinfandel",
+    "class_category": "wine",
+    "abv_percent": 13,
+    "net_contents": {
+      "value": 1000,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Five Sisters Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "Derived from syn-wine-0012. noise:gauss:15.8."
+}

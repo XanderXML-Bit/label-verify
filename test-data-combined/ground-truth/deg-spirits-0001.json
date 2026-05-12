@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0001",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-spirits-0001.png",
+  "degradations": [
+    "noise:gauss:8.1"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Fox's Lantern",
+    "class_type": "Vodka",
+    "class_category": "distilled_spirits",
+    "abv_percent": 39,
+    "net_contents": {
+      "value": 355,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Foxs Lantern Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-spirits-0001. noise:gauss:8.1."
+}

@@ -1,8 +1,17 @@
 # Verification Approach — Scientific Comparison
 
-> This document defines **how we will choose** the verification engine. It is
-> deliberately written *before* implementation so the choice is driven by
-> measurement, not preference.
+> **Status note (2026-05-12):** the original 4-contender plan below (T1
+> Tesseract / T4 GPT-4o-mini / T6 Gemini Flash / C1 OCR+vision) was
+> superseded once OpenRouter unlocked the long-tail frontier models.
+> The actual bake-off ran 13 variants on the combined 140-image corpus
+> (90 SVG + 50 photo-realistic AI). The winner is **Gemini 3.1 Flash
+> Lite (T6)** — see [`MODEL-SELECTION.md`](MODEL-SELECTION.md) §4 for
+> the result table and decision justification.
+>
+> This document defines **how we chose** the verification engine.
+> Originally written before implementation so the choice could be
+> driven by measurement, not preference — the priors below are
+> preserved verbatim alongside §4.3's "what we got wrong" record.
 
 ## 1. The Question We Are Answering
 

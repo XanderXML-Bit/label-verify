@@ -79,6 +79,14 @@ interface CliArgs {
   corpus: string;
   techniques: string[];
   bakeoff: boolean;
+  /**
+   * Explicit trial count override. When unset, defaults are:
+   *   - --smoke / --routine → 1 trial
+   *   - otherwise           → 3 trials (FULL)
+   * Useful for a "fast full-corpus pass" where you want every image in
+   * the corpus but only one measurement each.
+   */
+  trials?: number;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -100,6 +108,12 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (a === "--technique") {
       const v = argv[++i];
       if (v) out.techniques.push(v);
+    } else if (a === "--trials") {
+      const v = argv[++i];
+      if (v) {
+        const n = Number(v);
+        if (Number.isFinite(n) && n > 0) out.trials = n;
+      }
     }
   }
   // --smoke and --routine are mutually exclusive: they answer different
@@ -606,6 +620,14 @@ async function main(): Promise<void> {
     subset = truths;
     mode = "full";
     trials = TRIALS_FULL;
+  }
+
+  // CLI override: --trials N wins over the mode default. Useful for
+  // "fast full-corpus pass" where you want every image but only one
+  // measurement (cuts a 140-image bench from ~50 min to ~17 min).
+  if (typeof ARGS.trials === "number") {
+    trials = ARGS.trials;
+    console.warn(`[bench] trials per image overridden via --trials: ${trials}`);
   }
 
   const selectedIds =

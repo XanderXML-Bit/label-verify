@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0007",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-wine-0007.png",
+  "degradations": [
+    "noise:gauss:17.4"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Halfwild",
+    "class_type": "Cabernet Sauvignon",
+    "class_category": "wine",
+    "abv_percent": 12.7,
+    "net_contents": {
+      "value": 355,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Halfwild Beverage Co.",
+      "street": "7 Forge Alley",
+      "city": "Charleston",
+      "state": "SC",
+      "postal_code": "29401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T5",
+  "notes": "Derived from syn-wine-0008. noise:gauss:17.4."
+}

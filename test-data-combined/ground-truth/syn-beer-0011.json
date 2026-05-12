@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0011",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0011.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Wandering Coyote",
+    "class_type": "Wheat Beer",
+    "class_category": "beer",
+    "abv_percent": 6,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Wandering Coyote Beverage Co.",
+      "street": "802 Harbor Way",
+      "city": "Portland",
+      "state": "ME",
+      "postal_code": "04101",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T5",
+  "notes": "front label, multi brand pattern, 50 ml container. Archetype: premium-dark. Government Warning case: T5."
+}

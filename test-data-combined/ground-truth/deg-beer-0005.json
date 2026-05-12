@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0005",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0005.png",
+  "degradations": [
+    "perspective:-18deg"
+  ],
+  "beverage_type": "beer",
+  "label_face": "neck",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Half-Note",
+    "class_type": "Stout",
+    "class_category": "beer",
+    "abv_percent": 3.7,
+    "net_contents": {
+      "value": 17,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Half-Note Beverage Co.",
+      "street": "32 Orchard Ln",
+      "city": "Traverse City",
+      "state": "MI",
+      "postal_code": "49684",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "Derived from syn-beer-0019. perspective:-18deg."
+}
