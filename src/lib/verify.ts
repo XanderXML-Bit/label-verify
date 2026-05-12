@@ -240,7 +240,18 @@ export async function verifyLabel(
   // Wait for OCR to finish before validating: if it succeeded, the validator
   // uses Tesseract word bboxes (pixel-tight) for the bold + size subscores
   // instead of the vision model's noisy self-reported `prefix_bbox`.
-  const ocrFinal = await ocrPromise;
+  // Bounded await: if Tesseract's still running well past the vision
+  // call, we'd rather ship a vision-only Gov-Warning verdict than hang
+  // until the function timeout (Vercel Hobby caps at 30s). 8s is plenty
+  // for a fully warm worker to finish recognising a single label; a
+  // cold worker that hasn't finished by then almost certainly won't in
+  // the remaining budget. The .catch(()=>null) in ocrPromise's
+  // construction makes the timeout-loser harmless to the rest of the
+  // pipeline. See Vercel-deploy postmortem 2026-05-12.
+  const ocrFinal = await Promise.race([
+    ocrPromise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
+  ]);
   const gov = await validateGovernmentWarning({
     extracted: f.government_warning.value ?? {
       raw_text: null,
@@ -490,7 +501,18 @@ export async function extractOnly(
   // SELF-CONTAINED check (federal regulation, not application-derived).
   // We can deliver a useful answer for that field even without app data.
   const matchStart = performance.now();
-  const ocrFinal = await ocrPromise;
+  // Bounded await: if Tesseract's still running well past the vision
+  // call, we'd rather ship a vision-only Gov-Warning verdict than hang
+  // until the function timeout (Vercel Hobby caps at 30s). 8s is plenty
+  // for a fully warm worker to finish recognising a single label; a
+  // cold worker that hasn't finished by then almost certainly won't in
+  // the remaining budget. The .catch(()=>null) in ocrPromise's
+  // construction makes the timeout-loser harmless to the rest of the
+  // pipeline. See Vercel-deploy postmortem 2026-05-12.
+  const ocrFinal = await Promise.race([
+    ocrPromise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
+  ]);
   const f = extracted.fields;
   const gov = await validateGovernmentWarning({
     extracted: f.government_warning.value ?? {

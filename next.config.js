@@ -8,6 +8,21 @@ const nextConfig = {
   // sharp and tesseract.js carry native or large WASM payloads that Next's
   // bundler should leave out of the server bundle (DEPLOYMENT.md §6).
   serverExternalPackages: ["sharp", "tesseract.js"],
+  // Next.js's build-trace does NOT auto-include tesseract.js-core's WASM
+  // artefacts when tesseract.js is marked external. On Vercel this means
+  // `/var/task/node_modules/tesseract.js-core/tesseract-core-simd.wasm`
+  // is missing at runtime — `createWorker("eng")` aborts immediately
+  // with ENOENT and the whole function hangs until the 30s Hobby-plan
+  // cap fires (every OCR call returns 504). Forcing the WASM + the
+  // worker JS into the trace fixes it. Discovered via the Vercel
+  // function logs after the 2026-05-12 redeploy.
+  outputFileTracingIncludes: {
+    "/api/**/*": [
+      "./node_modules/tesseract.js-core/**/*.wasm",
+      "./node_modules/tesseract.js-core/**/*.js",
+      "./node_modules/tesseract.js/src/worker-script/node/**/*",
+    ],
+  },
   // Vision API responses can be large; raise the upload-body limit on the
   // verify endpoint so per-item function calls don't reject mid-batch.
   experimental: {
