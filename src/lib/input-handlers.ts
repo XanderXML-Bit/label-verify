@@ -204,17 +204,103 @@ async function assertHostnameIsPublic(hostname: string): Promise<void> {
 }
 
 function isIpLiteral(host: string): boolean {
-  // IPv4 dotted-quad
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+  // IPv4 — dotted-quad, but ALSO non-canonical forms (decimal, hex,
+  // octal, or shortened 3/2/1-component) that browsers and most clients
+  // will resolve. URL parsers see `http://2130706433/` as 127.0.0.1; the
+  // SSRF guard must too. See OWASP "URL parser inconsistencies."
+  if (/^[0-9a-fA-FxX.]+$/.test(host)) {
+    if (parseIpv4Loose(host) !== null) return true;
+  }
   // IPv6 — extremely loose check; the canonical fix would be ipaddr.js.
   if (host.includes(":") && /^[0-9a-fA-F:]+$/.test(host)) return true;
   return false;
 }
 
+/**
+ * Parse an IPv4 host into its canonical dotted-quad form, accepting:
+ *   - 4 components (a.b.c.d)
+ *   - 3 components (a.b.c — interprets c as a 16-bit word)
+ *   - 2 components (a.b — interprets b as a 24-bit word)
+ *   - 1 component (a — interprets a as a 32-bit integer)
+ *   - Each component may be decimal, octal (leading 0), or hex (0x).
+ *
+ * Returns the canonical `a.b.c.d` string, or null if the input doesn't
+ * parse as a valid IPv4 literal in any of these forms.
+ */
+function parseIpv4Loose(host: string): string | null {
+  const parts = host.split(".");
+  if (parts.length === 0 || parts.length > 4) return null;
+  const nums = parts.map(parseNumberLoose);
+  if (nums.some((n) => n === null)) return null;
+  // Each leading part (all but the last) must fit in a byte.
+  for (let i = 0; i < nums.length - 1; i++) {
+    if ((nums[i] as number) < 0 || (nums[i] as number) > 0xff) return null;
+  }
+  const last = nums[nums.length - 1] as number;
+  // The trailing part absorbs the remaining bits (32 / 24 / 16 / 8
+  // depending on how many leading bytes there were).
+  const maxLast =
+    parts.length === 4
+      ? 0xff
+      : parts.length === 3
+        ? 0xffff
+        : parts.length === 2
+          ? 0xffffff
+          : 0xffffffff;
+  if (last < 0 || last > maxLast) return null;
+  // Compose the 32-bit address. Leading bytes occupy the high
+  // positions; the trailing part absorbs the remaining (4 - leading)
+  // bytes. Examples:
+  //   "127.0.0.1"        → composed = (127<<24)|(0<<16)|(0<<8)|1     = 0x7F000001
+  //   "127.1"            → leading=[127], trailing=1; composed = (127<<24)|1 = 0x7F000001
+  //   "0x7f000001"       → leading=[], trailing=0x7f000001            = 0x7F000001
+  //   "8.8.8.8"          → composed = (8<<24)|(8<<16)|(8<<8)|8        = 0x08080808
+  // We use multiplication rather than `<<` because JS bitwise ops are
+  // 32-bit signed; multiplying keeps the math in safe-integer space
+  // before we narrow with masks.
+  let composed = 0;
+  for (let i = 0; i < nums.length - 1; i++) {
+    composed = composed * 0x100 + (nums[i] as number);
+  }
+  // Make room for the trailing absorbed part (which can hold up to
+  // (5 - nums.length) bytes), then add it.
+  composed = composed * Math.pow(2, (5 - nums.length) * 8) + last;
+  if (composed < 0 || composed > 0xffffffff) return null;
+  const a = Math.floor(composed / 0x1000000) & 0xff;
+  const b = Math.floor(composed / 0x10000) & 0xff;
+  const c = Math.floor(composed / 0x100) & 0xff;
+  const d = composed & 0xff;
+  return `${a}.${b}.${c}.${d}`;
+}
+
+function parseNumberLoose(s: string): number | null {
+  if (s === "") return null;
+  // Hex.
+  if (/^0[xX][0-9a-fA-F]+$/.test(s)) {
+    const n = parseInt(s, 16);
+    return Number.isFinite(n) ? n : null;
+  }
+  // Octal (leading 0 followed by octal digits).
+  if (/^0[0-7]+$/.test(s)) {
+    const n = parseInt(s, 8);
+    return Number.isFinite(n) ? n : null;
+  }
+  // Decimal.
+  if (/^\d+$/.test(s)) {
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 function isPrivateIp(addr: string): boolean {
-  // IPv4 private/loopback/link-local
-  const v4 = addr.split(".").map((p) => Number.parseInt(p, 10));
-  if (v4.length === 4 && v4.every((n) => Number.isFinite(n) && n >= 0 && n <= 255)) {
+  // IPv4 private/loopback/link-local. Normalise non-canonical forms
+  // (decimal, hex, octal, 1/2/3-component) before checking — the
+  // assertHostnameIsPublic caller passes the raw URL hostname, so a
+  // URL like `http://017700000001/` reaches us as `017700000001`.
+  const canonical = parseIpv4Loose(addr);
+  if (canonical !== null) {
+    const v4 = canonical.split(".").map((p) => Number.parseInt(p, 10));
     const [a, b] = v4 as [number, number, number, number];
     if (a === 10) return true;
     if (a === 127) return true;
@@ -222,6 +308,8 @@ function isPrivateIp(addr: string): boolean {
     if (a === 169 && b === 254) return true; // link-local
     if (a === 172 && b >= 16 && b <= 31) return true;
     if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64.0.0/10
+    if (a === 255 && b === 255) return true; // 255.255.255.255 broadcast
     if (a >= 224) return true; // multicast / reserved
     return false;
   }

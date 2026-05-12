@@ -5,7 +5,11 @@ import {
   type ExtractorContext,
   type ExtractorResult,
 } from "./types";
-import { EXTRACTION_PROMPT, getPromptHash } from "./prompt";
+import {
+  EXTRACTION_PROMPT,
+  buildOcrHintSection,
+  getPromptHash,
+} from "./prompt";
 
 // ─── Gemini structured-output schema ────────────────────────────────────────
 //
@@ -152,9 +156,7 @@ async function callGemini(
   // OCR-conditionally-off-path: if OCR returned in time, we append its
   // text to the prompt so the vision model can cross-reference. If not,
   // the prompt goes without and the C1 combined path degenerates to T6.
-  const ocrSection = ctx?.ocrText
-    ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
-    : "";
+  const ocrSection = buildOcrHintSection(ctx?.ocrText);
 
   const promptText = EXTRACTION_PROMPT + ocrSection;
 

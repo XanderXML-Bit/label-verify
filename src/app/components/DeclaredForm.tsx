@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { DeclaredFields } from "@/lib/types";
 
 interface DeclaredFormProps {
@@ -58,24 +58,57 @@ export function DeclaredForm({
   );
   const [country, setCountry] = useState(initial?.country_of_origin ?? "USA");
   const [errors, setErrors] = useState<string[]>([]);
+  // Per-field error keys so each input can render aria-invalid + an
+  // adjacent message. Mirrors `errors` for the summary block but lets
+  // a screen reader (or a sighted senior reviewer) jump directly to
+  // the offending input.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const errorBlockRef = useRef<HTMLDivElement | null>(null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const errs: string[] = [];
-    if (!brand) errs.push("Brand name is required.");
-    if (!classType) errs.push("Class / type is required.");
+    const fieldErrs: Record<string, string> = {};
+    if (!brand) {
+      errs.push("Brand name is required.");
+      fieldErrs.brand = "Brand name is required.";
+    }
+    if (!classType) {
+      errs.push("Class / type is required.");
+      fieldErrs.classType = "Class / type is required.";
+    }
     const abvN = Number(abv);
-    if (!Number.isFinite(abvN) || abvN < 0 || abvN > 100)
+    if (!Number.isFinite(abvN) || abvN < 0 || abvN > 100) {
       errs.push("ABV must be a number between 0 and 100.");
+      fieldErrs.abv = "ABV must be a number between 0 and 100.";
+    }
     const ncN = Number(ncValue);
-    if (!Number.isFinite(ncN) || ncN <= 0)
+    if (!Number.isFinite(ncN) || ncN <= 0) {
       errs.push("Net contents value must be a positive number.");
-    if (!country) errs.push("Country of origin is required.");
+      fieldErrs.ncValue = "Must be a positive number.";
+    }
+    if (!country) {
+      errs.push("Country of origin is required.");
+      fieldErrs.country = "Country of origin is required.";
+    }
     if (errs.length) {
       setErrors(errs);
+      setFieldErrors(fieldErrs);
+      // Scroll + focus the error summary so a senior reviewer who clicks
+      // Verify and sees nothing happen above the fold is brought to the
+      // problem instead of guessing. aria-live="assertive" already
+      // announces to screen readers; this covers sighted users.
+      requestAnimationFrame(() => {
+        errorBlockRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        errorBlockRef.current?.focus();
+      });
       return;
     }
     setErrors([]);
+    setFieldErrors({});
     onSubmit({
       brand_name: brand,
       class_type: classType,
@@ -101,7 +134,7 @@ export function DeclaredForm({
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field id={ids.brand} label="Brand name" required>
+        <Field id={ids.brand} label="Brand name" required error={fieldErrors.brand}>
           <input
             id={ids.brand}
             type="text"
@@ -109,10 +142,17 @@ export function DeclaredForm({
             onChange={(e) => setBrand(e.target.value)}
             disabled={disabled}
             autoComplete="off"
+            aria-invalid={!!fieldErrors.brand}
+            aria-describedby={fieldErrors.brand ? `${ids.brand}-err` : undefined}
             className={inputClass}
           />
         </Field>
-        <Field id={ids.classType} label="Class / type" required>
+        <Field
+          id={ids.classType}
+          label="Class / type"
+          required
+          error={fieldErrors.classType}
+        >
           <input
             id={ids.classType}
             type="text"
@@ -121,6 +161,10 @@ export function DeclaredForm({
             disabled={disabled}
             autoComplete="off"
             placeholder="e.g. India Pale Ale"
+            aria-invalid={!!fieldErrors.classType}
+            aria-describedby={
+              fieldErrors.classType ? `${ids.classType}-err` : undefined
+            }
             className={inputClass}
           />
         </Field>
@@ -140,7 +184,7 @@ export function DeclaredForm({
             <option value="fortified_wine">Fortified Wine</option>
           </select>
         </Field>
-        <Field id={ids.abv} label="ABV (%)" required>
+        <Field id={ids.abv} label="ABV (%)" required error={fieldErrors.abv}>
           <input
             id={ids.abv}
             type="number"
@@ -151,10 +195,17 @@ export function DeclaredForm({
             value={abv}
             onChange={(e) => setAbv(e.target.value)}
             disabled={disabled}
+            aria-invalid={!!fieldErrors.abv}
+            aria-describedby={fieldErrors.abv ? `${ids.abv}-err` : undefined}
             className={inputClass}
           />
         </Field>
-        <Field id={ids.ncValue} label="Net contents value" required>
+        <Field
+          id={ids.ncValue}
+          label="Net contents value"
+          required
+          error={fieldErrors.ncValue}
+        >
           <input
             id={ids.ncValue}
             type="number"
@@ -164,6 +215,10 @@ export function DeclaredForm({
             value={ncValue}
             onChange={(e) => setNcValue(e.target.value)}
             disabled={disabled}
+            aria-invalid={!!fieldErrors.ncValue}
+            aria-describedby={
+              fieldErrors.ncValue ? `${ids.ncValue}-err` : undefined
+            }
             className={inputClass}
           />
         </Field>
@@ -193,7 +248,12 @@ export function DeclaredForm({
             className={inputClass}
           />
         </Field>
-        <Field id={ids.country} label="Country of origin" required>
+        <Field
+          id={ids.country}
+          label="Country of origin"
+          required
+          error={fieldErrors.country}
+        >
           <input
             id={ids.country}
             type="text"
@@ -201,6 +261,10 @@ export function DeclaredForm({
             onChange={(e) => setCountry(e.target.value)}
             disabled={disabled}
             autoComplete="country-name"
+            aria-invalid={!!fieldErrors.country}
+            aria-describedby={
+              fieldErrors.country ? `${ids.country}-err` : undefined
+            }
             className={inputClass}
           />
         </Field>
@@ -208,9 +272,11 @@ export function DeclaredForm({
 
       {errors.length > 0 && (
         <div
+          ref={errorBlockRef}
+          tabIndex={-1}
           role="alert"
           aria-live="assertive"
-          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
+          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 outline-none ring-blue-500 focus:ring-2 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
         >
           <h3 className="font-semibold">Fix these before continuing</h3>
           <ul className="mt-1 list-inside list-disc">
@@ -221,7 +287,7 @@ export function DeclaredForm({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="space-y-3">
         <button
           type="submit"
           disabled={disabled}
@@ -230,14 +296,23 @@ export function DeclaredForm({
           Verify
         </button>
         {onExtractOnly && (
-          <button
-            type="button"
-            onClick={onExtractOnly}
-            disabled={disabled}
-            className="min-h-[44px] w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
-          >
-            Skip — just show what&apos;s on the label
-          </button>
+          // Demoted to a text-link below the primary button so a senior
+          // reviewer can't fat-finger past Verify into the extract-only
+          // path. The leading helper sentence makes the affordance
+          // explicit: this is only for the case where no application
+          // data exists.
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            No application data on hand?{" "}
+            <button
+              type="button"
+              onClick={onExtractOnly}
+              disabled={disabled}
+              className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 disabled:cursor-not-allowed disabled:opacity-60 dark:text-blue-300 dark:hover:text-blue-200"
+            >
+              Skip — show extracted fields without a verdict
+            </button>
+            .
+          </p>
         )}
       </div>
     </form>
@@ -249,11 +324,13 @@ function Field({
   label,
   children,
   required,
+  error,
 }: {
   readonly id: string;
   readonly label: string;
   readonly children: React.ReactNode;
   readonly required?: boolean;
+  readonly error?: string;
 }) {
   return (
     <label htmlFor={id} className="block">
@@ -266,6 +343,14 @@ function Field({
         )}
       </span>
       {children}
+      {error && (
+        <span
+          id={`${id}-err`}
+          className="mt-1 block text-xs text-red-700 dark:text-red-300"
+        >
+          {error}
+        </span>
+      )}
     </label>
   );
 }

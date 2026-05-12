@@ -1,0 +1,677 @@
+{
+  "runAt": "2026-05-12T05:42:10.912Z",
+  "mode": "routine",
+  "corpusRoot": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data",
+  "corpusSize": 12,
+  "trialsPerImage": 1,
+  "techniques": [
+    {
+      "id": "T5b",
+      "skipped": null,
+      "overall": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 1,
+        "n": 0
+      },
+      "stratified": [],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "n": 0
+      },
+      "ood": {
+        "id": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 0,
+        "p50": 0,
+        "p95": 0,
+        "mean": 0,
+        "failures": 12
+      },
+      "trialCount": 12,
+      "imageFailureCount": 12,
+      "economics": {
+        "inputTokensPerCall": 0,
+        "outputTokensPerCall": 0,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": null
+      }
+    },
+    {
+      "id": "T8",
+      "skipped": null,
+      "overall": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 1,
+        "n": 0
+      },
+      "stratified": [],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "n": 0
+      },
+      "ood": {
+        "id": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 0,
+        "p50": 0,
+        "p95": 0,
+        "mean": 0,
+        "failures": 12
+      },
+      "trialCount": 12,
+      "imageFailureCount": 12,
+      "economics": {
+        "inputTokensPerCall": 0,
+        "outputTokensPerCall": 0,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": null
+      }
+    },
+    {
+      "id": "T9",
+      "skipped": null,
+      "overall": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0.35433043867586833,
+        "n": 7
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "n": 0
+      },
+      "ood": {
+        "id": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 0.35433043867586833,
+          "n": 7
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 1,
+        "p50": 3541.3011000000115,
+        "p95": 3541.3011000000115,
+        "mean": 3541.3011000000115,
+        "failures": 11
+      },
+      "trialCount": 12,
+      "imageFailureCount": 11,
+      "economics": {
+        "inputTokensPerCall": 1697,
+        "outputTokensPerCall": 130,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": 0
+      }
+    },
+    {
+      "id": "T10",
+      "skipped": null,
+      "overall": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 1,
+        "n": 0
+      },
+      "stratified": [],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "n": 0
+      },
+      "ood": {
+        "id": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 0,
+        "p50": 0,
+        "p95": 0,
+        "mean": 0,
+        "failures": 12
+      },
+      "trialCount": 12,
+      "imageFailureCount": 12,
+      "economics": {
+        "inputTokensPerCall": 0,
+        "outputTokensPerCall": 0,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": null
+      }
+    },
+    {
+      "id": "T11",
+      "skipped": null,
+      "overall": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 1,
+        "n": 0
+      },
+      "stratified": [],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "n": 0
+      },
+      "ood": {
+        "id": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 0,
+        "p50": 0,
+        "p95": 0,
+        "mean": 0,
+        "failures": 12
+      },
+      "trialCount": 12,
+      "imageFailureCount": 12,
+      "economics": {
+        "inputTokensPerCall": 0,
+        "outputTokensPerCall": 0,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": null
+      }
+    },
+    {
+      "id": "T12",
+      "skipped": null,
+      "overall": {
+        "acc": 0.5357142857142857,
+        "ciLo": 0.35812689108225854,
+        "ciHi": 0.704684301314922,
+        "n": 28
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0.5,
+            "ciLo": 0.09453120463920084,
+            "ciHi": 0.9054687953607992,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.5,
+            "ciLo": 0.09453120463920084,
+            "ciHi": 0.9054687953607992,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0.3333333333333333,
+        "ciLo": 0.06149194402093078,
+        "ciHi": 0.7923404011921757,
+        "n": 3
+      },
+      "ood": {
+        "id": {
+          "acc": 0.5357142857142857,
+          "ciLo": 0.35812689108225854,
+          "ciHi": 0.704684301314922,
+          "n": 28
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 4,
+        "p50": 5753.170200000051,
+        "p95": 6623.921800000127,
+        "mean": 6171.907850000076,
+        "failures": 8
+      },
+      "trialCount": 12,
+      "imageFailureCount": 8,
+      "economics": {
+        "inputTokensPerCall": 2284,
+        "outputTokensPerCall": 458,
+        "costUsdPerCall": 0.022869999999999998,
+        "costUsdPer1k": 22.869999999999997,
+        "totalCostUsd": 0.09147999999999999,
+        "accuracyPerDollar": 23.42432381785246,
+        "accuracyPerSecond": 0.08679881468325537
+      }
+    }
+  ],
+  "pairwiseMcNemar": {
+    "T9_vs_T12": {
+      "statistic": 0,
+      "pValue": 1,
+      "b": 0,
+      "c": 0
+    }
+  }
+}

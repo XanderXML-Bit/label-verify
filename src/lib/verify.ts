@@ -277,15 +277,20 @@ export async function verifyLabel(
   // FAIL is never downgraded to REVIEW — a clearly non-compliant label still
   // fails, regardless of confidence. Only PASS is at risk of being too
   // optimistic.
+  // NOTE: loop variable renamed from `f` to `cmp` so it doesn't shadow
+  // the outer `const f = extracted.fields` reference further down. Per
+  // code review finding #12 — the shadowing was a maintainability
+  // landmine even though TypeScript's block scoping happened to keep
+  // current call sites correct.
   const reviewReasons: string[] = [];
-  for (const f of fieldResults) {
+  for (const cmp of fieldResults) {
     if (
-      f.status === "pass" &&
-      f.confidence < REVIEW_CONFIDENCE_THRESHOLD
+      cmp.status === "pass" &&
+      cmp.confidence < REVIEW_CONFIDENCE_THRESHOLD
     ) {
-      const label = FIELD_LABEL[f.field] ?? f.field;
+      const label = FIELD_LABEL[cmp.field] ?? cmp.field;
       reviewReasons.push(
-        `${label} confidence ${f.confidence.toFixed(2)} below ${REVIEW_CONFIDENCE_THRESHOLD} — extractor could not confidently read this field from the label.`,
+        `${label} confidence ${cmp.confidence.toFixed(2)} below ${REVIEW_CONFIDENCE_THRESHOLD} — extractor could not confidently read this field from the label.`,
       );
     }
   }
@@ -299,11 +304,11 @@ export async function verifyLabel(
   // Per-field comparators that already returned REVIEW (e.g. ABV with low
   // extractor confidence, brand near-miss) also contribute a reason so the
   // reviewer sees the full picture in one place.
-  for (const f of fieldResults) {
-    if (f.status === "review") {
-      const label = FIELD_LABEL[f.field] ?? f.field;
+  for (const cmp of fieldResults) {
+    if (cmp.status === "review") {
+      const label = FIELD_LABEL[cmp.field] ?? cmp.field;
       reviewReasons.push(
-        `${label} returned REVIEW${f.reason ? ` — ${f.reason}` : ""}`,
+        `${label} returned REVIEW${cmp.reason ? ` — ${cmp.reason}` : ""}`,
       );
     }
   }

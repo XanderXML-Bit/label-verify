@@ -5,7 +5,11 @@ import {
   type ExtractorContext,
   type ExtractorResult,
 } from "./types";
-import { EXTRACTION_PROMPT, getPromptHash } from "./prompt";
+import {
+  EXTRACTION_PROMPT,
+  buildOcrHintSection,
+  getPromptHash,
+} from "./prompt";
 
 // ─── OpenRouter extractor ───────────────────────────────────────────────────
 //
@@ -218,9 +222,7 @@ export class OpenRouterExtractor implements Extractor {
     const start = performance.now();
 
     // OCR-conditionally-off-path treatment, identical to the direct adapters.
-    const ocrSection = ctx?.ocrText
-      ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
-      : "";
+    const ocrSection = buildOcrHintSection(ctx?.ocrText);
 
     // When the upstream model doesn't honour json_schema we lean on the
     // explicit instruction suffix to nudge it into emitting bare JSON.
@@ -418,9 +420,9 @@ function coerceToExtractedFieldsShape(raw: unknown): unknown {
       // was correct; the "inner" value just needs the same sub-shape
       // rebuild we'd apply to a flat shape.
       if (
-        (key === "net_contents" ||
-          key === "producer" ||
-          key === "government_warning")
+        key === "net_contents" ||
+        key === "producer" ||
+        key === "government_warning"
       ) {
         if (
           env.value != null &&
@@ -432,10 +434,19 @@ function coerceToExtractedFieldsShape(raw: unknown): unknown {
             confidence: conf,
           };
         } else {
-          // Model gave us a scalar where a sub-object is required. Best
-          // we can do is mark the field empty/null so the verifier scores
-          // it as "no info" rather than 500-ing the whole call.
-          out[key] = { value: emptySubShape(key), confidence: 0 };
+          // Edge case: model emitted `{ value: 12, unit: "fl_oz",
+          //                              confidence: 0.8 }` — the
+          // "confidence" key tricks the envelope detector above, but
+          // this is really a flat shape with a scalar value. Re-run the
+          // sub-shape rebuild against the WHOLE `v` object (minus the
+          // confidence key) so we keep the data instead of zeroing it.
+          // Per code review finding #8.
+          const cloned = { ...(v as Record<string, unknown>) };
+          delete cloned.confidence;
+          out[key] = {
+            value: ensureSubShape(key, cloned),
+            confidence: conf,
+          };
         }
         continue;
       }

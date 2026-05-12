@@ -18,6 +18,8 @@
     "bench:routine:bakeoff": "tsx benchmarks/run.ts --routine --bake-off",
     "bench:bakeoff": "tsx benchmarks/run.ts --bake-off",
     "bench:bakeoff:smoke": "tsx benchmarks/run.ts --bake-off --smoke",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
     "gen:corpus": "tsx scripts/generate-corpus.ts",
     "validate:corpus": "tsx scripts/validate-corpus.ts"
   },
@@ -36,12 +38,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.14.0",
     "eslint-config-next": "^15.0.0",
@@ -50,8 +54,7 @@
     "tailwindcss": "^3.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0",
-    "@vitest/coverage-v8": "^2.1.0"
+    "vitest": "^2.1.0"
   },
   "engines": {
     "node": ">=20"

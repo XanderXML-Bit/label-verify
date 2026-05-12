@@ -5,7 +5,11 @@ import {
   type ExtractorContext,
   type ExtractorResult,
 } from "./types";
-import { EXTRACTION_PROMPT, getPromptHash } from "./prompt";
+import {
+  EXTRACTION_PROMPT,
+  buildOcrHintSection,
+  getPromptHash,
+} from "./prompt";
 
 // ─── OpenAI structured-output JSON Schema ───────────────────────────────────
 //
@@ -151,9 +155,7 @@ async function callOpenAI(
   // Same OCR-conditionally-off-path treatment as Gemini: if OCR text was
   // ready in time we include it; otherwise the C1 combined path silently
   // degrades to T4.
-  const ocrSection = ctx?.ocrText
-    ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
-    : "";
+  const ocrSection = buildOcrHintSection(ctx?.ocrText);
   const promptText = EXTRACTION_PROMPT + ocrSection;
 
   const signal = ctx?.signal;

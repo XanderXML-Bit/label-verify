@@ -77,34 +77,44 @@ export async function parseApplicationImage(
     generationConfig: { responseMimeType: "application/json", temperature: 0 },
   });
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // The @google/generative-ai SDK doesn't accept an AbortSignal directly,
+  // so we race the call against a timeout-rejected promise. This is the
+  // same pattern the other vision adapters (gemini.ts / openrouter.ts /
+  // anthropic.ts) use. Without the race the 30 s budget claimed in the
+  // header was fictional — the SDK ran to completion regardless.
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(
+      () => reject(new Error(`Application-image vision timed out after ${timeoutMs} ms.`)),
+      timeoutMs,
+    );
+  });
 
   let text: string;
   try {
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: PROMPT },
-            {
-              inlineData: {
-                mimeType: normaliseMime(mime),
-                data: buffer.toString("base64"),
+    const result = await Promise.race([
+      model.generateContent({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: PROMPT },
+              {
+                inlineData: {
+                  mimeType: normaliseMime(mime),
+                  data: buffer.toString("base64"),
+                },
               },
-            },
-          ],
-        },
-      ],
-    });
+            ],
+          },
+        ],
+      }),
+      timeoutPromise,
+    ]);
     text = result.response.text();
   } catch (err) {
     throw new Error(
       `Application-image vision call failed: ${(err as Error).message}`,
     );
-  } finally {
-    clearTimeout(timer);
   }
 
   let json: unknown;

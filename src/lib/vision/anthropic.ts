@@ -5,7 +5,11 @@ import {
   type ExtractorContext,
   type ExtractorResult,
 } from "./types";
-import { EXTRACTION_PROMPT, getPromptHash } from "./prompt";
+import {
+  EXTRACTION_PROMPT,
+  buildOcrHintSection,
+  getPromptHash,
+} from "./prompt";
 
 // ─── Claude Sonnet extractor ────────────────────────────────────────────────
 //
@@ -60,9 +64,7 @@ async function callAnthropic(
   const start = performance.now();
 
   // OCR-conditionally-off-path treatment, same as Gemini / OpenAI.
-  const ocrSection = ctx?.ocrText
-    ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
-    : "";
+  const ocrSection = buildOcrHintSection(ctx?.ocrText);
   const promptText = EXTRACTION_PROMPT + ocrSection + JSON_ONLY_SUFFIX;
 
   const signal = ctx?.signal;

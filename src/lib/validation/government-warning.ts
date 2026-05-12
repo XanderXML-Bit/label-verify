@@ -83,6 +83,16 @@ const STATUS_RANK: Record<SubscoreStatus, number> = {
  * the same aggregation logic.
  */
 export function aggregateStatus(subs: SubscoreStatus[]): SubscoreStatus {
+  // An empty subscores array is a programming error — there is no
+  // meaningful aggregation. Past behaviour silently returned "pass",
+  // which is the dangerous default (per code review finding #11). Throw
+  // instead so a refactor that drops the subscores hits a test
+  // failure in development, not a false PASS in production.
+  if (subs.length === 0) {
+    throw new Error(
+      "aggregateStatus: cannot aggregate an empty subscores array.",
+    );
+  }
   let worst: SubscoreStatus = "pass";
   for (const s of subs) {
     if (STATUS_RANK[s] < STATUS_RANK[worst]) worst = s;

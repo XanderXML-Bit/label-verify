@@ -100,7 +100,12 @@ export function ExtractionOnlyResult({
         role="alert"
         className="rounded-lg border-l-4 border-yellow-500 bg-yellow-50 p-4 text-sm text-yellow-900 dark:border-yellow-400 dark:bg-yellow-950/60 dark:text-yellow-200"
       >
-        <p className="font-semibold">Application data not provided</p>
+        <p className="text-base font-semibold">
+          <span aria-hidden className="mr-1">
+            ⚠
+          </span>
+          This is not a compliance verdict — extraction only
+        </p>
         <p className="mt-1">{result.note}</p>
       </div>
 

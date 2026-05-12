@@ -10,6 +10,11 @@ import { parseApplicationImage } from "@/lib/application/parse-image";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// Strict allowlist — only formats Gemini's vision API will accept. We do
+// NOT pass arbitrary "image/*" through; an SVG buffer rewritten to JPEG
+// (per the previous lax allowlist) would either trip Gemini's content
+// filter or, worse, be rendered server-side and become an XSS / SSRF
+// vector if surfaced anywhere. Reject early, surface 415 to the caller.
 const ACCEPTED_IMAGE_MIME = new Set([
   "image/jpeg",
   "image/jpg",
@@ -76,9 +81,11 @@ export async function POST(req: Request) {
   const filename = fileEntry.name || "application";
 
   // Image-of-application path is handled separately because it needs the
-  // Gemini key + a different prompt. Everything else routes through the
-  // pure-text dispatcher in lib/application/parse.ts.
-  if (mime.startsWith("image/") || ACCEPTED_IMAGE_MIME.has(mime)) {
+  // Gemini key + a different prompt. We require an EXACT MIME match
+  // against the Gemini-supported set — `image/svg+xml`, `image/gif`,
+  // `image/bmp`, etc., are 415'd rather than rewritten to JPEG and sent
+  // upstream (per security code review 2026-05).
+  if (ACCEPTED_IMAGE_MIME.has(mime)) {
     const apiKey = process.env.GOOGLE_API_KEY ?? "";
     if (!apiKey) {
       return NextResponse.json(
