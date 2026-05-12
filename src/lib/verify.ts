@@ -19,6 +19,7 @@ import type {
   VerifyTrace,
 } from "./types";
 import type {
+  ExtractedFields,
   Extractor,
   ExtractorContext,
   ExtractorResult,
@@ -386,6 +387,162 @@ export async function verifyLabel(
   }
 
   return response;
+}
+
+// ─── extractOnly — application-data-free path ──────────────────────────────
+//
+// Same preprocess + OCR + vision pipeline as verifyLabel(), but stops
+// after extraction. Used by /api/extract for the "show me what's on the
+// label without an application" UX (per user direction 2026-05-11). We
+// still surface modeId/modelVersion/timings so the result panel can
+// render the same diagnostics block, and we still compute the
+// image-quality flag so the reviewer sees the confidence pulse — there
+// is just no PASS/FAIL/REVIEW verdict because we have nothing to
+// compare against.
+
+export interface ExtractOnlyResponse {
+  extracted: ExtractedFields;
+  imageQuality: ImageQuality;
+  imageQualityReason?: string;
+  governmentWarning: import("./types").VerifyResponse["governmentWarning"];
+  timings: {
+    preprocess: number;
+    ocr: number | null;
+    vision: number;
+    matching: number;
+    total: number;
+  };
+  modelId: string;
+  modelVersion: string;
+  modeUsed: string;
+  /** Always present: tells the UI to show the no-application banner. */
+  note: string;
+}
+
+export async function extractOnly(
+  imageBytes: Buffer,
+  opts: VerifyOptions = {},
+): Promise<ExtractOnlyResponse> {
+  const startTotal = performance.now();
+  const visionTimeoutMs =
+    opts.visionTimeoutMs ??
+    timeoutForMode(opts.modelMode) ??
+    DEFAULT_VISION_TIMEOUT_MS;
+
+  const preStart = performance.now();
+  const pre = await preprocessImage(imageBytes);
+  const preElapsed = performance.now() - preStart;
+
+  const ctrl = new AbortController();
+  const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
+
+  let modeUsed: string = DEFAULT_MODE_ID;
+  let extractor: Extractor;
+  if (opts.extractor) {
+    extractor = opts.extractor;
+  } else if (opts.modelMode) {
+    const mode = getMode(opts.modelMode);
+    if (mode) {
+      extractor = mode.extractorFactory();
+      modeUsed = mode.id;
+    } else {
+      extractor = buildDefaultExtractor();
+    }
+  } else {
+    extractor = buildDefaultExtractor();
+  }
+
+  let ocrText: string | undefined;
+  let ocrWords: OcrWord[] | undefined;
+  let ocrElapsed: number | null = null;
+  const ocrPromise: Promise<OcrResult | null> = tesseractEngine
+    .run(pre.buffer, ctrl.signal)
+    .then((r) => {
+      ocrText = r.text;
+      ocrWords = r.words;
+      ocrElapsed = r.latencyMs;
+      return r;
+    })
+    .catch(() => null);
+  await Promise.race([
+    ocrPromise,
+    new Promise((resolve) => setTimeout(resolve, 1500)),
+  ]);
+  const visionCtx: ExtractorContext = {
+    ocrText,
+    ocrWords,
+    signal: ctrl.signal,
+  };
+
+  let extracted: ExtractorResult;
+  try {
+    extracted = await extractor.extract(pre.buffer, visionCtx);
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
+
+  // Government Warning still validated — regulator-mandated text is a
+  // SELF-CONTAINED check (federal regulation, not application-derived).
+  // We can deliver a useful answer for that field even without app data.
+  const matchStart = performance.now();
+  const ocrFinal = await ocrPromise;
+  const f = extracted.fields;
+  const gov = await validateGovernmentWarning({
+    extracted: f.government_warning.value ?? {
+      raw_text: null,
+      prefix_text: null,
+      prefix_bbox: null,
+      prefix_appears_bold: null,
+      prefix_appears_caps: null,
+    },
+    declaredNetContents: { value: 12, unit: "fl_oz" }, // placeholder
+    imageDimsPx: { width: pre.width, height: pre.height },
+    ocrContext:
+      ocrFinal && ocrFinal.words.length > 0
+        ? { words: ocrFinal.words, imageBuffer: pre.buffer }
+        : undefined,
+  });
+  const matchElapsed = performance.now() - matchStart;
+
+  const fieldConfidences = [
+    f.brand_name.confidence,
+    f.class_type.confidence,
+    f.abv_percent.confidence,
+    f.net_contents.confidence,
+    f.producer.confidence,
+    f.country_of_origin.confidence,
+    f.government_warning.confidence,
+  ];
+  const meanConf =
+    fieldConfidences.reduce((s, x) => s + x, 0) / fieldConfidences.length;
+  const minConf = Math.min(...fieldConfidences);
+  const imageQuality: ImageQuality =
+    minConf < 0.3 ? "bad" : meanConf < 0.6 ? "low" : "good";
+  const imageQualityReason =
+    imageQuality === "good"
+      ? undefined
+      : `Mean extractor confidence ${meanConf.toFixed(2)} (min ${minConf.toFixed(2)}).`;
+
+  const totalMs = performance.now() - startTotal;
+
+  return {
+    extracted: f,
+    imageQuality,
+    governmentWarning: gov,
+    timings: {
+      preprocess: round(preElapsed),
+      ocr: ocrElapsed === null ? null : round(ocrElapsed),
+      vision: round(extracted.latencyMs),
+      matching: round(matchElapsed),
+      total: round(totalMs),
+    },
+    modelId: extracted.modelId,
+    modelVersion: extracted.modelVersion,
+    modeUsed,
+    note:
+      "Application data was not provided. Extracted fields are shown for reference only — no PASS/FAIL/REVIEW verdict against declared values. The Government Warning subscore is still computed (federal regulation, not application-derived).",
+    ...(imageQualityReason ? { imageQualityReason } : {}),
+  };
 }
 
 function makeTraceId(): string {

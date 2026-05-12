@@ -7,12 +7,20 @@ interface DeclaredFormProps {
   readonly onSubmit: (values: DeclaredFields) => void;
   readonly disabled?: boolean;
   readonly initial?: Partial<DeclaredFields>;
+  /**
+   * Optional callback for the "Skip — just show what's on the label"
+   * affordance. When provided, the form renders a secondary button next
+   * to "Verify" that submits to /api/extract instead. The label-only
+   * flow doesn't require any of the fields to be filled in.
+   */
+  readonly onExtractOnly?: () => void;
 }
 
 export function DeclaredForm({
   onSubmit,
   disabled,
   initial,
+  onExtractOnly,
 }: DeclaredFormProps) {
   // Stable, unique ids per field so the wrapping <label> can use
   // htmlFor — needed so screen readers tie the visual label to its input
@@ -213,13 +221,25 @@ export function DeclaredForm({
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={disabled}
-        className="min-h-[44px] w-full rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400 sm:w-auto"
-      >
-        Verify
-      </button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          disabled={disabled}
+          className="min-h-[44px] w-full rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400 sm:w-auto"
+        >
+          Verify
+        </button>
+        {onExtractOnly && (
+          <button
+            type="button"
+            onClick={onExtractOnly}
+            disabled={disabled}
+            className="min-h-[44px] w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
+          >
+            Skip — just show what&apos;s on the label
+          </button>
+        )}
+      </div>
     </form>
   );
 }

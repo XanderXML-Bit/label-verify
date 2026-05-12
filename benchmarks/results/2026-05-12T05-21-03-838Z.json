@@ -1,0 +1,108 @@
+{
+  "runAt": "2026-05-12T05:21:03.838Z",
+  "mode": "routine",
+  "corpusRoot": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data",
+  "corpusSize": 12,
+  "trialsPerImage": 1,
+  "techniques": [
+    {
+      "id": "T5b",
+      "skipped": null,
+      "overall": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 1,
+        "n": 0
+      },
+      "stratified": [],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "n": 0
+      },
+      "ood": {
+        "id": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 0,
+        "p50": 0,
+        "p95": 0,
+        "mean": 0,
+        "failures": 12
+      },
+      "trialCount": 12,
+      "imageFailureCount": 12,
+      "economics": {
+        "inputTokensPerCall": 0,
+        "outputTokensPerCall": 0,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": null
+      }
+    },
+    {
+      "id": "T12",
+      "skipped": null,
+      "overall": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 1,
+        "n": 0
+      },
+      "stratified": [],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "n": 0
+      },
+      "ood": {
+        "id": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 0,
+        "p50": 0,
+        "p95": 0,
+        "mean": 0,
+        "failures": 12
+      },
+      "trialCount": 12,
+      "imageFailureCount": 12,
+      "economics": {
+        "inputTokensPerCall": 0,
+        "outputTokensPerCall": 0,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": null
+      }
+    }
+  ],
+  "pairwiseMcNemar": {}
+}

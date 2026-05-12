@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type { DeclaredFields, VerifyResponse } from "@/lib/types";
+import type { ExtractOnlyResponse } from "@/lib/verify";
 import { UploadZone } from "./components/UploadZone";
 import { DeclaredForm } from "./components/DeclaredForm";
 import { SingleResult } from "./components/SingleResult";
+import { ExtractionOnlyResult } from "./components/ExtractionOnlyResult";
 import { BatchView, type BatchRow } from "./components/BatchView";
 import { SampleAffordance } from "./components/SampleAffordance";
 import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
@@ -20,7 +22,14 @@ type Stage =
   | { kind: "idle" }
   | { kind: "single-pending"; file: File; previewUrl: string }
   | { kind: "single-verifying"; file: File; previewUrl: string }
+  | { kind: "single-extracting"; file: File; previewUrl: string }
   | { kind: "single-done"; file: File; previewUrl: string; result: VerifyResponse }
+  | {
+      kind: "single-extract-done";
+      file: File;
+      previewUrl: string;
+      result: ExtractOnlyResponse;
+    }
   | { kind: "single-error"; file: File; previewUrl: string; message: string }
   | { kind: "batch-pending"; files: File[] }
   | { kind: "batch-running"; batchId: string; rows: BatchRow[] };
@@ -127,6 +136,42 @@ export default function Home() {
     }
   }
 
+  async function submitExtractOnly() {
+    if (stage.kind !== "single-pending") return;
+    setStage({ ...stage, kind: "single-extracting" });
+    try {
+      const uploadFile = await compressImageInBrowser(stage.file);
+      const fd = new FormData();
+      fd.append("image", uploadFile);
+      fd.append("mode", modeId);
+      const res = await fetch("/api/extract", { method: "POST", body: fd });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        setStage({
+          kind: "single-error",
+          file: stage.file,
+          previewUrl: stage.previewUrl,
+          message: err.error ?? `HTTP ${res.status}`,
+        });
+        return;
+      }
+      const result = (await res.json()) as ExtractOnlyResponse;
+      setStage({
+        kind: "single-extract-done",
+        file: stage.file,
+        previewUrl: stage.previewUrl,
+        result,
+      });
+    } catch (e) {
+      setStage({
+        kind: "single-error",
+        file: stage.file,
+        previewUrl: stage.previewUrl,
+        message: (e as Error).message,
+      });
+    }
+  }
+
   async function submitBatch() {
     if (stage.kind !== "batch-pending") return;
     const fd = new FormData();
@@ -152,7 +197,11 @@ export default function Home() {
   }
 
   function reset() {
-    if (stage.kind === "single-pending" || stage.kind === "single-done") {
+    if (
+      stage.kind === "single-pending" ||
+      stage.kind === "single-done" ||
+      stage.kind === "single-extract-done"
+    ) {
       URL.revokeObjectURL(stage.previewUrl);
     }
     setStage({ kind: "idle" });
@@ -253,15 +302,22 @@ export default function Home() {
               key={appPrefill ? `prefill-${appPrefill.version}` : "manual"}
               onSubmit={submitSingle}
               initial={appPrefill?.fields}
+              onExtractOnly={submitExtractOnly}
             />
           </div>
         </div>
       )}
 
-      {stage.kind === "single-verifying" && (
+      {(stage.kind === "single-verifying" ||
+        stage.kind === "single-extracting") && (
         <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-base text-slate-700 dark:text-slate-200" aria-live="polite">
-            Checking the label… usually under 5 seconds.
+          <p
+            className="text-base text-slate-700 dark:text-slate-200"
+            aria-live="polite"
+          >
+            {stage.kind === "single-verifying"
+              ? "Checking the label… usually under 5 seconds."
+              : "Extracting from the label… usually under 5 seconds."}
           </p>
           <div className="mt-3 h-2 w-full overflow-hidden rounded bg-slate-200 dark:bg-slate-700">
             <div className="h-full w-1/3 animate-pulse bg-blue-500 dark:bg-blue-400" />
@@ -271,6 +327,14 @@ export default function Home() {
 
       {stage.kind === "single-done" && (
         <SingleResult
+          result={stage.result}
+          imagePreviewUrl={stage.previewUrl}
+          onAnother={reset}
+        />
+      )}
+
+      {stage.kind === "single-extract-done" && (
+        <ExtractionOnlyResult
           result={stage.result}
           imagePreviewUrl={stage.previewUrl}
           onAnother={reset}

@@ -297,7 +297,16 @@ export class OpenRouterExtractor implements Extractor {
       );
     }
 
-    const parsed = ExtractedFieldsSchema.safeParse(parsedJson);
+    // Open-weight models (Mistral / Llama / Nemotron / Qwen) often return
+    // a FLAT object — `{ brand_name: "Stone IPA", abv_percent: 6.4, ... }`
+    // — instead of the schema's `{ value, confidence }` envelope. Coerce
+    // flat shapes into the envelope so we can score them on the same
+    // playing field; default confidence to 0.6 when the model didn't
+    // self-report. Structured-output models (Gemini, GPT-5) hit the
+    // envelope first and skip this branch.
+    const coerced = coerceToExtractedFieldsShape(parsedJson);
+
+    const parsed = ExtractedFieldsSchema.safeParse(coerced);
     if (!parsed.success) {
       throw new Error(
         `OpenRouterExtractor[${this.modelSlug}]: schema validation failed: ${parsed.error.message}`,
@@ -351,6 +360,189 @@ function stripJsonWrappers(text: string): string {
     s = s.slice(firstBrace, lastBrace + 1);
   }
   return s;
+}
+
+// ─── Open-weight envelope coercion ─────────────────────────────────────────
+//
+// Schema-strict models (Gemini-via-OpenRouter, GPT-*) return values
+// already wrapped in `{ value, confidence }`. Open-weight models almost
+// never do — they emit a flat `{ brand_name: "Stone IPA", ... }` even
+// when the prompt asks for the envelope shape. Rather than fail the
+// whole call (which the bake-off then reads as "0 % accurate" — useless
+// for ranking), we coerce. Coercion is lossy: confidence defaults to 0.6
+// (the model wasn't asked, so don't pretend we know), null values map
+// to confidence 0. The downstream `verifyLabel` orchestrator already
+// treats anything < REVIEW_CONFIDENCE_THRESHOLD as REVIEW, so a flat-
+// schema model still routes correctly through the deferral path.
+
+interface Envelope {
+  value: unknown;
+  confidence: number;
+}
+
+const FIELD_KEYS = [
+  "brand_name",
+  "class_type",
+  "abv_percent",
+  "net_contents",
+  "government_warning",
+  "producer",
+  "country_of_origin",
+];
+
+function coerceToExtractedFieldsShape(raw: unknown): unknown {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return raw;
+  }
+  const out: Record<string, Envelope> = {};
+  const src = raw as Record<string, unknown>;
+  for (const key of FIELD_KEYS) {
+    const v = src[key];
+    // "Already enveloped" means the value carries BOTH `value` and
+    // `confidence` keys. A net_contents object has `value` + `unit` —
+    // which superficially looks like an envelope but isn't. Match
+    // strictly on the confidence key to avoid this collision.
+    if (
+      v != null &&
+      typeof v === "object" &&
+      !Array.isArray(v) &&
+      "value" in v &&
+      "confidence" in v
+    ) {
+      const env = v as { value: unknown; confidence?: unknown };
+      const conf = typeof env.confidence === "number" ? env.confidence : 0.6;
+      // For sub-shape fields (net_contents, producer, government_warning)
+      // the model frequently misreads the schema and stuffs the volume
+      // number directly into `.value` instead of the {value,unit} object.
+      // Rewrite so the inner value also conforms. The "outer" envelope
+      // was correct; the "inner" value just needs the same sub-shape
+      // rebuild we'd apply to a flat shape.
+      if (
+        (key === "net_contents" ||
+          key === "producer" ||
+          key === "government_warning")
+      ) {
+        if (
+          env.value != null &&
+          typeof env.value === "object" &&
+          !Array.isArray(env.value)
+        ) {
+          out[key] = {
+            value: ensureSubShape(key, env.value),
+            confidence: conf,
+          };
+        } else {
+          // Model gave us a scalar where a sub-object is required. Best
+          // we can do is mark the field empty/null so the verifier scores
+          // it as "no info" rather than 500-ing the whole call.
+          out[key] = { value: emptySubShape(key), confidence: 0 };
+        }
+        continue;
+      }
+      out[key] = { value: env.value, confidence: conf };
+      continue;
+    }
+    // Flat shape — wrap. Government warning + net_contents + producer
+    // are sub-object shapes; if the model gave us a string for those, we
+    // pass null because the downstream schema demands a structured
+    // object. Better to fail a single field than the whole row.
+    if (
+      key === "government_warning" ||
+      key === "net_contents" ||
+      key === "producer"
+    ) {
+      if (v != null && typeof v === "object" && !Array.isArray(v)) {
+        out[key] = { value: ensureSubShape(key, v), confidence: 0.6 };
+      } else {
+        out[key] = { value: emptySubShape(key), confidence: 0 };
+      }
+      continue;
+    }
+    // Scalar fields — wrap the value as-is. Null stays null.
+    out[key] = { value: v ?? null, confidence: v == null ? 0 : 0.6 };
+  }
+  return out;
+}
+
+function emptySubShape(key: string): unknown {
+  if (key === "government_warning") {
+    return {
+      raw_text: null,
+      prefix_text: null,
+      prefix_bbox: null,
+      prefix_appears_bold: null,
+      prefix_appears_caps: null,
+    };
+  }
+  if (key === "producer") {
+    return {
+      name: null,
+      street: null,
+      city: null,
+      state: null,
+      postal_code: null,
+      country: null,
+    };
+  }
+  // net_contents requires value+unit; an empty object isn't a legal
+  // shape for it (the schema demands both). Returning null lets the
+  // scorer mark it as "missing field" rather than "wrong value".
+  return null;
+}
+
+function ensureSubShape(key: string, raw: object): unknown {
+  if (key === "government_warning") {
+    const r = raw as Record<string, unknown>;
+    // Claude returns prefix_bbox as a 4-element array [x,y,w,h]; Gemini
+    // and GPT honour the {x,y,width,height} object shape. Coerce arrays
+    // back to the canonical object shape so the matcher can consume
+    // either model family's output.
+    const bboxRaw = r.prefix_bbox;
+    let prefix_bbox: unknown = null;
+    if (Array.isArray(bboxRaw) && bboxRaw.length === 4) {
+      const [x, y, w, h] = bboxRaw;
+      if (
+        typeof x === "number" &&
+        typeof y === "number" &&
+        typeof w === "number" &&
+        typeof h === "number"
+      ) {
+        prefix_bbox = { x, y, width: w, height: h };
+      }
+    } else if (
+      bboxRaw &&
+      typeof bboxRaw === "object" &&
+      !Array.isArray(bboxRaw)
+    ) {
+      prefix_bbox = bboxRaw;
+    }
+    return {
+      raw_text: typeof r.raw_text === "string" ? r.raw_text : null,
+      prefix_text: typeof r.prefix_text === "string" ? r.prefix_text : null,
+      prefix_bbox,
+      prefix_appears_bold:
+        typeof r.prefix_appears_bold === "boolean" ? r.prefix_appears_bold : null,
+      prefix_appears_caps:
+        typeof r.prefix_appears_caps === "boolean" ? r.prefix_appears_caps : null,
+    };
+  }
+  if (key === "producer") {
+    const r = raw as Record<string, unknown>;
+    return {
+      name: typeof r.name === "string" ? r.name : null,
+      street: typeof r.street === "string" ? r.street : null,
+      city: typeof r.city === "string" ? r.city : null,
+      state: typeof r.state === "string" ? r.state : null,
+      postal_code: typeof r.postal_code === "string" ? r.postal_code : null,
+      country: typeof r.country === "string" ? r.country : null,
+    };
+  }
+  // net_contents — accept `{ value, unit }` only.
+  const r = raw as Record<string, unknown>;
+  if (typeof r.value === "number" && typeof r.unit === "string") {
+    return { value: r.value, unit: r.unit };
+  }
+  return null;
 }
 
 function abortPromise(signal: AbortSignal | undefined): Promise<never> {
