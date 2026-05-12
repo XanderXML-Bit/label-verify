@@ -6,6 +6,8 @@ import { UploadZone } from "./components/UploadZone";
 import { DeclaredForm } from "./components/DeclaredForm";
 import { SingleResult } from "./components/SingleResult";
 import { BatchView, type BatchRow } from "./components/BatchView";
+import { SampleAffordance } from "./components/SampleAffordance";
+import type { Sample } from "@/lib/samples";
 
 type Stage =
   | { kind: "idle" }
@@ -32,6 +34,38 @@ export default function Home() {
       setStage({ kind: "single-pending", file: f, previewUrl: url });
     } else if (files.length > 1) {
       setStage({ kind: "batch-pending", files });
+    }
+  }
+
+  async function handleSample(sample: Sample, file: File) {
+    // Sample affordance: skip the form and verify immediately so the
+    // reviewer sees an end-to-end result in one click (UI-SPEC.md §4).
+    const url = URL.createObjectURL(file);
+    setStage({ kind: "single-verifying", file, previewUrl: url });
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("declared", JSON.stringify(sample.declared));
+      const res = await fetch("/api/verify", { method: "POST", body: fd });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        setStage({
+          kind: "single-error",
+          file,
+          previewUrl: url,
+          message: err.error ?? `HTTP ${res.status}`,
+        });
+        return;
+      }
+      const result = (await res.json()) as VerifyResponse;
+      setStage({ kind: "single-done", file, previewUrl: url, result });
+    } catch (e) {
+      setStage({
+        kind: "single-error",
+        file,
+        previewUrl: url,
+        message: (e as Error).message,
+      });
     }
   }
 
@@ -118,6 +152,7 @@ export default function Home() {
       {stage.kind === "idle" && (
         <>
           <UploadZone onFiles={handleFiles} />
+          <SampleAffordance onPick={handleSample} />
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
             <summary className="cursor-pointer font-medium text-slate-700">
               About this prototype

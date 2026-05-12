@@ -5,7 +5,33 @@ application data. A prototype for the U.S. Department of the Treasury,
 Alcohol and Tobacco Tax and Trade Bureau (TTB).
 
 **Live demo:** _(deploys to `labelverify.zendren.net` — TBD)_
-**Status:** Foundation in place; benchmark + implementation underway.
+**Status:** Vertical slice shipped (single + batch verify, four-technique
+benchmark harness, 100-label test corpus). Awaiting Vercel provisioning.
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+  U[Reviewer browser] -- drag/drop / URL / batch CSV --> UI[Next.js UI]
+  UI -- POST /api/verify --> V[Verify orchestrator]
+  V --> P[sharp preprocess]
+  P --> O[Tesseract OCR]
+  P --> X[Vision extractor]
+  O -. OCR text if returns first .-> X
+  X --> M[Field matchers]
+  O --> M
+  M --> G[Gov Warning validator<br/>27 CFR §16.21 + §16.22]
+  G --> A[Aggregate verdict + image quality]
+  A --> UI
+  UI -- SSE per-item stream --> B[Batch view<br/>virtualized table + CSV export]
+  V -. AbortSignal 5s .-> X
+```
+
+The vision extractor is one of four contenders the benchmark harness
+compares: **T1** Tesseract baseline, **T4** GPT-4o-mini, **T6** Gemini 2.0
+Flash, **C1** combined OCR + Vision. Pre-registered hypothesis: C1 wins on
+Gov-Warning accuracy by ≥3pp at ≤0.5s extra latency. See
+[`docs/APPROACH.md`](docs/APPROACH.md) §4 for the kill criterion.
 
 ## What it does
 
@@ -68,12 +94,31 @@ npm run dev                       # http://localhost:3000
 Other useful scripts:
 
 ```bash
-npm run gen:corpus     # regenerate the synthetic test-label set
-npm run bench          # run all extractor benchmarks
-npm run bench:smoke    # 20-image subset; runs in CI
+# Corpus
+npm run gen:corpus              # v1 generator → test-data/
+npx tsx scripts/generate-corpus-v2.ts   # v2 generator → test-data-v2/
+npm run validate:corpus         # zod schema + distribution + taxonomy
+
+# Benchmark
+npm run bench                   # all four techniques × full corpus
+npm run bench:smoke             # 20-image subset; runs in CI
+
+# Quality
 npm run typecheck
-npm run test
+npm run test                    # vitest (currently 70+ tests)
+npm run lint
 ```
+
+## What's deployed
+
+- `/`                              — single-image verify + batch UI
+- `POST /api/verify`               — multipart upload OR JSON `{ url, declared }`
+- `POST /api/verify/batch`         — multipart manifest + folder of images
+- `GET  /api/verify/batch/:id/stream` — SSE per-item streaming
+- `GET  /api/health`               — `{ ok, model, version }`
+- `GET  /api/warmup`               — warms sharp + Tesseract worker
+
+All endpoints rate-limited (60/min/IP by default). SSRF-safe URL fetch.
 
 ## Project structure
 
@@ -102,13 +147,15 @@ label-verify/
 ## Tech stack
 
 - **Next.js 15** (App Router) + **TypeScript** strict
-- **Tailwind** + **shadcn/ui** for accessible UI primitives
+- **Tailwind** for the UI
 - **sharp** for image preprocessing
-- **tesseract.js** for local OCR
-- **Google Gemini / OpenAI / Anthropic** for hosted vision
+- **tesseract.js** for local OCR (with word-level bounding boxes)
+- **Google Gemini / OpenAI / Anthropic** for hosted vision (four-contender benchmark)
 - **OCR + rule-based validators** as network-free graceful degradation
   (replaces the earlier Florence-2 / moondream2 local-VLM plan — see
   [`docs/REVIEW-PASS.md`](docs/REVIEW-PASS.md) §3.3 for why)
+- **csv-parse** for batch manifest parsing
+- **fast-fuzzy** for brand-name matching (Levenshtein + token-set)
 - **vitest** for tests
 - **Vercel** for deployment
 

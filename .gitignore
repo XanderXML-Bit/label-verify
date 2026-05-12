@@ -18,3 +18,7 @@ coverage/
 # Generated outputs that aren't worth checking in
 benchmarks/results/scratch/
 test-data/labels/_generated_tmp/
+
+# Tesseract language data (downloaded at runtime)
+eng.traineddata
+*.traineddata
