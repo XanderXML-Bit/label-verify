@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0007",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0007.png",
+  "degradations": [
+    "lowlight:0.35"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Wandering Coyote",
+    "class_type": "Amber Ale",
+    "class_category": "beer",
+    "abv_percent": 6.6,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Wandering Coyote Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "Derived from syn-beer-0020. lowlight:0.35."
+}

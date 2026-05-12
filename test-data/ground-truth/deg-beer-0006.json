@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0006",
+  "source": "degraded",
+  "image": "test-data/labels/deg-beer-0006.png",
+  "degradations": [
+    "perspective:-8deg"
+  ],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 700,
+  "fields": {
+    "brand_name": "Rust & Ember",
+    "class_type": "Porter",
+    "class_category": "beer",
+    "abv_percent": 5.5,
+    "net_contents": {
+      "value": 70,
+      "unit": "cl"
+    },
+    "producer": {
+      "name": "Rust  Ember Beverage Co.",
+      "street": "945 Main St",
+      "city": "Walla Walla",
+      "state": "WA",
+      "postal_code": "99362",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "back label, punctuation brand pattern, 700 ml container. Government Warning is compliant. Degraded variant of syn-beer-0002: perspective:-8deg."
+}

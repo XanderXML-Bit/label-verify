@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0004",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-beer-0004.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Headlands",
+    "class_type": "Saison",
+    "class_category": "beer",
+    "abv_percent": 4.5,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Headlands Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, single brand pattern, 355 ml container. Government Warning is compliant."
+}

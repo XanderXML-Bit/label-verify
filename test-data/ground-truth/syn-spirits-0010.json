@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0010",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-spirits-0010.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 1000,
+  "fields": {
+    "brand_name": "Vagrant Tide",
+    "class_type": "Mezcal",
+    "class_category": "distilled_spirits",
+    "abv_percent": 50.4,
+    "net_contents": {
+      "value": 1,
+      "unit": "L"
+    },
+    "producer": {
+      "name": "Vagrant Tide Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "S1",
+  "notes": "front label, multi brand pattern, 1000 ml container. Government Warning non-compliance case S1."
+}

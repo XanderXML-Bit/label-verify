@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0004",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-spirits-0004.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "back",
+  "container_size_ml": 1000,
+  "fields": {
+    "brand_name": "Iron Magnolia",
+    "class_type": "Mezcal",
+    "class_category": "distilled_spirits",
+    "abv_percent": 53.9,
+    "net_contents": {
+      "value": 1000,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Iron Magnolia Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "back label, multi brand pattern, 1000 ml container. Archetype: modern-minimal. Government Warning case: PASS."
+}

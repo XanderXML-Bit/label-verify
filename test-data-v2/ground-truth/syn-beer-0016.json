@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0016",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0016.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Rust & Ember",
+    "class_type": "Lager",
+    "class_category": "beer",
+    "abv_percent": 6.7,
+    "net_contents": {
+      "value": 25,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Rust Ember Beverage Co.",
+      "street": "945 Main St",
+      "city": "Walla Walla",
+      "state": "WA",
+      "postal_code": "99362",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": false,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "B3",
+  "notes": "back label, punctuation brand pattern, 750 ml container. Archetype: modern-minimal. Government Warning case: B3."
+}

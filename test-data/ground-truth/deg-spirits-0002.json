@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0002",
+  "source": "degraded",
+  "image": "test-data/labels/deg-spirits-0002.png",
+  "degradations": [
+    "perspective:10deg"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 187,
+  "fields": {
+    "brand_name": "Northmast",
+    "class_type": "Rye Whiskey",
+    "class_category": "distilled_spirits",
+    "abv_percent": 50.7,
+    "net_contents": {
+      "value": 187,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Northmast Beverage Co.",
+      "street": "802 Harbor Way",
+      "city": "Portland",
+      "state": "ME",
+      "postal_code": "04101",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, single brand pattern, 187 ml container. Government Warning is compliant. Degraded variant of syn-spirits-0001: perspective:10deg."
+}

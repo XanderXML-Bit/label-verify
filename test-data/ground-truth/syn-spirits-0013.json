@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0013",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-spirits-0013.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Longwhistle",
+    "class_type": "Mezcal",
+    "class_category": "distilled_spirits",
+    "abv_percent": 48.3,
+    "net_contents": {
+      "value": 500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Longwhistle Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "X3",
+  "notes": "front label, single brand pattern, 500 ml container. Government Warning non-compliance case X3."
+}

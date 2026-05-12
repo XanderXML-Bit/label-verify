@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0006",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-wine-0006.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 700,
+  "fields": {
+    "brand_name": "Argenton",
+    "class_type": "Riesling",
+    "class_category": "wine",
+    "abv_percent": 11.8,
+    "net_contents": {
+      "value": 70,
+      "unit": "cl"
+    },
+    "producer": {
+      "name": "Argenton Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, single brand pattern, 700 ml container. Government Warning is compliant."
+}

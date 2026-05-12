@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0003",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0003.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "RUST & EMBER",
+    "class_type": "India Pale Ale",
+    "class_category": "beer",
+    "abv_percent": 5.8,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "RUST EMBER Beverage Co.",
+      "street": "802 Harbor Way",
+      "city": "Portland",
+      "state": "ME",
+      "postal_code": "04101",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, stylized brand pattern, 355 ml container. Archetype: vintage-classical. Government Warning case: PASS."
+}

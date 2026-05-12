@@ -1,0 +1,39 @@
+{
+  "id": "deg-fortified_wine-0003",
+  "source": "degraded",
+  "image": "test-data/labels/deg-fortified_wine-0003.png",
+  "degradations": [
+    "perspective:15deg"
+  ],
+  "beverage_type": "fortified_wine",
+  "label_face": "back",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Vermella",
+    "class_type": "Madeira",
+    "class_category": "fortified_wine",
+    "abv_percent": 21.3,
+    "net_contents": {
+      "value": 500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Vermella Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "back label, single brand pattern, 500 ml container. Government Warning is compliant. Degraded variant of syn-fortified_wine-0001: perspective:15deg."
+}

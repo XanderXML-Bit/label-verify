@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0013",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-spirits-0013.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 200,
+  "fields": {
+    "brand_name": "Iron Magnolia",
+    "class_type": "London Dry Gin",
+    "class_category": "distilled_spirits",
+    "abv_percent": 36.1,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Iron Magnolia Beverage Co.",
+      "street": "7 Forge Alley",
+      "city": "Charleston",
+      "state": "SC",
+      "postal_code": "29401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "S1",
+  "notes": "front label, multi brand pattern, 200 ml container. Archetype: vintage-classical. Government Warning case: S1."
+}

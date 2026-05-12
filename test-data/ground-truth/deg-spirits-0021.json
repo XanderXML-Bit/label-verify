@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0021",
+  "source": "degraded",
+  "image": "test-data/labels/deg-spirits-0021.png",
+  "degradations": [
+    "occlusion:0.10"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "back",
+  "container_size_ml": 700,
+  "fields": {
+    "brand_name": "Cloister",
+    "class_type": "Rye Whiskey",
+    "class_category": "distilled_spirits",
+    "abv_percent": 43,
+    "net_contents": {
+      "value": 70,
+      "unit": "cl"
+    },
+    "producer": {
+      "name": "Cloister Beverage Co.",
+      "street": "14 Mill St",
+      "city": "Asheville",
+      "state": "NC",
+      "postal_code": "28801",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "back label, single brand pattern, 700 ml container. Government Warning intentionally missing. Degraded variant of syn-spirits-0014: occlusion:0.10."
+}

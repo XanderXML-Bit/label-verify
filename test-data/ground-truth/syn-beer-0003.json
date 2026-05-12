@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0003",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-beer-0003.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "neck",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Bluerose",
+    "class_type": "Lager",
+    "class_category": "beer",
+    "abv_percent": 7.1,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Bluerose Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "neck label, single brand pattern, 355 ml container. Government Warning is compliant."
+}

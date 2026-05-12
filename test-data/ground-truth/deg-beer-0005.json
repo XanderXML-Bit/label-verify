@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0005",
+  "source": "degraded",
+  "image": "test-data/labels/deg-beer-0005.png",
+  "degradations": [
+    "perspective:25deg"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Cold Iron",
+    "class_type": "Saison",
+    "class_category": "beer",
+    "abv_percent": 7.5,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Cold Iron Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, multi brand pattern, 50 ml container. Government Warning is compliant. Degraded variant of syn-beer-0001: perspective:25deg."
+}

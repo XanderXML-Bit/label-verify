@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0008",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0008.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Cold Iron",
+    "class_type": "Hazy IPA",
+    "class_category": "beer",
+    "abv_percent": 6.3,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Cold Iron Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T2",
+  "notes": "front label, multi brand pattern, 50 ml container. Archetype: vintage-classical. Government Warning case: T2."
+}

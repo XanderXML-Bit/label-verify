@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0009",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-wine-0009.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "neck",
+  "container_size_ml": 200,
+  "fields": {
+    "brand_name": "Argenton",
+    "class_type": "Riesling",
+    "class_category": "wine",
+    "abv_percent": 13,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Argenton Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C1",
+  "notes": "neck label, single brand pattern, 200 ml container. Archetype: modern-minimal. Government Warning case: C1."
+}

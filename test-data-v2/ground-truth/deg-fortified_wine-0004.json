@@ -1,0 +1,39 @@
+{
+  "id": "deg-fortified_wine-0004",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-fortified_wine-0004.png",
+  "degradations": [
+    "lowlight:0.64"
+  ],
+  "beverage_type": "fortified_wine",
+  "label_face": "back",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Solstice",
+    "class_type": "Ruby Port",
+    "class_category": "fortified_wine",
+    "abv_percent": 18.3,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Solstice Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "X3",
+  "notes": "Derived from syn-fortified_wine-0006. lowlight:0.64."
+}

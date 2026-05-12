@@ -1,0 +1,40 @@
+{
+  "id": "deg-wine-0028",
+  "source": "degraded",
+  "image": "test-data/labels/deg-wine-0028.png",
+  "degradations": [
+    "glare:0.5",
+    "occlusion:0.05"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 237,
+  "fields": {
+    "brand_name": "Old Schoolhouse",
+    "class_type": "Riesling",
+    "class_category": "wine",
+    "abv_percent": 12.2,
+    "net_contents": {
+      "value": 237,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Old Schoolhouse Beverage Co.",
+      "street": "32 Orchard Ln",
+      "city": "Traverse City",
+      "state": "MI",
+      "postal_code": "49684",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "front label, multi brand pattern, 237 ml container. Government Warning intentionally missing. Degraded variant of syn-wine-0018: glare:0.5, occlusion:0.05."
+}

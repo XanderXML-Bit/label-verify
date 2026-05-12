@@ -1,0 +1,37 @@
+{
+  "id": "syn-fortified_wine-0005",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-fortified_wine-0005.png",
+  "degradations": [],
+  "beverage_type": "fortified_wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Madrona",
+    "class_type": "Ruby Port",
+    "class_category": "fortified_wine",
+    "abv_percent": 21.4,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Madrona Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C3",
+  "notes": "back label, single brand pattern, 750 ml container. Government Warning non-compliance case C3."
+}

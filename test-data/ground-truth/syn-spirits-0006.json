@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0006",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-spirits-0006.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "back",
+  "container_size_ml": 375,
+  "fields": {
+    "brand_name": "Cloister Hill",
+    "class_type": "Rye Whiskey",
+    "class_category": "distilled_spirits",
+    "abv_percent": 54.6,
+    "net_contents": {
+      "value": 375,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Cloister Hill Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T3",
+  "notes": "back label, multi brand pattern, 375 ml container. Government Warning non-compliance case T3."
+}

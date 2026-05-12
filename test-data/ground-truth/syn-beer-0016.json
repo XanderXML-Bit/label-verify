@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0016",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-beer-0016.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Cold Iron",
+    "class_type": "Amber Ale",
+    "class_category": "beer",
+    "abv_percent": 7.2,
+    "net_contents": {
+      "value": 500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Cold Iron Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "S1",
+  "notes": "front label, multi brand pattern, 500 ml container. Government Warning non-compliance case S1."
+}

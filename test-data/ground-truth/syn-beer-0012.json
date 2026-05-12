@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0012",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-beer-0012.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 375,
+  "fields": {
+    "brand_name": "Headlands",
+    "class_type": "Amber Ale",
+    "class_category": "beer",
+    "abv_percent": 4.4,
+    "net_contents": {
+      "value": 375,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Headlands Beverage Co.",
+      "street": "802 Harbor Way",
+      "city": "Portland",
+      "state": "ME",
+      "postal_code": "04101",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C2",
+  "notes": "front label, single brand pattern, 375 ml container. Government Warning non-compliance case C2."
+}

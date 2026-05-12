@@ -1,0 +1,40 @@
+{
+  "id": "deg-beer-0027",
+  "source": "degraded",
+  "image": "test-data/labels/deg-beer-0027.png",
+  "degradations": [
+    "lowlight:0.55",
+    "noise:gauss:12"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 375,
+  "fields": {
+    "brand_name": "STONE'S THROW",
+    "class_type": "Pale Ale",
+    "class_category": "beer",
+    "abv_percent": 6,
+    "net_contents": {
+      "value": 375,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "STONES THROW Beverage Co.",
+      "street": "1190 Mission Ave",
+      "city": "San Antonio",
+      "state": "TX",
+      "postal_code": "78210",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "front label, stylized brand pattern, 375 ml container. Government Warning intentionally missing. Degraded variant of syn-beer-0019: lowlight:0.55, noise:gauss:12."
+}

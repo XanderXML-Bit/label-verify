@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0010",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-beer-0010.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Sundial",
+    "class_type": "Porter",
+    "class_category": "beer",
+    "abv_percent": 5.8,
+    "net_contents": {
+      "value": 500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Sundial Beverage Co.",
+      "street": "945 Main St",
+      "city": "Walla Walla",
+      "state": "WA",
+      "postal_code": "99362",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T3",
+  "notes": "front label, single brand pattern, 500 ml container. Government Warning non-compliance case T3."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0004",
+  "source": "degraded",
+  "image": "test-data/labels/deg-wine-0004.png",
+  "degradations": [
+    "perspective:20deg"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 700,
+  "fields": {
+    "brand_name": "Solano Reach",
+    "class_type": "Cabernet Sauvignon",
+    "class_category": "wine",
+    "abv_percent": 14.3,
+    "net_contents": {
+      "value": 70,
+      "unit": "cl"
+    },
+    "producer": {
+      "name": "Solano Reach Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, multi brand pattern, 700 ml container. Government Warning is compliant. Degraded variant of syn-wine-0002: perspective:20deg."
+}

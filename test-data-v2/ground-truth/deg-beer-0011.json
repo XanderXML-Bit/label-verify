@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0011",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0011.png",
+  "degradations": [
+    "lowlight:0.39"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Fieldstone",
+    "class_type": "Pale Ale",
+    "class_category": "beer",
+    "abv_percent": 5.1,
+    "net_contents": {
+      "value": 17,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Fieldstone Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T1",
+  "notes": "Derived from syn-beer-0007. lowlight:0.39."
+}

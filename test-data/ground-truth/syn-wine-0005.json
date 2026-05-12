@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0005",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-wine-0005.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 1000,
+  "fields": {
+    "brand_name": "Bertelli",
+    "class_type": "Chardonnay",
+    "class_category": "wine",
+    "abv_percent": 11.9,
+    "net_contents": {
+      "value": 1,
+      "unit": "L"
+    },
+    "producer": {
+      "name": "Bertelli Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, single brand pattern, 1000 ml container. Government Warning is compliant."
+}

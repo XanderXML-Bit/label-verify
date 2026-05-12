@@ -1,0 +1,37 @@
+{
+  "id": "syn-fortified_wine-0004",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-fortified_wine-0004.png",
+  "degradations": [],
+  "beverage_type": "fortified_wine",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Solstice No. 7",
+    "class_type": "Madeira",
+    "class_category": "fortified_wine",
+    "abv_percent": 20.2,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Solstice No 7 Beverage Co.",
+      "street": "14 Mill St",
+      "city": "Asheville",
+      "state": "NC",
+      "postal_code": "28801",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C1",
+  "notes": "front label, punctuation brand pattern, 750 ml container. Government Warning non-compliance case C1."
+}

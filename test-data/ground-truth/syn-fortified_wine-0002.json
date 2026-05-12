@@ -1,0 +1,37 @@
+{
+  "id": "syn-fortified_wine-0002",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-fortified_wine-0002.png",
+  "degradations": [],
+  "beverage_type": "fortified_wine",
+  "label_face": "front",
+  "container_size_ml": 1000,
+  "fields": {
+    "brand_name": "Solstice",
+    "class_type": "Vermouth",
+    "class_category": "fortified_wine",
+    "abv_percent": 20.7,
+    "net_contents": {
+      "value": 1,
+      "unit": "L"
+    },
+    "producer": {
+      "name": "Solstice Beverage Co.",
+      "street": "14 Mill St",
+      "city": "Asheville",
+      "state": "NC",
+      "postal_code": "28801",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T1",
+  "notes": "front label, single brand pattern, 1000 ml container. Government Warning non-compliance case T1."
+}

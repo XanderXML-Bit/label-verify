@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0004",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-spirits-0004.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Black Cardamom",
+    "class_type": "Mezcal",
+    "class_category": "distilled_spirits",
+    "abv_percent": 36,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Black Cardamom Beverage Co.",
+      "street": "945 Main St",
+      "city": "Walla Walla",
+      "state": "WA",
+      "postal_code": "99362",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "front label, multi brand pattern, 50 ml container. Government Warning is compliant."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0005",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-spirits-0005.png",
+  "degradations": [
+    "perspective:-16deg"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Marrow & Bone",
+    "class_type": "Scotch Whisky",
+    "class_category": "distilled_spirits",
+    "abv_percent": 53.7,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Marrow Bone Beverage Co.",
+      "street": "188 Quarry Pass",
+      "city": "Boise",
+      "state": "ID",
+      "postal_code": "83702",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C1",
+  "notes": "Derived from syn-spirits-0010. perspective:-16deg."
+}

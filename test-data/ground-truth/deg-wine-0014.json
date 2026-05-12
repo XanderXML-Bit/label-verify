@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0014",
+  "source": "degraded",
+  "image": "test-data/labels/deg-wine-0014.png",
+  "degradations": [
+    "glare:0.35"
+  ],
+  "beverage_type": "wine",
+  "label_face": "neck",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Mira Vista",
+    "class_type": "Chardonnay",
+    "class_category": "wine",
+    "abv_percent": 13.6,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Mira Vista Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T2",
+  "notes": "neck label, multi brand pattern, 750 ml container. Government Warning non-compliance case T2. Degraded variant of syn-wine-0008: glare:0.35."
+}

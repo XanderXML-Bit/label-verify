@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0011",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-wine-0011.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 237,
+  "fields": {
+    "brand_name": "SOLANO REACH",
+    "class_type": "Merlot",
+    "class_category": "wine",
+    "abv_percent": 12.4,
+    "net_contents": {
+      "value": 237,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "SOLANO REACH Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": false,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "B3",
+  "notes": "back label, stylized brand pattern, 237 ml container. Government Warning non-compliance case B3."
+}

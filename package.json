@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "bench": "tsx benchmarks/run.ts",
     "bench:smoke": "tsx benchmarks/run.ts --smoke",
-    "gen:corpus": "tsx scripts/generate-corpus.ts"
+    "gen:corpus": "tsx scripts/generate-corpus.ts",
+    "validate:corpus": "tsx scripts/validate-corpus.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",

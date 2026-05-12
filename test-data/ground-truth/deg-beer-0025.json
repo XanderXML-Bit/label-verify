@@ -1,0 +1,40 @@
+{
+  "id": "deg-beer-0025",
+  "source": "degraded",
+  "image": "test-data/labels/deg-beer-0025.png",
+  "degradations": [
+    "perspective:10deg",
+    "lowlight:0.6"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Stone's Throw",
+    "class_type": "Porter",
+    "class_category": "beer",
+    "abv_percent": 7.1,
+    "net_contents": {
+      "value": 500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Stones Throw Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "front label, punctuation brand pattern, 500 ml container. Government Warning intentionally missing. Degraded variant of syn-beer-0018: perspective:10deg, lowlight:0.6."
+}

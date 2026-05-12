@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0007",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-wine-0007.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 700,
+  "fields": {
+    "brand_name": "Argenton",
+    "class_type": "Pinot Noir",
+    "class_category": "wine",
+    "abv_percent": 14,
+    "net_contents": {
+      "value": 70,
+      "unit": "cl"
+    },
+    "producer": {
+      "name": "Argenton Beverage Co.",
+      "street": "802 Harbor Way",
+      "city": "Portland",
+      "state": "ME",
+      "postal_code": "04101",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T1",
+  "notes": "back label, single brand pattern, 700 ml container. Government Warning non-compliance case T1."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0009",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-beer-0009.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Mill Creek",
+    "class_type": "Saison",
+    "class_category": "beer",
+    "abv_percent": 7.2,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Mill Creek Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T2",
+  "notes": "back label, multi brand pattern, 355 ml container. Government Warning non-compliance case T2."
+}

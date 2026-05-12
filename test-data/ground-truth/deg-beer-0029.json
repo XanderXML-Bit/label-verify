@@ -1,0 +1,40 @@
+{
+  "id": "deg-beer-0029",
+  "source": "degraded",
+  "image": "test-data/labels/deg-beer-0029.png",
+  "degradations": [
+    "curved:0.18",
+    "lowlight:0.65"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 100,
+  "fields": {
+    "brand_name": "Latitude Seven",
+    "class_type": "Pilsner",
+    "class_category": "beer",
+    "abv_percent": 4.8,
+    "net_contents": {
+      "value": 100,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Latitude Seven Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "front label, multi brand pattern, 100 ml container. Government Warning intentionally missing. Degraded variant of syn-beer-0020: curved:0.18, lowlight:0.65."
+}

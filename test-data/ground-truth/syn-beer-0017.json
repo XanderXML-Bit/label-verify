@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0017",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-beer-0017.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Tin Roof",
+    "class_type": "Saison",
+    "class_category": "beer",
+    "abv_percent": 6.3,
+    "net_contents": {
+      "value": 500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Tin Roof Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "back label, multi brand pattern, 500 ml container. Government Warning intentionally missing."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0024",
+  "source": "degraded",
+  "image": "test-data/labels/deg-wine-0024.png",
+  "degradations": [
+    "curved:0.28"
+  ],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 375,
+  "fields": {
+    "brand_name": "VESPERA",
+    "class_type": "Chardonnay",
+    "class_category": "wine",
+    "abv_percent": 11.2,
+    "net_contents": {
+      "value": 375,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "VESPERA Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "back label, stylized brand pattern, 375 ml container. Government Warning intentionally missing. Degraded variant of syn-wine-0016: curved:0.28."
+}

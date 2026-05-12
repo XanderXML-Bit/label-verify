@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0003",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0003.png",
+  "degradations": [
+    "glare:0.75"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Tin Roof",
+    "class_type": "Stout",
+    "class_category": "beer",
+    "abv_percent": 6.2,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Tin Roof Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-beer-0004. glare:0.75."
+}

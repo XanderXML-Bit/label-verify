@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0017",
+  "source": "synthetic",
+  "image": "test-data/labels/syn-wine-0017.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "neck",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "CALDER ESTATES",
+    "class_type": "Merlot",
+    "class_category": "wine",
+    "abv_percent": 13.5,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "CALDER ESTATES Beverage Co.",
+      "street": "945 Main St",
+      "city": "Walla Walla",
+      "state": "WA",
+      "postal_code": "99362",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "neck label, stylized brand pattern, 750 ml container. Government Warning intentionally missing."
+}

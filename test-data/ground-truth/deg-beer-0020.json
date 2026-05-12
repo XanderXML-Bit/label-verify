@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0020",
+  "source": "degraded",
+  "image": "test-data/labels/deg-beer-0020.png",
+  "degradations": [
+    "occlusion:0.08"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Headlands",
+    "class_type": "Hazy IPA",
+    "class_category": "beer",
+    "abv_percent": 7.7,
+    "net_contents": {
+      "value": 50,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Headlands Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C1",
+  "notes": "front label, single brand pattern, 50 ml container. Government Warning non-compliance case C1. Degraded variant of syn-beer-0011: occlusion:0.08."
+}

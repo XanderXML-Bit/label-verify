@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0014",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-wine-0014.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "neck",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Five Sisters",
+    "class_type": "Zinfandel",
+    "class_category": "wine",
+    "abv_percent": 11.7,
+    "net_contents": {
+      "value": 500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Five Sisters Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "neck label, punctuation brand pattern, 500 ml container. Archetype: craft-artisanal. Government Warning case: X1."
+}

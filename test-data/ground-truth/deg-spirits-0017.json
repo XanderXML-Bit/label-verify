@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0017",
+  "source": "degraded",
+  "image": "test-data/labels/deg-spirits-0017.png",
+  "degradations": [
+    "glare:0.70"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "back",
+  "container_size_ml": 1000,
+  "fields": {
+    "brand_name": "Six Foxes",
+    "class_type": "Tequila Blanco",
+    "class_category": "distilled_spirits",
+    "abv_percent": 36.2,
+    "net_contents": {
+      "value": 1,
+      "unit": "L"
+    },
+    "producer": {
+      "name": "Six Foxes Beverage Co.",
+      "street": "1190 Mission Ave",
+      "city": "San Antonio",
+      "state": "TX",
+      "postal_code": "78210",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T4",
+  "notes": "back label, multi brand pattern, 1000 ml container. Government Warning non-compliance case T4. Degraded variant of syn-spirits-0007: glare:0.70."
+}
