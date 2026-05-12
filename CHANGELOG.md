@@ -4,6 +4,83 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [UX polish + reviewer-export] — 2026-05-12 late
+
+### Added
+
+- **Unified intent-inferring dropzone.** The home page now accepts
+  label images and application documents (PDF / JSON / CSV / MD /
+  TXT) in a single drop. `handleFiles` classifies what was dropped
+  and branches: 1 image → single-pending; 1 image + 1 application
+  → single + background `/api/application/parse` that pre-fills the
+  form; ≥ 2 images → batch (auto-pair if apps tagged along).
+  Implementation in `src/lib/batch-pairing.ts` + `src/app/page.tsx`.
+- **Smart batch pairing.** The batch route accepts batches WITHOUT
+  a manifest if filenames pair cleanly (e.g.
+  `123456-front.jpg` + `123456.pdf`). Two-pass match (strict stem
+  + face-tag-stripped fallback for multi-face uploads). The
+  response always includes a `pairing` summary the operator can
+  inspect before any vision call fires. 13 tests in
+  `src/tests/batch-pairing.test.ts`.
+- **PDF → vision auto-fallback.** When a PDF application file has
+  no extractable text (typical for printed-and-rescanned forms),
+  `parseApplication` now renders the first page and routes it
+  through the existing vision parser. Source surfaces as
+  `pdf-vision-fallback`, confidence `low`, with a warning telling
+  the reviewer to double-check the extracted fields. Configured
+  by passing `GOOGLE_API_KEY` to `parseApplication`; without the
+  key, behaviour falls back to the previous fail-loud error.
+- **JSON + CSV export** on every result panel. Single results and
+  batch results both download as either format. JSON uses versioned
+  schema envelopes (`labelverify.v1.single`, `labelverify.v1.batch`)
+  with status tallies and the full `VerifyResponse` per item. CSV
+  includes per-field confidence, the Gov-Warning subscore quartet,
+  review reasons, fallback indicator, and model id. 9 tests in
+  `src/tests/export-result.test.ts`.
+- **Country ↔ Producer cross-link** in the orchestrator. When
+  `compareCountry` returns REVIEW (label doesn't visibly print a
+  country) BUT `compareProducer.components.country` returns PASS
+  via implicit-USA inference (strict 2-letter US state + matching
+  city/postal), the standalone country field is promoted to PASS
+  with a reason that cites the address corroboration. Fixes the
+  PASS sample landing on REVIEW. 3 tests in
+  `src/tests/verify-country-crosslink.test.ts` pin both the promote
+  and the not-promote edge cases.
+
+### Changed
+
+- **DeclaredForm prefill merges, doesn't clobber.** The form used
+  a `key`-based remount that wiped user-typed values whenever a
+  new prefill arrived. Replaced with a `useEffect` that watches
+  `initial` and applies it ONLY to fields still at their default-
+  empty value. User-typed values win. Pairs with a new
+  `bgAppParse` status indicator on `single-pending` that surfaces
+  "Parsing X — form will pre-fill the empty fields" while the
+  background parse is in flight.
+- **UploadZone accept list** expanded to include the full
+  application MIME set (PDF/JSON/CSV/MD/TXT) so the unified flow
+  works without users hunting for a second dropzone.
+- **ApplicationUpload** now imports the canonical
+  `ApplicationParserSource` / `ApplicationConfidence` types from
+  `src/lib/application/types.ts` (previously had a local copy that
+  drifted from the `pdf-vision-fallback` addition).
+- **Lint clean.** The two remaining `consistent-type-imports`
+  warnings in vitest partial-mock test files are now explicitly
+  suppressed with a "why" rationale. `npm run lint` is now
+  zero-output.
+
+### Documentation
+
+- README "How to use it" rewritten to describe the two batch paths
+  (explicit manifest vs auto-pair) and the JSON/CSV download.
+- `docs/openapi.yaml` `/api/verify/batch` description reflects the
+  new request shape (manifest optional) and the response `pairing`
+  summary object.
+- `docs/REMAINING-IMPROVEMENTS.md` F5/F6/F7 capture three deferred
+  items with full scope analysis: DOCX support, speculative
+  pre-warming (with security analysis on why it's deferred), and
+  multi-image-no-manifest fill-each-form UI.
+
 ## [Submission] — 2026-05-12
 
 ### Validation
