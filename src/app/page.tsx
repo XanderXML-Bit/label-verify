@@ -175,19 +175,31 @@ export default function Home() {
           Verify a label against application data
         </h2>
         <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
-          Upload one label image to check it against the COLA application
-          fields, or a folder of labels with a manifest spreadsheet for
-          batch verification. Returns a structured pass / fail / review
-          verdict in under 5 seconds.
+          Upload a label image, then add the COLA application data (PDF,
+          JSON, CSV, Markdown, text, or a photo of the form) — or fill
+          the fields in manually. Returns a pass / fail / review verdict
+          in seconds.
         </p>
       </header>
 
       {stage.kind === "idle" && (
         <>
           <UploadZone onFiles={handleFiles} />
-          <SettingsPanel modeId={modeId} onModeChange={setModeId} />
           <SampleAffordance onPick={handleSample} />
-          <ReviewQueuePanel />
+          {/* Per docs/UI-SPEC §1.4 and user direction (2026-05-11),
+              non-reviewer controls collapse under a single disclosure so
+              the idle screen stays a two-affordance choice (upload OR
+              try a sample). Speed/accuracy mode, review queue, and the
+              prototype-context blurb all live here. */}
+          <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
+              More options
+            </summary>
+            <div className="mt-4 space-y-6">
+              <SettingsPanel modeId={modeId} onModeChange={setModeId} />
+              <ReviewQueuePanel />
+            </div>
+          </details>
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
               About this prototype
