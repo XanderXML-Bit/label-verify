@@ -247,6 +247,27 @@ wouldn't actually save bytes. Skip.
 Old bench result JSONs accumulate in `benchmarks/results/`. Add a
 git-lfs config or a script to compress old runs.
 
+### R6. Resumable batch stream — **NEW (caught 2026-05-12 evening)**
+`MAX_BATCH=1000` accepts any batch up to 1000 items, but the SSE
+stream lives inside ONE Vercel function invocation capped at 60 s
+(Hobby) or 300 s (Pro). With CONCURRENCY=8 and ~3 s/call:
+- Hobby plan: ~160 items finish before the function times out.
+- Pro plan: ~800 items.
+Submitting a 1000-batch on Hobby therefore loses ~840 items mid-
+stream. The UI's "connection dropped" banner currently invites the
+user to reconnect, but reconnecting RESTARTS the stream from
+item 0 — replaying work that already completed and billed.
+
+Fix scope (~3-4 hours): persist per-item completion state in
+`batch-store.ts` (already keyed by item index), have the SSE stream
+skip items where `status === "done" || status === "error"` on
+reconnect. Client-side: tag SSE messages with a stable sequence
+number so the UI can dedupe replayed events.
+
+For the take-home submission window, document the realistic ceiling
+in the route docstring (done) and recommend batches ≤ 100 for the
+prototype demo URL.
+
 ## Out of scope (acknowledge but won't do)
 
 - Custom CNN training (no labelled data).

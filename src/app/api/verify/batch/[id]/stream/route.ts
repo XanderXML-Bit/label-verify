@@ -21,6 +21,17 @@ const CONCURRENCY = 8;
  * any in-flight vision call is aborted via AbortController so we don't
  * keep billing the upstream model after the user has navigated away.
  * The request's own `signal` is also honored.
+ *
+ * Realistic batch ceiling (vs the MAX_BATCH=1000 router cap):
+ *   - Hobby plan (maxDuration=60 s, ~3 s/call, CONCURRENCY=8):
+ *     ~160 items finish before the function times out.
+ *   - Pro plan (maxDuration=300 s, same): ~800 items.
+ * Submitting more than that is accepted by the POST route (the cap is
+ * intentionally generous so operators on Enterprise plans can use it),
+ * but the SSE stream will deliver only the first N items before
+ * Vercel kills the function. The UI surfaces a "connection dropped"
+ * banner; reconnecting currently restarts the stream from item 0
+ * (a real limitation — tracked in REMAINING-IMPROVEMENTS R6).
  */
 export async function GET(
   req: Request,
