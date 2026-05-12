@@ -2,6 +2,10 @@
 
 import { useId, useRef, useState } from "react";
 import type { DeclaredFields } from "@/lib/types";
+import type {
+  ApplicationConfidence,
+  ApplicationParserSource,
+} from "@/lib/application/types";
 
 // ─── ApplicationUpload ──────────────────────────────────────────────────────
 //
@@ -11,21 +15,17 @@ import type { DeclaredFields } from "@/lib/types";
 // component is intentionally inert when no file is chosen — manual entry
 // is still the fast path for a reviewer who has the seven fields in their
 // head.
-
-type ParseSource =
-  | "txt"
-  | "md"
-  | "json"
-  | "csv"
-  | "pdf-text"
-  | "docx"
-  | "image-vision";
+//
+// Sources mirror the server's canonical `ApplicationParserSource` enum
+// (`src/lib/application/types.ts`) so a `pdf-vision-fallback` response
+// from the new PDF→vision auto-fallback path (2026-05-12) is typed
+// correctly here without local-shape drift.
 
 export interface ApplicationParsePayload {
   readonly fields: Partial<DeclaredFields>;
-  readonly source: ParseSource;
+  readonly source: ApplicationParserSource;
   readonly warnings: readonly string[];
-  readonly confidence: "high" | "medium" | "low";
+  readonly confidence: ApplicationConfidence;
   readonly filename: string;
 }
 
@@ -44,12 +44,13 @@ const ACCEPT_HINT =
 const REJECTED_HEIC_TYPES = new Set(["image/heic", "image/heif"]);
 const REJECTED_HEIC_EXTS = [".heic", ".heif"];
 
-const SOURCE_LABEL: Record<ParseSource, string> = {
+const SOURCE_LABEL: Record<ApplicationParserSource, string> = {
   txt: "plain text",
   md: "markdown",
   json: "JSON",
   csv: "CSV",
   "pdf-text": "PDF text",
+  "pdf-vision-fallback": "scanned PDF (vision OCR fallback)",
   docx: "DOCX",
   "image-vision": "image (AI extraction)",
 };
@@ -60,7 +61,12 @@ export function ApplicationUpload({ onParsed, disabled }: Props) {
   const [status, setStatus] = useState<
     | { kind: "idle" }
     | { kind: "parsing"; filename: string }
-    | { kind: "done"; source: ParseSource; filename: string; warnings: string[] }
+    | {
+        kind: "done";
+        source: ApplicationParserSource;
+        filename: string;
+        warnings: string[];
+      }
     | { kind: "error"; message: string }
   >({ kind: "idle" });
 
@@ -98,9 +104,9 @@ export function ApplicationUpload({ onParsed, disabled }: Props) {
       }
       const data = (await resp.json()) as {
         fields: Partial<DeclaredFields>;
-        source: ParseSource;
+        source: ApplicationParserSource;
         warnings: string[];
-        confidence: "high" | "medium" | "low";
+        confidence: ApplicationConfidence;
       };
       setStatus({
         kind: "done",
