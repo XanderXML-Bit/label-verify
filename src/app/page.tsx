@@ -406,6 +406,7 @@ export default function Home() {
           result={stage.result}
           imagePreviewUrl={stage.previewUrl}
           onAnother={reset}
+          filename={stage.file.name}
         />
       )}
 

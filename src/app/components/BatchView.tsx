@@ -4,6 +4,11 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { VerifyResponse } from "@/lib/types";
 import { VerdictChip, QualityChip } from "./StatusChip";
 import { SingleResult } from "./SingleResult";
+import {
+  batchToCsv,
+  batchToJson,
+  triggerDownload,
+} from "@/lib/export-result";
 
 export type BatchRow =
   | { index: number; filename: string; status: "pending" }
@@ -230,13 +235,36 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
       )}
 
       {done && (
-        <button
-          type="button"
-          onClick={() => downloadCsv(rows)}
-          className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
-        >
-          Download CSV
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              triggerDownload(
+                "label-verify-batch.json",
+                batchToJson(rows),
+                "application/json",
+              )
+            }
+            className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+            aria-label="Download the full batch result as a JSON file"
+          >
+            Download JSON
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              triggerDownload(
+                "label-verify-batch.csv",
+                batchToCsv(rows),
+                "text/csv",
+              )
+            }
+            className="min-h-[44px] rounded-md border border-blue-600 px-5 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
+            aria-label="Download the batch result as a CSV file"
+          >
+            Download CSV
+          </button>
+        </div>
       )}
     </section>
   );
@@ -395,67 +423,8 @@ function FilterPill({
   );
 }
 
-function downloadCsv(rows: BatchRow[]): void {
-  const header = [
-    "index",
-    "filename",
-    "verdict",
-    "image_quality",
-    "gov_warning_status",
-    "brand_status",
-    "abv_status",
-    "net_contents_status",
-    "class_status",
-    "producer_status",
-    "country_status",
-    "total_ms",
-    "vision_ms",
-  ];
-  // Always emit the full column shape so a spreadsheet import doesn't
-  // shift columns up for error/pending rows. Missing cells become "".
-  const body = rows.map((r) => {
-    if (r.status !== "done") {
-      return [
-        r.index,
-        r.filename,
-        r.status, // pending | running | error — slot under "verdict"
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-      ];
-    }
-    const f = r.result.fields;
-    return [
-      r.index,
-      r.filename,
-      r.result.verdict,
-      r.result.imageQuality,
-      r.result.governmentWarning.status,
-      f.brand_name.status,
-      f.abv_percent.status,
-      f.net_contents.status,
-      f.class_type.status,
-      f.producer.status,
-      f.country_of_origin.status,
-      r.result.timings.total,
-      r.result.timings.vision,
-    ];
-  });
-  const csv = [header, ...body]
-    .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `label-verify-batch.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+// CSV / JSON export helpers were extracted to src/lib/export-result.ts
+// so SingleResult and BatchView share one implementation. The new CSV
+// shape includes per-field confidence, the full Gov-Warning subscore
+// quartet, review reasons, fallback indicator, and model identifier —
+// strictly richer than the previous BatchView-local version.

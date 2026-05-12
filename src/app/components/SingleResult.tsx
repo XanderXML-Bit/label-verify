@@ -4,6 +4,12 @@ import { useMemo } from "react";
 import type { VerifyResponse } from "@/lib/types";
 import type { FieldComparison } from "@/lib/matching";
 import { VerdictChip, QualityChip } from "./StatusChip";
+import {
+  safeStem,
+  singleResultToCsv,
+  singleResultToJson,
+  triggerDownload,
+} from "@/lib/export-result";
 
 // Approximate cost-per-call by model id, in USD. Refreshed from
 // `benchmarks/results/<latest>.md` columns "USD / call". Surfaced on
@@ -34,12 +40,15 @@ interface SingleResultProps {
   readonly result: VerifyResponse;
   readonly imagePreviewUrl: string;
   readonly onAnother: () => void;
+  /** Original filename — used to name the JSON / CSV export files. */
+  readonly filename?: string;
 }
 
 export function SingleResult({
   result,
   imagePreviewUrl,
   onAnother,
+  filename,
 }: SingleResultProps) {
   // Sort fields: failures first, then review, then pass. The bordered
   // emphasis on FAIL rows comes from `FieldRow` below.
@@ -218,13 +227,45 @@ export function SingleResult({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onAnother}
-            className="min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
-          >
-            Verify another label
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onAnother}
+              className="min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
+            >
+              Verify another label
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const stem = safeStem(filename ?? "label-verify-result");
+                triggerDownload(
+                  `${stem}-result.json`,
+                  singleResultToJson(filename ?? stem, result),
+                  "application/json",
+                );
+              }}
+              className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              aria-label="Download this verification result as JSON"
+            >
+              Download JSON
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const stem = safeStem(filename ?? "label-verify-result");
+                triggerDownload(
+                  `${stem}-result.csv`,
+                  singleResultToCsv(filename ?? stem, result),
+                  "text/csv",
+                );
+              }}
+              className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              aria-label="Download this verification result as CSV"
+            >
+              Download CSV
+            </button>
+          </div>
         </div>
       </div>
     </section>
