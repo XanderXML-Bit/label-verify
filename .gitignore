@@ -22,3 +22,5 @@ test-data/labels/_generated_tmp/
 # Tesseract language data (downloaded at runtime)
 eng.traineddata
 *.traineddata
+
+.vercel
