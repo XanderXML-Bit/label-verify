@@ -80,14 +80,14 @@ export function DeclaredForm({
   }
 
   const inputClass =
-    "w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-50";
+    "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400 dark:disabled:bg-slate-900";
 
   return (
     <form onSubmit={submit} aria-label="Declared application data" className="space-y-4">
-      <h2 className="text-lg font-semibold text-slate-800">
+      <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
         Application data
       </h2>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Enter the field values declared on the COLA application. The label
         image will be compared against these.
       </p>
@@ -202,7 +202,7 @@ export function DeclaredForm({
         <div
           role="alert"
           aria-live="assertive"
-          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800"
+          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
         >
           <h3 className="font-semibold">Fix these before continuing</h3>
           <ul className="mt-1 list-inside list-disc">
@@ -216,7 +216,7 @@ export function DeclaredForm({
       <button
         type="submit"
         disabled={disabled}
-        className="min-h-[44px] w-full rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="min-h-[44px] w-full rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400 sm:w-auto"
       >
         Verify
       </button>
@@ -237,10 +237,10 @@ function Field({
 }) {
   return (
     <label htmlFor={id} className="block">
-      <span className="mb-1 block text-label font-medium text-slate-700">
+      <span className="mb-1 block text-label font-medium text-slate-700 dark:text-slate-200">
         {label}
         {required && (
-          <span className="ml-0.5 text-red-500" aria-label="required">
+          <span className="ml-0.5 text-red-500 dark:text-red-400" aria-label="required">
             *
           </span>
         )}

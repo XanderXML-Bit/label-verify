@@ -20,8 +20,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme variables.
+ *
+ * Light is the default for any document without an explicit data-theme
+ * (e.g. SSR before the pre-paint script runs — though layout.tsx pins
+ * data-theme="light" on <html> so this is a belt-and-braces fallback).
+ * The `[data-theme="dark"]` block below mirrors every variable so the
+ * Tailwind `dark:` utilities and any consumer that reads `var(--bg)`
+ * pick up the same palette.
+ */
 :root {
   color-scheme: light;
+  --bg: #f8fafc;
+  --fg: #0f172a;
+  --panel: #ffffff;
+  --border: #e2e8f0;
+  --muted: #64748b;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --fg: #f1f5f9;
+  --panel: #1e293b;
+  --border: #334155;
+  --muted: #94a3b8;
 }
 
 html,
@@ -29,6 +53,11 @@ body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
 }
 
 /* Respect prefers-reduced-motion globally. UI-SPEC §3. */
@@ -50,10 +79,23 @@ body {
   border-radius: 4px;
 }
 
+/* In dark mode the focus ring needs a lighter blue to stay visible against
+ * the slate-950 background — slate-500-blue on slate-950 is too low-contrast. */
+[data-theme="dark"] :focus-visible {
+  outline-color: #60a5fa;
+}
+
 /* Drop-zone shimmer (disabled under reduced-motion via the rule above). */
 @keyframes dropzone-pulse {
   0%, 100% { background-color: rgba(59, 130, 246, 0.04); }
   50%      { background-color: rgba(59, 130, 246, 0.10); }
+}
+@keyframes dropzone-pulse-dark {
+  0%, 100% { background-color: rgba(96, 165, 250, 0.08); }
+  50%      { background-color: rgba(96, 165, 250, 0.18); }
+}
+[data-theme="dark"] .dropzone-active {
+  animation-name: dropzone-pulse-dark;
 }
 .dropzone-active {
   animation: dropzone-pulse 1.6s ease-in-out infinite;

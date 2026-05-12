@@ -136,20 +136,20 @@ export function SettingsPanel({ modeId, onModeChange }: SettingsPanelProps) {
   return (
     <section
       aria-labelledby="settings-heading"
-      className="rounded-lg border border-slate-200 bg-white p-4"
+      className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
     >
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3
             id="settings-heading"
-            className="text-label font-semibold uppercase tracking-wide text-slate-500"
+            className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"
           >
             Settings
           </h3>
-          <p className="mt-1 text-sm text-slate-700">
+          <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
             Model mode:{" "}
             <strong className="font-semibold">{selected.label}</strong>
-            <span className="text-slate-500"> — {selected.description}</span>
+            <span className="text-slate-500 dark:text-slate-400"> — {selected.description}</span>
           </p>
         </div>
         <button
@@ -157,7 +157,7 @@ export function SettingsPanel({ modeId, onModeChange }: SettingsPanelProps) {
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-controls="settings-options"
-          className="min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+          className="min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           {expanded ? "Close settings" : "Open settings"}
         </button>
@@ -179,7 +179,7 @@ export function SettingsPanel({ modeId, onModeChange }: SettingsPanelProps) {
               ))}
             </ul>
           </fieldset>
-          <p className="pt-2 text-xs text-slate-500">
+          <p className="pt-2 text-xs text-slate-500 dark:text-slate-400">
             Your choice is saved in this browser only. Switching modes does
             not redeploy the app; the next verify uses the selected mode.
           </p>
@@ -202,8 +202,8 @@ function ModeRadio({
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors ${
         checked
-          ? "border-blue-400 bg-blue-50"
-          : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+          ? "border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950"
+          : "border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
       }`}
     >
       <input
@@ -212,20 +212,20 @@ function ModeRadio({
         value={mode.id}
         checked={checked}
         onChange={onSelect}
-        className="mt-1"
+        className="mt-1 dark:accent-blue-500"
         aria-describedby={`mode-desc-${mode.id}`}
       />
       <span className="flex-1">
         <span className="flex flex-wrap items-baseline justify-between gap-2">
-          <span className="font-medium text-slate-800">{mode.label}</span>
-          <span className="text-xs text-slate-500">
+          <span className="font-medium text-slate-800 dark:text-slate-100">{mode.label}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             {mode.approxLatency} · {mode.approxCostPer1k} / 1k
             {!mode.networkRequired && " · offline"}
           </span>
         </span>
         <span
           id={`mode-desc-${mode.id}`}
-          className="mt-1 block text-sm text-slate-600"
+          className="mt-1 block text-sm text-slate-600 dark:text-slate-300"
         >
           {mode.description}
         </span>

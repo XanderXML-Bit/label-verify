@@ -81,24 +81,24 @@ export function UploadZone({
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`flex min-h-[12rem] flex-col items-center justify-center rounded-xl border-2 border-dashed bg-white p-6 text-center transition-colors sm:min-h-[14rem] sm:p-8 ${
+        className={`flex min-h-[12rem] flex-col items-center justify-center rounded-xl border-2 border-dashed bg-white p-6 text-center transition-colors dark:bg-slate-900 sm:min-h-[14rem] sm:p-8 ${
           dragOver
-            ? "border-blue-500 dropzone-active"
-            : "border-slate-300 hover:border-slate-400"
+            ? "border-blue-500 dropzone-active dark:border-blue-400"
+            : "border-slate-300 hover:border-slate-400 dark:border-slate-600 dark:hover:border-slate-500"
         } ${disabled ? "opacity-60" : "cursor-pointer"}`}
       >
-        <div className="text-lg font-medium text-slate-800 sm:text-xl">
+        <div className="text-lg font-medium text-slate-800 dark:text-slate-100 sm:text-xl">
           Drop label images here
         </div>
-        <div className="mt-1 text-sm text-slate-500">
+        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           or click to browse · JPEG, PNG, WebP, PDF
         </div>
-        <div className="mt-1 text-xs text-slate-400">
+        <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           Single image, batch upload, or a folder
         </div>
         <button
           type="button"
-          className="mt-5 min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-5 min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-500"
           disabled={disabled}
           onClick={(e) => {
             e.stopPropagation();

@@ -1,0 +1,88 @@
+{
+  "runAt": "2026-05-12T03:45:19.408Z",
+  "extractor": "gemini:gemini-3.1-pro-preview",
+  "modelVersion": "gemini-3.1-pro-preview",
+  "totals": {
+    "validated": 1,
+    "match": 0,
+    "drift": 1,
+    "error": 0,
+    "inputTokens": 1640,
+    "outputTokens": 425,
+    "costUsd": 0.004175,
+    "wallClockMs": 23685.7315
+  },
+  "fieldDrift": {
+    "country_of_origin": 1
+  },
+  "reports": [
+    {
+      "id": "ai-label-0001",
+      "status": "drift",
+      "usageTier": "strictBenchmarkReady",
+      "diffs": [
+        {
+          "field": "country_of_origin",
+          "expected": "USA",
+          "actual": null,
+          "reason": "Extractor returned null country_of_origin."
+        }
+      ],
+      "extractorRaw": {
+        "brand_name": {
+          "value": "Mill Creek",
+          "confidence": 0.99
+        },
+        "class_type": {
+          "value": "PILSNER",
+          "confidence": 0.99
+        },
+        "abv_percent": {
+          "value": 5.2,
+          "confidence": 0.99
+        },
+        "net_contents": {
+          "value": {
+            "value": 12,
+            "unit": "fl_oz"
+          },
+          "confidence": 0.99
+        },
+        "government_warning": {
+          "value": {
+            "raw_text": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+            "prefix_text": "GOVERNMENT WARNING:",
+            "prefix_bbox": {
+              "x": 185,
+              "y": 685,
+              "width": 315,
+              "height": 25
+            },
+            "prefix_appears_bold": true,
+            "prefix_appears_caps": true
+          },
+          "confidence": 0.99
+        },
+        "producer": {
+          "value": {
+            "name": "Mill Creek Beverage Co.",
+            "street": null,
+            "city": "Asheville",
+            "state": "NC",
+            "postal_code": null,
+            "country": null
+          },
+          "confidence": 0.98
+        },
+        "country_of_origin": {
+          "value": null,
+          "confidence": 0
+        }
+      },
+      "latencyMs": 23478.5352,
+      "costUsd": 0.004175,
+      "inputTokens": 1640,
+      "outputTokens": 425
+    }
+  ]
+}

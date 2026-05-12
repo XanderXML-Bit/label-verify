@@ -46,24 +46,65 @@ interface VerifyOptions {
   modelMode?: string;
 }
 
-const DEFAULT_VISION_TIMEOUT_MS = 4500;
+// 5-second hard limit retired (2026-05-12, per user). The original budget
+// was a project guard rail against the prior vendor's 30-40s P95. With
+// per-mode model selection (fast = ~2s, smart = ~20s), an "always abort
+// at 5s" rule causes every Smart-mode verify to 504. The new policy:
+//   - default ceiling = 60s (well above any single-call budget we expect)
+//   - per-mode override below tailors the bound to the model's typical P95
+// The deployed UI shows "Verified in N.N s" in the result; the user can
+// see how long any given call took without us forcibly cutting it off.
+const DEFAULT_VISION_TIMEOUT_MS = 60_000;
 
 /**
- * Single source of truth for the per-field confidence floor below which we
- * defer to a human reviewer rather than return PASS. Intelligence-first
- * priority: if we can't be 100% certain, defer.
+ * Per-mode timeout policy. Different tiers have very different P95s —
+ * fast tier (Gemini 3.1 Flash Lite, GPT-5 nano) ≈ 2-3s; smart tier
+ * (Gemini 3.1 Pro Preview, GPT-5 full) ≈ 10-25s; balanced uses tiered
+ * escalation which can stack both. Honors the model's needs rather than
+ * imposing a one-size-fits-all timeout. Explicit `opts.visionTimeoutMs`
+ * still wins for tests and custom callers.
  *
- * Set to 0.75 because:
- *   - Empirically the Gemini Flash extractor reports ≥ 0.85 on clean labels
- *     and < 0.65 on the cases where it later turned out to be wrong. 0.75
- *     puts the cutoff in the middle of the dead zone.
- *   - Per-field comparators already downgrade to REVIEW at their own field-
- *     specific thresholds (ABV/net-contents at 0.7, brand by token-set, etc.).
- *     This is a *second-layer* floor that catches the cases where the
- *     comparator returned PASS but the underlying extractor confidence is
- *     borderline.
+ * Returns `null` when no per-mode override applies (caller falls back
+ * to DEFAULT_VISION_TIMEOUT_MS, which is now 60 s).
  */
-export const REVIEW_CONFIDENCE_THRESHOLD = 0.75;
+function timeoutForMode(modeId: string | undefined): number | null {
+  switch (modeId) {
+    case "smart":
+      return 60_000; // Gemini 3.1 Pro Preview headroom + slack
+    case "balanced":
+      return 45_000; // Tiered escalator: fast first, smart fallback on low conf
+    case "local":
+      return 30_000; // Tesseract-only; cold WASM start is the slow path
+    case "fast":
+    case "default":
+    case undefined:
+      return 15_000; // even "fast" models sometimes spike to ~8s — leave slack
+    default:
+      return null;
+  }
+}
+
+/**
+ * Per-field confidence floor below which we defer to a human reviewer
+ * rather than return PASS. Intelligence-first priority: if we can't be
+ * certain, defer.
+ *
+ * Calibration history:
+ *   - 2026-05-11: Started at 0.75 (mid of empirical dead zone).
+ *   - 2026-05-12: User observed over-deferral — many "borderline"
+ *     extractions turned out to be correct, so deferring them to
+ *     a human costs more than the safety it bought. Dropped to 0.55.
+ *     The bake-off run (npm run bench:bakeoff) measures the
+ *     "deferred-but-correct" rate per technique. If the number is still
+ *     high, tighten further; if too many wrong PASSes slip through,
+ *     raise it again. See docs/MODEL-SELECTION.md §3.
+ *
+ * Per-field comparators (ABV, net-contents, etc.) still apply their own
+ * field-specific thresholds. This is a *second-layer* floor that catches
+ * cases where the comparator returned PASS but the underlying extractor
+ * confidence is borderline.
+ */
+export const REVIEW_CONFIDENCE_THRESHOLD = 0.55;
 
 /** Pretty per-field labels for the `reviewReasons` strings. */
 const FIELD_LABEL: Record<string, string> = {
@@ -90,7 +131,15 @@ export async function verifyLabel(
   opts: VerifyOptions = {},
 ): Promise<VerifyResponse> {
   const startTotal = performance.now();
-  const visionTimeoutMs = opts.visionTimeoutMs ?? DEFAULT_VISION_TIMEOUT_MS;
+  // Per-mode timeout policy: the fast tiers are budgeted for ~5s, but the
+  // smart tier (Gemini 3.1 Pro Preview) routinely takes 10-20s. If the
+  // caller picks a slow mode via the Settings panel we must give it the
+  // headroom it needs, otherwise every "Smart" verify 504s. Explicit
+  // `opts.visionTimeoutMs` always wins (tests, custom callers).
+  const visionTimeoutMs =
+    opts.visionTimeoutMs ??
+    timeoutForMode(opts.modelMode) ??
+    DEFAULT_VISION_TIMEOUT_MS;
 
   // ─── 1. Preprocess ───────────────────────────────────────────────────────
   const preStart = performance.now();
@@ -361,8 +410,15 @@ function buildDefaultExtractor(): GeminiFlashExtractor {
   if (cachedExtractor) return cachedExtractor;
   const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
+    // Surface a maximally helpful message: this is the #1 deployment
+    // pitfall — the user copies the repo, deploys to Vercel, and forgets
+    // to add the env var. Make the next step obvious.
     throw new Error(
-      "verifyLabel: GOOGLE_API_KEY is not set. Set it in .env.local or the Vercel project settings.",
+      "GOOGLE_API_KEY is not set in the server environment. " +
+        "Add it as an Environment Variable in your Vercel project " +
+        "(Settings → Environment Variables → add GOOGLE_API_KEY for " +
+        "Production + Preview + Development) and redeploy. " +
+        "See docs/DEPLOYMENT-CHECKLIST.md §2.",
     );
   }
   cachedExtractor = new GeminiFlashExtractor({

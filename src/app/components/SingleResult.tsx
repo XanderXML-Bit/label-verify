@@ -40,16 +40,16 @@ export function SingleResult({
   return (
     <section aria-labelledby="results-heading" className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="results-heading" className="text-xl font-semibold text-slate-800">
+        <h2 id="results-heading" className="text-xl font-semibold text-slate-800 dark:text-slate-100">
           Verification result
         </h2>
-        <span className="text-sm text-slate-500" aria-live="polite">
+        <span className="text-sm text-slate-500 dark:text-slate-400" aria-live="polite">
           Verified in {(result.timings.total / 1000).toFixed(1)} s
         </span>
       </header>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-white p-3 md:col-span-1">
+        <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 md:col-span-1">
           {imagePreviewUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image */
             <img
@@ -60,32 +60,32 @@ export function SingleResult({
               className="h-full max-h-96 w-full rounded-md object-contain"
             />
           ) : (
-            <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+            <div className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
               No preview
             </div>
           )}
         </div>
         <div className="space-y-4 md:col-span-2">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-3">
-                <span className="text-label font-medium text-slate-600">
+                <span className="text-label font-medium text-slate-600 dark:text-slate-300">
                   Image quality:
                 </span>
                 <QualityChip quality={result.imageQuality} size="md" />
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-label font-medium text-slate-600">
+                <span className="text-label font-medium text-slate-600 dark:text-slate-300">
                   Verdict:
                 </span>
                 <VerdictChip verdict={result.verdict} size="lg" />
               </div>
             </div>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Verified using: <strong className="font-medium">{modeLabel}</strong>
             </p>
             {result.imageQuality !== "good" && (
-              <p className="mt-3 text-sm text-slate-600">
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
                 <strong>Image quality is independent of compliance.</strong>{" "}
                 {result.imageQuality === "bad"
                   ? "Re-photograph the label in better light and resubmit. This does not mean the label is non-compliant."
@@ -95,10 +95,10 @@ export function SingleResult({
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500">
+            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Government Warning (27 CFR §16.21)
             </h3>
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
               <SubscoreRow
                 label="Exact text matches federal language?"
                 status={gov.subscores.text.status}
@@ -120,16 +120,16 @@ export function SingleResult({
                 confidence={gov.subscores.size.confidence}
               />
               {gov.reason && (
-                <p className="mt-2 text-sm text-slate-600">{gov.reason}</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{gov.reason}</p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500">
+            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Other declared fields
             </h3>
-            <div className="rounded-lg border border-slate-200 bg-white">
+            <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
               {fields.map((f) => (
                 <FieldRow key={f.field} cmp={f} />
               ))}
@@ -139,7 +139,7 @@ export function SingleResult({
           <button
             type="button"
             onClick={onAnother}
-            className="min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+            className="min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
           >
             Verify another label
           </button>
@@ -165,37 +165,28 @@ function orderedFields(r: VerifyResponse): FieldComparison[] {
 function FieldRow({ cmp }: { readonly cmp: FieldComparison }) {
   const borderClass =
     cmp.status === "fail"
-      ? "border-l-4 border-l-red-500"
+      ? "border-l-4 border-l-red-500 dark:border-l-red-400"
       : cmp.status === "review"
-        ? "border-l-4 border-l-yellow-500"
-        : "border-l-4 border-l-green-500";
+        ? "border-l-4 border-l-yellow-500 dark:border-l-yellow-400"
+        : "border-l-4 border-l-green-500 dark:border-l-green-400";
   return (
-    <div className={`border-b border-slate-100 p-4 last:border-b-0 ${borderClass}`}>
+    <div className={`border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800 ${borderClass}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="font-medium capitalize text-slate-800">
+        <div className="font-medium capitalize text-slate-800 dark:text-slate-100">
           {cmp.field.replace(/_/g, " ")}
         </div>
         <VerdictChip verdict={cmp.status} size="sm" />
       </div>
-      <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="inline text-slate-500">Expected: </dt>
-          <dd className="inline font-mono">{stringify(cmp.expected)}</dd>
-        </div>
-        <div>
-          <dt className="inline text-slate-500">Found: </dt>
-          <dd className="inline font-mono">{stringify(cmp.actual)}</dd>
-        </div>
-      </dl>
+      <FieldValueComparison expected={cmp.expected} actual={cmp.actual} />
       {cmp.reason && (
-        <p className="mt-2 text-sm text-slate-600">{cmp.reason}</p>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{cmp.reason}</p>
       )}
       {cmp.components && (
         <details className="mt-2 text-sm">
-          <summary className="cursor-pointer text-slate-600 hover:text-slate-900">
+          <summary className="cursor-pointer text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
             Per-component breakdown
           </summary>
-          <ul className="mt-1 space-y-0.5 pl-4 text-slate-600">
+          <ul className="mt-1 space-y-0.5 pl-4 text-slate-600 dark:text-slate-300">
             {Object.entries(cmp.components).map(([k, v]) => (
               <li key={k}>
                 <span className="capitalize">{k.replace(/_/g, " ")}</span>:{" "}
@@ -219,10 +210,10 @@ function SubscoreRow({
   readonly confidence: number;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-2 last:border-b-0">
-      <span className="text-sm text-slate-800">{label}</span>
+    <div className="flex items-center justify-between border-b border-slate-100 py-2 last:border-b-0 dark:border-slate-800">
+      <span className="text-sm text-slate-800 dark:text-slate-100">{label}</span>
       <span className="flex items-center gap-2">
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-slate-400 dark:text-slate-500">
           conf {confidence.toFixed(2)}
         </span>
         <VerdictChip verdict={status} size="sm" />
@@ -234,11 +225,123 @@ function SubscoreRow({
 function statusColor(s: "pass" | "fail" | "review"): string {
   switch (s) {
     case "pass":
-      return "text-green-700";
+      return "text-green-700 dark:text-green-400";
     case "fail":
-      return "text-red-700";
+      return "text-red-700 dark:text-red-400";
     case "review":
-      return "text-yellow-700";
+      return "text-yellow-700 dark:text-yellow-400";
+  }
+}
+
+/**
+ * Expected ↔ Found two-column comparison. Strings / numbers / NetContents
+ * render inline (compact, visually scannable). Producer-shaped objects
+ * render as a stacked key/value list so the columns never collide when
+ * the address wraps. JSON fallback only for truly unknown shapes — and
+ * even then it uses `break-all` so it can never bleed past its column.
+ */
+function FieldValueComparison({
+  expected,
+  actual,
+}: {
+  readonly expected: unknown;
+  readonly actual: unknown;
+}) {
+  const expectedIsProducer = isProducerShape(expected);
+  const actualIsProducer = isProducerShape(actual);
+  // Producer → vertical key/value blocks. Anything else → side-by-side
+  // inline with break-all (handles long strings gracefully on mobile).
+  if (expectedIsProducer || actualIsProducer) {
+    return (
+      <dl className="mt-2 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="text-slate-500 dark:text-slate-400">Expected</dt>
+          <dd className="mt-1 font-mono text-slate-800 dark:text-slate-200">
+            <ProducerBlock value={expected} />
+          </dd>
+        </div>
+        <div>
+          <dt className="text-slate-500 dark:text-slate-400">Found</dt>
+          <dd className="mt-1 font-mono text-slate-800 dark:text-slate-200">
+            <ProducerBlock value={actual} />
+          </dd>
+        </div>
+      </dl>
+    );
+  }
+  return (
+    <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+      <div className="min-w-0">
+        <dt className="inline text-slate-500 dark:text-slate-400">Expected: </dt>
+        <dd className="inline break-all font-mono text-slate-800 dark:text-slate-200">{stringify(expected)}</dd>
+      </div>
+      <div className="min-w-0">
+        <dt className="inline text-slate-500 dark:text-slate-400">Found: </dt>
+        <dd className="inline break-all font-mono text-slate-800 dark:text-slate-200">{stringify(actual)}</dd>
+      </div>
+    </dl>
+  );
+}
+
+const PRODUCER_KEYS = [
+  "name",
+  "street",
+  "city",
+  "state",
+  "postal_code",
+  "country",
+] as const;
+
+function isProducerShape(v: unknown): v is Record<string, unknown> {
+  if (!v || typeof v !== "object") return false;
+  const keys = Object.keys(v);
+  return PRODUCER_KEYS.some((k) => keys.includes(k));
+}
+
+function ProducerBlock({ value }: { readonly value: unknown }) {
+  if (value == null) return <span className="text-slate-400 dark:text-slate-500">—</span>;
+  if (typeof value === "string") {
+    return <span className="break-words">{value}</span>;
+  }
+  const obj = value as Record<string, unknown>;
+  return (
+    <ul className="space-y-0.5">
+      {PRODUCER_KEYS.map((k) => {
+        const v = obj[k];
+        if (v === undefined || v === null || v === "") {
+          return (
+            <li key={k} className="text-slate-400 dark:text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">{labelFor(k)}: </span>—
+            </li>
+          );
+        }
+        return (
+          <li key={k} className="break-words">
+            <span className="text-slate-500 dark:text-slate-400">{labelFor(k)}: </span>
+            {String(v)}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function labelFor(k: string): string {
+  switch (k) {
+    case "postal_code":
+      return "Postal code";
+    case "name":
+      return "Name";
+    case "street":
+      return "Street";
+    case "city":
+      return "City";
+    case "state":
+      return "State";
+    case "country":
+      return "Country";
+    default:
+      return k;
   }
 }
 

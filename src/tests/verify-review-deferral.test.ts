@@ -106,13 +106,13 @@ describe("verifyLabel: intelligence-first deferral", () => {
 
   it("REVIEW when one field's confidence sits right at the threshold floor", async () => {
     // Country comparator passes country_of_origin's extracted confidence
-    // straight through to FieldComparison.confidence. Dropping it to 0.70
-    // (one tick under 0.75) is enough to trip the second-layer floor in
-    // verify.ts and downgrade what would otherwise be a PASS to REVIEW.
+    // straight through to FieldComparison.confidence. Threshold was
+    // dropped 0.75 → 0.55 in 2026-05-12 to reduce over-deferral; we
+    // pick 0.50 here (one tick under) to trip the second-layer floor.
     const img = await tinyJpeg();
     const lowCountry: ExtractedFields = {
       ...COMPLIANT_FIELDS,
-      country_of_origin: { value: "USA", confidence: 0.7 },
+      country_of_origin: { value: "USA", confidence: 0.5 },
     };
     const result = await verifyLabel(img, DECLARED, {
       extractor: buildExtractor(lowCountry),
@@ -121,7 +121,7 @@ describe("verifyLabel: intelligence-first deferral", () => {
     expect(result.requiresHumanReview).toBe(true);
     expect(result.reviewReasons.length).toBeGreaterThan(0);
     expect(result.reviewReasons.some((r) => r.includes("Country"))).toBe(true);
-    expect(result.reviewReasons[0]).toMatch(/below 0\.75|REVIEW/);
+    expect(result.reviewReasons[0]).toMatch(/below 0\.55|REVIEW/);
   });
 
   it("FAIL is never downgraded to REVIEW even with low confidence", async () => {
@@ -148,7 +148,7 @@ describe("verifyLabel: intelligence-first deferral", () => {
     const img = await tinyJpeg();
     const lowCountry: ExtractedFields = {
       ...COMPLIANT_FIELDS,
-      country_of_origin: { value: "USA", confidence: 0.5 },
+      country_of_origin: { value: "USA", confidence: 0.3 },
     };
     const result = await verifyLabel(img, DECLARED, {
       extractor: buildExtractor(lowCountry),
@@ -156,12 +156,12 @@ describe("verifyLabel: intelligence-first deferral", () => {
     expect(result.verdict).toBe("review");
     const joined = result.reviewReasons.join("\n");
     expect(joined).toMatch(/Country/);
-    expect(joined).toMatch(/0\.50/);
-    expect(joined).toMatch(/below 0\.75/);
+    expect(joined).toMatch(/0\.30/);
+    expect(joined).toMatch(/below 0\.55/);
   });
 
-  it("exposes REVIEW_CONFIDENCE_THRESHOLD at 0.75", () => {
-    expect(REVIEW_CONFIDENCE_THRESHOLD).toBe(0.75);
+  it("exposes REVIEW_CONFIDENCE_THRESHOLD at 0.55", () => {
+    expect(REVIEW_CONFIDENCE_THRESHOLD).toBe(0.55);
   });
 
   it("REVIEW when ABV confidence is 0.65 (per-field comparator floor 0.70)", async () => {

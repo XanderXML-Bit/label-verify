@@ -2,6 +2,12 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
+  // Dark mode is driven by a `data-theme="dark"` attribute on <html>,
+  // written by the pre-paint inline script in layout.tsx and toggled at
+  // runtime by ThemeToggle. The `["class", '[data-theme="dark"]']` form
+  // tells Tailwind 3.4 to emit dark-mode utilities behind that selector
+  // (instead of `.dark`), which keeps the theme contract in one place.
+  darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {

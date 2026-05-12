@@ -148,10 +148,10 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <header>
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Verify a label against application data
         </h2>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
           Upload one label image to check it against the COLA application
           fields, or a folder of labels with a manifest spreadsheet for
           batch verification. Returns a structured pass / fail / review
@@ -165,11 +165,11 @@ export default function Home() {
           <SettingsPanel modeId={modeId} onModeChange={setModeId} />
           <SampleAffordance onPick={handleSample} />
           <ReviewQueuePanel />
-          <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <summary className="cursor-pointer font-medium text-slate-700">
+          <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
               About this prototype
             </summary>
-            <div className="mt-2 space-y-2 text-slate-600">
+            <div className="mt-2 space-y-2 text-slate-600 dark:text-slate-300">
               <p>
                 Verifies seven regulated fields per 27 CFR §16.21 / §16.22
                 (Government Warning text, prefix all-caps, prefix bold,
@@ -189,7 +189,7 @@ export default function Home() {
       {stage.kind === "single-pending" && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="space-y-3">
-            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500">
+            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Uploaded image
             </h3>
             {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image */}
@@ -198,12 +198,12 @@ export default function Home() {
               alt="Uploaded label preview"
               loading="lazy"
               decoding="async"
-              className="max-h-96 w-full rounded-lg border border-slate-200 bg-white object-contain p-2"
+              className="max-h-96 w-full rounded-lg border border-slate-200 bg-white object-contain p-2 dark:border-slate-700 dark:bg-slate-900"
             />
             <button
               type="button"
               onClick={reset}
-              className="rounded px-1 py-0.5 text-sm text-slate-500 underline hover:text-slate-700"
+              className="rounded px-1 py-0.5 text-sm text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
             >
               Replace image
             </button>
@@ -213,12 +213,12 @@ export default function Home() {
       )}
 
       {stage.kind === "single-verifying" && (
-        <div className="rounded-lg border border-slate-200 bg-white p-6">
-          <p className="text-base text-slate-700" aria-live="polite">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-base text-slate-700 dark:text-slate-200" aria-live="polite">
             Checking the label… usually under 5 seconds.
           </p>
-          <div className="mt-3 h-2 w-full overflow-hidden rounded bg-slate-200">
-            <div className="h-full w-1/3 animate-pulse bg-blue-500" />
+          <div className="mt-3 h-2 w-full overflow-hidden rounded bg-slate-200 dark:bg-slate-700">
+            <div className="h-full w-1/3 animate-pulse bg-blue-500 dark:bg-blue-400" />
           </div>
         </div>
       )}
@@ -235,14 +235,14 @@ export default function Home() {
         <div
           role="alert"
           aria-live="assertive"
-          className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800"
+          className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200"
         >
           <h2 className="text-base font-semibold">Verification failed</h2>
           <p className="mt-1">{stage.message}</p>
           <button
             type="button"
             onClick={reset}
-            className="mt-3 min-h-[44px] rounded-md bg-red-700 px-4 py-2.5 font-semibold text-white hover:bg-red-800"
+            className="mt-3 min-h-[44px] rounded-md bg-red-700 px-4 py-2.5 font-semibold text-white hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500"
           >
             Try again
           </button>
@@ -251,22 +251,22 @@ export default function Home() {
 
       {stage.kind === "batch-pending" && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h3 className="text-lg font-semibold text-slate-800">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               Batch upload — {stage.files.length} images
             </h3>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Paste a manifest (CSV or JSON) below. Required column:{" "}
-              <code className="rounded bg-slate-100 px-1">filename</code>.
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">filename</code>.
               Other supported columns:{" "}
-              <code className="rounded bg-slate-100 px-1">brand_name</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">class_type</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">class_category</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">abv_percent</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">net_contents</code>{" "}
-              (e.g. <code>12 fl_oz</code>),{" "}
-              <code className="rounded bg-slate-100 px-1">producer</code>,{" "}
-              <code className="rounded bg-slate-100 px-1">country_of_origin</code>.
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">brand_name</code>,{" "}
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">class_type</code>,{" "}
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">class_category</code>,{" "}
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">abv_percent</code>,{" "}
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">net_contents</code>{" "}
+              (e.g. <code className="dark:text-slate-200">12 fl_oz</code>),{" "}
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">producer</code>,{" "}
+              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">country_of_origin</code>.
               Filenames are paired by stem (case-insensitive).
             </p>
             <textarea
@@ -274,7 +274,7 @@ export default function Home() {
               value={manifestText}
               onChange={(e) => setManifestText(e.target.value)}
               aria-label="Batch manifest (CSV or JSON)"
-              className="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-3 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
               placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Stone's Throw IPA,India Pale Ale,beer,6.4,12 fl_oz,USA`}
             />
             <div className="mt-3 flex flex-wrap gap-3">
@@ -282,14 +282,14 @@ export default function Home() {
                 type="button"
                 onClick={submitBatch}
                 disabled={!manifestText.trim()}
-                className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
               >
                 Verify batch
               </button>
               <button
                 type="button"
                 onClick={reset}
-                className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100"
+                className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>

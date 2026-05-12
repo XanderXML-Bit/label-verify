@@ -112,23 +112,23 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
   return (
     <section aria-labelledby="batch-heading" className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="batch-heading" className="text-xl font-semibold text-slate-800">
+        <h2 id="batch-heading" className="text-xl font-semibold text-slate-800 dark:text-slate-100">
           Batch verification
         </h2>
-        <div aria-live="polite" className="text-sm text-slate-600">
+        <div aria-live="polite" className="text-sm text-slate-600 dark:text-slate-300">
           {counts.finished} / {rows.length} complete · {done ? "Done" : `${pct}%`}
         </div>
       </header>
 
       <div
-        className="h-2 w-full overflow-hidden rounded bg-slate-200"
+        className="h-2 w-full overflow-hidden rounded bg-slate-200 dark:bg-slate-700"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pct}
       >
         <div
-          className="h-full bg-blue-500 transition-[width]"
+          className="h-full bg-blue-500 transition-[width] dark:bg-blue-400"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -142,17 +142,17 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
       </div>
 
       <div
-        className="-mx-4 overflow-x-auto rounded-lg border border-slate-200 bg-white sm:mx-0"
+        className="-mx-4 overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 sm:mx-0"
         style={{ maxHeight: "60vh" }}
         role="region"
         aria-label="Batch results table"
         tabIndex={0}
       >
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-700">
           <caption className="sr-only">
             One row per uploaded label, with verdict, image quality, and timing.
           </caption>
-          <thead className="sticky top-0 bg-slate-50 text-left text-slate-600">
+          <thead className="sticky top-0 bg-slate-50 text-left text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th scope="col" className="px-4 py-2 font-semibold">#</th>
               <th scope="col" className="px-4 py-2 font-semibold">File</th>
@@ -164,7 +164,7 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {visibleRows.map((r) => (
               <Row key={r.index} row={r} onOpen={() => setDrilled(r)} />
             ))}
@@ -180,7 +180,7 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
         <button
           type="button"
           onClick={() => downloadCsv(rows)}
-          className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
         >
           Download CSV
         </button>
@@ -244,19 +244,19 @@ function DrilldownPanel({
       ref={containerRef}
       role="region"
       aria-labelledby={headingId}
-      className="rounded-lg border border-slate-200 bg-white p-4"
+      className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
     >
-      <h3 id={headingId} className="text-lg font-semibold text-slate-800">
+      <h3 id={headingId} className="text-lg font-semibold text-slate-800 dark:text-slate-100">
         {row.filename}
       </h3>
-      <pre className="mt-2 max-h-96 overflow-auto text-xs">
+      <pre className="mt-2 max-h-96 overflow-auto rounded bg-slate-100 p-2 text-xs text-slate-800 dark:bg-slate-800 dark:text-slate-200">
         {JSON.stringify(row.result, null, 2)}
       </pre>
       <button
         ref={closeBtnRef}
         type="button"
         onClick={onClose}
-        className="mt-3 min-h-[44px] rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+        className="mt-3 min-h-[44px] rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
       >
         Close
       </button>
@@ -266,24 +266,24 @@ function DrilldownPanel({
 
 function Row({ row, onOpen }: { readonly row: BatchRow; readonly onOpen: () => void }) {
   return (
-    <tr className="hover:bg-slate-50">
-      <td className="px-4 py-2 text-slate-500">{row.index + 1}</td>
-      <td className="px-4 py-2 font-mono text-xs">{row.filename}</td>
+    <tr className="hover:bg-slate-50 dark:hover:bg-slate-800">
+      <td className="px-4 py-2 text-slate-500 dark:text-slate-400">{row.index + 1}</td>
+      <td className="px-4 py-2 font-mono text-xs text-slate-800 dark:text-slate-200">{row.filename}</td>
       <td className="px-4 py-2">
         {row.status === "done" ? (
           <VerdictChip verdict={row.result.verdict} size="sm" />
         ) : row.status === "error" ? (
-          <span className="text-xs text-red-600">error</span>
+          <span className="text-xs text-red-600 dark:text-red-400">error</span>
         ) : row.status === "running" ? (
-          <span className="text-xs text-slate-400">…</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">…</span>
         ) : (
-          <span className="text-xs text-slate-400">queued</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">queued</span>
         )}
       </td>
       <td className="px-4 py-2">
         {row.status === "done" && <QualityChip quality={row.result.imageQuality} size="sm" />}
       </td>
-      <td className="px-4 py-2 text-slate-500">
+      <td className="px-4 py-2 text-slate-500 dark:text-slate-400">
         {row.status === "done" && `${(row.result.timings.total / 1000).toFixed(1)}s`}
       </td>
       <td className="px-4 py-2 text-right">
@@ -292,13 +292,13 @@ function Row({ row, onOpen }: { readonly row: BatchRow; readonly onOpen: () => v
             type="button"
             onClick={onOpen}
             aria-label={`Open details for ${row.filename}`}
-            className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 hover:underline"
+            className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 hover:underline dark:text-blue-400 dark:hover:bg-blue-950"
           >
             Open
           </button>
         )}
         {row.status === "error" && (
-          <span className="text-xs text-red-600">{row.error}</span>
+          <span className="text-xs text-red-600 dark:text-red-400">{row.error}</span>
         )}
       </td>
     </tr>
@@ -320,8 +320,8 @@ function FilterPill({
       onClick={onClick}
       className={`rounded-full px-3 py-1.5 ring-1 ring-inset transition-colors ${
         active
-          ? "bg-blue-600 text-white ring-blue-600"
-          : "bg-white text-slate-700 ring-slate-300 hover:bg-slate-100"
+          ? "bg-blue-600 text-white ring-blue-600 dark:bg-blue-500 dark:ring-blue-500"
+          : "bg-white text-slate-700 ring-slate-300 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-700"
       }`}
       aria-pressed={active}
     >
