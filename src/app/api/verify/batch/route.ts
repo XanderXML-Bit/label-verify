@@ -287,7 +287,10 @@ export async function POST(req: Request) {
         pairingErrors.push(`${imageFile.name}: unsupported image MIME ${imageFile.type}.`);
         continue;
       }
-      // Parse the application file.
+      // Parse the application file. PDF-without-text auto-falls back
+      // to vision OCR when GOOGLE_API_KEY is configured (covers
+      // scanned application PDFs without forcing the operator to
+      // re-upload them as images).
       let parsed;
       try {
         const appBuf = Buffer.from(await applicationFile.arrayBuffer());
@@ -295,6 +298,9 @@ export async function POST(req: Request) {
           buffer: appBuf,
           filename: applicationFile.name,
           mime: applicationFile.type,
+          ...(process.env.GOOGLE_API_KEY
+            ? { apiKey: process.env.GOOGLE_API_KEY }
+            : {}),
         });
       } catch (err) {
         pairingErrors.push(

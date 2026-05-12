@@ -16,7 +16,10 @@ describe("UploadZone", () => {
   it("renders the dropzone copy and the 'Choose files' trigger", () => {
     render(<UploadZone onFiles={() => {}} />);
     expect(screen.getByLabelText(TRIGGER_LABEL)).toBeInTheDocument();
-    expect(screen.getByText("Drop label images here")).toBeInTheDocument();
+    // Unified-dropzone copy (image + optional application file).
+    expect(
+      screen.getByText(/Drop a label image \(\+ application file, optional\)/i),
+    ).toBeInTheDocument();
     // The trigger button carries the descriptive aria-label; its visible
     // text remains "Choose files".
     expect(

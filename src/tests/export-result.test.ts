@@ -58,6 +58,7 @@ function fakeResult(overrides: Partial<VerifyResponse> = {}): VerifyResponse {
     },
     governmentWarning: {
       status: "pass",
+      confidence: 0.95,
       subscores: {
         text: { status: "pass", confidence: 1.0 },
         caps: { status: "pass", confidence: 1.0 },

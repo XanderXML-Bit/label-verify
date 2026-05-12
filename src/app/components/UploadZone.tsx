@@ -9,11 +9,27 @@ interface UploadZoneProps {
   readonly disabled?: boolean;
 }
 
+// The unified dropzone accepts both label images (the gating input)
+// and application documents (PDF/JSON/CSV/MD/TXT). Intent inference
+// in page.tsx → handleFiles decides the flow per the drop's contents:
+// 1 image → single; 1 image + 1 app → single + pre-fill;
+// ≥ 2 images → batch (with auto-pair if apps were also dropped).
 const DEFAULT_ACCEPT = [
+  // Label images.
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/heic",
+  "image/heif",
+  // Application documents.
   "application/pdf",
+  "application/json",
+  "text/json",
+  "text/csv",
+  "application/csv",
+  "text/markdown",
+  "text/x-markdown",
+  "text/plain",
 ];
 
 export function UploadZone({
@@ -115,13 +131,13 @@ export function UploadZone({
         } ${disabled ? "opacity-60" : ""}`}
       >
         <div className="text-lg font-medium text-slate-800 dark:text-slate-100 sm:text-xl">
-          Drop label images here
+          Drop a label image (+ application file, optional)
         </div>
         <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          or use the button below · JPEG, PNG, WebP, PDF
+          or use the button below · images: JPEG, PNG, WebP · applications: PDF, JSON, CSV, MD, TXT
         </div>
         <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-          Single image, batch upload, or a folder
+          Drop one image to verify single; image + matching application file to pre-fill the form; or N image/application pairs for batch.
         </div>
         <button
           type="button"

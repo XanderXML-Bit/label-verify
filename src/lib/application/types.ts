@@ -28,6 +28,7 @@ export type ApplicationParserSource =
   | "json"
   | "csv"
   | "pdf-text"
+  | "pdf-vision-fallback"
   | "docx"
   | "image-vision";
 

@@ -146,7 +146,18 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await parseApplication({ buffer, filename, mime });
+    const result = await parseApplication({
+      buffer,
+      filename,
+      mime,
+      // Wire the Google API key so the PDF-without-text path can
+      // fall back to vision OCR of the rendered first page instead
+      // of failing closed. parseApplication ignores the key on
+      // non-PDF paths.
+      ...(process.env.GOOGLE_API_KEY
+        ? { apiKey: process.env.GOOGLE_API_KEY }
+        : {}),
+    });
     return NextResponse.json(result, {
       headers: { "X-RateLimit-Remaining": String(rl.remaining) },
     });

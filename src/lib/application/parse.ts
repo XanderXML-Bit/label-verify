@@ -5,7 +5,8 @@ import {
 } from "./types";
 import { parseApplicationText } from "./parse-text";
 import { parseApplicationJson, parseApplicationCsv } from "./parse-structured";
-import { extractPdfText } from "@/lib/pdf";
+import { extractPdfFirstPage, extractPdfText } from "@/lib/pdf";
+import { parseApplicationImage } from "./parse-image";
 
 // ─── Application-document parsing entry point ──────────────────────────────
 //
@@ -27,6 +28,14 @@ interface ParseArgs {
   buffer: Buffer;
   filename: string;
   mime: string;
+  /**
+   * Optional Google API key for the vision fallback. When provided
+   * and a PDF has no extractable text (scanned PDF), the first page
+   * is rendered to PNG and parsed via Gemini Vision rather than
+   * failing closed. Without the key, the scanned-PDF case errors
+   * with a "re-upload as image" message (current behaviour).
+   */
+  apiKey?: string;
 }
 
 export async function parseApplication(
@@ -60,13 +69,41 @@ export async function parseApplication(
       );
     }
     if (!text.trim()) {
-      // PDF with no extractable text — usually a scanned image. Tell the
-      // caller they can re-upload it as an image so the vision path picks
-      // it up.
-      throw new ApplicationParseError(
-        "parse-failed",
-        "PDF has no extractable text (it may be a scanned image). Re-upload as an image, or fill in manually.",
-      );
+      // PDF with no extractable text — usually a scanned image.
+      // Auto-fallback to vision if an API key is wired: render the
+      // first page to PNG and run it through the same vision parser
+      // the explicit image-of-application path uses. This is the
+      // common real-world TTB submission case (printed and re-
+      // scanned forms). Without an API key, surface the same error
+      // as before so the operator knows to wire one or re-upload.
+      if (!args.apiKey) {
+        throw new ApplicationParseError(
+          "parse-failed",
+          "PDF has no extractable text (it may be a scanned image). Configure GOOGLE_API_KEY to enable the vision fallback, re-upload as an image, or fill in manually.",
+        );
+      }
+      try {
+        const rendered = await extractPdfFirstPage(args.buffer);
+        const visionOut = await parseApplicationImage(
+          rendered.pngBuffer,
+          "image/png",
+          { apiKey: args.apiKey },
+        );
+        return {
+          fields: visionOut.fields,
+          source: "pdf-vision-fallback",
+          warnings: [
+            "PDF had no extractable text — fell back to vision OCR of the rendered first page. Verify the extracted fields.",
+            ...visionOut.warnings,
+          ],
+          confidence: "low",
+        };
+      } catch (err) {
+        throw new ApplicationParseError(
+          "parse-failed",
+          `PDF has no extractable text and the vision fallback failed: ${(err as Error).message}`,
+        );
+      }
     }
     const parsed = parseApplicationText(text);
     return {

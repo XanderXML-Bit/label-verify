@@ -361,20 +361,49 @@ paths:
     post:
       summary: Submit a batch of labels for asynchronous verification
       description: |
-        Accepts up to MAX_BATCH (default 1000) labels via multipart
-        upload. Returns a `batchId`. Stream individual results via
-        the `/api/verify/batch/{id}/stream` Server-Sent Events
-        endpoint.
+        Accepts up to MAX_BATCH_ITEMS (computed from GEMINI_RPM_LIMIT;
+        ~100 by default, hard ceiling MAX_BATCH_SIZE = 1000) labels
+        via multipart upload. Returns a `batchId` and a `pairing`
+        summary. Stream individual results via the
+        `/api/verify/batch/{id}/stream` Server-Sent Events endpoint.
+
+        Two submission paths:
+
+        1. EXPLICIT MANIFEST. Include a `manifest` form field — CSV or
+           JSON — that names each image by `filename` (or `file` /
+           `image`) and inlines the seven declared fields. Use when
+           the calling system exports structured COLA data.
+
+        2. AUTO-PAIR (no manifest). Upload image files (JPEG/PNG/WebP
+           /HEIC) AND application files (PDF/JSON/CSV/MD/TXT). The
+           route pairs them by filename stem (case- and extension-
+           insensitive), with a face-tag-stripped fallback for
+           multi-face uploads (`123-front.jpg` + `123-back.jpg` +
+           `123.pdf`). Each application file is parsed via the same
+           pipeline as `/api/application/parse`; PDFs without
+           extractable text auto-fall back to vision OCR of the
+           rendered first page.
+
+        Aggregate body cap: MAX_BATCH_BODY_BYTES = 256 MiB. Per-image
+        cap: 10 MB. Per-IP rate limit on this route is
+        `batch-create:` bucket at RATE_LIMIT_BATCH_PER_MIN (default
+        3/min) — distinct from `/api/verify`.
       requestBody:
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [manifest]
               properties:
                 manifest:
                   type: string
-                  format: binary
+                  description: |
+                    Optional. CSV or JSON describing the batch. When
+                    omitted, the route falls back to filename-stem
+                    auto-pairing (see description).
+                # The route iterates all File entries in the form
+                # body; field names can be anything. Files are
+                # classified by MIME or extension and routed by
+                # the manifest (if present) or by stem-match.
       responses:
         "200":
           description: Batch accepted
@@ -385,8 +414,44 @@ paths:
                 properties:
                   batchId: { type: string }
                   count: { type: integer }
+                  pairing:
+                    type: object
+                    properties:
+                      mode:
+                        type: string
+                        enum: [manifest, auto-stem]
+                      totalItems: { type: integer }
+                      pairedCount: { type: integer }
+                      pairs:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            image: { type: string }
+                            application: { type: string }
+                            stem: { type: string }
+                      unpairedImages:
+                        type: array
+                        items: { type: string }
+                      unpairedApplications:
+                        type: array
+                        items: { type: string }
+                      ignored:
+                        type: array
+                        items: { type: string }
+                  pairingErrors:
+                    type: array
+                    items: { type: string }
+        "400":
+          description: |
+            Malformed request — typically no files, an unparseable
+            manifest, or the auto-pair path yielded zero pairs. The
+            response body includes a `pairing` field showing what
+            was found.
         "413":
-          description: Payload too large
+          description: Payload too large (item count > MAX_BATCH_ITEMS, OR body bytes > MAX_BATCH_BODY_BYTES)
+        "429":
+          description: Rate-limited (per-IP batch-create bucket exhausted)
 
   /api/verify/batch/{id}/stream:
     get:

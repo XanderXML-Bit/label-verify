@@ -268,6 +268,101 @@ For the take-home submission window, document the realistic ceiling
 in the route docstring (done) and recommend batches ≤ 100 for the
 prototype demo URL.
 
+## Upload-flow ergonomics (project lead feedback, 2026-05-12 evening)
+
+### F1. Unified intent-inferring dropzone — **DONE 2026-05-12**
+Single dropzone classifies dropped files as image / application /
+other and branches: 1 image → single-pending; 1 image + 1 app →
+single + pre-fill via background `/api/application/parse` call;
+≥ 2 images → batch (auto-pair if apps tagged along). Implementation
+in `src/app/page.tsx:handleFiles` + `src/lib/batch-pairing.ts`.
+
+### F2. Smart batch pairing without a manifest — **DONE 2026-05-12**
+`pairByFilenameStem` with strict + face-tag-stripped two-pass
+matching; route returns a `pairing` summary so the operator can see
+exactly what was matched before any vision call fires. See
+`src/lib/batch-pairing.ts` + 13 tests in
+`src/tests/batch-pairing.test.ts`.
+
+### F3. PDF → vision auto-fallback for scanned applications — **DONE 2026-05-12**
+`parseApplication()` accepts an optional `apiKey`. When a PDF has
+no extractable text (typical for scanned forms), the first page is
+rendered to PNG via `extractPdfFirstPage` and routed through the
+existing `parseApplicationImage` vision parser. Confidence is
+flagged `"low"` and a warning surfaces in the response so the
+reviewer knows to double-check the extracted fields. Without
+`GOOGLE_API_KEY`, the route keeps the original "re-upload as image"
+error — fail-loud rather than silently degrade.
+
+### F4. JSON + CSV export for single and batch — **DONE 2026-05-12**
+`src/lib/export-result.ts` centralises both formats. JSON uses
+versioned schema envelopes (`labelverify.v1.single`,
+`labelverify.v1.batch`) with status tallies and the full
+VerifyResponse per item. CSV includes per-field confidence, the
+Gov-Warning subscore quartet, review reasons, fallback indicator,
+and model id (strictly richer than the previous batch-only export).
+9 tests in `src/tests/export-result.test.ts`.
+
+### F5. DOCX application files
+**Not yet built.** The `parseApplication` dispatcher hands off to
+text / JSON / CSV / PDF parsers; DOCX would add a 6th branch via
+`mammoth` (~150 KB compressed). Scope: install `mammoth`, call
+`mammoth.extractRawText({ buffer })` → feed the resulting text
+into the existing `parseApplicationText`. Effort: ~2 hours including
+a regression test fixture. Skipped for the submission window
+because (a) TTB applicants typically file as PDF, not DOCX, and
+(b) the new PDF → vision fallback covers the "we got a printed-then-
+scanned form" case which is the more realistic gap. Re-evaluate if
+a reviewer hands us a DOCX they can't easily convert.
+
+### F6. Speculative pre-warming on upload
+**Not yet built — deliberate.** The proposal: kick off
+`/api/extract` (image) and `/api/application/parse` (application
+file) in the background the moment files are dropped, store the
+result in state, then on Verify either use the cached extraction
+(fast path) or fall through to a normal `/api/verify` call if the
+pre-warm hasn't landed (slow path).
+
+Real benefit: ~2 s wall-clock shaved off the user's perceived
+verify time when the pre-warm finishes before they click. The user
+sees the form pre-fill (already done in F1) as evidence the system
+is working.
+
+Honest cost analysis:
+- The image extraction the verify orchestrator runs is the SAME
+  Gemini call as `/api/extract`. Speculating means firing it
+  pre-emptively — doubling per-session vision spend ($0.25 → $0.50
+  per 1k labels) for users who click Verify, and burning a call for
+  users who drop the wrong file or navigate away.
+- The fallback path needs a state machine that handles: (a) drop
+  → pre-warm in-flight; (b) drop → pre-warm succeeded; (c) drop →
+  pre-warm failed; (d) Verify-clicked-mid-flight (abort the pre-
+  warm, switch to /api/verify); (e) declared-fields changed after
+  pre-warm landed (invalidate cache). That's a real state-machine
+  refactor.
+- The verify orchestrator currently does extract + compare in one
+  network round-trip — pre-warming splits that into two round-trips
+  and a cache-lookup, which has its own latency floor.
+
+Scope if built: ~6-8 hours including the state machine, abort
+plumbing, race-condition tests, and a "do not speculate if
+GOOGLE_API_KEY is unset" guard. Worth doing if the demo URL ever
+serves real TTB submission traffic; not worth doubling cost for the
+take-home review window.
+
+### F7. Multi-image batch without a manifest, fill-each-form UI
+**Not yet built.** When the operator drops N images (no application
+files, no manifest), the current batch route 400s with a clear
+"either drop application files too or upload a manifest" message
+— but there's no UI affordance for "let me fill the declared
+fields for each image inline." Scope: a paged form view that
+walks the operator through each image, capturing declared fields
+per image, then submits the result as a manifest JSON. Effort:
+~4-6 hours of UI + a new state in `page.tsx`. Lower priority
+because the smart-pairing path (F2) covers the realistic TTB case
+(operator has both labels and applications) and the manifest path
+covers the structured-export case.
+
 ## Out of scope (acknowledge but won't do)
 
 - Custom CNN training (no labelled data).

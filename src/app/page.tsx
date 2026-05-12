@@ -18,6 +18,7 @@ import {
 } from "./components/ApplicationUpload";
 import type { Sample } from "@/lib/samples";
 import { compressImageInBrowser } from "@/lib/client-compress";
+import { classifyFile } from "@/lib/batch-pairing";
 
 // Translate raw API error strings into plain-language copy a senior
 // reviewer can act on. The raw `HTTP 503` / `FUNCTION_INVOCATION_
@@ -106,13 +107,116 @@ export default function Home() {
 
   function handleFiles(files: File[]) {
     revokeIfPreview(stage);
-    if (files.length === 1) {
-      const f = files[0]!;
-      const url = URL.createObjectURL(f);
-      setStage({ kind: "single-pending", file: f, previewUrl: url });
-    } else if (files.length > 1) {
-      setStage({ kind: "batch-pending", files });
+    if (files.length === 0) return;
+
+    // Intent inference: classify dropped files into images vs
+    // application documents (PDF / JSON / CSV / MD / TXT) and branch.
+    // Per UX recommendation 2026-05-12: a single dropzone that handles
+    // (1 image, 1 image + 1 application, N images, N images + N apps)
+    // without making the reviewer hunt for the right input slot.
+    const images: File[] = [];
+    const apps: File[] = [];
+    const ignored: File[] = [];
+    for (const f of files) {
+      const kind = classifyFile(f);
+      if (kind === "image") images.push(f);
+      else if (kind === "application") apps.push(f);
+      else ignored.push(f);
     }
+
+    // Zero images: can't verify anything.
+    if (images.length === 0) {
+      // No safe way to enter a meaningful stage. Surface a transient
+      // alert via a single-error stage so the user sees a clear
+      // message, then returns to idle on dismiss.
+      setStage({
+        kind: "single-error",
+        // Synthesize a placeholder file/preview so the existing error
+        // stage shape is satisfied; reset() clears it.
+        file: apps[0] ?? new File([], "missing.txt"),
+        previewUrl: "",
+        message:
+          "Please include at least one label image (JPEG, PNG, WebP, HEIC, or PDF). " +
+          (apps.length
+            ? "An application file was detected but a label image is required for verification."
+            : "Unsupported file types were detected — drop a label image instead."),
+      });
+      return;
+    }
+
+    // One image: single-pending. If exactly one application file
+    // came along, kick off a background parse so the form pre-fills
+    // by the time the reviewer looks at it.
+    if (images.length === 1) {
+      const img = images[0]!;
+      const url = URL.createObjectURL(img);
+      setStage({ kind: "single-pending", file: img, previewUrl: url });
+
+      if (apps.length >= 1) {
+        // If multiple apps, prefer the one whose stem matches the
+        // image; else just take the first.
+        const matched =
+          apps.find((a) => stemMatches(a.name, img.name)) ?? apps[0]!;
+        void parseAppInBackground(matched);
+        if (apps.length > 1) {
+          // Surface the discarded apps as a console warning so a
+          // developer can see what was ignored; the reviewer just
+          // sees the form pre-filled.
+          console.warn(
+            `[upload] ${apps.length} application files dropped with 1 image; using "${matched.name}". Ignored: ${apps
+              .filter((a) => a !== matched)
+              .map((a) => a.name)
+              .join(", ")}`,
+          );
+        }
+      }
+      if (ignored.length > 0) {
+        console.warn(
+          `[upload] ignored ${ignored.length} unsupported file(s): ${ignored.map((f) => f.name).join(", ")}`,
+        );
+      }
+      return;
+    }
+
+    // Multiple images: batch mode. Apps tag along — the batch route
+    // auto-pairs by filename stem if no manifest is provided.
+    setStage({ kind: "batch-pending", files: [...images, ...apps] });
+  }
+
+  /** Parse an application file via /api/application/parse and feed the
+   *  result into the existing pre-fill state. Failures degrade
+   *  silently — the reviewer can still fill the form manually. */
+  async function parseAppInBackground(file: File) {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/application/parse", { method: "POST", body: fd });
+      if (!res.ok) return;
+      const body = (await res.json()) as ApplicationParsePayload & {
+        fields?: Partial<DeclaredFields>;
+      };
+      if (body.fields) {
+        handleApplicationParsed({
+          fields: body.fields,
+          source: body.source,
+          filename: file.name,
+          warnings: body.warnings ?? [],
+          confidence: body.confidence,
+        });
+      }
+    } catch {
+      // ignore — manual fill is always a fallback.
+    }
+  }
+
+  /** True if two filenames share the same stem (case-insensitive). */
+  function stemMatches(a: string, b: string): boolean {
+    const stem = (s: string) => {
+      const base = s.split(/[\\/]/).pop() ?? s;
+      const dot = base.lastIndexOf(".");
+      return (dot > 0 ? base.slice(0, dot) : base).toLowerCase();
+    };
+    return stem(a) === stem(b);
   }
 
   async function handleSample(sample: Sample, file: File) {

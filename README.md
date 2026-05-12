@@ -82,8 +82,32 @@ Open the live URL and choose one of three flows:
    does NOT render a PASS / FAIL / REVIEW chip — a yellow banner
    makes the "not a verification" status unmissable.
 
-Batch verification accepts up to the **quota-derived interactive cap** (100 labels by default) with a CSV/JSON manifest;
-results stream back over SSE with a virtualised table and CSV export. Very large uploads are bounded by a 256 MiB aggregate request cap to keep the in-memory serverless worker safe.
+**Batch verification** accepts up to the **quota-derived interactive
+cap** (100 labels by default; scales with `GEMINI_RPM_LIMIT`). Two
+ways to submit:
+
+1. **Explicit manifest.** A CSV or JSON `manifest` field names each
+   image by `filename` (or `file` / `image`) and inlines the seven
+   declared fields. Use when your COLA system can export a structured
+   manifest.
+2. **Auto-pair by filename stem.** Drop image files (JPEG/PNG/WebP/
+   HEIC) **and** application files (PDF/JSON/CSV/MD/TXT) in the same
+   upload — no manifest needed. The route matches them by filename
+   stem (case- and extension-insensitive), face-tag-stripped fallback
+   for the `123-front.jpg` + `123-back.jpg` + `123.pdf` multi-face
+   case, and parses each application file via the same parser the
+   single-flow uses (PDFs with no extractable text auto-fall-back to
+   vision OCR). The response includes a `pairing` summary so the
+   operator sees exactly what was matched before any vision call
+   fires.
+
+Results stream back over SSE with a virtualised table and a download
+in either **JSON** (full structured per-item VerifyResponse + status
+tallies, `labelverify.v1.batch` schema) or **CSV** (one row per item
+with per-field confidence + Gov-Warning subscores). Single-image
+verifications expose the same JSON / CSV download. Very large
+uploads are bounded by a 256 MiB aggregate request cap to keep the
+in-memory serverless worker safe.
 
 ## Architecture at a glance
 
