@@ -6,7 +6,7 @@
   "trailingSlash": false,
   "functions": {
     "src/app/api/verify/route.ts": {
-      "memory": 3009,
+      "memory": 2048,
       "maxDuration": 60
     },
     "src/app/api/verify/batch/route.ts": {
@@ -14,8 +14,16 @@
       "maxDuration": 60
     },
     "src/app/api/verify/batch/[id]/stream/route.ts": {
-      "memory": 3009,
+      "memory": 2048,
       "maxDuration": 300
+    },
+    "src/app/api/extract/route.ts": {
+      "memory": 2048,
+      "maxDuration": 60
+    },
+    "src/app/api/application/parse/route.ts": {
+      "memory": 1024,
+      "maxDuration": 60
     },
     "src/app/api/warmup/route.ts": {
       "memory": 1024,
