@@ -601,24 +601,25 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       // when the public listing lands.
       const extractor = new mod.OpenRouterExtractor({
         apiKey: routerKey,
-        modelSlug: "google/gemini-3-pro-preview",
-        pricing: { inputPer1M: 2.5, outputPer1M: 10 }, // TODO: confirm vs OpenRouter
+        modelSlug: "google/gemini-3.1-pro-preview",
+        pricing: { inputPer1M: 2.0, outputPer1M: 12.0 },
         structuredOutput: true,
       });
       return new VisionExtractorRunner("T6d", extractor, false);
     },
   },
   {
-    // T6e — Gemini 3 Flash Lite (cheap & fast frontier Google tier).
-    // Routed via OpenRouter because the direct @google/generative-ai SDK
-    // may not expose the flash-lite preview slug yet.
+    // T6e — Gemini 3.1 Flash Lite GA (cheap & fast frontier Google tier).
+    // Routed via OpenRouter for apples-to-apples cost accounting against
+    // the other OpenRouter contenders. The Google-SDK direct path uses the
+    // same model in `gemini.ts` (T6).
     id: "T6e",
     networkRequired: true,
     build: async () => {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error(
-          "T6e requires OPENROUTER_API_KEY (Gemini 3 Flash Lite via OpenRouter). " +
+          "T6e requires OPENROUTER_API_KEY (Gemini 3.1 Flash Lite via OpenRouter). " +
             "See https://openrouter.ai/models for the current slug.",
         );
       }
@@ -640,9 +641,8 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey,
-        modelSlug: "google/gemini-3-flash-lite-preview",
-        // Estimated: the flash-lite tier historically prices at ~0.10/0.40 per 1M.
-        pricing: { inputPer1M: 0.1, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        modelSlug: "google/gemini-3.1-flash-lite",
+        pricing: { inputPer1M: 0.25, outputPer1M: 1.5 },
         structuredOutput: true,
       });
       return new VisionExtractorRunner("T6e", extractor, false);
@@ -681,25 +681,28 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey,
-        modelSlug: "openai/gpt-5",
-        // GPT-5 list pricing as of 2026-05 (OpenRouter): refresh from the
-        // model page if OpenAI re-tiers.
-        pricing: { inputPer1M: 5, outputPer1M: 20 }, // TODO: confirm vs OpenRouter
+        // GPT-5.5 is OpenAI's current flagship vision tier (created
+        // 2026-04-24 on OpenRouter). Pricing pulled from OpenRouter's live
+        // model listing.
+        modelSlug: "openai/gpt-5.5",
+        pricing: { inputPer1M: 5, outputPer1M: 30 },
         structuredOutput: true,
       });
       return new VisionExtractorRunner("T7", extractor, false);
     },
   },
   {
-    // T7b — GPT-5 nano (OpenAI's smallest, fastest frontier tier).
+    // T7b — GPT-5.4 nano (OpenAI's smallest current vision tier — created
+    // 2026-03-17 on OpenRouter). Older 5-nano/5-mini are still on the
+    // catalog but at notably worse cost/perf vs the 5.4 line.
     id: "T7b",
     networkRequired: true,
     build: async () => {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error(
-          "T7b requires OPENROUTER_API_KEY (GPT-5 nano via OpenRouter). " +
-            "See https://openrouter.ai/openai/gpt-5-nano for the current slug + pricing.",
+          "T7b requires OPENROUTER_API_KEY (GPT-5.4-nano via OpenRouter). " +
+            "See https://openrouter.ai/openai/gpt-5.4-nano for the current slug + pricing.",
         );
       }
       let mod: {
@@ -720,26 +723,27 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey,
-        modelSlug: "openai/gpt-5-nano",
-        pricing: { inputPer1M: 0.1, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        modelSlug: "openai/gpt-5.4-nano",
+        pricing: { inputPer1M: 0.2, outputPer1M: 1.25 },
         structuredOutput: true,
       });
       return new VisionExtractorRunner("T7b", extractor, false);
     },
   },
   {
-    // T8 — GPT-OSS-120B (open-weights frontier). Useful as a self-hosting
-    // candidate: if accuracy is within tolerance we can pin a private
-    // deployment later. OpenRouter's structured-output support for
-    // open-weight models is patchy, so structuredOutput stays false.
+    // T8 — Mistral Medium 3.5 (Mistral's current flagship vision tier,
+    // created 2026-04-30 on OpenRouter). The older Pixtral Large slug
+    // disappeared from the OpenRouter catalogue, so this is the natural
+    // successor; mistral-medium-3-5 is multimodal and structured-output
+    // capable via OpenAI-compat tools.
     id: "T8",
     networkRequired: true,
     build: async () => {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error(
-          "T8 requires OPENROUTER_API_KEY (GPT-OSS-120B via OpenRouter). " +
-            "See https://openrouter.ai/openai/gpt-oss-120b for the current slug.",
+          "T8 requires OPENROUTER_API_KEY (Mistral Medium 3.5 via OpenRouter). " +
+            "See https://openrouter.ai/mistralai/mistral-medium-3-5 for the current slug.",
         );
       }
       let mod: {
@@ -760,26 +764,25 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey,
-        modelSlug: "openai/gpt-oss-120b",
-        // Open-weight pricing on OpenRouter typically sits well under the
-        // frontier closed-source rates; estimate refreshable from the
-        // OpenRouter model page.
-        pricing: { inputPer1M: 0.3, outputPer1M: 0.5 }, // TODO: confirm vs OpenRouter
+        modelSlug: "mistralai/mistral-medium-3-5",
+        pricing: { inputPer1M: 1.5, outputPer1M: 7.5 },
         structuredOutput: false,
       });
       return new VisionExtractorRunner("T8", extractor, false);
     },
   },
   {
-    // T9 — NVIDIA Nemotron (vision-language tuned). Slug guess based on
-    // OpenRouter's nvidia/* namespace; refresh if the catalogue moves.
+    // T9 — NVIDIA Nemotron 3 Nano Omni 30B (reasoning, vision, free tier).
+    // Created 2026-04-28 on OpenRouter and priced at $0 — the best
+    // free-tier vision-reasoning model available. Free tier is
+    // rate-limited but fine for an 90-image × 3-trial bake-off.
     id: "T9",
     networkRequired: true,
     build: async () => {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error(
-          "T9 requires OPENROUTER_API_KEY (NVIDIA Nemotron via OpenRouter). " +
+          "T9 requires OPENROUTER_API_KEY (NVIDIA Nemotron 3 Nano Omni via OpenRouter). " +
             "See https://openrouter.ai/models?q=nemotron for the current slug.",
         );
       }
@@ -801,26 +804,25 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey,
-        // TODO: confirm — Nemotron 3 Super may also appear as
-        // `nvidia/nemotron-3-super`. The nano-9b-v2 listing is the safer
-        // bet today; bump if Super is GA on OpenRouter.
-        modelSlug: "nvidia/nemotron-nano-9b-v2",
-        pricing: { inputPer1M: 0.2, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        modelSlug: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        pricing: { inputPer1M: 0, outputPer1M: 0 },
         structuredOutput: false,
       });
       return new VisionExtractorRunner("T9", extractor, false);
     },
   },
   {
-    // T10 — Mistral Pixtral Large (Mistral's frontier vision tier).
+    // T10 — Qwen 3.6 Flash (Alibaba's current flash-tier vision model,
+    // created 2026-04-27 on OpenRouter). High-value to test as a non-US
+    // contender at GPT-5.4-nano-class pricing.
     id: "T10",
     networkRequired: true,
     build: async () => {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error(
-          "T10 requires OPENROUTER_API_KEY (Mistral Pixtral Large via OpenRouter). " +
-            "See https://openrouter.ai/mistralai/pixtral-large-latest for the current slug.",
+          "T10 requires OPENROUTER_API_KEY (Qwen 3.6 Flash via OpenRouter). " +
+            "See https://openrouter.ai/qwen/qwen3.6-flash for the current slug.",
         );
       }
       let mod: {
@@ -841,23 +843,26 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey,
-        modelSlug: "mistralai/pixtral-large-latest",
-        pricing: { inputPer1M: 2, outputPer1M: 6 }, // TODO: confirm vs OpenRouter
+        modelSlug: "qwen/qwen3.6-flash",
+        pricing: { inputPer1M: 0.25, outputPer1M: 1.5 },
         structuredOutput: false,
       });
       return new VisionExtractorRunner("T10", extractor, false);
     },
   },
   {
-    // T11 — Llama 3.x Vision (open-weight vision baseline).
+    // T11 — Llama 4 Maverick (Meta's current open-weight vision tier,
+    // created 2025-04-05 on OpenRouter; Llama 4 Scout is the cheaper
+    // sibling). Older Llama 3.2 90B Vision slug is gone from the
+    // catalogue — Maverick is the natural successor.
     id: "T11",
     networkRequired: true,
     build: async () => {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error(
-          "T11 requires OPENROUTER_API_KEY (Llama 3.2 90B Vision via OpenRouter). " +
-            "See https://openrouter.ai/meta-llama/llama-3.2-90b-vision-instruct for the current slug.",
+          "T11 requires OPENROUTER_API_KEY (Llama 4 Maverick via OpenRouter). " +
+            "See https://openrouter.ai/meta-llama/llama-4-maverick for the current slug.",
         );
       }
       let mod: {
@@ -878,20 +883,18 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey,
-        modelSlug: "meta-llama/llama-3.2-90b-vision-instruct",
-        pricing: { inputPer1M: 0.4, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        modelSlug: "meta-llama/llama-4-maverick",
+        pricing: { inputPer1M: 0.15, outputPer1M: 0.6 },
         structuredOutput: false,
       });
       return new VisionExtractorRunner("T11", extractor, false);
     },
   },
   {
-    // T12 — Claude Opus 4.x (Anthropic's frontier 1M-context tier). We
-    // prefer the direct Anthropic SDK path (ClaudeOpusExtractor) over the
-    // OpenRouter proxy when ANTHROPIC_API_KEY is set, since direct calls
-    // expose Opus's full context window and prompt-caching surface. Falls
-    // back to OpenRouter only if the operator hasn't wired the Anthropic
-    // key — useful for bake-off operators who consolidate billing there.
+    // T12 — Claude Opus 4.7 (Anthropic's current frontier vision tier —
+    // created 2026-04-16 on OpenRouter, $5/$25 per 1M). We prefer the
+    // direct Anthropic SDK path when ANTHROPIC_API_KEY is set; fall back
+    // to OpenRouter so the bake-off still runs with consolidated billing.
     id: "T12",
     networkRequired: true,
     build: async () => {
@@ -914,7 +917,7 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
         }
         const extractor = new mod.ClaudeOpusExtractor({
           apiKey: directKey,
-          modelVersion: process.env.MODEL_CLAUDE_OPUS ?? undefined,
+          modelVersion: process.env.MODEL_CLAUDE_OPUS ?? "claude-opus-4-7",
         });
         return new VisionExtractorRunner("T12", extractor, false);
       }
@@ -942,10 +945,9 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.OpenRouterExtractor({
         apiKey: routerKey,
-        modelSlug: "anthropic/claude-opus-4-1",
-        // Opus list price on OpenRouter matches the direct Anthropic table.
-        pricing: { inputPer1M: 15, outputPer1M: 75 },
-        structuredOutput: false, // Anthropic Messages API doesn't honour json_schema
+        modelSlug: "anthropic/claude-opus-4.7",
+        pricing: { inputPer1M: 5, outputPer1M: 25 },
+        structuredOutput: false,
       });
       return new VisionExtractorRunner("T12", extractor, false);
     },

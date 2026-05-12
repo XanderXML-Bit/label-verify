@@ -226,11 +226,14 @@ export class ClaudeHaikuExtractor implements Extractor {
 // worth the ~5x Sonnet cost. Same Messages API call path as Sonnet —
 // only the default model and prices change.
 
-const OPUS_MODEL_DEFAULT = "claude-opus-4-1";
-// Pricing per Anthropic's published Opus 4.x table:
-// $15 / 1M input, $75 / 1M output.
-const OPUS_PRICE_INPUT_PER_M = 15;
-const OPUS_PRICE_OUTPUT_PER_M = 75;
+// Latest Anthropic frontier vision tier on the direct SDK as of 2026-05.
+// OpenRouter exposes the same model as `anthropic/claude-opus-4.7` (dot,
+// not dash) at the SAME price; T12's factory keeps both code paths.
+const OPUS_MODEL_DEFAULT = "claude-opus-4-7";
+// Pricing per Anthropic's published Opus 4.7 table (re-tiered down from
+// the 4.0/4.1 era pricing): $5 / 1M input, $25 / 1M output.
+const OPUS_PRICE_INPUT_PER_M = 5;
+const OPUS_PRICE_OUTPUT_PER_M = 25;
 
 export class ClaudeOpusExtractor implements Extractor {
   readonly id: string;
