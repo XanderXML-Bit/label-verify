@@ -6,9 +6,17 @@ import {
   type ApplicationParseResult,
 } from "@/lib/application/parse";
 import { parseApplicationImage } from "@/lib/application/parse-image";
+import { callerKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+// REMAINING-IMPROVEMENTS R4: separately bucket per-IP for this
+// endpoint so abuse of the image-of-application path (which calls
+// Gemini and bills us) can't piggyback on the user's /api/verify
+// budget. Default 60/min — same as /api/verify. The bucket key is
+// `app-parse:` prefixed so it's a distinct bucket per endpoint.
+const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
 // Strict allowlist — only formats Gemini's vision API will accept. We do
 // NOT pass arbitrary "image/*" through; an SVG buffer rewritten to JPEG
@@ -43,6 +51,24 @@ const ACCEPTED_IMAGE_MIME = new Set([
  * /api/verify like any manual entry would.
  */
 export async function POST(req: Request) {
+  const key = callerKey(req.headers);
+  const rl = rateLimit(`app-parse:${key}`, { perMinute: RATE_LIMIT_PER_MIN });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      {
+        error: `Rate limit exceeded. Try again in ${rl.resetSeconds}s.`,
+        code: "rate-limited",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.resetSeconds),
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
+  }
+
   let form: FormData;
   try {
     form = await req.formData();
@@ -105,7 +131,9 @@ export async function POST(req: Request) {
         warnings: out.warnings,
         confidence: "low",
       };
-      return NextResponse.json(body);
+      return NextResponse.json(body, {
+        headers: { "X-RateLimit-Remaining": String(rl.remaining) },
+      });
     } catch (err) {
       return NextResponse.json(
         {
@@ -119,7 +147,9 @@ export async function POST(req: Request) {
 
   try {
     const result = await parseApplication({ buffer, filename, mime });
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { "X-RateLimit-Remaining": String(rl.remaining) },
+    });
   } catch (err) {
     if (err instanceof ApplicationParseError) {
       return NextResponse.json(

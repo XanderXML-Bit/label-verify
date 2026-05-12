@@ -133,10 +133,13 @@ copy it from a toast. Tests in `src/tests/middleware-request-id.test.ts`.
 Documented but I haven't manually verified it produces useful output
 for a 100-row batch. Quick Playwright e2e.
 
-### R4. Rate-limit on `/api/application/parse` symmetric to `/api/verify`
-Currently the application-parse route shares the rate-limit bucket
-but the bucket key is per-IP not per-endpoint. Verify the current
-behaviour is what we want; document.
+### R4. Rate-limit on `/api/application/parse` symmetric to `/api/verify` — **DONE 2026-05-12**
+The application-parse route did NOT have rate-limiting at all on
+audit — a real gap, not just a documentation one. Fixed in
+`src/app/api/application/parse/route.ts`: `app-parse:${ip}` bucket
+at 60/min default, separate from `verify:` and `extract:` so the
+image-of-application vision-billed path can't piggyback. Regression
+test in `src/tests/api-application-parse-rate-limit.test.ts`.
 
 ### R5. Vercel Pro upgrade — document the deltas — **DONE 2026-05-12**
 Added `docs/DEPLOYMENT.md` §7a: Hobby → Pro table covering function

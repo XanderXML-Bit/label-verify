@@ -196,6 +196,17 @@ reproducible: same script, same corpus, comparable numbers.
   threshold). Aggregated by worst-of rule.
 - **Stats.** Wilson 95 % CI per technique × stratum. McNemar pairwise
   tests between candidate techniques.
+- **A binary scorer caveat.** The bench treats a comparator REVIEW
+  the same as a FAIL. That's deliberately strict: REVIEW means
+  "needs a human," which on a strict accuracy metric should not
+  count as correct. But it means the headline % understates
+  orchestrator-level UX, where REVIEW is a routed-to-human verdict
+  with a regulation-citing reason — not a refusal. The
+  `country_of_origin` field is the canonical example: 14 OOD images
+  return REVIEW (not FAIL) because the label doesn't visibly mark
+  USA on a US-domestic bottle, which TTB regulation explicitly
+  allows. They cost the bench number but are the correct production
+  behaviour. See [`docs/FAILURE-MODES.md`](docs/FAILURE-MODES.md) §F1.
 
 ## Beyond the brief
 

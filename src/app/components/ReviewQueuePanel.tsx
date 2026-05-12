@@ -115,6 +115,14 @@ export function ReviewQueuePanel({
               "No labels currently waiting on human review."
             )}
           </p>
+          {state.kind === "empty" && (
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Items appear here when the verifier needs a human judgment on
+              borderline cases — typically low extractor confidence on a
+              field that the comparator still passed, or a Gov-Warning
+              subscore in the review band.
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {hasToken && (

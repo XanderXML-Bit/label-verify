@@ -88,11 +88,14 @@ and the per-route handlers for the exact implementations.
 - See `src/lib/vision/prompts.ts` and `src/lib/ocr/sanitise.ts`.
 
 ### Rate limiting
-- Per-IP token bucket on `/api/verify`, `/api/extract`,
-  `/api/application/parse`. Default 60/min per IP, configurable via
-  `RATE_LIMIT_PER_MIN`.
+- Per-IP token bucket on `/api/verify`, `/api/extract`, and
+  `/api/application/parse`. Each route uses a DISTINCT bucket key
+  (`verify:`, `extract:`, `app-parse:` prefixes) so a noisy client
+  can't exhaust one endpoint's budget at another's expense. Default
+  60/min per IP per endpoint, configurable via `RATE_LIMIT_PER_MIN`.
 - Implementation in `src/lib/rate-limit.ts`, tested in
-  `src/tests/rate-limit.test.ts`.
+  `src/tests/rate-limit.test.ts` and
+  `src/tests/api-application-parse-rate-limit.test.ts`.
 
 ### Producer-comparator hardening
 - The `compareProducer` implicit-USA country inference (when the
@@ -140,10 +143,7 @@ This is a prototype, so we acknowledge:
 - **No request body signing.** A man-in-the-middle who already
   defeated TLS could alter the declared-fields JSON. Out of scope
   for the prototype; production would mint per-session HMACs.
-- **No fine-grained rate limiting per endpoint.** The bucket is
-  per-IP, shared across `/api/verify`, `/api/extract`, and
-  `/api/application/parse`. A noisy client could exhaust all three
-  with one. Tracked as item R4 in `docs/REMAINING-IMPROVEMENTS.md`.
+- **No CSRF tokens for state-changing endpoints** (see below).
 
 ## Vendor data handling
 
