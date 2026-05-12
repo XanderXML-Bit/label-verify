@@ -272,13 +272,7 @@ export default function Home() {
         <>
           <UploadZone onFiles={handleFiles} />
           <SampleAffordance onPick={handleSample} />
-          {/* Mode picker removed 2026-05-12: the bake-off
-              (docs/MODEL-SELECTION.md §4) showed three of the five
-              previously-offered modes were strictly worse than the
-              default on this corpus. Offering them mis-leads
-              non-technical reviewers. Underlying model-modes catalogue
-              + /api/verify?mode= parameter retained for the benchmark
-              harness and operator A/B testing. */}
+          {/* Single production path only: no reviewer/API-selectable model modes. */}
           <ReviewQueuePanel />
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">

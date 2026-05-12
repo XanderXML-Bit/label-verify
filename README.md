@@ -79,8 +79,8 @@ Open the live URL and choose one of three flows:
    does NOT render a PASS / FAIL / REVIEW chip — a yellow banner
    makes the "not a verification" status unmissable.
 
-Batch mode accepts up to **1,000 labels** with a CSV/JSON manifest;
-results stream back over SSE with a virtualised table and CSV export.
+Batch verification accepts up to **1,000 labels** with a CSV/JSON manifest;
+results stream back over SSE with a virtualised table and CSV export. Very large uploads are bounded by a 1 GiB aggregate request cap to keep the in-memory serverless worker safe.
 
 ## Architecture at a glance
 
@@ -126,8 +126,7 @@ Full decision trail in
 
 The brief explicitly permits cloud APIs (§8 Latitude: "free choice of
 model provider"). §10 asks for graceful degradation when the hosted
-model is unreachable — which we have, via the GPT-5.4-nano fallback
-plus a Tesseract-only floor.
+model is unreachable — which we have, via the GPT-5.4-nano fallback. There is no reviewer- or API-selectable model mode in production; every request uses the same primary path and only falls back on provider failure.
 
 ## Models benchmarked
 
@@ -212,7 +211,7 @@ reproducible: same script, same corpus, comparable numbers.
 
 - **Application-input parser** — PDF text extraction (pdfjs-dist),
   CSV/JSON parsing, Markdown / plain-text regex extraction, photo of
-  the application form via vision. Three input modes (manual / file /
+  the application form via vision. Three application-entry paths (manual / file /
   image-only) instead of just one.
 - **Sample affordance** — three pre-populated examples (PASS / FAIL /
   REVIEW) so a reviewer sees an end-to-end result on first click. Now

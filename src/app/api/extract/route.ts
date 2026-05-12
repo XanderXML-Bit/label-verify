@@ -51,9 +51,9 @@ export async function POST(req: Request) {
 
   const contentType = req.headers.get("content-type") ?? "";
 
-  // JSON: { url, mode? }
+  // JSON: { url }
   if (contentType.includes("application/json")) {
-    let body: { url?: unknown; mode?: unknown };
+    let body: { url?: unknown };
     try {
       body = (await req.json()) as typeof body;
     } catch {
@@ -68,7 +68,6 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const mode = typeof body.mode === "string" ? body.mode : undefined;
     let fetched;
     try {
       fetched = await fetchUrlImage(body.url);
@@ -81,10 +80,10 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runExtract(fetched.buffer, mode);
+    return runExtract(fetched.buffer);
   }
 
-  // multipart/form-data: { image | url, mode? }
+  // multipart/form-data: { image | url }
   let form: FormData;
   try {
     form = await req.formData();
@@ -97,10 +96,6 @@ export async function POST(req: Request) {
 
   const file = form.get("image");
   const urlField = form.get("url");
-  const modeField = form.get("mode");
-  const mode =
-    typeof modeField === "string" && modeField.trim() ? modeField.trim() : undefined;
-
   if (typeof urlField === "string" && urlField.trim()) {
     let fetched;
     try {
@@ -114,7 +109,7 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runExtract(fetched.buffer, mode);
+    return runExtract(fetched.buffer);
   }
 
   if (!(file instanceof File)) {
@@ -162,12 +157,12 @@ export async function POST(req: Request) {
   } else {
     buffer = raw;
   }
-  return runExtract(buffer, mode);
+  return runExtract(buffer);
 }
 
-async function runExtract(buffer: Buffer, mode: string | undefined) {
+async function runExtract(buffer: Buffer) {
   try {
-    const result = await extractOnly(buffer, mode ? { modelMode: mode } : {});
+    const result = await extractOnly(buffer, {});
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json(

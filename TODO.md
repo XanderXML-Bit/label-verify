@@ -55,7 +55,7 @@ thresholds), Gemini Flash extractor, all the way to commit `a99d8b9`.
 - [x] `POST /api/verify` — multipart OR JSON `{url, declared}`, JPEG /
       PNG / WebP / PDF (first-page)
 - [x] `POST /api/verify/batch` + `GET /api/verify/batch/:id/stream`
-      (per-item function invocations + SSE)
+      (SSE streaming from the in-memory batch worker)
 - [x] `GET /api/health`, `GET /api/warmup`
 - [x] URL fetch with SSRF safeguards (`src/lib/input-handlers.ts`)
 - [x] Rate limiter for public demo (`src/lib/rate-limit.ts`)
@@ -110,8 +110,7 @@ export, SSE stream wiring.
 - [x] Vercel project linked, auto-deploys on push to `main`
 - [x] Env vars set in Vercel (`GOOGLE_API_KEY`, `OPENAI_API_KEY`,
       `ANTHROPIC_API_KEY`, `MODEL_PRIMARY`, `MODEL_FALLBACK`,
-      `VISION_TIMEOUT_MS`, `RATE_LIMIT_PER_MIN`, `MAX_BATCH_SIZE`,
-      `DEBUG_TOKEN` optional)
+      `VISION_TIMEOUT_MS`, `RATE_LIMIT_PER_MIN`, `DEBUG_TOKEN` optional)
 - [x] `vercel.json` (region `iad1`, per-route memory + maxDuration,
       security headers)
 - [x] Production smoke (live demo at

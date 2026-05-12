@@ -29,9 +29,6 @@ function approximateCostUsd(modelId: string | undefined): number | null {
   return null;
 }
 
-// Display labels for the model modes the verifier may return.
-// Mirrors @/lib/model-modes#MODES but is kept inline so this client
-// browser bundle.
 
 interface SingleResultProps {
   readonly result: VerifyResponse;

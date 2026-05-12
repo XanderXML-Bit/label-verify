@@ -12,7 +12,6 @@ import {
 } from "@/lib/pdf";
 
 export const runtime = "nodejs";
-// Vercel max for hobby plan is 10s; we run within a 5s vision budget.
 export const maxDuration = 60;
 
 const PDF_MIME = "application/pdf";
@@ -50,9 +49,9 @@ export async function POST(req: Request) {
 
   const contentType = req.headers.get("content-type") ?? "";
 
-  // ─── JSON body: { url, declared, mode? } ─────────────────────────────────
+  // ─── JSON body: { url, declared } ───────────────────────────────────────
   if (contentType.includes("application/json")) {
-    let body: { url?: unknown; declared?: unknown; mode?: unknown };
+    let body: { url?: unknown; declared?: unknown };
     try {
       body = (await req.json()) as typeof body;
     } catch {
@@ -77,7 +76,6 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const mode = typeof body.mode === "string" ? body.mode : undefined;
     let fetched;
     try {
       fetched = await fetchUrlImage(body.url);
@@ -90,7 +88,7 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runVerify(fetched.buffer, parsed.data, rl, undefined, mode, requestId);
+    return runVerify(fetched.buffer, parsed.data, rl, undefined, requestId);
   }
 
   // ─── multipart/form-data: { image, declared } ────────────────────────────
@@ -107,10 +105,6 @@ export async function POST(req: Request) {
   const file = formData.get("image");
   const declaredRaw = formData.get("declared");
   const urlField = formData.get("url");
-  const modeField = formData.get("mode");
-  const formMode =
-    typeof modeField === "string" && modeField.trim() ? modeField.trim() : undefined;
-
   // URL inside a multipart body is supported as a convenience for the UI.
   if (typeof urlField === "string" && urlField.trim()) {
     if (typeof declaredRaw !== "string") {
@@ -150,7 +144,7 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runVerify(fetched.buffer, parsed.data, rl, undefined, formMode, requestId);
+    return runVerify(fetched.buffer, parsed.data, rl, undefined, requestId);
   }
 
   if (!(file instanceof File)) {
@@ -227,7 +221,7 @@ export async function POST(req: Request) {
   } else {
     buffer = raw;
   }
-  return runVerify(buffer, parsed.data, rl, file.name, formMode, requestId);
+  return runVerify(buffer, parsed.data, rl, file.name, requestId);
 }
 
 function pdfErrorStatus(code: PdfExtractError["code"]): number {
@@ -254,14 +248,10 @@ async function runVerify(
   declared: import("@/lib/types").DeclaredFields,
   rl: import("@/lib/rate-limit").RateLimitResult,
   filename?: string,
-  mode?: string,
   requestId?: string,
 ) {
   try {
-    const result = await verifyLabel(buffer, declared, {
-      recordTrace,
-      ...(mode ? { modelMode: mode } : {}),
-    });
+    const result = await verifyLabel(buffer, declared, { recordTrace });
     if (result.requiresHumanReview) {
       try {
         enqueueForReview({
@@ -296,7 +286,7 @@ async function runVerify(
     return NextResponse.json(
       {
         error: aborted
-          ? "Vision call exceeded the 5 s budget."
+          ? "Vision call exceeded the service time budget."
           : `Verification failed: ${e.message}`,
         aborted,
         ...(requestId ? { requestId } : {}),

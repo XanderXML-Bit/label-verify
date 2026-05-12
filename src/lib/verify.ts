@@ -1,7 +1,6 @@
 import { preprocessImage } from "./preprocess";
 import { GeminiFlashExtractor } from "./vision/gemini";
 import { tesseractEngine } from "./ocr/tesseract";
-import { DEFAULT_MODE_ID, getMode } from "./model-modes";
 import {
   compareBrand,
   compareAbv,
@@ -37,53 +36,14 @@ interface VerifyOptions {
    * populate the in-memory ring buffer; never affects the response.
    */
   recordTrace?: (trace: VerifyTrace) => void;
-  /**
-   * Optional model-mode ID (see lib/model-modes.ts). When provided and
-   * recognised, the orchestrator builds the extractor via that mode's
-   * factory. Falls through to `extractor` first (explicit beats mode) and
-   * to `buildDefaultExtractor()` last. Unknown IDs are silently ignored:
-   * the orchestrator must never 500 because the UI sent a stale mode.
-   */
-  modelMode?: string;
 }
 
-// 5-second hard limit retired (2026-05-12, per user). The original budget
-// was a project guard rail against the prior vendor's 30-40s P95. With
-// per-mode model selection (fast = ~2s, smart = ~20s), an "always abort
-// at 5s" rule causes every Smart-mode verify to 504. The new policy:
-//   - default ceiling = 60s (well above any single-call budget we expect)
-//   - per-mode override below tailors the bound to the model's typical P95
-// The deployed UI shows "Verified in N.N s" in the result; the user can
-// see how long any given call took without us forcibly cutting it off.
+// Single production mode. No public/API-selectable modes: every verify and
+// extract call uses the same Gemini Flash Lite primary path, with fallback only
+// when the primary provider fails. Explicit `opts.extractor` and
+// `opts.visionTimeoutMs` remain for tests and internal dependency injection.
 const DEFAULT_VISION_TIMEOUT_MS = 60_000;
-
-/**
- * Per-mode timeout policy. Different tiers have very different P95s —
- * fast tier (Gemini 3.1 Flash Lite, GPT-5 nano) ≈ 2-3s; smart tier
- * (Gemini 3.1 Pro Preview, GPT-5 full) ≈ 10-25s; balanced uses tiered
- * escalation which can stack both. Honors the model's needs rather than
- * imposing a one-size-fits-all timeout. Explicit `opts.visionTimeoutMs`
- * still wins for tests and custom callers.
- *
- * Returns `null` when no per-mode override applies (caller falls back
- * to DEFAULT_VISION_TIMEOUT_MS, which is now 60 s).
- */
-function timeoutForMode(modeId: string | undefined): number | null {
-  switch (modeId) {
-    case "smart":
-      return 60_000; // Gemini 3.1 Pro Preview headroom + slack
-    case "balanced":
-      return 45_000; // Tiered escalator: fast first, smart fallback on low conf
-    case "local":
-      return 30_000; // Tesseract-only; cold WASM start is the slow path
-    case "fast":
-    case "default":
-    case undefined:
-      return 15_000; // even "fast" models sometimes spike to ~8s — leave slack
-    default:
-      return null;
-  }
-}
+const PRODUCTION_MODE_ID = "default";
 
 /**
  * Per-field confidence floor below which we defer to a human reviewer
@@ -145,15 +105,7 @@ export async function verifyLabel(
   opts: VerifyOptions = {},
 ): Promise<VerifyResponse> {
   const startTotal = performance.now();
-  // Per-mode timeout policy: the fast tiers are budgeted for ~5s, but the
-  // smart tier (Gemini 3.1 Pro Preview) routinely takes 10-20s. If the
-  // caller picks a slow mode via the Settings panel we must give it the
-  // headroom it needs, otherwise every "Smart" verify 504s. Explicit
-  // `opts.visionTimeoutMs` always wins (tests, custom callers).
-  const visionTimeoutMs =
-    opts.visionTimeoutMs ??
-    timeoutForMode(opts.modelMode) ??
-    DEFAULT_VISION_TIMEOUT_MS;
+  const visionTimeoutMs = opts.visionTimeoutMs ?? DEFAULT_VISION_TIMEOUT_MS;
 
   // ─── 1. Preprocess ───────────────────────────────────────────────────────
   const preStart = performance.now();
@@ -164,27 +116,8 @@ export async function verifyLabel(
   const ctrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
 
-  // Extractor selection precedence:
-  //   1. opts.extractor — explicit instance (tests, custom callers)
-  //   2. opts.modelMode — selectable mode (Settings panel / API `mode` field)
-  //   3. buildDefaultExtractor() — legacy MODEL_PRIMARY path
-  // Unknown modeIds fall through to the legacy default so a stale
-  // client-side value never breaks the request.
-  let modeUsed: string = DEFAULT_MODE_ID;
-  let extractor: Extractor;
-  if (opts.extractor) {
-    extractor = opts.extractor;
-  } else if (opts.modelMode) {
-    const mode = getMode(opts.modelMode);
-    if (mode) {
-      extractor = mode.extractorFactory();
-      modeUsed = mode.id;
-    } else {
-      extractor = buildDefaultExtractor();
-    }
-  } else {
-    extractor = buildDefaultExtractor();
-  }
+  const modeUsed = PRODUCTION_MODE_ID;
+  const extractor = opts.extractor ?? buildDefaultExtractor();
 
   // OCR may finish first; if it does, we hand its text to the vision call.
   // If it doesn't, the vision call goes without (C1 degenerates to T6).
@@ -505,10 +438,7 @@ export async function extractOnly(
   opts: VerifyOptions = {},
 ): Promise<ExtractOnlyResponse> {
   const startTotal = performance.now();
-  const visionTimeoutMs =
-    opts.visionTimeoutMs ??
-    timeoutForMode(opts.modelMode) ??
-    DEFAULT_VISION_TIMEOUT_MS;
+  const visionTimeoutMs = opts.visionTimeoutMs ?? DEFAULT_VISION_TIMEOUT_MS;
 
   const preStart = performance.now();
   const pre = await preprocessImage(imageBytes);
@@ -517,21 +447,8 @@ export async function extractOnly(
   const ctrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
 
-  let modeUsed: string = DEFAULT_MODE_ID;
-  let extractor: Extractor;
-  if (opts.extractor) {
-    extractor = opts.extractor;
-  } else if (opts.modelMode) {
-    const mode = getMode(opts.modelMode);
-    if (mode) {
-      extractor = mode.extractorFactory();
-      modeUsed = mode.id;
-    } else {
-      extractor = buildDefaultExtractor();
-    }
-  } else {
-    extractor = buildDefaultExtractor();
-  }
+  const modeUsed = PRODUCTION_MODE_ID;
+  const extractor = opts.extractor ?? buildDefaultExtractor();
 
   let ocrText: string | undefined;
   let ocrWords: OcrWord[] | undefined;

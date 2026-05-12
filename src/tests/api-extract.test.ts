@@ -238,16 +238,13 @@ describe("/api/extract — multipart image path", () => {
     expect(resp.status).toBe(502);
   });
 
-  it("forwards mode field to extractOnly", async () => {
+  it("ignores stray mode field and always uses the single production path", async () => {
     const form = buildMultipart({
       image: { buffer: await tinyJpeg(), type: "image/jpeg", name: "x.jpg" },
     });
     form.append("mode", "fast");
     await POST(makeMultipartReq(form));
-    expect(extractOnlyMock).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      expect.objectContaining({ modelMode: "fast" }),
-    );
+    expect(extractOnlyMock.mock.calls[0]?.[1]).toEqual({});
   });
 });
 
