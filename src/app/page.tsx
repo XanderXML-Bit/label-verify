@@ -9,6 +9,10 @@ import { BatchView, type BatchRow } from "./components/BatchView";
 import { SampleAffordance } from "./components/SampleAffordance";
 import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
 import { SettingsPanel, useModelMode } from "./components/SettingsPanel";
+import {
+  ApplicationUpload,
+  type ApplicationParsePayload,
+} from "./components/ApplicationUpload";
 import type { Sample } from "@/lib/samples";
 import { compressImageInBrowser } from "@/lib/client-compress";
 
@@ -25,6 +29,15 @@ export default function Home() {
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
   const [manifestText, setManifestText] = useState("");
   const { modeId, setModeId } = useModelMode();
+  // Parsed application payload, used to prefill DeclaredForm. The
+  // monotonic `version` counter is appended to the form key so the
+  // controlled inputs re-initialise when a new file lands.
+  const [appPrefill, setAppPrefill] = useState<{
+    fields: ApplicationParsePayload["fields"];
+    source: ApplicationParsePayload["source"];
+    filename: string;
+    version: number;
+  } | null>(null);
 
   // Warm the function + Tesseract worker on page load (DEPLOYMENT.md §6).
   useEffect(() => {
@@ -143,6 +156,16 @@ export default function Home() {
       URL.revokeObjectURL(stage.previewUrl);
     }
     setStage({ kind: "idle" });
+    setAppPrefill(null);
+  }
+
+  function handleApplicationParsed(payload: ApplicationParsePayload) {
+    setAppPrefill((prev) => ({
+      fields: payload.fields,
+      source: payload.source,
+      filename: payload.filename,
+      version: (prev?.version ?? 0) + 1,
+    }));
   }
 
   return (
@@ -187,28 +210,39 @@ export default function Home() {
       )}
 
       {stage.kind === "single-pending" && (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="space-y-3">
-            <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Uploaded image
-            </h3>
-            {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image */}
-            <img
-              src={stage.previewUrl}
-              alt="Uploaded label preview"
-              loading="lazy"
-              decoding="async"
-              className="max-h-96 w-full rounded-lg border border-slate-200 bg-white object-contain p-2 dark:border-slate-700 dark:bg-slate-900"
+        <div className="space-y-6">
+          <ApplicationUpload onParsed={handleApplicationParsed} />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Uploaded image
+              </h3>
+              {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image */}
+              <img
+                src={stage.previewUrl}
+                alt="Uploaded label preview"
+                loading="lazy"
+                decoding="async"
+                className="max-h-96 w-full rounded-lg border border-slate-200 bg-white object-contain p-2 dark:border-slate-700 dark:bg-slate-900"
+              />
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded px-1 py-0.5 text-sm text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                Replace image
+              </button>
+            </div>
+            <DeclaredForm
+              // Re-mount when a new application file is parsed so the
+              // controlled inputs pick up the prefilled values via `initial`.
+              // Without the key bump the inputs stay on whatever the user
+              // last typed and silently swallow the new application data.
+              key={appPrefill ? `prefill-${appPrefill.version}` : "manual"}
+              onSubmit={submitSingle}
+              initial={appPrefill?.fields}
             />
-            <button
-              type="button"
-              onClick={reset}
-              className="rounded px-1 py-0.5 text-sm text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              Replace image
-            </button>
           </div>
-          <DeclaredForm onSubmit={submitSingle} />
         </div>
       )}
 

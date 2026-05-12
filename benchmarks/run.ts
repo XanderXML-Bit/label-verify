@@ -15,7 +15,39 @@
 // docs/CODEX-HANDOFF.md for the image-generation specification.
 
 import { readFile, readdir, writeFile, mkdir, stat } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
+
+// ─── .env.local loader (no extra deps) ──────────────────────────────────────
+// The bench runs via `tsx benchmarks/run.ts`, which does NOT auto-load
+// Next.js's `.env.local`. Without this, every vision technique skips with
+// "API key missing" even when the keys are committed to .env.local. Same
+// pattern as scripts/cross-validate-ai-corpus.ts.
+function loadDotenv(path: string): void {
+  if (!existsSync(path)) return;
+  const text = readFileSync(path, "utf8");
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq < 0) continue;
+    const k = line.slice(0, eq).trim();
+    let v = line.slice(eq + 1).trim();
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
+      v = v.slice(1, -1);
+    }
+    // Override empty-string parent-shell exports (a common Windows/WSL
+    // quirk where the shell ships ANTHROPIC_API_KEY="" or similar) so the
+    // .env.local value wins. Only skip when the parent already has a
+    // non-empty value, which is the legitimate "operator overrode it" case.
+    const existing = process.env[k];
+    if (existing === undefined || existing === "") process.env[k] = v;
+  }
+}
+loadDotenv(".env.local");
 import {
   type AccuracyPoint,
   type PerItemOutcome,
@@ -214,7 +246,9 @@ async function runTechnique(
   const trialsLog: TrialRecord[] = [];
   let failures = 0;
 
-  for (const gt of truths) {
+  for (let imgIdx = 0; imgIdx < truths.length; imgIdx++) {
+    const gt = truths[imgIdx]!;
+    const imgStart = performance.now();
     const imagePath = join(labelsDir, basename(gt.image));
     let imageBuf: Buffer;
     try {
@@ -264,6 +298,13 @@ async function runTechnique(
         console.warn(`[bench] ${id} ${gt.id} trial=${t}: ${msg}`);
       }
     }
+    // Per-image progress: prints a single line per image so a long-running
+    // technique (T4, T6c, T7, T12) doesn't look hung. Stays on console.warn
+    // so it interleaves correctly with summary lines through tee + 2>&1.
+    const imgElapsed = Math.round(performance.now() - imgStart);
+    console.warn(
+      `[bench] ${id} [${imgIdx + 1}/${truths.length}] ${gt.id}: ${imgElapsed}ms`,
+    );
   }
 
   return { id, outcomes, warningOutcomes, trials: trialsLog, failures };

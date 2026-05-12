@@ -223,6 +223,81 @@ interface PdfjsModule {
   };
 }
 
+// ─── Public: text-only extraction (application-document path) ──────────────
+//
+// The application-input flow doesn't need a synthesized PNG — it needs the
+// raw text so a regex pass can find "Brand Name:", "ABV:", etc. We re-use
+// the pdfjs parse from `extractPdfFirstPage` but stop after collecting
+// page text. Multi-page PDFs are walked top-to-bottom (and joined with
+// blank lines) so a multi-page TTB application file still works.
+
+export interface PdfTextResult {
+  text: string;
+  pageCount: number;
+}
+
+export async function extractPdfText(buffer: Buffer): Promise<PdfTextResult> {
+  if (buffer.byteLength > MAX_PDF_BYTES) {
+    throw new PdfExtractError(
+      "too-large",
+      `PDF exceeds ${MAX_PDF_BYTES} bytes.`,
+    );
+  }
+  const pdfjs = await loadPdfjs();
+  const data = new Uint8Array(buffer.byteLength);
+  data.set(buffer);
+  let doc: PdfDocumentLike;
+  try {
+    const loadingTask = pdfjs.getDocument({
+      data,
+      disableFontFace: true,
+      useSystemFonts: false,
+      isEvalSupported: false,
+    });
+    doc = (await loadingTask.promise) as PdfDocumentLike;
+  } catch (err) {
+    const e = err as { name?: string; message?: string };
+    if (e.name === "PasswordException") {
+      throw new PdfExtractError("encrypted", "PDF is password-protected.");
+    }
+    throw new PdfExtractError(
+      "render-failed",
+      `Could not parse PDF: ${e.message ?? "unknown error"}`,
+    );
+  }
+  const pageCount = doc.numPages;
+  if (pageCount < 1) {
+    throw new PdfExtractError("empty", "PDF has no pages.");
+  }
+  // Cap at 20 pages — a TTB COLA application file is normally 1–3 pages.
+  const pagesToRead = Math.min(pageCount, 20);
+  const blocks: string[] = [];
+  try {
+    for (let i = 1; i <= pagesToRead; i++) {
+      const page = (await doc.getPage(i)) as PdfPageLike;
+      const tc = await page.getTextContent();
+      const items = tc.items.filter(isTextItem);
+      const pageText = items
+        .map((it) => it.str)
+        .filter((s) => s.length > 0)
+        .join("\n");
+      blocks.push(pageText);
+    }
+  } catch (err) {
+    throw new PdfExtractError(
+      "render-failed",
+      `Could not extract text: ${(err as Error).message}`,
+    );
+  } finally {
+    try {
+      await doc.destroy();
+    } catch {
+      // ignore
+    }
+  }
+  return { text: blocks.join("\n\n"), pageCount };
+}
+
 let cached: PdfjsModule | null = null;
 async function loadPdfjs(): Promise<PdfjsModule> {
   if (cached) return cached;
