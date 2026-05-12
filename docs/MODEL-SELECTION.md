@@ -148,16 +148,31 @@ computed across the 5 successful images.
 
 **Verdict-decision criteria check (from §3):**
 
-1. ✅ Gov-Warning FN ≤ 10 %: T6's Government-Warning subscore is the
-   most reliable in the run — extractor + OCR-bbox bold + stroke-width
-   measurement converge on the regulator-dangerous direction.
-2. ✅ Accuracy CI lower bound ≥ 85 %: 97.6 % across 84 field
-   measurements; Wilson 95 % CI floor sits well above the threshold.
-3. ✅ P95 ≤ 6 s: T6 P95 = 3.34 s on this run.
+> **Honest framing on Gov-Warning FN.** The small 12-image routine
+> run reported a Gov-Warning FN-rate of 28.6 % (n=7 non-compliant
+> labels) — that small-sample number is **NOT** evidence that T6
+> meets the criterion. The criterion-check below uses the
+> 170-image combined-corpus run
+> (`benchmarks/results/2026-05-12T23-44-56-393Z.md`) where T6's
+> Gov-Warning FN-rate is **5.1 % (n=137, Wilson 95 % CI [2.5,
+> 10.2])**. Point estimate is inside the criterion; the CI upper
+> bound is at 10.2 % so the criterion holds at the point estimate
+> but the corpus is too small to be 95 %-confident.
+
+1. ⚠ Gov-Warning FN ≤ 10 %: point estimate 5.1 % is inside;
+   Wilson 95 % CI upper bound 10.2 % is just over. T6's
+   Government-Warning subscore combines model self-report + OCR-bbox
+   bold + classical-CV stroke-width measurement — three signals
+   that all need to fail for a non-compliant warning to slip
+   through as PASS. A federal deploy would want a larger
+   human-adjudicated holdout to tighten the CI.
+2. ✅ Accuracy CI lower bound ≥ 85 %: 93.8 % overall on the
+   170-image corpus; Wilson 95 % CI floor 92.3 % sits well above.
+3. ✅ P95 ≤ 6 s: T6 P95 = 4.1 s on the latest run.
 4. ✅ Cost ≤ $1 / 1k labels: $0.25 / 1k.
-5. ✅ Single-provider risk: Fallback (T7b, GPT-5.4-nano) is a different
-   provider (OpenAI). If Google's API is unreachable, the C5 tiered
-   escalation path swaps to T7b before degrading to Tesseract-only.
+5. ✅ Single-provider risk: Fallback (T7b, GPT-5.4-nano) is a
+   different provider (OpenAI). The fallback fires only on
+   primary-provider failure — see §4.4 for the exact contract.
 
 ### 4.3 What the priors got wrong
 
@@ -197,21 +212,39 @@ Result files committed: `benchmarks/results/2026-05-12T16-55-38-735Z.{md,json}`
 
 ### 4.4 Backup chain
 
-The orchestrator in `src/lib/verify.ts` defers to a fallback model when
-the primary's per-field confidence is below
-`REVIEW_CONFIDENCE_THRESHOLD = 0.55`. The chain is:
+The orchestrator in `src/lib/verify.ts` runs a single primary path
+and falls back to a second provider only on **primary failure**
+(network error, 5xx, rate-limit, schema-parse error, timeout abort).
+The chain in production today is:
 
 ```
-T6 (single primary path)
-  ↓ (any field returns confidence < 0.55)
-T7b (fallback, off critical path — does not block the response)
-  ↓ (network unreachable)
-T1 (network-blocked degradation: Tesseract + rule-based validators)
+T6 (primary: Gemini 3.1 Flash Lite)
+  ↓ (extractor throws — provider down / rate-limited / timed out)
+T7b (fallback: GPT-5.4-nano via OpenAI SDK, fresh AbortController + remaining-budget timer)
+  ↓ (both providers failed)
+500 — primary error surfaced to the caller
 ```
 
-The fallback runs only when the primary provider fails; it is not a low-confidence mode and does not add
-latency to the response the user sees. The review-queue surfaces the
-deferred verdict for human inspection regardless.
+**This is NOT a low-confidence-driven fallback.** A primary call
+that returns successfully but with confidence < 0.55 on any field
+does NOT trigger the fallback; instead, the orchestrator's
+`REVIEW_CONFIDENCE_THRESHOLD` floor routes the verdict to REVIEW
+and the review-queue surfaces it for human inspection. The fallback
+only fires when the primary literally fails to return a result.
+
+There is **no Tesseract-only degradation tier in production** —
+when both providers fail, the orchestrator surfaces the primary
+error and the request returns 5xx. Tesseract OCR runs in parallel
+to feed the Gov-Warning bold/size subscores; it is not a backup
+extractor.
+
+If you need a richer degradation story for a self-hosted deploy
+(e.g. an air-gapped TTB environment), the bench harness exercises
+T1 (Tesseract-only) and it scores ~33% on the corpus — well below
+the criterion, but it's a real third tier you could wire as a
+defensive fallback. The hosted prototype deliberately doesn't ship
+it because returning a 33%-accurate verdict to a TTB reviewer is
+worse than returning an error they can retry.
 
 ### 4.4 What we're not deciding here
 

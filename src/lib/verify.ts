@@ -549,13 +549,16 @@ export async function extractOnly(
   const modeUsed = PRODUCTION_MODE_ID;
   const extractor = opts.extractor ?? buildDefaultExtractor();
 
-  let ocrText: string | undefined;
+  // extractOnly mirrors verifyLabel's no-ocr-text-to-vision policy
+  // (Hermes audit, BLOCKER #4 — README said "vision-only" but this
+  // path was still passing ocrText into the vision prompt). OCR's
+  // text is captured for debug-trace below; only ocrWords (bboxes)
+  // feed the Gov-Warning validator.
   let ocrWords: OcrWord[] | undefined;
   let ocrElapsed: number | null = null;
   const ocrPromise: Promise<OcrResult | null> = tesseractEngine
     .run(pre.buffer, ctrl.signal)
     .then((r) => {
-      ocrText = r.text;
       ocrWords = r.words;
       ocrElapsed = r.latencyMs;
       return r;
@@ -566,7 +569,7 @@ export async function extractOnly(
     new Promise((resolve) => setTimeout(resolve, 1500)),
   ]);
   const visionCtx: ExtractorContext = {
-    ocrText,
+    // ocrText deliberately omitted — see comment above.
     ocrWords,
     signal: ctrl.signal,
   };
@@ -593,7 +596,8 @@ export async function extractOnly(
           modelVersion: fallbackModel,
         });
         extracted = await fallbackExtractor.extract(pre.buffer, {
-          ocrText,
+          // ocrText omitted — same C1-falsified rationale as the
+          // primary extractOnly path above.
           ocrWords,
           signal: fbCtrl.signal,
         });

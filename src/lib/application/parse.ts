@@ -15,9 +15,7 @@ import { parseApplicationImage } from "./parse-image";
 // or file extension (extension wins when MIME is generic like
 // "application/octet-stream"), runs it, and returns an ApplicationParseResult.
 //
-// What it does NOT do (yet):
-//   - DOCX — adds `mammoth` to the dep tree; deferred until a reviewer
-//     hands us a DOCX they can't easily convert to PDF/text.
+// What it does NOT do:
 //   - Image vision — the path is sketched as an `image-vision` source but
 //     calling the extractor lives in the API route, so it can pick the
 //     single production vision path without coupling this
@@ -205,17 +203,7 @@ export async function parseApplication(
     };
   }
 
-  // DOCX (not yet wired) — tell the reviewer to convert.
-  if (
-    mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    ext === "docx"
-  ) {
-    throw new ApplicationParseError(
-      "unsupported-mime",
-      "DOCX upload is not yet supported. Convert the file to PDF or paste the text directly.",
-      415,
-    );
-  }
+  // (DOCX handled above by parseApplicationDocx — earlier dispatch.)
 
   // Image — caller (the API route) handles the vision path so this
   // module stays free of the vision-adapter import surface.

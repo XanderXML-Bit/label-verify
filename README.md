@@ -20,8 +20,10 @@ country of origin, and the Government Warning statement under 27 CFR
 §16.21 / §16.22 (text, all-caps prefix, bold prefix, type size).
 
 The brief target was ≤ 5 s per label, beating the prior vendor's
-30–40 s. The deployed primary path runs in **3.2 s P50**, **4.6 s P95**
-on Gemini 3.1 Flash Lite at **$0.25 per 1,000 labels**.
+30–40 s. The deployed primary path runs in **3.0 s P50**, **4.1 s P95**
+on Gemini 3.1 Flash Lite at **$0.25 per 1,000 labels** (latest rerun
+2026-05-12T23-44-56Z after removing OCR-as-hint from the vision prompt
+shaved P95 from 4.6 s to 4.1 s).
 
 ## Headline measurement — combined-corpus bake-off (2026-05-12)
 
@@ -49,7 +51,7 @@ estimate** is inside the pre-registered ≤ 10 % criterion, but the
 small (n=137 non-compliant labels) to conclude the criterion holds at
 95 % confidence. A federal deploy would want a larger
 human-adjudicated holdout before signing off on this number. Source
-result file: `benchmarks/results/2026-05-12T17-10-53-642Z.md`. A side-
+result file: `benchmarks/results/2026-05-12T23-44-56-393Z.md`. A side-
 by-side test of Gemini **3 Flash Preview** scored 94.3 % overall but
 failed the GW FN criterion outright (10.8 % point estimate), so 3.1
 Flash Lite stays the deployed primary — see
