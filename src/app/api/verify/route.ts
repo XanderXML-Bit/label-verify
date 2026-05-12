@@ -14,7 +14,9 @@ import {
 } from "@/lib/pdf";
 
 export const runtime = "nodejs";
-// Vercel max for hobby plan is 10s; we run within a 5s vision budget.
+// 60 s ceiling matches Vercel Hobby. The vision call has its own
+// per-mode budget in `verify.ts:timeoutForMode()` (15–60 s) — this
+// is the outer wall.
 export const maxDuration = 60;
 
 const PDF_MIME = "application/pdf";
@@ -298,7 +300,7 @@ async function runVerify(
     return NextResponse.json(
       {
         error: aborted
-          ? "Vision call exceeded the 5 s budget."
+          ? "Vision call exceeded its per-mode time budget. Try again, or pick a different mode if a Smart-tier call is timing out."
           : `Verification failed: ${e.message}`,
         aborted,
         ...(requestId ? { requestId } : {}),

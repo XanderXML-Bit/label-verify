@@ -196,7 +196,7 @@ fresh deploy from the Vercel dashboard with **Redeploy → Clear build
 cache**.
 
 **Cold-start timeout (first request after 10+ min idle)**
-The `/api/verify` route allocates 3009 MB and loads sharp + Tesseract
+The `/api/verify` route allocates 2048 MB (Hobby plan cap) and loads sharp + Tesseract
 on first hit — that's ~2s of cold-start tax. The UI's warmup pinger
 (home page → `/api/warmup`) prevents this for any reviewer who lands
 on `/` first. If you suspect cold starts are biting, just refresh once.

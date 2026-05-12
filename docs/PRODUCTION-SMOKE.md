@@ -30,21 +30,40 @@ If any step fails, the deployment is **not** ready to ship. See
 
 ## Check 2 — Health endpoint (15 seconds)
 
-1. In a new tab, open `BASE_URL/api/health`.
-2. **Expected:** JSON response like:
+1. In a new tab, open `BASE_URL/api/health`. The endpoint returns a
+   minimal public shape to anonymous callers and a detailed shape
+   only with `Authorization: Bearer ${DEBUG_TOKEN}` (see SECURITY.md
+   for the auth contract).
+2. **Public expected (no auth):**
    ```json
    {
      "ok": true,
      "service": "label-verify",
-     "model": "gemini-2.0-flash-001",
-     "version": "a1b2c3d",
-     "timestamp": "2026-05-11T..."
+     "ready": true,
+     "notes": []
    }
    ```
-3. **Failure looks like:**
+3. **Detailed expected (with `Authorization: Bearer <DEBUG_TOKEN>`):**
+   ```json
+   {
+     "ok": true,
+     "service": "label-verify",
+     "ready": true,
+     "model": "gemini-3.1-flash-lite",
+     "fallbackModel": "gpt-5.4-nano",
+     "providers": { "google": true, "openai": true },
+     "version": "a1b2c3d",
+     "timestamp": "2026-05-12T...",
+     "notes": []
+   }
+   ```
+4. **Failure looks like:**
    - `404` → routing broken, redeploy.
-   - `model: "dev"` and `version: "dev"` → environment variables not
-     set; revisit checklist Step 2.
+   - `ready: false` with `notes` listing a missing key → set the
+     missing env var on Vercel, redeploy.
+   - `model: "dev"` and `version: "dev"` (only in the detailed
+     shape) → environment variables not set; revisit checklist
+     Step 2.
    - 500 with no body → check Vercel function logs.
 
 ---

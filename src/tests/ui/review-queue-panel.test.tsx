@@ -24,7 +24,7 @@ describe("ReviewQueuePanel", () => {
     render(<ReviewQueuePanel fetchFn={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: /open queue/i }));
     await waitFor(() =>
-      expect(screen.getByPlaceholderText(/DEBUG_TOKEN/)).toBeInTheDocument(),
+      expect(screen.getByPlaceholderText(/Access code/i)).toBeInTheDocument(),
     );
     expect(promptSpy).not.toHaveBeenCalled();
     promptSpy.mockRestore();

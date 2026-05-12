@@ -82,30 +82,37 @@ export const SAMPLES: readonly Sample[] = [
     },
   },
   {
-    // ai-label-0014 — Latitude Seven Hazy IPA. Partial occlusion on
-    // producer/warning area. Codex audit: "Partial occlusion condition
-    // confirmed; producer/address area not clean enough for strict
-    // use." This is exactly the kind of imperfect-photo case the
-    // pipeline should defer to human review on.
+    // Reuses the PASS sample image (Mill Creek Pilsner). The
+    // deferral is engineered by a class_type mismatch: label prints
+    // "Pilsner", application declares "Lager". TTB treats those as
+    // distinct class designations; the comparator's REVIEW_ALIASES
+    // bucket (matching/class.ts) routes such pairs to REVIEW. This
+    // is a real-production case — labels often use "Pilsner" and
+    // "Lager" interchangeably even though they're not. Previous
+    // sample (Latitude Seven IPA) used an image whose producer the
+    // model reliably extracted as "Latitude Seven Beverage Co.,
+    // Denver, CO" while declared said "Latitude Seven Brewing,
+    // Seattle, WA" — that's a hard FAIL on producer, not REVIEW.
+    // Pre-submission UI audit BLOCKER #1 (2026-05-12).
     id: "review",
     label: "REVIEW sample",
     shortDescription:
-      "Hazy IPA can with partial occlusion over producer/warning — flagged for human review.",
-    imageUrl: "/samples/review.jpg",
+      "Label reads 'Pilsner', application declares 'Lager' — distinct TTB class designations, surfaced for human confirmation.",
+    imageUrl: "/samples/pass.jpg",
     expectedVerdict: "review",
     expectedNote:
-      "A sticker or finger partially occludes the producer block and Government Warning. The pipeline cannot read the obscured fields confidently, so it routes the verdict to human review rather than guessing.",
+      "The label prints 'Pilsner' but the COLA application declares 'Lager'. These styles are used interchangeably on real labels but are distinct class designations under TTB rules — the comparator defers to a human reviewer rather than silently treating them as identical.",
     declared: {
-      brand_name: "Latitude Seven",
-      class_type: "Hazy IPA",
+      brand_name: "Mill Creek",
+      class_type: "Lager",
       class_category: "beer",
-      abv_percent: 6.8,
-      net_contents: { value: 16, unit: "fl_oz" },
+      abv_percent: 5.2,
+      net_contents: { value: 12, unit: "fl_oz" },
       producer: {
-        name: "Latitude Seven Brewing",
+        name: "Mill Creek Beverage Co.",
         street: null,
-        city: "Seattle",
-        state: "WA",
+        city: "Asheville",
+        state: "NC",
         postal_code: null,
         country: "USA",
       },

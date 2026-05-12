@@ -22,9 +22,18 @@ describe("X-Request-Id middleware (REMAINING-IMPROVEMENTS R2)", () => {
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   });
 
-  it("honours a valid inbound X-Request-Id", () => {
-    const res = middleware(makeReq({ "x-request-id": "abc-123_XYZ" }));
-    expect(res.headers.get("X-Request-Id")).toBe("abc-123_XYZ");
+  it("honours a valid inbound X-Request-Id (>= 8 chars)", () => {
+    const res = middleware(makeReq({ "x-request-id": "abc-123_XYZ_long" }));
+    expect(res.headers.get("X-Request-Id")).toBe("abc-123_XYZ_long");
+  });
+
+  it("rejects a too-short inbound id (< 8 chars) and generates a UUID instead", () => {
+    // Single-character or short IDs would collide trivially with other
+    // requests and pollute log greps. Per code-review B4.
+    const res = middleware(makeReq({ "x-request-id": "a" }));
+    const id = res.headers.get("X-Request-Id");
+    expect(id).not.toBe("a");
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   });
 
   it("ignores an inbound id with disallowed characters and generates a UUID instead", () => {

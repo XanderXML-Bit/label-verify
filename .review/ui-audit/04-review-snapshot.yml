@@ -1,0 +1,205 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Label Verify" [level=1] [ref=e6]
+        - paragraph [ref=e7]: TTB COLA prototype
+      - button "Toggle dark mode" [ref=e8] [cursor=pointer]:
+        - img [ref=e9]
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - heading "Verify a label against application data" [level=2] [ref=e14]
+        - paragraph [ref=e15]: Upload a label image, then add the COLA application data (PDF, JSON, CSV, Markdown, text, or a photo of the form) — or fill the fields in manually. Returns a pass / fail / review verdict in seconds.
+      - region "Verification result" [ref=e455]:
+        - generic [ref=e456]:
+          - heading "Verification result" [level=2] [ref=e457]
+          - generic [ref=e458]: Verified in 5.2 s · ≈ $0.25 per 1,000 labels
+        - generic [ref=e459]:
+          - img "Submitted label preview" [ref=e461]
+          - generic [ref=e462]:
+            - generic [ref=e463]:
+              - generic [ref=e464]:
+                - generic [ref=e465]:
+                  - generic [ref=e466]: "Image quality:"
+                  - generic "Image quality Re-photograph" [ref=e467]:
+                    - generic [ref=e468]: ○
+                    - text: Re-photograph
+                - generic [ref=e469]:
+                  - generic [ref=e470]: "Verdict:"
+                  - generic "Verdict FAIL" [ref=e471]:
+                    - generic [ref=e472]: ✗
+                    - text: FAIL
+              - paragraph [ref=e473]:
+                - strong [ref=e474]: Image quality is independent of compliance.
+                - text: Re-photograph the label in better light and resubmit. This does not mean the label is non-compliant.
+            - generic [ref=e475]:
+              - heading "Government Warning (27 CFR §16.21)" [level=3] [ref=e476]
+              - generic [ref=e478]:
+                - generic [ref=e479]:
+                  - generic [ref=e480]: Exact text matches federal language?
+                  - generic [ref=e481]:
+                    - 'generic "Internal confidence: 1.00" [ref=e482]': conf 1.00
+                    - generic "Verdict PASS" [ref=e483]:
+                      - generic [ref=e484]: ✓
+                      - text: PASS
+                - generic [ref=e485]:
+                  - generic [ref=e486]: Prefix all caps?
+                  - generic [ref=e487]:
+                    - 'generic "Internal confidence: 1.00" [ref=e488]': conf 1.00
+                    - generic "Verdict PASS" [ref=e489]:
+                      - generic [ref=e490]: ✓
+                      - text: PASS
+                - generic [ref=e491]:
+                  - generic [ref=e492]: Prefix bold (vs body)?
+                  - generic [ref=e493]:
+                    - 'generic "Internal confidence: 0.95" [ref=e494]': conf 0.95
+                    - generic "Verdict PASS" [ref=e495]:
+                      - generic [ref=e496]: ✓
+                      - text: PASS
+                - generic [ref=e497]:
+                  - generic [ref=e498]: Type size meets §16.22 minimum?
+                  - generic [ref=e499]:
+                    - 'generic "Internal confidence: 0.60" [ref=e500]': conf 0.60
+                    - generic "Verdict PASS" [ref=e501]:
+                      - generic [ref=e502]: ✓
+                      - text: PASS
+            - generic [ref=e503]:
+              - heading "Other declared fields" [level=3] [ref=e504]
+              - generic [ref=e505]:
+                - generic [ref=e506]:
+                  - generic [ref=e507]:
+                    - generic [ref=e508]: producer
+                    - generic "Verdict FAIL" [ref=e509]:
+                      - generic [ref=e510]: ✗
+                      - text: FAIL
+                  - generic [ref=e511]:
+                    - generic [ref=e512]:
+                      - term [ref=e513]: Expected
+                      - definition [ref=e514]:
+                        - list [ref=e515]:
+                          - listitem [ref=e516]:
+                            - generic [ref=e517]: "Name:"
+                            - text: Latitude Seven Brewing
+                          - listitem [ref=e518]:
+                            - generic [ref=e519]: "Street:"
+                            - text: —
+                          - listitem [ref=e520]:
+                            - generic [ref=e521]: "City:"
+                            - text: Seattle
+                          - listitem [ref=e522]:
+                            - generic [ref=e523]: "State:"
+                            - text: WA
+                          - listitem [ref=e524]:
+                            - generic [ref=e525]: "Postal code:"
+                            - text: —
+                          - listitem [ref=e526]:
+                            - generic [ref=e527]: "Country:"
+                            - text: USA
+                    - generic [ref=e528]:
+                      - term [ref=e529]: Found
+                      - definition [ref=e530]:
+                        - list [ref=e531]:
+                          - listitem [ref=e532]:
+                            - generic [ref=e533]: "Name:"
+                            - text: Latitude Seven Beverage Co.
+                          - listitem [ref=e534]:
+                            - generic [ref=e535]: "Street:"
+                            - text: 320 In
+                          - listitem [ref=e536]:
+                            - generic [ref=e537]: "City:"
+                            - text: Denver
+                          - listitem [ref=e538]:
+                            - generic [ref=e539]: "State:"
+                            - text: CO
+                          - listitem [ref=e540]:
+                            - generic [ref=e541]: "Postal code:"
+                            - text: —
+                          - listitem [ref=e542]:
+                            - generic [ref=e543]: "Country:"
+                            - text: —
+                  - paragraph [ref=e544]: 3 producer components did not match.
+                  - group [ref=e545]:
+                    - generic "Per-component breakdown" [ref=e546] [cursor=pointer]
+                    - list [ref=e547]:
+                      - listitem [ref=e548]: "name: fail"
+                      - listitem [ref=e549]: "street: pass"
+                      - listitem [ref=e550]: "city: fail"
+                      - listitem [ref=e551]: "state: fail"
+                      - listitem [ref=e552]: "postal code: pass"
+                      - listitem [ref=e553]: "country: pass"
+                - generic [ref=e554]:
+                  - generic [ref=e555]:
+                    - generic [ref=e556]: country of origin
+                    - generic "Verdict REVIEW" [ref=e557]:
+                      - generic [ref=e558]: ⚠
+                      - text: REVIEW
+                  - generic [ref=e559]:
+                    - generic [ref=e560]:
+                      - term [ref=e561]: "Expected:"
+                      - definition [ref=e562]: USA
+                    - generic [ref=e563]:
+                      - term [ref=e564]: "Found:"
+                      - definition [ref=e565]: —
+                  - paragraph [ref=e566]: Label does not visibly print a country of origin. Most US-produced beverages omit it (TTB requires it for imports only, per 27 CFR §4.39 / §5.36). Reviewer should confirm the producer address is US-based.
+                - generic [ref=e567]:
+                  - generic [ref=e568]:
+                    - generic [ref=e569]: brand name
+                    - generic "Verdict PASS" [ref=e570]:
+                      - generic [ref=e571]: ✓
+                      - text: PASS
+                  - generic [ref=e572]:
+                    - generic [ref=e573]:
+                      - term [ref=e574]: "Expected:"
+                      - definition [ref=e575]: Latitude Seven
+                    - generic [ref=e576]:
+                      - term [ref=e577]: "Found:"
+                      - definition [ref=e578]: Latitude Seven
+                - generic [ref=e579]:
+                  - generic [ref=e580]:
+                    - generic [ref=e581]: class type
+                    - generic "Verdict PASS" [ref=e582]:
+                      - generic [ref=e583]: ✓
+                      - text: PASS
+                  - generic [ref=e584]:
+                    - generic [ref=e585]:
+                      - term [ref=e586]: "Expected:"
+                      - definition [ref=e587]: Hazy IPA
+                    - generic [ref=e588]:
+                      - term [ref=e589]: "Found:"
+                      - definition [ref=e590]: Hazy IPA
+                - generic [ref=e591]:
+                  - generic [ref=e592]:
+                    - generic [ref=e593]: abv percent
+                    - generic "Verdict PASS" [ref=e594]:
+                      - generic [ref=e595]: ✓
+                      - text: PASS
+                  - generic [ref=e596]:
+                    - generic [ref=e597]:
+                      - term [ref=e598]: "Expected:"
+                      - definition [ref=e599]: "6.8"
+                    - generic [ref=e600]:
+                      - term [ref=e601]: "Found:"
+                      - definition [ref=e602]: "6.8"
+                - generic [ref=e603]:
+                  - generic [ref=e604]:
+                    - generic [ref=e605]: net contents
+                    - generic "Verdict PASS" [ref=e606]:
+                      - generic [ref=e607]: ✓
+                      - text: PASS
+                  - generic [ref=e608]:
+                    - generic [ref=e609]:
+                      - term [ref=e610]: "Expected:"
+                      - definition [ref=e611]: 16 fl oz
+                    - generic [ref=e612]:
+                      - term [ref=e613]: "Found:"
+                      - definition [ref=e614]: 16 fl oz
+            - button "Verify another label" [ref=e615] [cursor=pointer]
+  - contentinfo [ref=e52]:
+    - text: Prototype for the U.S. Department of the Treasury, Alcohol and Tobacco Tax and Trade Bureau. Not a production verification service. See
+    - link "github.com/XanderXML-Bit/label-verify" [ref=e53] [cursor=pointer]:
+      - /url: https://github.com/XanderXML-Bit/label-verify
+    - text: .
+  - alert [ref=e54]

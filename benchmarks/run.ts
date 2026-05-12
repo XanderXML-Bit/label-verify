@@ -12,7 +12,7 @@
 //
 // The corpus comes from --corpus <dir>/labels + <dir>/ground-truth (default
 // test-data; falls back to test-data-v2 if test-data is empty). See
-// docs/CODEX-HANDOFF.md for the image-generation specification.
+// docs/archive/CODEX-HANDOFF.md for the image-generation specification.
 
 import { readFile, readdir, writeFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";

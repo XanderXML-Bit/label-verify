@@ -79,7 +79,7 @@ conscious: routine = 15-label subset.
    `test-data-yourname/ground-truth/`.
 2. Each label needs a sibling JSON ground-truth file conforming to
    `GroundTruth` in `benchmarks/scorer.ts` (see
-   `docs/CODEX-HANDOFF.md` §3 for the canonical schema).
+   `docs/archive/CODEX-HANDOFF.md` §3 for the canonical schema).
 3. Validate with `npx tsx scripts/validate-corpus.ts test-data-yourname`.
 4. Run a bake-off pass:
    `npm run bench -- --corpus test-data-yourname --technique T6 --trials 1`.

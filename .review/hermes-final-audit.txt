@@ -1,0 +1,70 @@
+↻ Resumed session 20260512_140418_0ff281 (1 user message, 64 total messages)
+
+session_id: 20260512_140418_0ff281
+Not submit-ready. Files changed: none.
+
+BLOCKERS
+
+1. Batch upload claim is false on live Vercel.
+Paths: README.md:82-83, docs/openapi.yaml:360-366, src/app/api/verify/batch/route.ts:44-52, src/app/api/verify/batch/[id]/stream/route.ts:25-34
+Wrong: You claim 1,000-label batch upload, but Vercel Functions cap request/response payloads around 4.5 MB. Code comments assume 5 GB multipart bodies and 2 GB in-memory batch storage, which cannot work on the deployed platform.
+Fix: Replace multipart batch upload with direct-to-Blob/S3 upload plus durable queue/worker, or cap public demo to a Vercel-safe number and update README/OpenAPI/UI.
+
+2. The demo misses the core sub-5s promise.
+Path/URL: live /, “Try the fail sample”; README.md:22-24
+Wrong: Observed sample result: “Verified in 5.5 s.” The brief’s hard requirement is ~5s and README claims 4.6s P95.
+Fix: Add live smoke benchmarking for the three sample buttons; either make warmup/preprocess faster or change README to live-measured P95.
+
+3. Public API still exposes hidden model selection.
+Paths: docs/openapi.yaml:210-220, src/app/api/verify/route.ts:55-95, src/app/api/extract/route.ts:54-84, src/lib/verify.ts:183-199
+Wrong: UI removed mode choice, but unauthenticated callers can still submit mode and route to internal/costlier/different extractors. That undermines the single-engine submission story and creates abuse surface.
+Fix: Ignore mode unless an operator bearer/debug token is present; remove mode from public OpenAPI.
+
+4. Accuracy evidence is not federal-review-grade.
+Path: README.md:170-190
+Wrong: Headline accuracy relies heavily on synthetic SVG and AI-generated “photo-realistic” labels, with AI-assisted ground truth. That is not evidence of real COLA performance.
+Fix: Reframe as proxy validation; add a small human-adjudicated real/near-real holdout and report it separately.
+
+5. Government Warning false-negative risk is not actually below target with confidence.
+Path: README.md:35-48
+Wrong: Gov Warning FN is 5.1% with CI [2.5, 10.2], so the upper bound exceeds the ≤10% criterion. For a strict legal field, false PASS is disqualifying.
+Fix: Tune aggregation so any warning-text/bold/caps uncertainty becomes REVIEW, not PASS; optimize for near-zero false PASS.
+
+CRITICAL ISSUES
+
+1. Runtime contradicts “vision-only” documentation.
+Paths: README.md:92-95, README.md:152-155, src/lib/verify.ts:205-231
+Wrong: README says OCR hints hurt and “we ship vision-only,” but runtime waits up to 1.5s for OCR and passes ocrText/ocrWords to vision.
+Fix: Either remove OCR hints from production path or rewrite docs/benchmark claims.
+
+2. Upload size UX is misleading.
+Paths: src/app/api/verify/route.ts:29, src/app/page.tsx:29-31
+Wrong: UI says “under 10 MB,” but live Vercel can reject smaller multipart payloads.
+Fix: enforce client-side compressed payload limit matching deployment, or move uploads off function bodies.
+
+3. Rate limiting is not meaningful for paid public inference.
+Path: src/lib/rate-limit.ts:1-5, 90-103
+Wrong: process-local Map is bypassed across Vercel instances; fallback headers may be spoofable outside trusted proxy assumptions.
+Fix: shared Redis/Upstash limiter, strict trusted Vercel IP source, separate lower caps for batch/extract.
+
+4. Batch execution is not resumable and can rebill.
+Paths: src/lib/batch-store.ts:36-47, src/app/api/verify/batch/[id]/stream/route.ts:31-34
+Wrong: reconnect restarts from item 0; process death loses state.
+Fix: durable item table, cursor resume, idempotency key per image hash + manifest row.
+
+5. Live fail sample is diagnostically messy.
+URL: / sample “FAIL”
+Wrong: It is advertised as caps-only failure but also produces bad image quality, producer REVIEW, and country REVIEW.
+Fix: make sample fixtures isolate one reason each.
+
+POLISH
+
+1. README.md:182 links docs/CODEX-BATCH-02-HANDOFF.md; actual file is docs/archive/CODEX-BATCH-02-HANDOFF.md. Fix link.
+
+2. docs/openapi.yaml:466-467 has broken bearer-token formatting. Rewrite plain text.
+
+3. / shows Human Review Queue before any result. Collapse or move below result.
+
+4. Upload copy says “folder” before explaining manifest requirement. Add manifest note there.
+
+5. Cut README adjectives like “Pareto-dominant” and “government-grade”; use measured claims only.

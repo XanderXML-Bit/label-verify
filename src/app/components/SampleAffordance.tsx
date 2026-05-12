@@ -97,7 +97,7 @@ function lookForHint(s: Sample): string {
     case "fail":
       return "title-case warning prefix";
     case "review":
-      return "borderline bold stroke width on prefix";
+      return "label says \"Pilsner\", application says \"Lager\"";
     default:
       return s.expectedNote;
   }

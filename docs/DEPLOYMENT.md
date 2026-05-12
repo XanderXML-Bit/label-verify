@@ -43,17 +43,21 @@ exists. From `TODO.md` Phase 1:
 
 ## 3. Environment Variables
 
-Stored in Vercel project settings (never in the repo):
+Stored in Vercel project settings (never in the repo). `.env.example`
+is the canonical source — this table mirrors it. README + DEPLOYMENT-
+CHECKLIST cover acquisition.
 
-| Var | Purpose |
-|-----|---------|
-| `OPENROUTER_API_KEY` | Vision model access via OpenRouter (multi-provider). |
-| `OPENAI_API_KEY` | Direct OpenAI fallback. |
-| `ANTHROPIC_API_KEY` | Direct Claude fallback. |
-| `MODEL_PRIMARY` | Model identifier for the primary tier (e.g. `google/gemini-2.0-flash-001`). |
-| `MODEL_FALLBACK` | Higher-quality model for low-confidence escalation. |
-| `MAX_BATCH_SIZE` | Hard cap on uploads per request (default 1000). |
-| `RATE_LIMIT_PER_MIN` | Per-IP cap on the public demo. |
+| Var | Required? | Purpose |
+|-----|-----------|---------|
+| `GOOGLE_API_KEY` | **Yes** | Primary vision tier (Gemini 3.1 Flash Lite). |
+| `OPENAI_API_KEY` | Recommended | Auto-fallback (GPT-5.4-nano) when Gemini fails. |
+| `OPENROUTER_API_KEY` | Optional | Used only by the bake-off harness (not the deployed verify path). |
+| `MODEL_PRIMARY` | Optional | Override the primary model id. Default: `gemini-3.1-flash-lite`. |
+| `MODEL_FALLBACK` | Optional | Override the fallback model id. Default: `gpt-5.4-nano`. |
+| `VISION_TIMEOUT_MS` | Optional | Wall-clock budget for the vision call. Default: `60000`. |
+| `MAX_BATCH_SIZE` | Optional | Hard cap on uploads per batch request. Default: `1000`. |
+| `RATE_LIMIT_PER_MIN` | Optional | Per-IP per-endpoint cap on the public demo. Default: `60`. |
+| `DEBUG_TOKEN` | Optional | Bearer token gating `/api/debug/last`, `/api/queue`, and the detailed `/api/health` payload. Leave unset to hide those surfaces entirely. |
 
 A `.env.example` documents every var. The README explains how to obtain
 each key.

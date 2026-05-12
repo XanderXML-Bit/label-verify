@@ -65,10 +65,12 @@ export type ExtractedFields = z.infer<typeof ExtractedFieldsSchema>;
 // Anything an extractor wants to read besides the image. Today: OCR text
 // (for the C1 OCR+vision combined path) and a hard timeout signal.
 //
-// Important semantic: OCR is *conditionally* off the critical path. The
-// vision call does not wait for OCR — if OCR finishes first, its text is
-// included in the prompt; if it doesn't, the vision call goes without and
-// the C1 combined path degenerates to T4/T6. See ARCHITECTURE.md §4.3.
+// Production policy: the orchestrator does NOT pass `ocrText` to the
+// vision extractor. The C1 OCR-as-hint hypothesis was falsified in
+// the bake-off — text fed in lowered accuracy on stylised fonts.
+// `ocrText` is retained on the type so the bench harness can still
+// exercise it as a controlled variable, but the live verify path
+// only passes `ocrWords` (bboxes, consumed by the GW validator).
 export interface ExtractorContext {
   ocrText?: string;
   ocrWords?: OcrWord[];

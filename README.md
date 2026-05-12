@@ -91,15 +91,21 @@ flowchart LR
   V --> P[sharp preprocess]
   P --> O[Tesseract OCR]
   P --> X[Vision extractor]
-  O -. OCR text if returns first .-> X
   X --> M[Field matchers]
-  O --> M
-  M --> G[Gov Warning validator<br/>27 CFR §16.21 + §16.22<br/>+ classical-CV stroke-width bold]
-  G --> A[Aggregate verdict + image quality]
+  O --> G[Gov Warning validator<br/>27 CFR §16.21 + §16.22<br/>+ classical-CV stroke-width bold]
+  X --> G
+  M --> A[Aggregate verdict + image quality]
+  G --> A
   A --> UI
   V -. on Gemini failure .-> F[Fallback: GPT-5.4-nano]
   F --> M
 ```
+
+OCR runs in parallel with the vision call but its text is **not** fed
+into the vision prompt — the C1 "OCR-as-hint" hypothesis was
+falsified in the bake-off (it lowered accuracy on stylised fonts).
+OCR's only role is to locate the Government Warning prefix bbox for
+the classical-CV bold + size subscores.
 
 Latency budget is honest: vision call dominates (~2 s P50), preprocess
 + OCR run in parallel, matchers + validators are sub-100ms. The
@@ -179,7 +185,7 @@ reproducible: same script, same corpus, comparable numbers.
   `test-data/ai-generated/manifest.json`). Batch 02 specifically
   targeted Gov-Warning paraphrase stress, photo-quality stress, and
   novel beverage categories — see
-  [`docs/CODEX-BATCH-02-HANDOFF.md`](docs/CODEX-BATCH-02-HANDOFF.md).
+  [`docs/archive/CODEX-BATCH-02-HANDOFF.md`](docs/archive/CODEX-BATCH-02-HANDOFF.md).
 - **Ground truth.** Each image has a JSON ground-truth file with all
   seven declared fields plus Gov-Warning subscore truths. Adjudication
   was the prompt-declared field set for synthetic; visual audit for
@@ -337,7 +343,7 @@ reproducibility.
   corpus we don't have yet. Batch 02 (30 images focused on
   Gov-Warning paraphrase stress, photo-quality stress, and novel
   beverage categories) is already merged; the spec lives at
-  [`docs/CODEX-BATCH-02-HANDOFF.md`](docs/CODEX-BATCH-02-HANDOFF.md)
+  [`docs/archive/CODEX-BATCH-02-HANDOFF.md`](docs/archive/CODEX-BATCH-02-HANDOFF.md)
   for reproducible regeneration.
 - **Single point of dependency.** The deployed demo uses one Google
   API key; if that key is rate-limited, the fallback to GPT-5.4-nano
@@ -362,7 +368,7 @@ reproducibility.
 - [`docs/government-warning-cases.md`](docs/government-warning-cases.md) — §16.21/§16.22 taxonomy
 - [`docs/UI-SPEC.md`](docs/UI-SPEC.md) — UI/UX spec
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — production runbook
-- [`docs/CODEX-BATCH-02-HANDOFF.md`](docs/CODEX-BATCH-02-HANDOFF.md) — next-batch corpus prompt
+- [`docs/archive/CODEX-BATCH-02-HANDOFF.md`](docs/archive/CODEX-BATCH-02-HANDOFF.md) — next-batch corpus prompt
 - [`docs/PROJECT-TODO.md`](docs/PROJECT-TODO.md) — locked-in overnight TODO + acceptance criteria
 
 The repo is documentation-first because, for a take-home, the

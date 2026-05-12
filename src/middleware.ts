@@ -11,11 +11,17 @@ import { NextResponse, type NextRequest } from "next/server";
 //
 // If the client already sent X-Request-Id (e.g. an upstream proxy /
 // CDN injected one), honour it — don't clobber operator trace context.
-// Cap the inbound value at 128 chars and strip anything that isn't ASCII
-// alphanumeric / dash / underscore so a malicious client can't smuggle
-// log-injection sequences into our logging substrate.
+// Cap the inbound value at 128 chars, require ≥ 8 chars (so a single
+// character or short string can't pollute log greps + can't collide
+// trivially with another request's id), and strip anything that isn't
+// ASCII alphanumeric / dash / underscore so a malicious client can't
+// smuggle log-injection sequences into our logging substrate.
+//
+// The inbound id is correlation-only — it does NOT gate any auth
+// decision. Bearer-gated routes still check Authorization regardless
+// of what id the client supplied.
 
-const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
+const SAFE_ID_RE = /^[A-Za-z0-9_-]{8,128}$/;
 
 export function middleware(req: NextRequest): NextResponse {
   const inbound = req.headers.get("x-request-id");

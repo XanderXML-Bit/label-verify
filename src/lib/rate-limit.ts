@@ -7,12 +7,21 @@
 interface Bucket {
   /** Tokens available right now (fractional). */
   tokens: number;
-  /** Wall-clock ms of last refill. */
+  /** Monotonic ms of last refill (performance.now()-based). */
   updatedAt: number;
 }
 
 const BUCKETS = new Map<string, Bucket>();
 const SWEEP_AFTER_MS = 60 * 60 * 1000;
+
+// Monotonic clock — survives NTP step-backwards without falsely
+// crediting tokens (or, worse, debiting tokens via negative elapsed).
+// performance.now() returns ms since process start; the absolute value
+// is meaningless but the delta between two readings is always
+// non-negative. Per code-review C8.
+function nowMs(): number {
+  return performance.now();
+}
 
 export interface RateLimitOptions {
   /** Number of requests allowed per minute per key. */
@@ -33,7 +42,7 @@ export interface RateLimitResult {
  * per second.
  */
 export function rateLimit(key: string, opts: RateLimitOptions): RateLimitResult {
-  const now = Date.now();
+  const now = nowMs();
   const refillPerMs = opts.perMinute / 60_000;
   const cap = opts.burst ?? opts.perMinute;
 
@@ -42,14 +51,22 @@ export function rateLimit(key: string, opts: RateLimitOptions): RateLimitResult 
     bucket = { tokens: cap, updatedAt: now };
     BUCKETS.set(key, bucket);
   } else {
-    const elapsed = now - bucket.updatedAt;
+    // performance.now() is monotonic so `elapsed` is always >= 0, but
+    // we still floor at 0 belt-and-suspenders in case of pathological
+    // platform behaviour. Per C8.
+    const elapsed = Math.max(0, now - bucket.updatedAt);
     bucket.tokens = Math.min(cap, bucket.tokens + elapsed * refillPerMs);
     bucket.updatedAt = now;
   }
 
+  // Sweep runs on EVERY call — even denied ones — so a deployment
+  // that's saturated with rate-limited callers still releases stale
+  // bucket memory. Previously the sweep only fired on the allowed
+  // branch, causing unbounded growth in pathological cases. C8.
+  sweepStale(now);
+
   if (bucket.tokens >= 1) {
     bucket.tokens -= 1;
-    sweepStale(now);
     return {
       allowed: true,
       remaining: Math.floor(bucket.tokens),

@@ -168,15 +168,32 @@ export async function verifyLabel(
   const preElapsed = performance.now() - preStart;
 
   // ─── 2. OCR + vision in parallel ─────────────────────────────────────────
+  // Separate controllers for OCR vs the vision call. The vision call has
+  // a per-mode budget that can fire ctrl.abort() mid-OCR; if we shared
+  // one controller, every primary-vision-timeout would also kill OCR,
+  // leaving the Gov-Warning validator on the fallback path with only
+  // vision-self-reported flags (unreliable). Separate signals let OCR
+  // keep running independently and arrive in time for the GW validator's
+  // bold/size subscores. Per code-review B2.
   const ctrl = new AbortController();
+  const ocrCtrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
-  // Forward an external signal (e.g. SSE-client disconnect) into the
-  // per-call controller so the vision SDK sees a real abort and can
-  // tear down the in-flight HTTP request.
+  // OCR gets a slightly longer budget than vision — Tesseract on a cold
+  // worker has been known to spike to ~5 s, and we'd rather have OCR
+  // finish for the GW validator than abort it in lockstep with vision.
+  const ocrTimeoutHandle = setTimeout(
+    () => ocrCtrl.abort(),
+    Math.max(visionTimeoutMs, 10_000),
+  );
+  // Forward an external signal (e.g. SSE-client disconnect) into BOTH
+  // controllers so a navigate-away stops every in-flight call.
   const externalAbort = opts.abortSignal;
-  const onExternalAbort = () => ctrl.abort();
+  const onExternalAbort = () => {
+    ctrl.abort();
+    ocrCtrl.abort();
+  };
   if (externalAbort) {
-    if (externalAbort.aborted) ctrl.abort();
+    if (externalAbort.aborted) onExternalAbort();
     else externalAbort.addEventListener("abort", onExternalAbort, { once: true });
   }
 
@@ -202,31 +219,30 @@ export async function verifyLabel(
     extractor = buildDefaultExtractor();
   }
 
-  // OCR may finish first; if it does, we hand its text to the vision call.
-  // If it doesn't, the vision call goes without (C1 degenerates to T6).
-  let ocrText: string | undefined;
+  // OCR runs in parallel — its WORDS (bboxes) feed the Gov-Warning
+  // bold/size subscores. Its TEXT is intentionally NOT fed to the
+  // vision call (C1 was falsified — see comment block below).
   let ocrWords: OcrWord[] | undefined;
   let ocrElapsed: number | null = null;
 
   const ocrPromise: Promise<OcrResult | null> = tesseractEngine
-    .run(pre.buffer, ctrl.signal)
+    .run(pre.buffer, ocrCtrl.signal)
     .then((r) => {
-      ocrText = r.text;
       ocrWords = r.words;
       ocrElapsed = r.latencyMs;
       return r;
     })
     .catch(() => null);
 
-  // Race a short window so OCR can deliver hint text if it's fast enough.
-  // 1.5s is empirically about Tesseract's P50 on a 1600px label on Vercel.
-  await Promise.race([
-    ocrPromise,
-    new Promise((resolve) => setTimeout(resolve, 1500)),
-  ]);
+  // OCR runs in parallel with the vision call but its text is NOT
+  // injected into the vision prompt — the C1 "OCR-as-hint" hypothesis
+  // was falsified in the bake-off (text fed in lowered accuracy on
+  // stylised fonts). OCR's only role is to supply pixel-tight word
+  // bboxes for the Government Warning bold + size subscores below.
+  // Per code-review Hermes CRITICAL #1.
 
   const visionCtx: ExtractorContext = {
-    ocrText,
+    // ocrText intentionally omitted — see comment above.
     ocrWords,
     signal: ctrl.signal,
   };
@@ -249,6 +265,14 @@ export async function verifyLabel(
       if (!fallbackKey) {
         throw primaryErr;
       }
+      // SECURITY: if the EXTERNAL caller already aborted (e.g. SSE
+      // client disconnect mid-primary call), skip the fallback — we
+      // would otherwise burn a fresh vision call (~$0.001) and up to
+      // 25 s of compute on a request the user has already abandoned.
+      // Code-review B3.
+      if (externalAbort?.aborted) {
+        throw primaryErr;
+      }
       // SECURITY: don't reuse the primary controller's signal — it has
       // probably already aborted (which is why the primary call threw).
       // Reusing it would either short-circuit the fallback to an
@@ -263,8 +287,16 @@ export async function verifyLabel(
       );
       const fbCtrl = new AbortController();
       const fbTimer = setTimeout(() => fbCtrl.abort(), remainingMs);
+      // Also forward an external abort into the fallback controller so a
+      // disconnect mid-fallback also stops billing.
+      const onExternalAbortFb = () => fbCtrl.abort();
+      if (externalAbort && !externalAbort.aborted) {
+        externalAbort.addEventListener("abort", onExternalAbortFb, { once: true });
+      }
       const fallbackCtx: ExtractorContext = {
-        ocrText,
+        // ocrText intentionally omitted — same C1-falsified rationale
+        // as the primary call. ocrWords still feeds the GW validator
+        // below.
         ocrWords,
         signal: fbCtrl.signal,
       };
@@ -283,10 +315,16 @@ export async function verifyLabel(
         throw primaryErr;
       } finally {
         clearTimeout(fbTimer);
+        if (externalAbort) {
+          externalAbort.removeEventListener("abort", onExternalAbortFb);
+        }
       }
     }
   } finally {
     clearTimeout(timeoutHandle);
+    // Don't clear ocrTimeoutHandle here — OCR is still in flight for the
+    // Gov-Warning validator's race below (the 8 s GW await on
+    // ocrPromise). We clear it once we've used the OCR result.
     if (externalAbort) {
       externalAbort.removeEventListener("abort", onExternalAbort);
     }
@@ -335,6 +373,9 @@ export async function verifyLabel(
     ocrPromise,
     new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
   ]);
+  // OCR has either landed or the 8 s race timed out — either way the
+  // OCR controller's wall-clock is no longer needed.
+  clearTimeout(ocrTimeoutHandle);
   const gov = await validateGovernmentWarning({
     extracted: f.government_warning.value ?? {
       raw_text: null,
@@ -415,14 +456,22 @@ export async function verifyLabel(
   // IMAGE QUALITY (independent): driven by the extractor's per-field
   // confidence aggregate, not by the verdict. This is the critical UX
   // distinction — see UI-SPEC §2.2.
+  //
+  // We use the COMPARATOR's confidence (post-normalization) rather than
+  // the extractor's raw confidence so that legitimately-absent fields
+  // (e.g. country_of_origin on a US-domestic label, which the
+  // comparator routes to REVIEW @ 0.5) don't drag image quality to
+  // "bad". The extractor would report 0.0 for that field, which would
+  // mis-classify the image as bad even when the label is photographed
+  // perfectly. Per code-review C12.
   const fieldConfidences = [
-    f.brand_name.confidence,
-    f.class_type.confidence,
-    f.abv_percent.confidence,
-    f.net_contents.confidence,
-    f.producer.confidence,
-    f.country_of_origin.confidence,
-    f.government_warning.confidence,
+    brand.confidence,
+    cls.confidence,
+    abv.confidence,
+    nc.confidence,
+    producer.confidence,
+    country.confidence,
+    gov.confidence,
   ];
   const meanConf =
     fieldConfidences.reduce((s, x) => s + x, 0) / fieldConfidences.length;
@@ -477,7 +526,11 @@ export async function verifyLabel(
         modelId: extracted.modelId,
         modelVersion: extracted.modelVersion,
         promptHash: extracted.promptHash,
-        ocrText: ocrText ?? null,
+        // OCR text is captured here for the debug trace (operators
+        // grep it when triaging). It is NOT fed to the vision prompt
+        // — the C1 OCR-as-hint hypothesis was falsified in the
+        // bake-off, see comments earlier in this function.
+        ocrText: ocrFinal?.text ?? null,
         rawExtraction: extracted.rawOutput,
         response,
       });

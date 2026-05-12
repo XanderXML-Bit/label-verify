@@ -8,13 +8,17 @@
 
 ### Validation
 
-- **Combined-corpus bake-off** rerun on 170 images (90 SVG +
-  80 photo-realistic). Headline: T6 (Gemini 3.1 Flash Lite) =
-  93.3 % field accuracy / 2.4 s P50 / $0.25 per 1k labels on the
-  earlier 140-image cut; full 170-image numbers in
-  `benchmarks/results/`.
-- ID/OOD split now reported separately (96 % synthetic vs 88 %
-  photo-realistic). The OOD subset is the closer-to-real signal.
+- **Combined-corpus bake-off** on **170 images** (90 SVG-rendered
+  synthetic + 80 photo-realistic). Headline: T6 (Gemini 3.1 Flash
+  Lite) = **93.8 % field accuracy** (n=1,169) / **3.2 s P50, 4.6 s
+  P95** / **$0.25 per 1,000 labels**. Source result file:
+  `benchmarks/results/2026-05-12T17-10-53-642Z.md`. (The earlier
+  140-image cut at 93.3 % / 2.4 s is superseded; left in the
+  `benchmarks/results/` history for reproducibility.)
+- ID/OOD split: 95.8 % synthetic SVG vs 88.4 % photo-realistic.
+  The OOD subset is the closer-to-real signal.
+- Gov-Warning false-negative rate: 5.1 % (n=137, Wilson 95 % CI
+  [2.5, 10.2]) — inside the pre-registered ≤ 10 % criterion.
 - Wilson 95 % CIs on every accuracy number.
 - Hermes outside-reviewer pass on the headline framing.
 
@@ -43,7 +47,7 @@
 - **Codex Batch 02 corpus** — 30 targeted images (paraphrase stress,
   photo-quality stress, novel beverage categories like sake / cider /
   bilingual) generated via the handoff in
-  `docs/CODEX-BATCH-02-HANDOFF.md`.
+  `docs/archive/CODEX-BATCH-02-HANDOFF.md`.
 - **Batch endpoint cap raised** from 300 to 1000 with a 5 GB
   `Content-Length` pre-check before `formData()` buffering.
 
@@ -56,10 +60,14 @@
 - **README** rewritten as the submission report. Leads with corpus
   composition; per-field results, methodology, security posture, and
   self-host instructions all in one document.
-- **`/api/health`** gated detailed output behind same-origin referer
-  or Bearer DEBUG_TOKEN. Anonymous callers get the minimal
-  `{ ok, ready, service }` only — closes a deployment-fingerprint
-  leak.
+- **`/api/health`** initially gated detailed output behind same-
+  origin referer or Bearer DEBUG_TOKEN. **Later in the same release
+  the same-origin shortcut was removed** (see the
+  [Sibling-session consolidation] entry below) — Referer is
+  spoofable via cross-origin `fetch`, so it was a fingerprint leak,
+  not a security boundary. Final state: anonymous callers get the
+  minimal `{ ok, ready, service, notes }` shape; detailed payload
+  is reachable only with a valid Bearer token.
 
 ### Security
 

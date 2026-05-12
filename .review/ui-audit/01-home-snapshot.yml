@@ -1,0 +1,56 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Label Verify" [level=1] [ref=e6]
+        - paragraph [ref=e7]: TTB COLA prototype
+      - button "Toggle dark mode" [ref=e8] [cursor=pointer]:
+        - img [ref=e9]
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - heading "Verify a label against application data" [level=2] [ref=e14]
+        - paragraph [ref=e15]: Upload a label image, then add the COLA application data (PDF, JSON, CSV, Markdown, text, or a photo of the form) — or fill the fields in manually. Returns a pass / fail / review verdict in seconds.
+      - region "Label upload area" [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Drop label images here
+          - generic [ref=e19]: or use the button below · JPEG, PNG, WebP, PDF
+          - generic [ref=e20]: Single image, batch upload, or a folder
+          - 'button "Upload label images: drag and drop, or press Enter to browse" [ref=e21] [cursor=pointer]': Choose files
+        - status [ref=e22]
+      - region "Try a sample" [ref=e23]:
+        - heading "Try a sample" [level=3] [ref=e24]
+        - paragraph [ref=e25]: Pre-populated examples so you can see end-to-end results without filling the form. One of each verdict type.
+        - generic [ref=e26]:
+          - button "Try the pass sample" [ref=e27] [cursor=pointer]:
+            - generic [ref=e28]: "Expected: PASS"
+            - generic [ref=e29]: PASS sample
+            - generic [ref=e30]: Compliant beer label — every field should match.
+            - generic [ref=e31]: All seven regulated fields match the declared application data; Government Warning is fully compliant under 27 CFR §16.21.
+          - button "Try the fail sample" [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]: "Expected: FAIL"
+            - generic [ref=e34]: FAIL sample
+            - generic [ref=e35]: Spirits label with title-case 'Government Warning:' prefix — must fail (caps required).
+            - generic [ref=e36]: "Look for: title-case warning prefix"
+          - button "Try the review sample" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38]: "Expected: REVIEW"
+            - generic [ref=e39]: REVIEW sample
+            - generic [ref=e40]: Hazy IPA can with partial occlusion over producer/warning — flagged for human review.
+            - generic [ref=e41]: "Look for: borderline bold stroke width on prefix"
+      - region "Human review queue" [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading "Human review queue" [level=3] [ref=e45]
+            - paragraph [ref=e46]: No labels currently waiting on human review.
+            - paragraph [ref=e47]: Items appear here when the verifier needs a human judgment on borderline cases — typically low extractor confidence on a field that the comparator still passed, or a Gov-Warning subscore in the review band.
+          - button "Open queue" [ref=e49] [cursor=pointer]
+      - group [ref=e50]:
+        - generic "About this prototype" [ref=e51] [cursor=pointer]
+  - contentinfo [ref=e52]:
+    - text: Prototype for the U.S. Department of the Treasury, Alcohol and Tobacco Tax and Trade Bureau. Not a production verification service. See
+    - link "github.com/XanderXML-Bit/label-verify" [ref=e53] [cursor=pointer]:
+      - /url: https://github.com/XanderXML-Bit/label-verify
+    - text: .
+  - alert [ref=e54]

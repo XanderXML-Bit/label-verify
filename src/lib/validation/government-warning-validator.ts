@@ -146,9 +146,17 @@ export async function validateGovernmentWarning(input: {
 // printed label to the canonical text directly.
 function scoreText(raw: string | null): SubscoreResult {
   if (!raw) {
+    // raw_text=null from the extractor is ambiguous — it could mean
+    // "no warning visible on the label" OR "the warning is there but
+    // the model couldn't read it". The first case is a TTB violation;
+    // the second is a low-quality image. We can't distinguish them
+    // from the validator alone, so emit confidence=0 (not 1.0) so the
+    // orchestrator's image-quality aggregate correctly flags the image
+    // as low/bad — letting the reviewer disambiguate. Status stays
+    // FAIL so the regulator-strict semantic holds. Per code-review C4.
     return {
       status: "fail",
-      confidence: 1.0, // we are confident it is missing
+      confidence: 0,
     };
   }
   // Compare against the canonical full statement after normalization.
@@ -190,7 +198,9 @@ function scoreText(raw: string | null): SubscoreResult {
 // ─── caps subscore ──────────────────────────────────────────────────────────
 
 function scoreCaps(prefixText: string | null): SubscoreResult {
-  if (!prefixText) return { status: "fail", confidence: 1.0 };
+  // Same as scoreText: null prefix is ambiguous (missing vs unreadable).
+  // confidence=0 lets the image-quality aggregate flag it. Per C4.
+  if (!prefixText) return { status: "fail", confidence: 0 };
   return isPrefixAllCaps(prefixText)
     ? { status: "pass", confidence: 1.0 }
     : { status: "fail", confidence: 1.0 };
