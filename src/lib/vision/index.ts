@@ -2,9 +2,13 @@
 // so callers can `import { GeminiFlashExtractor } from "@/lib/vision"`
 // without reaching into individual files.
 
-export { GeminiFlashExtractor } from "./gemini";
-export { GPT4oMiniExtractor } from "./openai";
-export { ClaudeSonnetExtractor } from "./anthropic";
+export {
+  GeminiFlashExtractor,
+  GeminiFlashFullExtractor,
+  GeminiProExtractor,
+} from "./gemini";
+export { GPT4oMiniExtractor, GPT4oFullExtractor } from "./openai";
+export { ClaudeSonnetExtractor, ClaudeHaikuExtractor } from "./anthropic";
 export { TieredEscalationExtractor } from "./tiered";
 
 export { EXTRACTION_PROMPT, getPromptHash } from "./prompt";

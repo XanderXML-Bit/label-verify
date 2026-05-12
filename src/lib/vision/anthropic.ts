@@ -37,6 +37,110 @@ above. Output ONLY the JSON object — no prose before or after, no code
 fences, no commentary. The first character of your response must be "{"
 and the last character must be "}".`;
 
+// ─── Internal: shared Anthropic messages call ───────────────────────────────
+//
+// Sonnet (T5) and Haiku (T5b) differ only in default model and price tier.
+// The Messages API call shape, manual JSON parse, and abort race are
+// identical, so we share them here.
+
+interface AnthropicCallOptions {
+  client: Anthropic;
+  modelVersion: string;
+  priceInputPerM: number;
+  priceOutputPerM: number;
+  errorTag: string;
+}
+
+async function callAnthropic(
+  image: Buffer,
+  ctx: ExtractorContext | undefined,
+  cfg: AnthropicCallOptions,
+  modelId: string,
+): Promise<ExtractorResult> {
+  const start = performance.now();
+
+  // OCR-conditionally-off-path treatment, same as Gemini / OpenAI.
+  const ocrSection = ctx?.ocrText
+    ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
+    : "";
+  const promptText = EXTRACTION_PROMPT + ocrSection + JSON_ONLY_SUFFIX;
+
+  const signal = ctx?.signal;
+
+  const response = await Promise.race([
+    cfg.client.messages.create(
+      {
+        model: cfg.modelVersion,
+        max_tokens: MAX_OUTPUT_TOKENS,
+        temperature: 0,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: "image/jpeg",
+                  data: image.toString("base64"),
+                },
+              },
+              { type: "text", text: promptText },
+            ],
+          },
+        ],
+      },
+      signal ? { signal } : {},
+    ),
+    abortPromise(signal),
+  ]);
+
+  // Find the first text block. Anthropic responses are arrays of typed
+  // content blocks; for our prompt we expect exactly one text block.
+  const textBlock = response.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error(`${cfg.errorTag}: no text block in response content`);
+  }
+  const text = textBlock.text;
+
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(text);
+  } catch (err) {
+    throw new Error(
+      `${cfg.errorTag}: response was not JSON: ${(err as Error).message}\n` +
+        `Raw response (first 500 chars): ${text.slice(0, 500)}`,
+    );
+  }
+
+  const parsed = ExtractedFieldsSchema.safeParse(parsedJson);
+  if (!parsed.success) {
+    throw new Error(
+      `${cfg.errorTag}: schema validation failed: ${parsed.error.message}`,
+    );
+  }
+
+  const latencyMs = performance.now() - start;
+  const inputTokens = response.usage.input_tokens;
+  const outputTokens = response.usage.output_tokens;
+
+  return {
+    fields: parsed.data,
+    rawOutput: parsedJson,
+    latencyMs,
+    modelId,
+    modelVersion: cfg.modelVersion,
+    promptHash: getPromptHash(),
+    cost: {
+      inputTokens,
+      outputTokens,
+      costUsd:
+        (inputTokens / 1_000_000) * cfg.priceInputPerM +
+        (outputTokens / 1_000_000) * cfg.priceOutputPerM,
+    },
+  };
+}
+
 export class ClaudeSonnetExtractor implements Extractor {
   readonly id: string;
   readonly networkRequired = true;
@@ -54,90 +158,61 @@ export class ClaudeSonnetExtractor implements Extractor {
     image: Buffer,
     ctx?: ExtractorContext,
   ): Promise<ExtractorResult> {
-    const start = performance.now();
-
-    // OCR-conditionally-off-path treatment, same as Gemini / OpenAI.
-    const ocrSection = ctx?.ocrText
-      ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
-      : "";
-    const promptText = EXTRACTION_PROMPT + ocrSection + JSON_ONLY_SUFFIX;
-
-    const signal = ctx?.signal;
-
-    const response = await Promise.race([
-      this.client.messages.create(
-        {
-          model: this.modelVersion,
-          max_tokens: MAX_OUTPUT_TOKENS,
-          temperature: 0,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image",
-                  source: {
-                    type: "base64",
-                    media_type: "image/jpeg",
-                    data: image.toString("base64"),
-                  },
-                },
-                { type: "text", text: promptText },
-              ],
-            },
-          ],
-        },
-        signal ? { signal } : {},
-      ),
-      abortPromise(signal),
-    ]);
-
-    // Find the first text block. Anthropic responses are arrays of typed
-    // content blocks; for our prompt we expect exactly one text block.
-    const textBlock = response.content.find((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      throw new Error(
-        "ClaudeSonnetExtractor: no text block in response content",
-      );
-    }
-    const text = textBlock.text;
-
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(text);
-    } catch (err) {
-      throw new Error(
-        `ClaudeSonnetExtractor: response was not JSON: ${(err as Error).message}\n` +
-          `Raw response (first 500 chars): ${text.slice(0, 500)}`,
-      );
-    }
-
-    const parsed = ExtractedFieldsSchema.safeParse(parsedJson);
-    if (!parsed.success) {
-      throw new Error(
-        `ClaudeSonnetExtractor: schema validation failed: ${parsed.error.message}`,
-      );
-    }
-
-    const latencyMs = performance.now() - start;
-    const inputTokens = response.usage.input_tokens;
-    const outputTokens = response.usage.output_tokens;
-
-    return {
-      fields: parsed.data,
-      rawOutput: parsedJson,
-      latencyMs,
-      modelId: this.id,
-      modelVersion: this.modelVersion,
-      promptHash: getPromptHash(),
-      cost: {
-        inputTokens,
-        outputTokens,
-        costUsd:
-          (inputTokens / 1_000_000) * PRICE_INPUT_PER_M +
-          (outputTokens / 1_000_000) * PRICE_OUTPUT_PER_M,
+    return callAnthropic(
+      image,
+      ctx,
+      {
+        client: this.client,
+        modelVersion: this.modelVersion,
+        priceInputPerM: PRICE_INPUT_PER_M,
+        priceOutputPerM: PRICE_OUTPUT_PER_M,
+        errorTag: "ClaudeSonnetExtractor",
       },
-    };
+      this.id,
+    );
+  }
+}
+
+// ─── Claude Haiku extractor (T5b) ───────────────────────────────────────────
+//
+// Anthropic's fast tier. Cheaper and faster than Sonnet, with a distinct
+// accuracy/latency profile worth measuring against the Gemini/OpenAI
+// fast-tier candidates. Same Messages API call path as Sonnet — only the
+// default model and prices change.
+
+const HAIKU_MODEL_DEFAULT = "claude-haiku-4-5";
+const HAIKU_PRICE_INPUT_PER_M = 1;
+const HAIKU_PRICE_OUTPUT_PER_M = 5;
+
+export class ClaudeHaikuExtractor implements Extractor {
+  readonly id: string;
+  readonly networkRequired = true;
+  readonly modelVersion: string;
+  private readonly client: Anthropic;
+
+  constructor(opts: { apiKey: string; modelVersion?: string }) {
+    if (!opts.apiKey) throw new Error("ClaudeHaikuExtractor: missing apiKey");
+    this.modelVersion = opts.modelVersion ?? HAIKU_MODEL_DEFAULT;
+    this.id = `anthropic:${this.modelVersion}`;
+    this.client = new Anthropic({ apiKey: opts.apiKey });
+  }
+
+  async extract(
+    image: Buffer,
+    ctx?: ExtractorContext,
+  ): Promise<ExtractorResult> {
+    return callAnthropic(
+      image,
+      ctx,
+      {
+        client: this.client,
+        modelVersion: this.modelVersion,
+        priceInputPerM: HAIKU_PRICE_INPUT_PER_M,
+        priceOutputPerM: HAIKU_PRICE_OUTPUT_PER_M,
+        errorTag: "ClaudeHaikuExtractor",
+      },
+      this.id,
+    );
   }
 }
 

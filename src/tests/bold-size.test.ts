@@ -231,6 +231,149 @@ describe("measureRelativeBold", () => {
     expect(r.ratio).toBe(1);
     expect(r.confidence).toBe(0);
   });
+
+  it("B1 case: same-weight prefix and body returns ratio ≈ 1.0 (fail)", async () => {
+    // Reproduces the syn-beer-0014 B1 false-pass regression: prefix
+    // rendered at the SAME font-weight as body (CSS 400 / 400). The
+    // legacy `dark/height` metric was sensitive to bbox aspect ratio
+    // and could spuriously report ratio > 1.4. The new mean-stroke-
+    // thickness metric must return a ratio close to 1.0 → FAIL band.
+    //
+    // To approximate real text-glyph crossings without depending on
+    // system-installed fonts, we paint horizontal-stroke patterns:
+    //   - Each "word" is a band of horizontal strokes (1 row tall)
+    //     spaced 4 rows apart. Every dark pixel column will yield
+    //     multiple short vertical runs whose mean length = the stroke
+    //     thickness (1 row) — a faithful proxy for letter horizontal
+    //     bars (the "Government" G/E/R cross-strokes, etc.).
+    //   - Prefix and body use the SAME stroke thickness → metric ≈ 1.0.
+    const W = 600;
+    const H = 200;
+    const channels = 3;
+    const data = Buffer.alloc(W * H * channels, 255);
+    function paint(x: number, y: number) {
+      const i = (y * W + x) * channels;
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+    }
+    function paintHorizontalStripes(
+      x0: number,
+      y0: number,
+      w: number,
+      h: number,
+      strokeThickness: number,
+    ): void {
+      // Horizontal strokes spaced 4 rows apart, each `strokeThickness`
+      // rows tall. Every column has identical pattern → per-column
+      // mean dark-run length = strokeThickness.
+      for (let cy = y0; cy < y0 + h; cy += 4) {
+        for (let s = 0; s < strokeThickness; s++) {
+          if (cy + s >= y0 + h) break;
+          for (let cx = x0; cx < x0 + w; cx++) paint(cx, cy + s);
+        }
+      }
+    }
+    // Prefix region: thin (1 px) strokes, height 60 — large but light.
+    paintHorizontalStripes(50, 30, 200, 60, 1);
+    // Body region: thin (1 px) strokes, height 30 — smaller, SAME thickness.
+    paintHorizontalStripes(350, 50, 200, 30, 1);
+
+    const buf = await sharp(data, { raw: { width: W, height: H, channels } })
+      .png()
+      .toBuffer();
+
+    const prefix: OcrWord[] = [
+      word("GOVERNMENT", { x: 50, y: 30, width: 200, height: 60 }),
+    ];
+    const body: OcrWord[] = [
+      word("According", { x: 350, y: 50, width: 200, height: 30 }),
+    ];
+    const m = await measureRelativeBold(buf, prefix, body);
+    // Both regions have identical column-mean-run-length (1 px), so
+    // ratio is ≈ 1.0 — well below BOLD_RATIO_PASS=1.5 and below
+    // BOLD_RATIO_FAIL=1.15. The new metric correctly classifies B1 as fail.
+    expect(m.ratio).toBeGreaterThan(0.85);
+    expect(m.ratio).toBeLessThan(1.15);
+    expect(m.confidence).toBeGreaterThan(0);
+  });
+
+  it("returns clearly > 1.5 when the prefix has bolder horizontal strokes", async () => {
+    // Sanity check the OTHER direction: real-bold prefix → ratio in pass band.
+    const W = 600;
+    const H = 200;
+    const channels = 3;
+    const data = Buffer.alloc(W * H * channels, 255);
+    function paint(x: number, y: number) {
+      const i = (y * W + x) * channels;
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+    }
+    function paintHorizontalStripes(
+      x0: number,
+      y0: number,
+      w: number,
+      h: number,
+      strokeThickness: number,
+    ): void {
+      for (let cy = y0; cy < y0 + h; cy += 5) {
+        for (let s = 0; s < strokeThickness; s++) {
+          if (cy + s >= y0 + h) break;
+          for (let cx = x0; cx < x0 + w; cx++) paint(cx, cy + s);
+        }
+      }
+    }
+    paintHorizontalStripes(50, 30, 200, 60, 3); // bold strokes
+    paintHorizontalStripes(350, 50, 200, 30, 1); // regular strokes
+    const buf = await sharp(data, { raw: { width: W, height: H, channels } })
+      .png()
+      .toBuffer();
+    const m = await measureRelativeBold(
+      buf,
+      [word("GOVERNMENT", { x: 50, y: 30, width: 200, height: 60 })],
+      [word("According", { x: 350, y: 50, width: 200, height: 30 })],
+    );
+    expect(m.ratio).toBeGreaterThan(1.5);
+  });
+
+  it("propagates Tesseract fontBold fractions into the BoldMeasurement", async () => {
+    // When Tesseract emits `is_bold` per word, the bold measurement
+    // exposes the prefix/body fractions for downstream corroboration.
+    const buf = await sharp({
+      create: { width: 100, height: 60, channels: 3, background: "#fff" },
+    })
+      .png()
+      .toBuffer();
+    // Paint two minimal strokes so the metric doesn't degenerate.
+    const prefix: OcrWord[] = [
+      {
+        text: "GOVERNMENT",
+        bbox: { x: 0, y: 0, width: 50, height: 60 },
+        confidence: 0.95,
+        fontBold: true,
+      },
+      {
+        text: "WARNING",
+        bbox: { x: 50, y: 0, width: 50, height: 60 },
+        confidence: 0.95,
+        fontBold: true,
+      },
+    ];
+    const body: OcrWord[] = [
+      {
+        text: "according",
+        bbox: { x: 0, y: 0, width: 50, height: 30 },
+        confidence: 0.95,
+        fontBold: false,
+      },
+    ];
+    const m = await measureRelativeBold(buf, prefix, body);
+    // On a fully-white image the stroke proxy is null, but the fontBold
+    // fractions are still computed (they don't depend on pixel data).
+    expect(m.fontBoldFractionPrefix).toBe(1);
+    expect(m.fontBoldFractionBody).toBe(0);
+  });
 });
 
 // ─── Validator with OCR context ─────────────────────────────────────────────
@@ -319,6 +462,73 @@ describe("validateGovernmentWarning with OCR context", () => {
     // With OCR, the validator sees a 5px-tall prefix and downgrades the
     // size subscore (a regulator-defensible measurement).
     expect(withOcr.subscores.size.status).not.toBe("pass");
+  });
+
+  it("B1 false-pass regression: prefix at same weight as body returns bold=fail", async () => {
+    // Reproduces the syn-beer-0014 B1 case at the validator level.
+    // Renders prefix and body with IDENTICAL stroke thickness; even
+    // though the model self-reports `prefix_appears_bold=true` (the
+    // known false-positive failure mode), the OCR stroke-metric must
+    // override it and return bold=fail.
+    const W = 1600;
+    const H = 1200;
+    const data = Buffer.alloc(W * H * 3, 255);
+    function paint(x: number, y: number) {
+      const i = (y * W + x) * 3;
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+    }
+    function horizontalStripes(
+      x0: number,
+      y0: number,
+      w: number,
+      h: number,
+      strokeThickness: number,
+    ) {
+      // Horizontal strokes 4 rows apart, each `strokeThickness` rows tall.
+      // Per-column mean dark-run length = strokeThickness.
+      for (let cy = y0; cy < y0 + h; cy += 4) {
+        for (let s = 0; s < strokeThickness; s++) {
+          if (cy + s >= y0 + h) break;
+          for (let cx = x0; cx < x0 + w; cx++) paint(cx, cy + s);
+        }
+      }
+    }
+    // Prefix: tall (40 px), thin strokes (1 px). Body: short (20 px),
+    // SAME thin strokes (1 px). Same weight → ratio ≈ 1.0 → bold=fail.
+    horizontalStripes(100, 200, 300, 40, 1);
+    horizontalStripes(420, 200, 200, 40, 1);
+    // Body words below — same stroke thickness.
+    horizontalStripes(100, 260, 100, 20, 1);
+    horizontalStripes(220, 260, 100, 20, 1);
+    horizontalStripes(340, 260, 100, 20, 1);
+    horizontalStripes(460, 260, 100, 20, 1);
+
+    const image = await sharp(data, {
+      raw: { width: W, height: H, channels: 3 },
+    })
+      .png()
+      .toBuffer();
+    const sameWeightWords = [
+      word("GOVERNMENT", { x: 100, y: 200, width: 300, height: 40 }),
+      word("WARNING", { x: 420, y: 200, width: 200, height: 40 }),
+      word("(1)", { x: 100, y: 260, width: 30, height: 20 }),
+      word("According", { x: 140, y: 260, width: 100, height: 20 }),
+      word("to", { x: 250, y: 260, width: 30, height: 20 }),
+      word("the", { x: 290, y: 260, width: 40, height: 20 }),
+      word("Surgeon", { x: 340, y: 260, width: 80, height: 20 }),
+      word("General", { x: 430, y: 260, width: 80, height: 20 }),
+    ];
+    const r = await validateGovernmentWarning({
+      // Model says "yes bold" — the vision model's known overcall on B1.
+      extracted: { ...fullyCompliant, prefix_appears_bold: true },
+      declaredNetContents: LARGE,
+      imageDimsPx: { width: W, height: H },
+      ocrContext: { words: sameWeightWords, imageBuffer: image },
+    });
+    // The stroke metric overrides the model's false self-report.
+    expect(r.subscores.bold.status).not.toBe("pass");
   });
 
   it("size pass when OCR sees a normal-sized prefix", async () => {

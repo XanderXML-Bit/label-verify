@@ -191,13 +191,18 @@ function scoreCaps(prefixText: string | null): SubscoreResult {
 
 /**
  * Three signals, in order of authority:
- *   1. OCR-derived stroke-width ratio (when confidence is non-zero) —
- *      authoritative, regulator-defensible.
- *   2. Model's self-reported `prefix_appears_bold` boolean — fallback.
- *   3. Neither available → REVIEW.
+ *   1. OCR-derived mean-stroke-thickness ratio (when confidence is
+ *      non-zero) — authoritative, regulator-defensible.
+ *   2. Tesseract's per-word `is_bold` flag, when the engine emits it
+ *      — corroboration only (treat as advisory, never as the only signal).
+ *   3. Vision model's self-reported `prefix_appears_bold` boolean —
+ *      fallback when OCR fails to locate the prefix and corroboration
+ *      when it doesn't.
  *
- * The OCR signal can also COROBORATE the model flag: when both agree we
- * report higher confidence; when they disagree the worse signal wins.
+ * "prefer_model" mode (implicit): when the OCR stroke metric is in the
+ * REVIEW band (1.15 < ratio < 1.5) AND its confidence is low, we defer
+ * to the model's report. When both OCR and model agree on FAIL, we
+ * return FAIL with high confidence (corroborated finding).
  */
 function scoreBold(
   appearsBold: boolean | null,
@@ -211,30 +216,91 @@ function scoreBold(
         ? "fail"
         : ("review" as SubscoreStatus);
 
+  // Tesseract's per-word `is_bold` flag is unreliable on synthetic text
+  // (often emits `false` even when the glyph is clearly bold) but on
+  // real labels it's a credible third signal. When both prefix and body
+  // expose it, we use the DIFFERENCE between fractions as a secondary
+  // corroboration.
+  const fontBoldStatus: SubscoreStatus | null = (() => {
+    if (!ocr) return null;
+    const p = ocr.fontBoldFractionPrefix;
+    const b = ocr.fontBoldFractionBody;
+    if (p === null || b === null) return null;
+    // If most prefix words are flagged bold AND most body words are not,
+    // that's a strong corroboration of "bold prefix".
+    if (p >= 0.5 && b < 0.5) return "pass";
+    // If neither side is flagged bold, or both are equally flagged,
+    // that's a weak signal — could be a flag that Tesseract just isn't
+    // emitting reliably for this build. Don't take it as fail unless the
+    // body is MORE bold than the prefix (B2 inverse case).
+    if (b > p + 0.3) return "fail";
+    return null;
+  })();
+
   if (ocrStatus !== null) {
-    // OCR is the authoritative signal. If the model flag agrees, bump
-    // confidence; if it disagrees, demote to the worse of the two
-    // (never silently override OCR with a less-trustworthy model boolean,
-    // but acknowledge the disagreement).
-    if (appearsBold === null) {
-      return { status: ocrStatus, confidence: ocr!.confidence };
-    }
-    if (modelStatus === ocrStatus) {
-      // Agreement — bump confidence (capped at 0.95).
+    // OCR stroke metric is the primary authority. Fold in the font-bold
+    // and model signals as corroboration.
+    const signals: SubscoreStatus[] = [ocrStatus];
+    if (fontBoldStatus !== null) signals.push(fontBoldStatus);
+    if (modelStatus !== "review") signals.push(modelStatus);
+
+    // Count agreement: how many signals match the OCR verdict?
+    const agreeing = signals.filter((s) => s === ocrStatus).length;
+    const corroborated = agreeing >= 2 && signals.length >= 2;
+
+    // OCR pass: if model OR font-bold contradicts with "fail", and OCR
+    // ratio is in the lower half of the pass band, drop to REVIEW.
+    if (ocrStatus === "pass") {
+      const ratio = ocr!.ratio;
+      const inLowerPassBand = ratio < BOLD_RATIO_PASS + 0.2;
+      const contradicted =
+        (modelStatus === "fail" || fontBoldStatus === "fail") &&
+        inLowerPassBand;
+      if (contradicted) {
+        return { status: "review", confidence: Math.max(0.4, ocr!.confidence - 0.2) };
+      }
       return {
-        status: ocrStatus,
-        confidence: Math.min(0.95, ocr!.confidence + 0.15),
+        status: "pass",
+        confidence: corroborated
+          ? Math.min(0.95, ocr!.confidence + 0.15)
+          : ocr!.confidence,
       };
     }
-    // Disagreement: trust the worse of the two so we never silently pass
-    // a borderline case the model called "not bold".
-    const worst = aggregateStatus([ocrStatus, modelStatus]);
-    return { status: worst, confidence: Math.max(0.3, ocr!.confidence - 0.1) };
+
+    // OCR fail: if BOTH model and font-bold disagree (both say pass),
+    // this is suspicious — drop to REVIEW so a human looks.
+    if (ocrStatus === "fail") {
+      const modelDisagrees = modelStatus === "pass";
+      const fontBoldDisagrees = fontBoldStatus === "pass";
+      if (modelDisagrees && fontBoldDisagrees) {
+        return { status: "review", confidence: 0.4 };
+      }
+      // Corroborated fail = high-confidence FAIL.
+      return {
+        status: "fail",
+        confidence: corroborated
+          ? Math.min(0.95, ocr!.confidence + 0.15)
+          : ocr!.confidence,
+      };
+    }
+
+    // OCR review: defer to model when it's confident, otherwise stay review.
+    if (modelStatus !== "review") {
+      // prefer_model in the ambiguous OCR band.
+      return { status: modelStatus, confidence: 0.55 };
+    }
+    return { status: "review", confidence: ocr!.confidence };
   }
 
-  // Fall back to the legacy model-only path.
-  if (appearsBold === true) return { status: "pass", confidence: 0.7 };
-  if (appearsBold === false) return { status: "fail", confidence: 0.7 };
+  // No OCR signal — fall back to the model + font-bold (if available).
+  if (fontBoldStatus !== null && modelStatus === fontBoldStatus) {
+    // The font-bold signal alone, but corroborated by the model.
+    // `fontBoldStatus` is only ever "pass" | "fail" (never "review")
+    // per its construction above, so this is a 2-signal agreement.
+    return { status: fontBoldStatus, confidence: 0.7 };
+  }
+  if (appearsBold === true) return { status: "pass", confidence: 0.6 };
+  if (appearsBold === false) return { status: "fail", confidence: 0.6 };
   return { status: "review", confidence: 0.5 };
 }
 

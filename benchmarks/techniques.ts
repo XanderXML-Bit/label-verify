@@ -8,22 +8,36 @@
 // (API key, sibling extractor module) is missing — the rest of the run still
 // proceeds, per the "graceful skip" requirement.
 
-import type { ExtractedFields } from "../src/lib/vision/types";
-import type { Extractor, ExtractorContext } from "../src/lib/vision/types";
+import type {
+  ExtractedFields,
+  Extractor,
+  ExtractorContext,
+  ExtractorCost,
+} from "../src/lib/vision/types";
 import { tesseractEngine } from "../src/lib/ocr/tesseract";
 import { GeminiFlashExtractor } from "../src/lib/vision/gemini";
 
 // ─── TechniqueRunner contract ───────────────────────────────────────────────
+
+export interface TechniqueRunResult {
+  fields: ExtractedFields;
+  /**
+   * Per-call cost accounting. T1 (Tesseract) returns undefined because
+   * local OCR has no token cost. Vision-backed techniques propagate the
+   * extractor's `ExtractorResult.cost` so the bench can aggregate
+   * USD-per-1k-labels and accuracy-per-dollar on the Pareto frontier.
+   */
+  cost?: ExtractorCost;
+}
 
 export interface TechniqueRunner {
   /** Stable ID used in the results JSON. */
   readonly id: string;
   /**
    * Run the technique against one preprocessed image. Returns extracted
-   * fields in the same shape the production extractors return so the
-   * scorer can use the existing per-field comparators.
+   * fields plus (when available) the per-call token + USD cost.
    */
-  run(image: Buffer): Promise<ExtractedFields>;
+  run(image: Buffer): Promise<TechniqueRunResult>;
 }
 
 export interface TechniqueFactory {
@@ -31,6 +45,23 @@ export interface TechniqueFactory {
   readonly networkRequired: boolean;
   build(): Promise<TechniqueRunner>;
 }
+
+// ─── Bake-off alias ─────────────────────────────────────────────────────────
+//
+// "bake-off" expands to T1 + T4 + T6 + C1 (core contenders) AND the
+// extended candidates T4b + T5b + T6b + T6c so a single CLI flag runs the
+// full Pareto-frontier comparison once all API keys are set. See
+// `docs/MODEL-SELECTION.md` for what we're trying to learn from it.
+export const BAKEOFF_TECHNIQUES: readonly string[] = [
+  "T1",
+  "T4",
+  "T4b",
+  "T5b",
+  "T6",
+  "T6b",
+  "T6c",
+  "C1",
+];
 
 // ─── T1: Pure-OCR baseline ──────────────────────────────────────────────────
 //
@@ -235,7 +266,7 @@ function extractGovernmentWarning(text: string): {
 class TesseractOnlyRunner implements TechniqueRunner {
   readonly id = "T1";
 
-  async run(image: Buffer): Promise<ExtractedFields> {
+  async run(image: Buffer): Promise<TechniqueRunResult> {
     const ocr = await tesseractEngine.run(image);
     const text = ocr.text;
 
@@ -282,7 +313,8 @@ class TesseractOnlyRunner implements TechniqueRunner {
       confidence: gw.raw_text ? OCR_FIELD_CONFIDENCE : 0,
     };
 
-    return fields;
+    // T1 is local OCR only — no token cost.
+    return { fields };
   }
 }
 
@@ -295,7 +327,7 @@ class VisionExtractorRunner implements TechniqueRunner {
     private readonly withOcr: boolean,
   ) {}
 
-  async run(image: Buffer): Promise<ExtractedFields> {
+  async run(image: Buffer): Promise<TechniqueRunResult> {
     let ctx: ExtractorContext | undefined;
     if (this.withOcr) {
       // C1: run OCR first, hand its text to the vision call as a hint.
@@ -308,7 +340,7 @@ class VisionExtractorRunner implements TechniqueRunner {
       }
     }
     const result = await this.extractor.extract(image, ctx);
-    return result.fields;
+    return { fields: result.fields, cost: result.cost };
   }
 }
 
@@ -376,6 +408,109 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
         modelVersion: process.env.MODEL_PRIMARY ?? undefined,
       });
       return new VisionExtractorRunner("C1", extractor, true);
+    },
+  },
+  // ─── Bake-off extended candidates (T4b / T5b / T6b / T6c) ────────────────
+  //
+  // Per APPROACH.md §2.1, the four core contenders (T1, T4, T6, C1) settle
+  // the initial Pareto question. The candidates below feed the *bake-off
+  // run* (full-corpus comparison once the final corpus lands) and let us
+  // tell "fastest / cheapest / smartest" apart across providers. Each
+  // factory mirrors the T4/T6 dynamic-import pattern so a missing API key
+  // or missing sibling extractor module fails *gracefully at build time*,
+  // not at module-load.
+  {
+    id: "T4b",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T4b requires OPENAI_API_KEY (GPT-4o full Vision). Set it in .env.local.",
+        );
+      }
+      let mod: { GPT4oFullExtractor: new (opts: { apiKey: string }) => Extractor };
+      try {
+        mod = (await import("../src/lib/vision/openai")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T4b extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openai.ts to export GPT4oFullExtractor.`,
+        );
+      }
+      const extractor = new mod.GPT4oFullExtractor({ apiKey });
+      return new VisionExtractorRunner("T4b", extractor, false);
+    },
+  },
+  {
+    id: "T5b",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T5b requires ANTHROPIC_API_KEY (Claude Haiku Vision). Set it in .env.local.",
+        );
+      }
+      let mod: { ClaudeHaikuExtractor: new (opts: { apiKey: string }) => Extractor };
+      try {
+        mod = (await import("../src/lib/vision/anthropic")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T5b extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/anthropic.ts to export ClaudeHaikuExtractor.`,
+        );
+      }
+      const extractor = new mod.ClaudeHaikuExtractor({ apiKey });
+      return new VisionExtractorRunner("T5b", extractor, false);
+    },
+  },
+  {
+    id: "T6b",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.GOOGLE_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T6b requires GOOGLE_API_KEY (Gemini 2.5 Flash full Vision). Set it in .env.local.",
+        );
+      }
+      let mod: {
+        GeminiFlashFullExtractor: new (opts: { apiKey: string }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/gemini")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T6b extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/gemini.ts to export GeminiFlashFullExtractor.`,
+        );
+      }
+      const extractor = new mod.GeminiFlashFullExtractor({ apiKey });
+      return new VisionExtractorRunner("T6b", extractor, false);
+    },
+  },
+  {
+    id: "T6c",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.GOOGLE_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T6c requires GOOGLE_API_KEY (Gemini 2.5 Pro Vision). Set it in .env.local.",
+        );
+      }
+      let mod: { GeminiProExtractor: new (opts: { apiKey: string }) => Extractor };
+      try {
+        mod = (await import("../src/lib/vision/gemini")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T6c extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/gemini.ts to export GeminiProExtractor.`,
+        );
+      }
+      const extractor = new mod.GeminiProExtractor({ apiKey });
+      return new VisionExtractorRunner("T6c", extractor, false);
     },
   },
 ];

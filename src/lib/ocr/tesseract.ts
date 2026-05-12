@@ -32,16 +32,27 @@ export const tesseractEngine: OcrEngine = {
     const result = await worker.recognize(image);
     const data = result.data;
 
-    const words: OcrWord[] = (data.words ?? []).map((w) => ({
-      text: w.text,
-      bbox: {
-        x: w.bbox.x0,
-        y: w.bbox.y0,
-        width: w.bbox.x1 - w.bbox.x0,
-        height: w.bbox.y1 - w.bbox.y0,
-      },
-      confidence: w.confidence / 100,
-    }));
+    const words: OcrWord[] = (data.words ?? []).map((w) => {
+      // tesseract.js types declare `is_bold: boolean` on Word, but at
+      // runtime the LSTM-only engine doesn't populate font-attributes
+      // for every build — read defensively. `undefined` means "engine
+      // didn't tell us" (so downstream code falls back to its stroke-
+      // width proxy instead of trusting a false negative).
+      const tw = w as { is_bold?: unknown };
+      const fontBold =
+        typeof tw.is_bold === "boolean" ? tw.is_bold : undefined;
+      return {
+        text: w.text,
+        bbox: {
+          x: w.bbox.x0,
+          y: w.bbox.y0,
+          width: w.bbox.x1 - w.bbox.x0,
+          height: w.bbox.y1 - w.bbox.y0,
+        },
+        confidence: w.confidence / 100,
+        fontBold,
+      };
+    });
 
     return {
       text: data.text,

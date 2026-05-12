@@ -40,14 +40,25 @@ export const MIN_TYPE_HEIGHT_MM_SMALL = 1;
 // ─── Bold-detection thresholds (relative, not absolute) ─────────────────────
 
 /**
- * Bold is inherently relative. We measure the prefix stroke width on the
- * same image as the body stroke width and bucket the ratio:
+ * Bold is inherently relative. We measure the prefix mean-stroke-thickness
+ * on the same image as the body mean-stroke-thickness and bucket the
+ * ratio:
  *   ratio ≥ BOLD_RATIO_PASS     → bold (pass)
  *   ratio ≤ BOLD_RATIO_FAIL     → not bold (fail)
  *   in between                  → ambiguous → REVIEW (human resolves)
+ *
+ * Thresholds calibrated against test-data-v2/ (Inter font, sharp PNG):
+ *   Compliant (Bold prefix, Regular body):  ratio 1.58–3.97 (min 1.58)
+ *   B1 same-weight prefix and body:         ratio ≈ 1.0     (by construction)
+ *   B2 prefix Regular, body Bold:           ratio < 1.0
+ *   B3 prefix Medium (500) vs body Regular: ratio ≈ 1.1–1.3 (review band)
+ *
+ * The 1.15 / 1.50 split puts B1/B2 in the fail band, B3 in review, and
+ * compliant comfortably above pass. See `scripts/calibrate-bold.ts` for
+ * the calibration run that produced these bands.
  */
-export const BOLD_RATIO_PASS = 1.4;
-export const BOLD_RATIO_FAIL = 1.2;
+export const BOLD_RATIO_PASS = 1.5;
+export const BOLD_RATIO_FAIL = 1.15;
 
 // ─── Validator output ───────────────────────────────────────────────────────
 

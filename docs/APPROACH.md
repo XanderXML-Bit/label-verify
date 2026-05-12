@@ -34,6 +34,29 @@ If C1 wins, we may also implement the **tiered escalation** wrapper (call
 it C5) — a fast call first, a stronger model only when confidence is low —
 *time permitting after the vertical slice ships*.
 
+#### Bake-off candidates (full-corpus comparison)
+
+The four contenders above are the **initial Pareto question** — they
+settle whether a hosted VLM beats a pure-OCR baseline and whether the
+OCR-as-hint combination buys us anything. Once the final corpus lands we
+also run a **bake-off** that widens the candidate set with stronger and
+cross-provider variants. This lets us tell "fastest / cheapest /
+smartest" apart and pick the right model on the frontier rather than
+within a single provider family. Each variant uses the same prompt and
+schema as the originals — the only thing changing is the model behind it.
+
+| ID | Technique | Why included in the bake-off | Predicted accuracy | Predicted P50 | Cost / 1k labels |
+|----|-----------|-------------------------------|--------------------|---------------|-------------------|
+| **T4b** | **GPT-4o (full)** Vision | The "smartest, dearest" OpenAI candidate. Tests whether the 17x cost jump over T4 buys accuracy worth the latency. | 88–94 % | 2.5–4.0 s | ≈ $8 |
+| **T5b** | **Claude Haiku 4.5** Vision | Anthropic's fast tier; cross-provider sanity check on whether Haiku competes with T4 / T6 on the speed Pareto. | 84–90 % | 1.5–2.5 s | ≈ $3 |
+| **T6b** | **Gemini 2.5 Flash (full)** Vision | Same Flash pricing as T6 but the 2.5 generation — exposes whether the cheap winner from T6 still wins with a stronger model at the same price. | 88–93 % | 1.5–2.5 s | ≈ $0.50 |
+| **T6c** | **Gemini 2.5 Pro** Vision | The "smartest" Gemini candidate, ~17x T6 pricing. Symmetric to T4b on the other provider — same question, different family. | 90–95 % | 2.5–4.0 s | ≈ $5 |
+
+Cost-per-1k-labels rows assume ≈1.2K input tokens (image + prompt) and
+≈300 output tokens per call, matching the in-line accounting in each
+adapter. These are pre-registered predictions — the bake-off run will
+falsify or confirm them.
+
 ### 2.2 Techniques we explicitly chose not to benchmark (and why)
 
 | ID | Technique | Why dropped |

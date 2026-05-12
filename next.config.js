@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // `standalone` output trims the Vercel deployment to only the files the
+  // server actually needs. Per-route memory / region / timeout policy lives
+  // in vercel.json (the source of truth).
+  output: "standalone",
   // sharp and tesseract.js carry native or large WASM payloads that Next's
   // bundler should leave out of the server bundle (DEPLOYMENT.md §6).
   serverExternalPackages: ["sharp", "tesseract.js"],

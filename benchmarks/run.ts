@@ -27,9 +27,10 @@ import {
   falseNegativeRate,
   partitionOod,
 } from "./score";
-import { BUILTIN_TECHNIQUES, findTechnique, type TechniqueRunner } from "./techniques";
+import { BUILTIN_TECHNIQUES, BAKEOFF_TECHNIQUES, findTechnique, type TechniqueRunner } from "./techniques";
 import { scoreImage, type GroundTruth } from "./scorer";
 import { preprocessImage } from "../src/lib/preprocess";
+import type { ExtractorCost } from "../src/lib/vision/types";
 
 // ─── CLI argument parsing ───────────────────────────────────────────────────
 
@@ -37,13 +38,15 @@ interface CliArgs {
   smoke: boolean;
   corpus: string;
   techniques: string[];
+  bakeoff: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const out: CliArgs = { smoke: false, corpus: "test-data", techniques: [] };
+  const out: CliArgs = { smoke: false, corpus: "test-data", techniques: [], bakeoff: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--smoke") out.smoke = true;
+    else if (a === "--bake-off" || a === "--bakeoff") out.bakeoff = true;
     else if (a === "--corpus") {
       const v = argv[++i];
       if (v) out.corpus = v;
@@ -116,6 +119,8 @@ interface TrialRecord {
   latencyMs: number;
   ok: boolean;
   error?: string;
+  /** Per-call cost from the extractor. `undefined` for T1 (local OCR). */
+  cost?: ExtractorCost;
 }
 
 interface TechniqueRun {
@@ -203,12 +208,18 @@ async function runTechnique(
           `${id} ${gt.id} trial=${t}`,
         );
         const latencyMs = performance.now() - start;
-        trialsLog.push({ imageId: gt.id, trial: t, latencyMs, ok: true });
+        trialsLog.push({
+          imageId: gt.id,
+          trial: t,
+          latencyMs,
+          ok: true,
+          ...(extracted.cost ? { cost: extracted.cost } : {}),
+        });
 
         // Score only the first successful trial. Additional trials are kept
         // for latency variance only (per APPROACH.md §5 step 3).
         if (!scored) {
-          const result = await scoreImage(gt, extracted, {
+          const result = await scoreImage(gt, extracted.fields, {
             width: pre.width,
             height: pre.height,
           });
@@ -291,6 +302,22 @@ interface TechniqueSummary {
   latencyMs: ReturnType<typeof latencyStats>;
   trialCount: number;
   imageFailureCount: number;
+  /** Token + USD accounting aggregated across trials. */
+  economics: {
+    /** Mean tokens-in per call across successful trials. */
+    inputTokensPerCall: number;
+    outputTokensPerCall: number;
+    /** Mean USD per call. */
+    costUsdPerCall: number;
+    /** Extrapolated USD to verify 1k labels at the observed per-call cost. */
+    costUsdPer1k: number;
+    /** Total USD spent during this run (signal for the reviewer). */
+    totalCostUsd: number;
+    /** accuracy / dollar — useful for ranking the cost-effective frontier. */
+    accuracyPerDollar: number | null;
+    /** accuracy / second — useful for ranking the speed-effective frontier. */
+    accuracyPerSecond: number | null;
+  };
 }
 
 interface BenchmarkSummary {
@@ -304,19 +331,44 @@ interface BenchmarkSummary {
 }
 
 function summarizeRun(run: TechniqueRun): TechniqueSummary {
+  const overall = summarize(run.outcomes);
+  const latency = latencyStats(run.trials);
+  const okTrials = run.trials.filter((t) => t.ok);
+  const withCost = okTrials.filter((t): t is TrialRecord & { cost: ExtractorCost } =>
+    t.cost !== undefined,
+  );
+  const totalInputTokens = withCost.reduce((s, t) => s + t.cost.inputTokens, 0);
+  const totalOutputTokens = withCost.reduce((s, t) => s + t.cost.outputTokens, 0);
+  const totalCostUsd = withCost.reduce((s, t) => s + t.cost.costUsd, 0);
+  const n = withCost.length;
+  const costPerCall = n > 0 ? totalCostUsd / n : 0;
+  // accuracyPerDollar / accuracyPerSecond return null when there's no
+  // signal (T1 has no $; skipped runs have no acc) — markdown renders "—".
+  const accuracyPerDollar = costPerCall > 0 ? overall.acc / costPerCall : null;
+  const meanLatencySec = latency.n > 0 ? latency.mean / 1000 : 0;
+  const accuracyPerSecond = meanLatencySec > 0 ? overall.acc / meanLatencySec : null;
   return {
     id: run.id,
     skipped: run.skipped ?? null,
-    overall: summarize(run.outcomes),
+    overall,
     stratified: stratify(run.outcomes, ["beverage_type", "condition"]),
     govWarningFnRate: falseNegativeRate(run.warningOutcomes),
     ood: (() => {
       const split = partitionOod(run.outcomes);
       return { id: summarize(split.id), ood: summarize(split.ood) };
     })(),
-    latencyMs: latencyStats(run.trials),
+    latencyMs: latency,
     trialCount: run.trials.length,
     imageFailureCount: run.failures,
+    economics: {
+      inputTokensPerCall: n > 0 ? totalInputTokens / n : 0,
+      outputTokensPerCall: n > 0 ? totalOutputTokens / n : 0,
+      costUsdPerCall: costPerCall,
+      costUsdPer1k: costPerCall * 1000,
+      totalCostUsd,
+      accuracyPerDollar,
+      accuracyPerSecond,
+    },
   };
 }
 
@@ -348,6 +400,72 @@ function renderMarkdown(summary: BenchmarkSummary): string {
     lines.push(
       `| ${t.id} | ${fmtPct(t.overall)} | ${fmtPct(t.govWarningFnRate)} | ${Math.round(lat.p50)} / ${Math.round(lat.p95)} | ${t.imageFailureCount} |`,
     );
+  }
+
+  // ─── Economics + Pareto frontier ────────────────────────────────────────
+  lines.push(
+    "",
+    "## Economics (cost + acc-per-\\$ + acc-per-second)",
+    "",
+    "Per-call token + USD figures aggregated across successful trials. `cost/1k` extrapolates the per-call cost to 1,000 labels (the prototype's batch-day target).",
+    "",
+  );
+  lines.push("| Technique | In tok / call | Out tok / call | USD / call | USD / 1k labels | Acc / \\$ | Acc / sec |");
+  lines.push("|-----------|---------------|----------------|------------|------------------|----------|-----------|");
+  for (const t of summary.techniques) {
+    if (t.skipped) {
+      lines.push(`| ${t.id} | — | — | — | — | — | — |`);
+      continue;
+    }
+    const e = t.economics;
+    const ind = e.inputTokensPerCall > 0 ? e.inputTokensPerCall.toFixed(0) : "—";
+    const out = e.outputTokensPerCall > 0 ? e.outputTokensPerCall.toFixed(0) : "—";
+    const usdCall = e.costUsdPerCall > 0 ? `$${e.costUsdPerCall.toFixed(5)}` : "$0";
+    const usd1k = e.costUsdPer1k > 0 ? `$${e.costUsdPer1k.toFixed(2)}` : "$0";
+    const apd = e.accuracyPerDollar !== null
+      ? e.accuracyPerDollar.toFixed(2)
+      : (e.costUsdPerCall === 0 ? "∞ (free)" : "—");
+    const aps = e.accuracyPerSecond !== null ? e.accuracyPerSecond.toFixed(3) : "—";
+    lines.push(
+      `| ${t.id} | ${ind} | ${out} | ${usdCall} | ${usd1k} | ${apd} | ${aps} |`,
+    );
+  }
+
+  // Pareto frontier: any technique not strictly dominated by another on
+  // (accuracy ↑, latency ↓, cost ↓). Reviewer-readable.
+  const eligible = summary.techniques.filter(
+    (t) => !t.skipped && t.overall.n > 0 && t.latencyMs.n > 0,
+  );
+  const dominated = new Set<string>();
+  for (const a of eligible) {
+    for (const b of eligible) {
+      if (a.id === b.id) continue;
+      const bDominatesA =
+        b.overall.acc >= a.overall.acc &&
+        b.latencyMs.mean <= a.latencyMs.mean &&
+        b.economics.costUsdPerCall <= a.economics.costUsdPerCall &&
+        (b.overall.acc > a.overall.acc ||
+          b.latencyMs.mean < a.latencyMs.mean ||
+          b.economics.costUsdPerCall < a.economics.costUsdPerCall);
+      if (bDominatesA) dominated.add(a.id);
+    }
+  }
+  const pareto = eligible.filter((t) => !dominated.has(t.id));
+  if (pareto.length > 0) {
+    lines.push(
+      "",
+      "## Pareto frontier (accuracy ↑ · latency ↓ · cost ↓)",
+      "",
+      "Techniques not strictly dominated by any other on the three-axis frontier. A reviewer picking the deployed model should choose one from this list — others are inferior on every axis they care about.",
+      "",
+      "| Technique | Acc | Mean latency (ms) | USD / 1k labels |",
+      "|-----------|-----|--------------------|------------------|",
+    );
+    for (const t of pareto) {
+      lines.push(
+        `| **${t.id}** | ${fmtPct(t.overall)} | ${Math.round(t.latencyMs.mean)} | ${t.economics.costUsdPer1k > 0 ? `$${t.economics.costUsdPer1k.toFixed(2)}` : "$0"} |`,
+      );
+    }
   }
 
   // OOD split
@@ -391,7 +509,11 @@ async function main(): Promise<void> {
   const selectedIds =
     ARGS.techniques.length > 0
       ? ARGS.techniques
-      : BUILTIN_TECHNIQUES.map((t) => t.id);
+      : ARGS.bakeoff
+        ? [...BAKEOFF_TECHNIQUES]
+        : BUILTIN_TECHNIQUES.filter((t) =>
+            ["T1", "T4", "T6", "C1"].includes(t.id),
+          ).map((t) => t.id);
 
   console.warn(
     `[bench] mode=${ARGS.smoke ? "smoke" : "full"}  corpus=${subset.length}/${truths.length}  techniques=${selectedIds.join(",")}  trials=${trials}`,

@@ -10,6 +10,15 @@ export interface OcrWord {
   text: string;
   bbox: { x: number; y: number; width: number; height: number };
   confidence: number;
+  /**
+   * Tesseract's font-attribute classifier flag for "bold" weight on this
+   * word, when the engine emits it. Most builds of tesseract.js DO expose
+   * `is_bold` per word (see node_modules/tesseract.js/src/index.d.ts),
+   * but it's unreliable on synthetic crops and tiny text — treat it as
+   * a corroboration signal, never the only signal. `undefined` when the
+   * engine didn't emit it.
+   */
+  fontBold?: boolean;
 }
 
 export interface OcrResult {

@@ -176,17 +176,40 @@ export function findBodyWords(
 export interface BoldMeasurement {
   /** prefix-mean stroke proxy ÷ body-mean stroke proxy. 1 = same weight. */
   ratio: number;
-  /** 0–1 — combines sample size and contrast. */
+  /** 0–1 — combines sample size, contrast, and pixel-coverage robustness. */
   confidence: number;
+  /**
+   * Fraction of prefix words whose Tesseract `is_bold` flag was true (or
+   * `null` when no prefix word had the flag set by the engine).
+   * Used by the validator as a third corroboration signal.
+   */
+  fontBoldFractionPrefix: number | null;
+  /** Same, body-side. */
+  fontBoldFractionBody: number | null;
 }
 
 /**
- * For each word, crop the bbox, binarize, and compute
- *   strokeProxy = darkPixelCount / wordHeight
- * which is monotonic in stroke width once normalized by glyph height
- * (heavier weights paint more pixels per cap-height row). The returned
- * ratio is `mean(prefixProxy) / mean(bodyProxy)`, which is the relative
- * bold signal that 27 CFR § 16.21 demands.
+ * For each word, crop the bbox, binarize, and compute the **per-column
+ * average dark-run length** as a stroke-width proxy. Algorithm:
+ *
+ *   1. Crop the word bbox; greyscale + threshold to binary (dark = 1).
+ *   2. For each column with at least one dark pixel, count the longest
+ *      contiguous dark run (vertical stroke thickness at that column).
+ *   3. Average those run lengths across columns with dark coverage.
+ *
+ * This is materially better than `dark / bboxHeight` (the legacy metric):
+ *
+ *   - Independent of bbox padding: a loose bbox no longer inflates the
+ *     denominator and crushes the signal.
+ *   - Independent of glyph aspect ratio: "I" vs "M" no longer skews the
+ *     proxy by glyph width.
+ *   - Captures stroke thickness directly: a Regular-weight glyph's
+ *     vertical strokes are ~1px wide at typical render sizes; Bold is
+ *     ~1.7×–2×. The ratio of column-mean-run-length between prefix
+ *     and body is a clean weight-difference signal.
+ *
+ * The returned ratio is `mean(prefixProxy) / mean(bodyProxy)`, which is
+ * the relative bold signal that 27 CFR § 16.21 demands.
  *
  * The image MUST be the same pixel buffer the OCR ran on, so the bboxes
  * are valid in the same coordinate space.
@@ -197,7 +220,12 @@ export async function measureRelativeBold(
   body: OcrWord[],
 ): Promise<BoldMeasurement> {
   if (prefix.length === 0 || body.length === 0) {
-    return { ratio: 1, confidence: 0 };
+    return {
+      ratio: 1,
+      confidence: 0,
+      fontBoldFractionPrefix: null,
+      fontBoldFractionBody: null,
+    };
   }
 
   const sharpImg = sharp(image, { failOn: "none" });
@@ -205,7 +233,12 @@ export async function measureRelativeBold(
   const imgW = meta.width ?? 0;
   const imgH = meta.height ?? 0;
   if (imgW === 0 || imgH === 0) {
-    return { ratio: 1, confidence: 0 };
+    return {
+      ratio: 1,
+      confidence: 0,
+      fontBoldFractionPrefix: null,
+      fontBoldFractionBody: null,
+    };
   }
 
   const prefixProxies = await Promise.all(
@@ -219,14 +252,30 @@ export async function measureRelativeBold(
   const bodyValid = bodyProxies.filter((p): p is number => p !== null);
 
   if (prefixValid.length === 0 || bodyValid.length === 0) {
-    return { ratio: 1, confidence: 0 };
+    return {
+      ratio: 1,
+      confidence: 0,
+      fontBoldFractionPrefix: fontBoldFraction(prefix),
+      fontBoldFractionBody: fontBoldFraction(body),
+    };
   }
 
   const prefixMean = mean(prefixValid);
   const bodyMean = mean(bodyValid);
   if (bodyMean <= 0) {
-    return { ratio: 1, confidence: 0 };
+    return {
+      ratio: 1,
+      confidence: 0,
+      fontBoldFractionPrefix: fontBoldFraction(prefix),
+      fontBoldFractionBody: fontBoldFraction(body),
+    };
   }
+  // The per-word proxy is `mean(longest-dark-run-per-column) / bboxHeight`.
+  // This is already approximately render-size-invariant: at the same font
+  // weight, doubling the render size doubles both the stroke run length
+  // and the bbox height, so the proxy is unchanged. Therefore the ratio
+  // of `meanProxy(prefix) / meanProxy(body)` is a clean WEIGHT signal,
+  // not a size signal — no further size attenuation needed.
   const ratio = prefixMean / bodyMean;
 
   // Confidence: scales with sample size up to ~10 body words, capped at 0.9.
@@ -234,13 +283,20 @@ export async function measureRelativeBold(
   const sampleConf = Math.min(1, bodyValid.length / 10);
   const confidence = 0.5 + 0.4 * sampleConf;
 
-  return { ratio, confidence };
+  return {
+    ratio,
+    confidence,
+    fontBoldFractionPrefix: fontBoldFraction(prefix),
+    fontBoldFractionBody: fontBoldFraction(body),
+  };
 }
 
 /**
- * Crop the word bbox, threshold-binarize, count dark pixels, and divide by
- * the bbox height. Returns null on degenerate crops (zero area or all
- * one color).
+ * Crop the word bbox, threshold-binarize, and compute the per-column
+ * average **vertical dark-run length** — a clean stroke-thickness proxy.
+ *
+ * Returns null on degenerate crops (zero area, all one color, or fewer
+ * than 2 columns with dark coverage — not enough signal).
  */
 async function strokeProxy(
   image: Buffer,
@@ -266,21 +322,54 @@ async function strokeProxy(
       .threshold(128)
       .raw()
       .toBuffer({ resolveWithObject: true });
-    const total = info.width * info.height;
-    if (total === 0) return null;
-    let dark = 0;
-    for (let i = 0; i < data.length; i++) {
-      if (data[i]! < 128) dark++;
+    const cols = info.width;
+    const rows = info.height;
+    if (cols === 0 || rows === 0) return null;
+
+    // For each column, enumerate ALL contiguous dark runs (each run is a
+    // stroke crossing). Sum total dark pixels and total run count across
+    // all columns; the ratio `darkPixels / runCount` is **mean stroke
+    // thickness** along the column axis — a true stroke-width proxy
+    // (NOT cap-height, which is what `longest-run-per-column` measures).
+    //
+    // For Regular weight at the same render size, a horizontal stroke
+    // crosses each column with a 1–2 px vertical run; for Bold, the same
+    // stroke crosses with a 2–4 px run. Ratio of mean-run-length between
+    // prefix and body cleanly separates the two weights.
+    let totalDark = 0;
+    let totalRuns = 0;
+    let columnsWithDark = 0;
+    for (let cx = 0; cx < cols; cx++) {
+      let inRun = false;
+      let columnHadDark = false;
+      for (let cy = 0; cy < rows; cy++) {
+        const dark = data[cy * cols + cx]! < 128;
+        if (dark) {
+          totalDark++;
+          columnHadDark = true;
+          if (!inRun) {
+            totalRuns++;
+            inRun = true;
+          }
+        } else {
+          inRun = false;
+        }
+      }
+      if (columnHadDark) columnsWithDark++;
     }
-    // Reject crops with zero dark pixels (no glyph data inside the bbox).
-    // We intentionally accept crops that are fully dark — a very thick
-    // glyph or a tightly-fitted bbox can saturate, and a high stroke
-    // proxy is exactly the signal we want to surface for "bold".
-    if (dark === 0) return null;
-    return dark / info.height;
+    if (columnsWithDark < 2 || totalRuns === 0) return null;
+    // Mean dark-run length along columns = stroke thickness proxy.
+    return totalDark / totalRuns;
   } catch {
     return null;
   }
+}
+
+function fontBoldFraction(words: OcrWord[]): number | null {
+  const observed = words.filter((w) => typeof w.fontBold === "boolean");
+  if (observed.length === 0) return null;
+  const bold = observed.filter((w) => w.fontBold === true).length;
+  return bold / observed.length;
 }
 
 function mean(xs: number[]): number {

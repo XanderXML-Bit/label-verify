@@ -95,9 +95,121 @@ function fieldWithConfidence(inner: any) {
   };
 }
 
-// ─── Gemini Flash extractor ─────────────────────────────────────────────────
+// ─── Gemini Flash extractor (T6 — gemini-2.0-flash-001) ─────────────────────
 
 const MODEL_DEFAULT = "gemini-2.0-flash-001";
+
+// Pricing per Google's published table (refresh if the SDK changes):
+// Flash tier (2.0 + 2.5 flash): $0.075 / 1M input, $0.300 / 1M output.
+// Pro tier (2.5-pro, <200K ctx): $1.25 / 1M input, $5.00 / 1M output.
+const FLASH_PRICE_INPUT_PER_M = 0.075;
+const FLASH_PRICE_OUTPUT_PER_M = 0.3;
+const PRO_PRICE_INPUT_PER_M = 1.25;
+const PRO_PRICE_OUTPUT_PER_M = 5.0;
+
+// ─── Internal: shared Gemini call body ──────────────────────────────────────
+//
+// The Flash, Flash-Full, and Pro adapters differ only in default model and
+// price coefficients. The request shape, schema, prompt, abort race, and
+// response parsing are identical, so we share them via this helper rather
+// than copy-pasting three near-identical classes.
+
+interface GeminiCallOptions {
+  genAI: GoogleGenerativeAI;
+  modelVersion: string;
+  priceInputPerM: number;
+  priceOutputPerM: number;
+  errorTag: string; // class name used as prefix in thrown errors
+}
+
+async function callGemini(
+  image: Buffer,
+  ctx: ExtractorContext | undefined,
+  cfg: GeminiCallOptions,
+  modelId: string,
+): Promise<ExtractorResult> {
+  const start = performance.now();
+
+  const model = cfg.genAI.getGenerativeModel({
+    model: cfg.modelVersion,
+    generationConfig: {
+      responseMimeType: "application/json",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      responseSchema: RESPONSE_SCHEMA as any,
+      temperature: 0.0,
+    },
+  });
+
+  // OCR-conditionally-off-path: if OCR returned in time, we append its
+  // text to the prompt so the vision model can cross-reference. If not,
+  // the prompt goes without and the C1 combined path degenerates to T6.
+  const ocrSection = ctx?.ocrText
+    ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
+    : "";
+
+  const promptText = EXTRACTION_PROMPT + ocrSection;
+
+  const signal = ctx?.signal;
+  const result = await Promise.race([
+    model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: promptText },
+            {
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: image.toString("base64"),
+              },
+            },
+          ],
+        },
+      ],
+    }),
+    abortPromise(signal),
+  ]);
+
+  const text = result.response.text();
+  const usage = result.response.usageMetadata;
+
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(text);
+  } catch (err) {
+    throw new Error(
+      `${cfg.errorTag}: response was not JSON: ${(err as Error).message}\n` +
+        `Raw response (first 500 chars): ${text.slice(0, 500)}`,
+    );
+  }
+
+  const parsed = ExtractedFieldsSchema.safeParse(parsedJson);
+  if (!parsed.success) {
+    throw new Error(
+      `${cfg.errorTag}: schema validation failed: ${parsed.error.message}`,
+    );
+  }
+
+  const latencyMs = performance.now() - start;
+  const inputTokens = usage?.promptTokenCount ?? 0;
+  const outputTokens = usage?.candidatesTokenCount ?? 0;
+
+  return {
+    fields: parsed.data,
+    rawOutput: parsedJson,
+    latencyMs,
+    modelId,
+    modelVersion: cfg.modelVersion,
+    promptHash: getPromptHash(),
+    cost: {
+      inputTokens,
+      outputTokens,
+      costUsd:
+        (inputTokens / 1_000_000) * cfg.priceInputPerM +
+        (outputTokens / 1_000_000) * cfg.priceOutputPerM,
+    },
+  };
+}
 
 export class GeminiFlashExtractor implements Extractor {
   readonly id: string;
@@ -116,89 +228,100 @@ export class GeminiFlashExtractor implements Extractor {
     image: Buffer,
     ctx?: ExtractorContext,
   ): Promise<ExtractorResult> {
-    const start = performance.now();
-
-    const model = this.genAI.getGenerativeModel({
-      model: this.modelVersion,
-      generationConfig: {
-        responseMimeType: "application/json",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        responseSchema: RESPONSE_SCHEMA as any,
-        temperature: 0.0,
+    return callGemini(
+      image,
+      ctx,
+      {
+        genAI: this.genAI,
+        modelVersion: this.modelVersion,
+        priceInputPerM: FLASH_PRICE_INPUT_PER_M,
+        priceOutputPerM: FLASH_PRICE_OUTPUT_PER_M,
+        errorTag: "GeminiFlashExtractor",
       },
-    });
+      this.id,
+    );
+  }
+}
 
-    // OCR-conditionally-off-path: if OCR returned in time, we append its
-    // text to the prompt so the vision model can cross-reference. If not,
-    // the prompt goes without and the C1 combined path degenerates to T6.
-    const ocrSection = ctx?.ocrText
-      ? `\n\nFor reference, an OCR pass returned the following text. Use it as a hint, but do NOT trust it for the Government Warning verbatim text — re-read that from the image directly. OCR text:\n\n${ctx.ocrText}`
-      : "";
+// ─── Gemini 2.5 Flash (full, not lite) — T6b ────────────────────────────────
+//
+// Same Flash pricing tier as T6; the differentiator is the larger 2.5
+// generation, which historically improves multilingual and OCR-on-image
+// performance versus the 2.0 line. Same SDK, same schema, same prompt.
 
-    const promptText = EXTRACTION_PROMPT + ocrSection;
+const FLASH_FULL_MODEL_DEFAULT = "gemini-2.5-flash";
 
-    const signal = ctx?.signal;
-    const result = await Promise.race([
-      model.generateContent({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: promptText },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: image.toString("base64"),
-                },
-              },
-            ],
-          },
-        ],
-      }),
-      abortPromise(signal),
-    ]);
+export class GeminiFlashFullExtractor implements Extractor {
+  readonly id: string;
+  readonly networkRequired = true;
+  readonly modelVersion: string;
+  private readonly genAI: GoogleGenerativeAI;
 
-    const text = result.response.text();
-    const usage = result.response.usageMetadata;
+  constructor(opts: { apiKey: string; modelVersion?: string }) {
+    if (!opts.apiKey)
+      throw new Error("GeminiFlashFullExtractor: missing apiKey");
+    this.modelVersion = opts.modelVersion ?? FLASH_FULL_MODEL_DEFAULT;
+    this.id = `gemini:${this.modelVersion}`;
+    this.genAI = new GoogleGenerativeAI(opts.apiKey);
+  }
 
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(text);
-    } catch (err) {
-      throw new Error(
-        `GeminiFlashExtractor: response was not JSON: ${(err as Error).message}\n` +
-          `Raw response (first 500 chars): ${text.slice(0, 500)}`,
-      );
-    }
-
-    const parsed = ExtractedFieldsSchema.safeParse(parsedJson);
-    if (!parsed.success) {
-      throw new Error(
-        `GeminiFlashExtractor: schema validation failed: ${parsed.error.message}`,
-      );
-    }
-
-    const latencyMs = performance.now() - start;
-    const inputTokens = usage?.promptTokenCount ?? 0;
-    const outputTokens = usage?.candidatesTokenCount ?? 0;
-
-    return {
-      fields: parsed.data,
-      rawOutput: parsedJson,
-      latencyMs,
-      modelId: this.id,
-      modelVersion: this.modelVersion,
-      promptHash: getPromptHash(),
-      cost: {
-        inputTokens,
-        outputTokens,
-        // Pricing as of model release: Flash $0.075 / 1M input,
-        // $0.30 / 1M output. Refresh if the SDK changes.
-        costUsd:
-          (inputTokens / 1_000_000) * 0.075 +
-          (outputTokens / 1_000_000) * 0.3,
+  async extract(
+    image: Buffer,
+    ctx?: ExtractorContext,
+  ): Promise<ExtractorResult> {
+    return callGemini(
+      image,
+      ctx,
+      {
+        genAI: this.genAI,
+        modelVersion: this.modelVersion,
+        priceInputPerM: FLASH_PRICE_INPUT_PER_M,
+        priceOutputPerM: FLASH_PRICE_OUTPUT_PER_M,
+        errorTag: "GeminiFlashFullExtractor",
       },
-    };
+      this.id,
+    );
+  }
+}
+
+// ─── Gemini 2.5 Pro — T6c ───────────────────────────────────────────────────
+//
+// Strongest Gemini tier as of the knowledge cutoff. The 200K-context price
+// band applies for our single-image payloads (well under that threshold);
+// long-context billing would need a separate adapter if we ever batched
+// many images per request.
+
+const PRO_MODEL_DEFAULT = "gemini-2.5-pro";
+
+export class GeminiProExtractor implements Extractor {
+  readonly id: string;
+  readonly networkRequired = true;
+  readonly modelVersion: string;
+  private readonly genAI: GoogleGenerativeAI;
+
+  constructor(opts: { apiKey: string; modelVersion?: string }) {
+    if (!opts.apiKey) throw new Error("GeminiProExtractor: missing apiKey");
+    this.modelVersion = opts.modelVersion ?? PRO_MODEL_DEFAULT;
+    this.id = `gemini:${this.modelVersion}`;
+    this.genAI = new GoogleGenerativeAI(opts.apiKey);
+  }
+
+  async extract(
+    image: Buffer,
+    ctx?: ExtractorContext,
+  ): Promise<ExtractorResult> {
+    return callGemini(
+      image,
+      ctx,
+      {
+        genAI: this.genAI,
+        modelVersion: this.modelVersion,
+        priceInputPerM: PRO_PRICE_INPUT_PER_M,
+        priceOutputPerM: PRO_PRICE_OUTPUT_PER_M,
+        errorTag: "GeminiProExtractor",
+      },
+      this.id,
+    );
   }
 }
 

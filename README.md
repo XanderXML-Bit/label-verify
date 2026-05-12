@@ -93,6 +93,17 @@ npm install
 npm run dev                       # http://localhost:3000
 ```
 
+**Deploying to production?** Follow
+[`docs/DEPLOYMENT-CHECKLIST.md`](docs/DEPLOYMENT-CHECKLIST.md) — a
+non-Vercel-expert can take a fresh GitHub repo to a live HTTPS URL at
+`labelverify.zendren.net` in ~60 minutes. After every deploy, run
+[`docs/PRODUCTION-SMOKE.md`](docs/PRODUCTION-SMOKE.md) before sharing
+the link.
+
+> [`vercel.json`](vercel.json) is the **source of truth** for region,
+> per-route memory, and per-route timeouts. Edit it in the repo, not in
+> the Vercel UI — UI overrides drift silently from the code.
+
 Other useful scripts:
 
 ```bash
