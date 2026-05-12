@@ -141,7 +141,7 @@ where `troubleshoot` is one actionable sentence. Apply to:
 If Gemini returns 401/403/429/5xx during verify, catch it and:
 1. Log with a request ID
 2. If OPENAI_API_KEY is set, retry once against gpt-5.4-nano
-3. Return result with a `fallbackUsed: true` flag
+3. Return result with a `fallbackUsed: <model>` flag
 
 UI shows a yellow banner: "Verified using a backup model — primary
 unavailable. Result may differ slightly."
@@ -211,9 +211,9 @@ FAIL, missing entire warning → FAIL.
 
 ## Phase G — Quality of life + nice-to-have
 
-### G1. Batch cap → 1000
+### G1. Batch cap → quota-derived
 
-`MAX_BATCH_SIZE=1000` in .env.example and the route default. Test on
+Quota-derived batch cap in `src/lib/batch-capacity.ts` and route default. Test on
 a 500-image manifest synthetically.
 
 ### G2. Real-photo sample (covered in B3)
@@ -268,7 +268,7 @@ quotes the pre-bake-off plan.
 - `SettingsPanel.tsx` — kept as a dead file. Decide: delete or
   restore behind a debug flag. (Earlier I said "keep for future
   operator use." Reconsider after sub-agent review.)
-- `model-modes.ts` — keep for the bench harness, but remove any
+- `model-modes.ts` — deleted from runtime; keep benchmark-only candidates isolated from any
   references in the runtime path that are dead.
 - Unused imports / commented-out code across `src/`.
 

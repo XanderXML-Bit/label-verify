@@ -174,7 +174,7 @@ image"). A FAIL on input-quality does not count toward "non-compliant."
 
 ### 3.9 CSV import is hostile for the 50+ reviewer audience
 
-A typo in a header silently misaligns 300 verifications.
+A typo in a header silently misaligns a full batch.
 
 **Change:** primary batch flow is now **drag a folder of images + a single
 spreadsheet (CSV or XLSX); the app auto-pairs by filename stem** and shows
@@ -183,7 +183,7 @@ a row inline. CSV download template is the bare minimum.
 
 ### 3.10 Vercel batch timeout was a TODO note, not a design
 
-`R3` requires 200–300 labels. Vercel Hobby caps function exec at 10–60 s.
+`R3` asks for 200–300 labels. The current interactive path is capped by provider RPM and serverless duration.
 "Worker pool" in one function does not survive the timeout.
 
 **Change:** `ARCHITECTURE.md` §5 now spells out **per-item function

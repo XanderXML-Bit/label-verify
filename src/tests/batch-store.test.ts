@@ -5,6 +5,8 @@ import {
   setItemResult,
   setItemError,
   deleteBatch,
+  claimBatchProcessing,
+  releaseBatchProcessing,
   type BatchItem,
 } from "@/lib/batch-store";
 import type { DeclaredFields, VerifyResponse } from "@/lib/types";
@@ -96,6 +98,22 @@ describe("batch-store", () => {
     expect(getBatch(job.id)).toBeDefined();
     deleteBatch(job.id);
     expect(getBatch(job.id)).toBeUndefined();
+  });
+
+  it("claimBatchProcessing allows only one active processor per batch", () => {
+    const job = createBatch([makeItem(0, "a.jpg")]);
+    expect(claimBatchProcessing(job)).toBe(true);
+    expect(claimBatchProcessing(job)).toBe(false);
+    releaseBatchProcessing(job);
+    expect(claimBatchProcessing(job)).toBe(true);
+  });
+
+  it("setItemResult and setItemError clear raw image bytes after terminal status", () => {
+    const job = createBatch([makeItem(0, "a.jpg"), makeItem(1, "b.jpg")]);
+    setItemResult(job, 0, fakeResult());
+    setItemError(job, 1, "bad image");
+    expect(job.items[0]!.imageBytes.byteLength).toBe(0);
+    expect(job.items[1]!.imageBytes.byteLength).toBe(0);
   });
 
   it("evicts the oldest batch when MAX_BATCHES (32) is exceeded", async () => {

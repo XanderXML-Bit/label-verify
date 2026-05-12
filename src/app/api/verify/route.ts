@@ -54,9 +54,10 @@ export async function POST(req: Request) {
 
   const contentType = req.headers.get("content-type") ?? "";
 
-  // ─── JSON body: { url, declared, mode? } ─────────────────────────────────
+  // ─── JSON body: { url, declared } ────────────────────────────────────────
+  // Any `mode` field is silently ignored (see runVerify comment).
   if (contentType.includes("application/json")) {
-    let body: { url?: unknown; declared?: unknown; mode?: unknown };
+    let body: { url?: unknown; declared?: unknown };
     try {
       body = (await req.json()) as typeof body;
     } catch {
@@ -81,7 +82,6 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const mode = typeof body.mode === "string" ? body.mode : undefined;
     let fetched;
     try {
       fetched = await fetchUrlImage(body.url);
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runVerify(fetched.buffer, parsed.data, rl, undefined, mode, requestId);
+    return runVerify(fetched.buffer, parsed.data, rl, undefined, requestId);
   }
 
   // ─── multipart/form-data: { image, declared } ────────────────────────────
@@ -111,9 +111,7 @@ export async function POST(req: Request) {
   const file = formData.get("image");
   const declaredRaw = formData.get("declared");
   const urlField = formData.get("url");
-  const modeField = formData.get("mode");
-  const formMode =
-    typeof modeField === "string" && modeField.trim() ? modeField.trim() : undefined;
+  // Any `mode` field is silently ignored (see runVerify comment).
 
   // URL inside a multipart body is supported as a convenience for the UI.
   if (typeof urlField === "string" && urlField.trim()) {
@@ -154,7 +152,7 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runVerify(fetched.buffer, parsed.data, rl, undefined, formMode, requestId);
+    return runVerify(fetched.buffer, parsed.data, rl, undefined, requestId);
   }
 
   if (!(file instanceof File)) {
@@ -231,7 +229,7 @@ export async function POST(req: Request) {
   } else {
     buffer = raw;
   }
-  return runVerify(buffer, parsed.data, rl, file.name, formMode, requestId);
+  return runVerify(buffer, parsed.data, rl, file.name, requestId);
 }
 
 function pdfErrorStatus(code: PdfExtractError["code"]): number {
@@ -258,13 +256,19 @@ async function runVerify(
   declared: DeclaredFields,
   rl: RateLimitResult,
   filename?: string,
-  mode?: string,
   requestId?: string,
 ) {
+  // The route used to thread a `mode` parameter through to the
+  // orchestrator. The model picker was retired (single production
+  // path) and exposing it on the public API would let an
+  // unauthenticated caller route to a costlier/different tier — a
+  // real abuse surface flagged in the Hermes pre-submission audit
+  // (BLOCKER #3). Any `mode` field in the request body or form is
+  // now silently ignored. Operators running internal A/B tests can
+  // still inject an Extractor via the internal `extractor` option.
   try {
     const result = await verifyLabel(buffer, declared, {
       recordTrace,
-      ...(mode ? { modelMode: mode } : {}),
     });
     if (result.requiresHumanReview) {
       try {

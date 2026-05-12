@@ -38,13 +38,6 @@ export type DeclaredFields = z.infer<typeof DeclaredFieldsSchema>;
 
 export const VerifyRequestSchema = z.object({
   declared: DeclaredFieldsSchema,
-  /**
-   * Optional model-mode ID (see lib/model-modes.ts). When omitted the
-   * server uses its default extractor — back-compat with pre-Settings
-   * clients. Unknown IDs are ignored by the orchestrator (it falls back
-   * to default rather than 400-ing the request).
-   */
-  mode: z.string().optional(),
 });
 export type VerifyRequest = z.infer<typeof VerifyRequestSchema>;
 
@@ -86,13 +79,8 @@ export interface VerifyResponse {
   /** Model that produced the extraction; surfaced only in /api/debug/last. */
   modelId: string;
   modelVersion: string;
-  /**
-   * Which selectable mode produced this answer (see lib/model-modes.ts).
-   * Always one of the known mode IDs; falls back to the literal string
-   * "default" when no override was supplied so the UI can render a stable
-   * caption.
-   */
-  modeUsed: string;
+  /** Stable internal marker for the single production verification path. */
+  modeUsed: "default" | string;
   /**
    * True iff the aggregate verdict is `"review"`. Drives the human-review
    * queue: the API route enqueues the response when this is true.

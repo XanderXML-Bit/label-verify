@@ -1,37 +1,42 @@
-import { getBatch, setItemError, setItemResult } from "@/lib/batch-store";
+import {
+  claimBatchProcessing,
+  deleteBatch,
+  getBatch,
+  releaseBatchProcessing,
+  setItemError,
+  setItemResult,
+} from "@/lib/batch-store";
 import { verifyLabel } from "@/lib/verify";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const CONCURRENCY = 8;
+const CONCURRENCY = 2;
 
 /**
  * GET /api/verify/batch/[id]/stream
  *
- * Opens a Server-Sent Events stream. Internally fires up to CONCURRENCY
- * verifyLabel calls in parallel, emitting one SSE event per completed item.
+ * Opens a Server-Sent Events stream. This is NOT Google's offline
+ * Batch API — it is an interactive SSE worker in a single serverless
+ * invocation. Internally fires up to CONCURRENCY verifyLabel calls in
+ * parallel, emitting one SSE event per completed item.
  *
  * Event types:
  *   - "start"   { count }
  *   - "item"    { index, status, result | error }
  *   - "done"    { passed, failed, review, errored }
  *
- * If the client disconnects, the work stops on the next item boundary AND
- * any in-flight vision call is aborted via AbortController so we don't
- * keep billing the upstream model after the user has navigated away.
- * The request's own `signal` is also honored.
+ * If the client disconnects, the work stops on the next item boundary
+ * AND any in-flight vision call is aborted via AbortController so we
+ * don't keep billing the upstream model after the user has navigated
+ * away. The request's own `signal` is also honored.
  *
- * Realistic batch ceiling (vs the MAX_BATCH=1000 router cap):
- *   - Hobby plan (maxDuration=60 s, ~3 s/call, CONCURRENCY=8):
- *     ~160 items finish before the function times out.
- *   - Pro plan (maxDuration=300 s, same): ~800 items.
- * Submitting more than that is accepted by the POST route (the cap is
- * intentionally generous so operators on Enterprise plans can use it),
- * but the SSE stream will deliver only the first N items before
- * Vercel kills the function. The UI surfaces a "connection dropped"
- * banner; reconnecting currently restarts the stream from item 0
- * (a real limitation — tracked in REMAINING-IMPROVEMENTS R6).
+ * Realistic batch ceiling: the POST route caps item count at
+ * `MAX_BATCH_ITEMS` derived from `GEMINI_RPM_LIMIT` × the 300 s
+ * stream window in `lib/batch-capacity.ts` (default ~100). On Hobby
+ * plans the function's 60 s ceiling lowers the effective drain to
+ * ~160 items at CONCURRENCY=8 / ~3 s per call; reconnects currently
+ * restart from item 0 (tracked in REMAINING-IMPROVEMENTS R6).
  */
 export async function GET(
   req: Request,
@@ -41,6 +46,9 @@ export async function GET(
   const job = getBatch(id);
   if (!job) {
     return new Response("Batch not found", { status: 404 });
+  }
+  if (!claimBatchProcessing(job)) {
+    return new Response("Batch is already processing", { status: 409 });
   }
 
   const encoder = new TextEncoder();
@@ -75,61 +83,82 @@ export async function GET(
         }
       };
 
-      send("start", { count: job.items.length });
-
-      let i = 0;
-      const pump = async (_workerId: number): Promise<void> => {
-        while (!cancelled) {
-          const idx = i++;
-          if (idx >= job.items.length) return;
-          const item = job.items[idx]!;
-          item.status = "running";
-          try {
-            const result = await verifyLabel(item.imageBytes, item.declared, {
-              abortSignal: itemAbort.signal,
-            });
-            if (cancelled) return;
-            setItemResult(job, idx, result);
-            send("item", {
-              index: idx,
-              filename: item.filename,
-              status: "done",
-              result,
-            });
-          } catch (err) {
-            if (cancelled) return;
-            const msg = (err as Error).message;
-            setItemError(job, idx, msg);
-            send("item", {
-              index: idx,
-              filename: item.filename,
-              status: "error",
-              error: msg,
-            });
-          }
-        }
-      };
-
-      await Promise.all(
-        Array.from({ length: CONCURRENCY }, (_, idx) => pump(idx)),
-      );
-
-      if (!cancelled) {
-        const passed = job.items.filter((x) => x.result?.verdict === "pass").length;
-        const failed = job.items.filter((x) => x.result?.verdict === "fail").length;
-        const review = job.items.filter((x) => x.result?.verdict === "review").length;
-        const errored = job.items.filter((x) => x.status === "error").length;
-        send("done", { passed, failed, review, errored });
-      }
-
       try {
-        controller.close();
-      } catch {
-        // already closed
+        send("start", { count: job.items.length });
+
+        let i = 0;
+        const pump = async (): Promise<void> => {
+          while (!cancelled) {
+            const idx = i++;
+            if (idx >= job.items.length) return;
+            const item = job.items[idx]!;
+            // Skip items already processed on a previous invocation
+            // (the new claimBatchProcessing/releaseBatchProcessing
+            // lifecycle prevents two streams from competing on the
+            // same job, but a single reconnect after a soft cancel
+            // can replay items 0..n−1; this short-circuit resumes
+            // from where we left off).
+            if (item.status === "done" || item.status === "error") {
+              continue;
+            }
+            item.status = "running";
+            try {
+              // Thread the shared AbortController into the per-item
+              // verify so a client disconnect propagates through to
+              // the vision SDK and stops billing immediately (code-
+              // review B3). Sharing one signal across CONCURRENCY=8
+              // pumps is correct: every pump observes the same abort.
+              const result = await verifyLabel(item.imageBytes, item.declared, {
+                abortSignal: itemAbort.signal,
+              });
+              if (cancelled) return;
+              setItemResult(job, idx, result);
+              send("item", {
+                index: idx,
+                filename: item.filename,
+                status: "done",
+                result,
+              });
+            } catch (err) {
+              if (cancelled) return;
+              const msg = (err as Error).message;
+              setItemError(job, idx, msg);
+              send("item", {
+                index: idx,
+                filename: item.filename,
+                status: "error",
+                error: msg,
+              });
+            }
+          }
+        };
+
+        await Promise.all(Array.from({ length: CONCURRENCY }, () => pump()));
+
+        if (!cancelled) {
+          const passed = job.items.filter((x) => x.result?.verdict === "pass").length;
+          const failed = job.items.filter((x) => x.result?.verdict === "fail").length;
+          const review = job.items.filter((x) => x.result?.verdict === "review").length;
+          const errored = job.items.filter((x) => x.status === "error").length;
+          send("done", { passed, failed, review, errored });
+        }
+      } finally {
+        releaseBatchProcessing(job);
+        if (!cancelled) deleteBatch(id);
+        try {
+          controller.close();
+        } catch {
+          // already closed
+        }
       }
     },
     cancel() {
+      // Two-phase: the `cancel()` helper aborts itemAbort (so any
+      // in-flight vision call tears down its HTTP connection), then
+      // we release the batch claim so a reconnect can pick up where
+      // we left off.
       cancel();
+      releaseBatchProcessing(job);
     },
   });
 

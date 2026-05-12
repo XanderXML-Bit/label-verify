@@ -18,7 +18,7 @@ import { extractPdfText } from "@/lib/pdf";
 //     hands us a DOCX they can't easily convert to PDF/text.
 //   - Image vision — the path is sketched as an `image-vision` source but
 //     calling the extractor lives in the API route, so it can pick the
-//     bake-off-winning model from MODEL_PRIMARY without coupling this
+//     single production vision path without coupling this
 //     module to the vision adapters.
 
 export const MAX_APPLICATION_BYTES = 10 * 1024 * 1024;

@@ -333,6 +333,7 @@ export default function Home() {
         <>
           <UploadZone onFiles={handleFiles} />
           <SampleAffordance onPick={handleSample} />
+          {/* Single production path only: no reviewer/API-selectable model modes. */}
           <ReviewQueuePanel />
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">

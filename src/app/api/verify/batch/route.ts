@@ -6,20 +6,25 @@ import {
   createBatch,
   type BatchItem,
 } from "@/lib/batch-store";
+import {
+  configuredMaxBatchItems,
+  MAX_BATCH_BODY_BYTES,
+} from "@/lib/batch-capacity";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { rowToDeclared } from "@/lib/application/row-to-declared";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Default cap raised to 1000 per project lead's explicit ask
-// (2026-05-12). Operators can override via the MAX_BATCH_SIZE env var.
-// The brief's stated 200–300 range is the conservative floor; 1000 is
-// reachable in practice because per-item Vercel function invocations
-// avoid the 30 s per-batch SSE wall-clock cap.
-const MAX_BATCH = Number(process.env.MAX_BATCH_SIZE ?? 1000);
+// Interactive batch cap. Computed from provider RPM × stream window
+// (see lib/batch-capacity.ts) — yields ~100 labels by default for
+// Gemini Flash-Lite Tier 1, scales up if GEMINI_RPM_LIMIT is bumped.
+// Hard ceiling MAX_BATCH_SIZE (env, default 1000) overrides upward.
+export const MAX_BATCH_ITEMS = configuredMaxBatchItems();
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
+// Lower per-IP create-rate so a single client can't queue dozens of
+// 100-item batches in a minute and starve the stream worker.
+const RATE_LIMIT_BATCH_PER_MIN = Number(process.env.RATE_LIMIT_BATCH_PER_MIN ?? 3);
 
 const ACCEPTED_MIME = new Set([
   "image/jpeg",
@@ -40,24 +45,29 @@ const ACCEPTED_MIME = new Set([
  * Returns { batchId }. The client then opens an SSE connection to
  *   GET /api/verify/batch/<id>/stream
  * which kicks off per-item verifications and streams results back.
+ *
+ * Capacity:
+ *   - Item count capped at MAX_BATCH_ITEMS (computed from
+ *     GEMINI_RPM_LIMIT × stream window, ceilinged by MAX_BATCH_SIZE).
+ *   - Body bytes capped at MAX_BATCH_BYTES (256 MiB by default; small
+ *     enough to stay materially under the 1 GB function memory after
+ *     formData buffering, big enough for ~100 real label photos).
+ *   - Per-IP rate limit dedicated to batch creation (`batch-create:`
+ *     bucket), at RATE_LIMIT_BATCH_PER_MIN (default 3/min) — distinct
+ *     from /api/verify so a noisy batch client cannot starve single-
+ *     image traffic.
  */
-// Per-batch body cap. MAX_BATCH=1000 × 10 MB/image = 10 GB theoretical
-// worst-case, but real-world labels average ~1 MB, so legitimate
-// 1000-image batches typically run ~1-2 GB. The 5 GB cap absorbs the
-// 99th-percentile legitimate workload while keeping a DoS guard
-// against pathologically large bodies before `formData()` buffers
-// them into the 2 GB Vercel function memory. Anything bigger gets a
-// 413 from the Content-Length pre-check below — no buffering, no
-// OOM. Clients hitting this cap should split their upload.
-const MAX_BATCH_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
+export const MAX_BATCH_BYTES = MAX_BATCH_BODY_BYTES;
 
 export async function POST(req: Request) {
-  // ─── Rate limit ──────────────────────────────────────────────────────────
   const key = callerKey(req.headers);
-  const rl = rateLimit(`batch:${key}`, { perMinute: RATE_LIMIT_PER_MIN });
+  const rl = rateLimit(`batch-create:${key}`, {
+    perMinute: RATE_LIMIT_BATCH_PER_MIN,
+    burst: RATE_LIMIT_BATCH_PER_MIN,
+  });
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: `Rate limit exceeded. Try again in ${rl.resetSeconds}s.` },
+      { error: `Batch creation rate limit exceeded. Try again in ${rl.resetSeconds}s.` },
       {
         status: 429,
         headers: {
@@ -69,16 +79,26 @@ export async function POST(req: Request) {
   }
 
   const lenHeader = req.headers.get("content-length");
-  if (lenHeader) {
-    const declared = Number(lenHeader);
-    if (Number.isFinite(declared) && declared > MAX_BATCH_BYTES) {
-      return NextResponse.json(
-        {
-          error: `Batch body exceeds ${MAX_BATCH_BYTES} bytes. Split the upload into multiple smaller batches.`,
-        },
-        { status: 413 },
-      );
-    }
+  if (!lenHeader) {
+    return NextResponse.json(
+      { error: "Batch uploads require a Content-Length header." },
+      { status: 411 },
+    );
+  }
+  const declaredLength = Number(lenHeader);
+  if (!Number.isFinite(declaredLength) || declaredLength < 0) {
+    return NextResponse.json(
+      { error: "Invalid Content-Length header." },
+      { status: 400 },
+    );
+  }
+  if (declaredLength > MAX_BATCH_BYTES) {
+    return NextResponse.json(
+      {
+        error: `Batch body exceeds ${MAX_BATCH_BYTES} bytes. Split the upload into multiple smaller batches.`,
+      },
+      { status: 413 },
+    );
   }
 
   let form: FormData;
@@ -127,9 +147,9 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (manifestRows.length > MAX_BATCH) {
+  if (manifestRows.length > MAX_BATCH_ITEMS) {
     return NextResponse.json(
-      { error: `Batch exceeds MAX_BATCH_SIZE (${MAX_BATCH}).` },
+      { error: `Batch exceeds maximum capacity (${MAX_BATCH_ITEMS} items).` },
       { status: 413 },
     );
   }

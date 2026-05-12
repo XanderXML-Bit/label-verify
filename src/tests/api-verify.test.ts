@@ -195,6 +195,19 @@ describe("/api/verify — multipart image path", () => {
     expect(Number(resp.headers.get("X-RateLimit-Remaining"))).toBeGreaterThanOrEqual(0);
   });
 
+
+  it("ignores stray multipart mode field and always uses the single production path", async () => {
+    const form = buildMultipart({
+      image: { buffer: await tinyJpeg(), type: "image/jpeg", name: "a.jpg" },
+      declared: JSON.stringify(DECLARED_VALID),
+    });
+    form.append("mode", "smart");
+    const resp = await POST(makeMultipartReq(form));
+    expect(resp.status).toBe(200);
+    const options = verifyLabelMock.mock.calls[0]?.[2] as Record<string, unknown>;
+    expect(options).not.toHaveProperty("modelMode");
+  });
+
   it("415 on an unsupported MIME (e.g. text/plain)", async () => {
     const form = buildMultipart({
       image: { buffer: Buffer.from("not an image"), type: "text/plain", name: "x.txt" },
@@ -319,6 +332,25 @@ describe("/api/verify — JSON {url, declared}", () => {
     expect(resp.status).toBe(400);
   });
 });
+
+
+  it("ignores stray JSON mode field and always uses the single production path", async () => {
+    fetchUrlImageMock.mockResolvedValue({
+      buffer: await tinyJpeg(),
+      mime: "image/jpeg",
+      finalUrl: "https://example.com/label.jpg",
+    });
+    const resp = await POST(
+      makeJsonReq({
+        url: "https://example.com/label.jpg",
+        declared: DECLARED_VALID,
+        mode: "local",
+      }),
+    );
+    expect(resp.status).toBe(200);
+    const options = verifyLabelMock.mock.calls[0]?.[2] as Record<string, unknown>;
+    expect(options).not.toHaveProperty("modelMode");
+  });
 
 describe("/api/verify — rate limiting", () => {
   it("429 + Retry-After header when the per-minute budget is exhausted", async () => {
