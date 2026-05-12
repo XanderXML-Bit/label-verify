@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0061",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0061.jpg",
+  "degradations": [
+    "perspective-heavy"
+  ],
+  "beverage_type": "beer",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Drift Angle",
+    "class_type": "Farmhouse Saison",
+    "class_category": "beer",
+    "abv_percent": 6.2,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Drift Angle Brewing",
+      "street": "16 Mill Race",
+      "city": "Asheville",
+      "state": "NC",
+      "postal_code": "28801",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Bottle is photographed from a heavy off-axis perspective."
+}

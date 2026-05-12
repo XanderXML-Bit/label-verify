@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0074",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0074.jpg",
+  "degradations": [],
+  "beverage_type": "distilled_spirits",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Desert Finch",
+    "class_type": "Margarita Cocktail",
+    "class_category": "distilled_spirits",
+    "abv_percent": 8.0,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Desert Finch Cocktails",
+      "street": "44 Agave Road",
+      "city": "Tucson",
+      "state": "AZ",
+      "postal_code": "85701",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "RTD margarita canned cocktail with compliant warning."
+}

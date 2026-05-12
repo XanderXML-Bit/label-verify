@@ -30,22 +30,49 @@ function canonicalize(s: string): string {
   return n;
 }
 
+// Domestic-USA labels routinely omit an explicit country marking — TTB
+// regulations only mandate country-of-origin text for IMPORTS (27 CFR
+// §4.39, §5.36). When a US-produced bottle's front label doesn't
+// print "USA" / "Product of USA", the model correctly returns null,
+// and the previous comparator marked that FAIL — the dominant cause
+// of false-FAILs on the photo-realistic OOD corpus (Codex AI labels
+// over-claim country_of_origin="USA" on labels that don't visibly
+// state one). The fix: if declared is USA and extracted is null,
+// REVIEW (let a human confirm it's domestic) rather than hard FAIL.
+// Non-US declared with null extracted stays FAIL — country marking
+// IS required for imports.
+function isUsaCanonical(c: string): boolean {
+  return c === "united states";
+}
+
 export function compareCountry(
   declared: string,
   extracted: string | null,
   extractedConfidence: number,
 ): FieldComparison {
+  const a = canonicalize(declared);
   if (!extracted) {
+    if (isUsaCanonical(a)) {
+      return {
+        field: "country_of_origin",
+        status: "review",
+        expected: declared,
+        actual: null,
+        confidence: 0.5,
+        reason:
+          "Label does not visibly print a country of origin. Most US-produced beverages omit it (TTB requires it for imports only, per 27 CFR §4.39 / §5.36). Reviewer should confirm the producer address is US-based.",
+      };
+    }
     return {
       field: "country_of_origin",
       status: "fail",
       expected: declared,
       actual: null,
       confidence: 0,
-      reason: "No country of origin found on the label.",
+      reason:
+        "No country of origin found on the label. Imports must visibly state the country of origin per 27 CFR §4.39 / §5.36.",
     };
   }
-  const a = canonicalize(declared);
   const b = canonicalize(extracted);
   const pass = a === b;
   return {

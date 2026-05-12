@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0066",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0066.jpg",
+  "degradations": [
+    "motion-blur"
+  ],
+  "beverage_type": "distilled_spirits",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Flicker Road",
+    "class_type": "Vodka Soda",
+    "class_category": "distilled_spirits",
+    "abv_percent": 7.0,
+    "net_contents": {
+      "value": 12,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Flicker Road Canning Co.",
+      "street": "710 Market Alley",
+      "city": "Austin",
+      "state": "TX",
+      "postal_code": "78701",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Handheld can photo has horizontal motion blur."
+}

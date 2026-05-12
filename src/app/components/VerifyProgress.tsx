@@ -28,7 +28,11 @@ interface Props {
 }
 
 const DEFAULT_EXPECTED_MS = 5_000;
-const LONG_WAIT_THRESHOLD_MS = 10_000;
+// First "still working" reassurance fires earlier (~6s) so the user
+// sees a message before the ease-out bar visibly stalls at ~95%. A
+// second, softer copy at 20s explains cold-start specifically.
+const LONG_WAIT_THRESHOLD_MS = 6_000;
+const VERY_LONG_WAIT_THRESHOLD_MS = 20_000;
 const TICK_MS = 100;
 
 export function VerifyProgress({
@@ -54,6 +58,7 @@ export function VerifyProgress({
     1 - Math.exp(-elapsed / (expectedMs * 0.6)) * 0.95,
   );
   const longWait = elapsed >= LONG_WAIT_THRESHOLD_MS;
+  const veryLongWait = elapsed >= VERY_LONG_WAIT_THRESHOLD_MS;
 
   // Format elapsed as seconds with one decimal (e.g. "2.4 s"). Cleaner
   // for the user than ms.
@@ -74,11 +79,15 @@ export function VerifyProgress({
             {elapsedSec} s
           </span>
         </p>
-        {longWait && (
+        {veryLongWait ? (
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            Still working — a cold start on the free tier can take up to 30 seconds.
+          </span>
+        ) : longWait ? (
           <span className="text-xs text-slate-500 dark:text-slate-400">
             Larger or more detailed images take a moment.
           </span>
-        )}
+        ) : null}
       </div>
       <div className="mt-3 h-2 w-full overflow-hidden rounded bg-slate-200 dark:bg-slate-700">
         <div

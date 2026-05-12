@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0053",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0053.jpg",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Quiet Meridian",
+    "class_type": "Pinot Gris",
+    "class_category": "wine",
+    "abv_percent": 12.7,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Quiet Meridian Cellars",
+      "street": "700 Orchard Road",
+      "city": "Yakima",
+      "state": "WA",
+      "postal_code": "98901",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "non-compliant-text",
+  "notes": "Warning omits the numbered parentheticals."
+}

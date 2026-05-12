@@ -62,6 +62,7 @@ export const BAKEOFF_TECHNIQUES: readonly string[] = [
   "T6c",
   "T6d",
   "T6e",
+  "T6f",
   "T7",
   "T7b",
   "T8",
@@ -681,6 +682,45 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
         structuredOutput: true,
       });
       return new VisionExtractorRunner("T6e", extractor, false);
+    },
+  },
+  {
+    // T6f — Gemini 3 Flash Preview (the prior generation Flash). User
+    // explicitly asked us to bench this against 3.1 Flash Lite. Both
+    // routed via OpenRouter for apples-to-apples accounting.
+    id: "T6f",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T6f requires OPENROUTER_API_KEY (Gemini 3 Flash Preview via OpenRouter). " +
+            "See https://openrouter.ai/google/gemini-3-flash-preview for the current slug.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T6f extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        modelSlug: "google/gemini-3-flash-preview",
+        pricing: { inputPer1M: 0.5, outputPer1M: 3.0 },
+        structuredOutput: true,
+      });
+      return new VisionExtractorRunner("T6f", extractor, false);
     },
   },
   {

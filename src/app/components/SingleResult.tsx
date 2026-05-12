@@ -43,14 +43,13 @@ export function SingleResult({
         >
           <p className="font-semibold">
             <span aria-hidden className="mr-1">⚠</span>
-            Verified via backup model — primary was unavailable
+            We used a backup verifier for this one
           </p>
           <p className="mt-1">
-            The primary vision model couldn&apos;t be reached on this request.
-            The result below was produced by{" "}
-            <code className="font-mono">{result.fallbackUsed}</code>. Field
-            accuracy should be within ~5pp of the primary, but you may want
-            to re-submit when the primary is back.
+            Our main AI service was briefly unavailable, so a backup
+            took over. The result below is still trustworthy, but if
+            anything looks off you can verify the label again in a
+            minute or two when the main service is back.
           </p>
         </div>
       )}
@@ -217,7 +216,14 @@ function SubscoreRow({
     <div className="flex items-center justify-between border-b border-slate-100 py-2 last:border-b-0 dark:border-slate-800">
       <span className="text-sm text-slate-800 dark:text-slate-100">{label}</span>
       <span className="flex items-center gap-2">
-        <span className="text-xs text-slate-400 dark:text-slate-500">
+        {/* "conf 0.92" is jargon for a non-technical reviewer. We
+            hide it on phones (<sm) and keep it visible on tablet+ for
+            anyone debugging. Title attribute preserves the value for
+            anyone who needs it on small screens. */}
+        <span
+          className="hidden text-xs text-slate-400 dark:text-slate-500 sm:inline"
+          title={`Internal confidence: ${confidence.toFixed(2)}`}
+        >
           conf {confidence.toFixed(2)}
         </span>
         <VerdictChip verdict={status} size="sm" />

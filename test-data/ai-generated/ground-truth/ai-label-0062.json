@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0062",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0062.jpg",
+  "degradations": [
+    "glare-on-warning"
+  ],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Glassfire Cellars",
+    "class_type": "Chardonnay",
+    "class_category": "wine",
+    "abv_percent": 13.0,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Glassfire Cellars",
+      "street": "401 Sun Bench",
+      "city": "Napa",
+      "state": "CA",
+      "postal_code": "94558",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Specular glare crosses the Government Warning panel."
+}

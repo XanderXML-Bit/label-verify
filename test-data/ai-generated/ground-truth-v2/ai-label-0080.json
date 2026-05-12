@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0080",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0080.jpg",
+  "degradations": [],
+  "beverage_type": "malt_beverage",
+  "label_face": "wrap",
+  "container_size_ml": 473,
+  "fields": {
+    "brand_name": "Citrus Loom",
+    "class_type": "Mango Lime Malt Seltzer",
+    "class_category": "malt_beverage",
+    "abv_percent": 5.5,
+    "net_contents": {
+      "value": 16,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Citrus Loom Beverage Co.",
+      "street": "65 Grove Street",
+      "city": "St. Petersburg",
+      "state": "FL",
+      "postal_code": "33701",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Fruit-flavored malt seltzer tall can with compliant warning."
+}

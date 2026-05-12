@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0077",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0077.jpg",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Cote de Lanterne",
+    "class_type": "Pinot Noir",
+    "class_category": "wine",
+    "abv_percent": 13.5,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Cote de Lanterne Vins",
+      "street": "22 Rue des Pres",
+      "city": "Beaune",
+      "state": "Burgundy",
+      "postal_code": "21200",
+      "country": "France"
+    },
+    "country_of_origin": "France",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "French wine import has only the required English warning."
+}

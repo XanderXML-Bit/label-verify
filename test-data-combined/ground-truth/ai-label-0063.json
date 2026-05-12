@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0063",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0063.jpg",
+  "degradations": [
+    "lowlight"
+  ],
+  "beverage_type": "distilled_spirits",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Underpass Oak",
+    "class_type": "Bourbon Whiskey",
+    "class_category": "distilled_spirits",
+    "abv_percent": 46.0,
+    "net_contents": {
+      "value": 750,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Underpass Oak Distilling",
+      "street": "612 Barrel Way",
+      "city": "Frankfort",
+      "state": "KY",
+      "postal_code": "40601",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Dim under-exposed bottle photo with still-readable fields."
+}

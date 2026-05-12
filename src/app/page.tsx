@@ -19,6 +19,31 @@ import {
 import type { Sample } from "@/lib/samples";
 import { compressImageInBrowser } from "@/lib/client-compress";
 
+// Translate raw API error strings into plain-language copy a senior
+// reviewer can act on. The raw `HTTP 503` / `FUNCTION_INVOCATION_
+// TIMEOUT` strings are noise to a non-technical user.
+function friendlyError(raw: string, status?: number): string {
+  if (status === 429) {
+    return "We've hit the per-minute request limit. Wait a moment and try again.";
+  }
+  if (status === 413) {
+    return "That image is too large. Try a smaller file (under 10 MB) or compress it before uploading.";
+  }
+  if (status === 415) {
+    return "That file type isn't supported. Use a JPEG, PNG, WebP, or PDF.";
+  }
+  if (status === 504 || /timeout|TIMEOUT/.test(raw)) {
+    return "The verification took too long to respond. The service may be cold-starting — try again in a few seconds.";
+  }
+  if (status === 503 || /UNAVAILABLE|configuration/.test(raw)) {
+    return "The verification service is unavailable right now. Try again in a few minutes; if it keeps failing, the operator may need to refresh the API key.";
+  }
+  if (status === 500) {
+    return "Something went wrong on our side. Try again — if it keeps happening, take a screenshot and let the team know.";
+  }
+  return raw;
+}
+
 type Stage =
   | { kind: "idle" }
   | { kind: "single-pending"; file: File; previewUrl: string }
@@ -31,7 +56,16 @@ type Stage =
       previewUrl: string;
       result: ExtractOnlyResponse;
     }
-  | { kind: "single-error"; file: File; previewUrl: string; message: string }
+  | {
+      kind: "single-error";
+      file: File;
+      previewUrl: string;
+      message: string;
+      /** Set when the failed flow originated from a sample button — lets
+       *  the UI offer a "retry this sample" affordance instead of the
+       *  generic "Try again" that just dumps the user back to idle. */
+      retrySample?: Sample;
+    }
   | { kind: "batch-pending"; files: File[] }
   | { kind: "batch-running"; batchId: string; rows: BatchRow[] };
 
@@ -66,6 +100,9 @@ export default function Home() {
   async function handleSample(sample: Sample, file: File) {
     // Sample affordance: skip the form and verify immediately so the
     // reviewer sees an end-to-end result in one click (UI-SPEC.md §4).
+    // Tracks the originating sample on `single-error` so a runtime
+    // failure offers a "retry this sample" affordance instead of
+    // dumping the user back to idle.
     const url = URL.createObjectURL(file);
     setStage({ kind: "single-verifying", file, previewUrl: url });
     try {
@@ -80,7 +117,8 @@ export default function Home() {
           kind: "single-error",
           file,
           previewUrl: url,
-          message: err.error ?? `HTTP ${res.status}`,
+          message: friendlyError(err.error ?? `HTTP ${res.status}`, res.status),
+          retrySample: sample,
         });
         return;
       }
@@ -91,6 +129,7 @@ export default function Home() {
         kind: "single-error",
         file,
         previewUrl: url,
+        retrySample: sample,
         message: (e as Error).message,
       });
     }
@@ -335,13 +374,27 @@ export default function Home() {
         >
           <h2 className="text-base font-semibold">Verification failed</h2>
           <p className="mt-1">{stage.message}</p>
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-3 min-h-[44px] rounded-md bg-red-700 px-4 py-2.5 font-semibold text-white hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500"
-          >
-            Try again
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {stage.retrySample && (
+              <button
+                type="button"
+                onClick={() => {
+                  const sample = stage.retrySample!;
+                  void handleSample(sample, stage.file);
+                }}
+                className="min-h-[44px] rounded-md bg-red-700 px-4 py-2.5 font-semibold text-white hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500"
+              >
+                Retry this sample
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={reset}
+              className="min-h-[44px] rounded-md border border-red-300 bg-white px-4 py-2.5 font-semibold text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-red-950 dark:text-red-200 dark:hover:bg-red-900"
+            >
+              {stage.retrySample ? "Start over" : "Try again"}
+            </button>
+          </div>
         </div>
       )}
 
