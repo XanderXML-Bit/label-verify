@@ -97,13 +97,15 @@ export function DeclaredForm({
       // Scroll + focus the error summary so a senior reviewer who clicks
       // Verify and sees nothing happen above the fold is brought to the
       // problem instead of guessing. aria-live="assertive" already
-      // announces to screen readers; this covers sighted users.
+      // announces to screen readers; this covers sighted users. We
+      // feature-detect scrollIntoView so jsdom-based unit tests don't
+      // throw on the missing API.
       requestAnimationFrame(() => {
-        errorBlockRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-        errorBlockRef.current?.focus();
+        const el = errorBlockRef.current;
+        if (el?.scrollIntoView) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        el?.focus?.();
       });
       return;
     }

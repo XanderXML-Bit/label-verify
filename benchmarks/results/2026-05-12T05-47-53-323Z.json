@@ -1,0 +1,2949 @@
+{
+  "runAt": "2026-05-12T05:47:53.323Z",
+  "mode": "routine",
+  "corpusRoot": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data",
+  "corpusSize": 12,
+  "trialsPerImage": 1,
+  "techniques": [
+    {
+      "id": "T5b",
+      "skipped": null,
+      "overall": {
+        "acc": 0.5476190476190477,
+        "ciLo": 0.4414303693212117,
+        "ciHi": 0.6496427993383703,
+        "n": 84
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.5655175313406071,
+            "ciHi": 1,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.5655175313406071,
+            "ciHi": 1,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.5655175313406071,
+            "ciHi": 1,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.8,
+            "ciLo": 0.375534627029995,
+            "ciHi": 0.9637758917743693,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.6666666666666666,
+            "ciLo": 0.2076595988078242,
+            "ciHi": 0.9385080559790691,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0.2857142857142857,
+        "ciLo": 0.08221892324928332,
+        "ciHi": 0.6410655504689458,
+        "n": 7
+      },
+      "ood": {
+        "id": {
+          "acc": 0.5476190476190477,
+          "ciLo": 0.4414303693212117,
+          "ciHi": 0.6496427993383703,
+          "n": 84
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 12,
+        "p50": 4071.9838999999993,
+        "p95": 4562.109500000002,
+        "mean": 3994.807308333333,
+        "failures": 0
+      },
+      "trialCount": 12,
+      "imageFailureCount": 0,
+      "economics": {
+        "inputTokensPerCall": 2070,
+        "outputTokensPerCall": 394.4166666666667,
+        "costUsdPerCall": 0.004042083333333334,
+        "costUsdPer1k": 4.042083333333334,
+        "totalCostUsd": 0.048505000000000006,
+        "accuracyPerDollar": 135.47940565773777,
+        "accuracyPerSecond": 0.13708271897788205
+      }
+    },
+    {
+      "id": "T8",
+      "skipped": null,
+      "overall": {
+        "acc": 0.36904761904761907,
+        "ciLo": 0.2737011844117609,
+        "ciHi": 0.47584760177438895,
+        "n": 84
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.5655175313406071,
+            "ciHi": 1,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.5655175313406071,
+            "ciHi": 1,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.6,
+            "ciLo": 0.23072427940911855,
+            "ciHi": 0.8823792268590028,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.6666666666666666,
+            "ciLo": 0.2076595988078242,
+            "ciHi": 0.9385080559790691,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0.35433043867586833,
+        "n": 7
+      },
+      "ood": {
+        "id": {
+          "acc": 0.36904761904761907,
+          "ciLo": 0.2737011844117609,
+          "ciHi": 0.47584760177438895,
+          "n": 84
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 12,
+        "p50": 2908.618199999997,
+        "p95": 3576.5264999999927,
+        "mean": 3524.846666666665,
+        "failures": 0
+      },
+      "trialCount": 12,
+      "imageFailureCount": 0,
+      "economics": {
+        "inputTokensPerCall": 2082,
+        "outputTokensPerCall": 361,
+        "costUsdPerCall": 0.0058305,
+        "costUsdPer1k": 5.8305,
+        "totalCostUsd": 0.069966,
+        "accuracyPerDollar": 63.2960499181235,
+        "accuracyPerSecond": 0.10469891429252315
+      }
+    },
+    {
+      "id": "T9",
+      "skipped": null,
+      "overall": {
+        "acc": 0.2,
+        "ciLo": 0.10042446419270429,
+        "ciHi": 0.3589161320454949,
+        "n": 35
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.5,
+            "ciLo": 0.09453120463920084,
+            "ciHi": 0.9054687953607992,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0.6576197760453506,
+        "n": 2
+      },
+      "ood": {
+        "id": {
+          "acc": 0.2,
+          "ciLo": 0.10042446419270429,
+          "ciHi": 0.3589161320454949,
+          "n": 35
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 5,
+        "p50": 47013.609200000006,
+        "p95": 50242.3578,
+        "mean": 42175.985560000016,
+        "failures": 7
+      },
+      "trialCount": 12,
+      "imageFailureCount": 7,
+      "economics": {
+        "inputTokensPerCall": 1697,
+        "outputTokensPerCall": 1913.6,
+        "costUsdPerCall": 0,
+        "costUsdPer1k": 0,
+        "totalCostUsd": 0,
+        "accuracyPerDollar": null,
+        "accuracyPerSecond": 0.004742035007468358
+      }
+    },
+    {
+      "id": "T10",
+      "skipped": null,
+      "overall": {
+        "acc": 0.38095238095238093,
+        "ciLo": 0.2711746838885313,
+        "ciHi": 0.5044136971694202,
+        "n": 63
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0.3333333333333333,
+            "ciLo": 0.06149194402093078,
+            "ciHi": 0.7923404011921757,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 0.6666666666666666,
+            "ciLo": 0.2076595988078242,
+            "ciHi": 0.9385080559790691,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.6666666666666666,
+            "ciLo": 0.2076595988078242,
+            "ciHi": 0.9385080559790691,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0.5,
+        "ciLo": 0.15003898774401986,
+        "ciHi": 0.8499610122559802,
+        "n": 4
+      },
+      "ood": {
+        "id": {
+          "acc": 0.38095238095238093,
+          "ciLo": 0.2711746838885313,
+          "ciHi": 0.5044136971694202,
+          "n": 63
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 9,
+        "p50": 25326.77170000004,
+        "p95": 46760.66910000006,
+        "mean": 32993.493488888926,
+        "failures": 3
+      },
+      "trialCount": 12,
+      "imageFailureCount": 3,
+      "economics": {
+        "inputTokensPerCall": 1683,
+        "outputTokensPerCall": 4646.333333333333,
+        "costUsdPerCall": 0.007390249999999999,
+        "costUsdPer1k": 7.390249999999999,
+        "totalCostUsd": 0.06651225,
+        "accuracyPerDollar": 51.54796941272365,
+        "accuracyPerSecond": 0.011546288091034453
+      }
+    },
+    {
+      "id": "T11",
+      "skipped": null,
+      "overall": {
+        "acc": 0.34523809523809523,
+        "ciLo": 0.2523501491862907,
+        "ciHi": 0.45166205267006815,
+        "n": 84
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 0.8,
+            "ciLo": 0.375534627029995,
+            "ciHi": 0.9637758917743693,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 0.8,
+            "ciLo": 0.375534627029995,
+            "ciHi": 0.9637758917743693,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.6,
+            "ciLo": 0.23072427940911855,
+            "ciHi": 0.8823792268590028,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0.3333333333333333,
+            "ciLo": 0.06149194402093078,
+            "ciHi": 0.7923404011921757,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.6666666666666666,
+            "ciLo": 0.2076595988078242,
+            "ciHi": 0.9385080559790691,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0,
+        "ciLo": 0,
+        "ciHi": 0.35433043867586833,
+        "n": 7
+      },
+      "ood": {
+        "id": {
+          "acc": 0.34523809523809523,
+          "ciLo": 0.2523501491862907,
+          "ciHi": 0.45166205267006815,
+          "n": 84
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 12,
+        "p50": 3575.714799999958,
+        "p95": 4502.634899999946,
+        "mean": 3647.805666666633,
+        "failures": 0
+      },
+      "trialCount": 12,
+      "imageFailureCount": 0,
+      "economics": {
+        "inputTokensPerCall": 2557,
+        "outputTokensPerCall": 260.8333333333333,
+        "costUsdPerCall": 0.0005400499999999999,
+        "costUsdPer1k": 0.5400499999999999,
+        "totalCostUsd": 0.0064805999999999996,
+        "accuracyPerDollar": 639.2706142729289,
+        "accuracyPerSecond": 0.09464267748494783
+      }
+    },
+    {
+      "id": "T12",
+      "skipped": null,
+      "overall": {
+        "acc": 0.5119047619047619,
+        "ciLo": 0.40685182810363585,
+        "ciHi": 0.6159164640612594,
+        "n": 84
+      },
+      "stratified": [
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.5655175313406071,
+            "ciHi": 1,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0.2,
+            "ciLo": 0.03622410822563066,
+            "ciHi": 0.6244653729700049,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0.6,
+            "ciLo": 0.23072427940911855,
+            "ciHi": 0.8823792268590028,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.43448246865939283,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.5655175313406071,
+            "ciHi": 1,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.8,
+            "ciLo": 0.375534627029995,
+            "ciHi": 0.9637758917743693,
+            "n": 5
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0.5,
+            "ciLo": 0.09453120463920084,
+            "ciHi": 0.9054687953607992,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.6576197760453506,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.3423802239546494,
+            "ciHi": 1,
+            "n": 2
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0.6666666666666666,
+            "ciLo": 0.2076595988078242,
+            "ciHi": 0.9385080559790691,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 0.3333333333333333,
+            "ciLo": 0.06149194402093078,
+            "ciHi": 0.7923404011921757,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.5614970356393196,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.43850296436068037,
+            "ciHi": 1,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 0.6666666666666666,
+            "ciLo": 0.2076595988078242,
+            "ciHi": 0.9385080559790691,
+            "n": 3
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "brand_name"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "class_type"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "abv_percent"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "net_contents"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "country_of_origin"
+          },
+          "acc": {
+            "acc": 0,
+            "ciLo": 0,
+            "ciHi": 0.7934506882081973,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "producer"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        },
+        {
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "lowlight",
+            "field": "government_warning"
+          },
+          "acc": {
+            "acc": 1,
+            "ciLo": 0.2065493117918027,
+            "ciHi": 1,
+            "n": 1
+          }
+        }
+      ],
+      "govWarningFnRate": {
+        "acc": 0.14285714285714285,
+        "ciLo": 0.025679624057823897,
+        "ciHi": 0.5131278321392249,
+        "n": 7
+      },
+      "ood": {
+        "id": {
+          "acc": 0.5119047619047619,
+          "ciLo": 0.40685182810363585,
+          "ciHi": 0.6159164640612594,
+          "n": 84
+        },
+        "ood": {
+          "acc": 0,
+          "ciLo": 0,
+          "ciHi": 1,
+          "n": 0
+        }
+      },
+      "latencyMs": {
+        "n": 12,
+        "p50": 6387.225099999923,
+        "p95": 7553.348600000143,
+        "mean": 6500.316916666711,
+        "failures": 0
+      },
+      "trialCount": 12,
+      "imageFailureCount": 0,
+      "economics": {
+        "inputTokensPerCall": 2284,
+        "outputTokensPerCall": 426.6666666666667,
+        "costUsdPerCall": 0.022086666666666668,
+        "costUsdPer1k": 22.086666666666666,
+        "totalCostUsd": 0.26504,
+        "accuracyPerDollar": 23.17709456254581,
+        "accuracyPerSecond": 0.07875073915123215
+      }
+    }
+  ],
+  "pairwiseMcNemar": {
+    "T5b_vs_T8": {
+      "statistic": 10.31578947368421,
+      "pValue": 0.001319095759917066,
+      "b": 17,
+      "c": 2
+    },
+    "T5b_vs_T9": {
+      "statistic": 8.642857142857142,
+      "pValue": 0.0032835976201791572,
+      "b": 13,
+      "c": 1
+    },
+    "T5b_vs_T10": {
+      "statistic": 9.090909090909092,
+      "pValue": 0.002568970081442856,
+      "b": 11,
+      "c": 0
+    },
+    "T5b_vs_T11": {
+      "statistic": 11.130434782608695,
+      "pValue": 0.000849338878764816,
+      "b": 20,
+      "c": 3
+    },
+    "T5b_vs_T12": {
+      "statistic": 0.16,
+      "pValue": 0.6891566153038218,
+      "b": 14,
+      "c": 11
+    },
+    "T8_vs_T9": {
+      "statistic": 3.2,
+      "pValue": 0.07363816975042525,
+      "b": 5,
+      "c": 0
+    },
+    "T8_vs_T10": {
+      "statistic": 0.1,
+      "pValue": 0.7518297719068255,
+      "b": 4,
+      "c": 6
+    },
+    "T8_vs_T11": {
+      "statistic": 0.25,
+      "pValue": 0.6170750745520118,
+      "b": 3,
+      "c": 1
+    },
+    "T8_vs_T12": {
+      "statistic": 7.5625,
+      "pValue": 0.0059596374265369345,
+      "b": 2,
+      "c": 14
+    },
+    "T9_vs_T10": {
+      "statistic": 5.142857142857143,
+      "pValue": 0.023342131587125614,
+      "b": 0,
+      "c": 7
+    },
+    "T9_vs_T11": {
+      "statistic": 1.5,
+      "pValue": 0.22067149635775196,
+      "b": 1,
+      "c": 5
+    },
+    "T9_vs_T12": {
+      "statistic": 9.090909090909092,
+      "pValue": 0.002568970081442856,
+      "b": 0,
+      "c": 11
+    },
+    "T10_vs_T11": {
+      "statistic": 0.3076923076923077,
+      "pValue": 0.5790996835135263,
+      "b": 8,
+      "c": 5
+    },
+    "T10_vs_T12": {
+      "statistic": 2.769230769230769,
+      "pValue": 0.09609229048993928,
+      "b": 3,
+      "c": 10
+    },
+    "T11_vs_T12": {
+      "statistic": 8.45,
+      "pValue": 0.0036505688196584174,
+      "b": 3,
+      "c": 17
+    }
+  }
+}

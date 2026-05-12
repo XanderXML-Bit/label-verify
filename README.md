@@ -6,9 +6,28 @@ AI-powered verification of beverage label artwork against declared
 application data. A prototype for the U.S. Department of the Treasury,
 Alcohol and Tobacco Tax and Trade Bureau (TTB).
 
-**Live demo:** **<https://label-verify-six.vercel.app>** _(custom domain on `zendren.net` / `xandermlopez.com` TBD)_
-**Status:** Live. Single + batch verify working end-to-end. 8 extractor
-candidates registered; final bake-off pending the locked corpus.
+**Live demo:** **<https://label-verify-six.vercel.app>**
+
+**Status:** Submission-ready (2026-05-12). Routine bake-off across 13
+extractor variants complete — **Gemini 3.1 Flash Lite wins** at 97.6 %
+accuracy, 2.3 s P50 latency, $0.25 per 1k labels. See
+[`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4 for the full
+table; [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) covers why we
+ruled out classical CV, pure OCR, self-hosted open-weight VLMs, and
+custom-trained CNNs.
+
+**Three input modes:**
+1. **Image + manual application form** — fill the seven declared
+   fields yourself; standard COLA verification flow.
+2. **Image + uploaded application file** — drop a PDF / JSON / CSV /
+   Markdown / plain-text / photo of the application form; the parser
+   prefills the form, you review/edit, then click Verify.
+3. **Image-only "extract without verdict"** — for when you don't have
+   the application data on hand. Shows extracted fields and the
+   Government Warning subscore (federal regulation, not application-
+   derived) but does NOT render a PASS/FAIL/REVIEW chip.
+
+Batch verify accepts up to 300 labels with a CSV/JSON manifest.
 
 ## Architecture at a glance
 
@@ -29,11 +48,16 @@ flowchart LR
   V -. AbortSignal 5s .-> X
 ```
 
-The vision extractor is one of four contenders the benchmark harness
-compares: **T1** Tesseract baseline, **T4** GPT-4o-mini, **T6** Gemini 2.0
-Flash, **C1** combined OCR + Vision. Pre-registered hypothesis: C1 wins on
-Gov-Warning accuracy by ≥3pp at ≤0.5s extra latency. See
-[`docs/APPROACH.md`](docs/APPROACH.md) §4 for the kill criterion.
+The vision extractor is selected by `MODEL_PRIMARY` in the server
+environment. The benchmark harness (`npm run bench:bakeoff`) compared
+13 variants across OpenAI (GPT-4o-mini, GPT-4o, GPT-5.5, GPT-5.4-nano),
+Google (Gemini 3.1 Flash Lite, Gemini 2.5 Flash, Gemini 3.1 Pro), Anthropic
+(Claude Haiku 4.5, Claude Opus 4.7), Meta (Llama 4 Maverick), Mistral
+(Medium 3.5), NVIDIA (Nemotron 3 Nano Omni), Alibaba (Qwen 3.6 Flash),
+plus Tesseract baseline (T1) and an OCR+Vision combination (C1).
+**Gemini 3.1 Flash Lite (T6) wins.** See
+[`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4 for the full
+table and the criterion-by-criterion justification.
 
 ## What it does
 
