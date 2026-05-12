@@ -33,12 +33,10 @@ test.describe("Idle screen", () => {
     expect(persisted).toBe(after);
   });
 
-  test("More options disclosure reveals settings + review queue", async ({
-    page,
-  }) => {
+  test("Human review queue surfaces on the idle screen", async ({ page }) => {
+    // The Settings panel was retired (single production path now).
+    // The review queue lives directly on the idle screen.
     await page.goto("/");
-    await page.getByText(/More options/i).click();
-    await expect(page.getByRole("region", { name: /Settings/i })).toBeVisible();
     await expect(
       page.getByRole("region", { name: /Human review queue/i }),
     ).toBeVisible();
@@ -46,18 +44,53 @@ test.describe("Idle screen", () => {
 });
 
 test.describe("Sample affordance", () => {
-  test("PASS sample reaches a Verification result panel", async ({ page }) => {
+  // Each sample's expected verdict is asserted explicitly. A federal
+  // reviewer's first interaction with the demo is to click each
+  // sample and confirm the chip matches the button's "Expected: …"
+  // label — this e2e suite enforces that contract against the live
+  // deployment via .github/workflows/e2e-live.yml.
+
+  test("PASS sample reaches a PASS verdict", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /Try the pass sample/i }).click();
-    // Vision call latency varies; allow generous wait.
     await expect(
       page.getByRole("region", { name: /Verification result/i }),
     ).toBeVisible({ timeout: 30_000 });
-    // PASS sample should land on a non-FAIL verdict (PASS or REVIEW).
+    // The header chip is the canonical verdict location.
     const verdict = await page
       .locator("text=/^(PASS|FAIL|REVIEW)$/")
       .first()
       .innerText();
-    expect(["PASS", "REVIEW"]).toContain(verdict);
+    expect(verdict).toBe("PASS");
+  });
+
+  test("FAIL sample reaches a FAIL verdict (title-case Gov-Warning prefix)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Try the fail sample/i }).click();
+    await expect(
+      page.getByRole("region", { name: /Verification result/i }),
+    ).toBeVisible({ timeout: 30_000 });
+    const verdict = await page
+      .locator("text=/^(PASS|FAIL|REVIEW)$/")
+      .first()
+      .innerText();
+    expect(verdict).toBe("FAIL");
+  });
+
+  test("REVIEW sample reaches a REVIEW verdict (Lager vs Pilsner)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Try the review sample/i }).click();
+    await expect(
+      page.getByRole("region", { name: /Verification result/i }),
+    ).toBeVisible({ timeout: 30_000 });
+    const verdict = await page
+      .locator("text=/^(PASS|FAIL|REVIEW)$/")
+      .first()
+      .innerText();
+    expect(verdict).toBe("REVIEW");
   });
 });
