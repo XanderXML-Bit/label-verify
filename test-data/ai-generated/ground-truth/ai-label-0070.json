@@ -1,0 +1,41 @@
+{
+  "id": "ai-label-0070",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0070.jpg",
+  "degradations": [
+    "perspective-heavy",
+    "curved-substrate",
+    "occlusion-edge"
+  ],
+  "beverage_type": "beer",
+  "label_face": "wrap",
+  "container_size_ml": 473,
+  "fields": {
+    "brand_name": "Edge Current",
+    "class_type": "Imperial Stout",
+    "class_category": "beer",
+    "abv_percent": 9.2,
+    "net_contents": {
+      "value": 16,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Edge Current Brewing",
+      "street": "91 Breakwater Drive",
+      "city": "Duluth",
+      "state": "MN",
+      "postal_code": "55802",
+      "country": "USA"
+    },
+    "country_of_origin": "USA",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Warning sits near the visible edge of a steep curved can label."
+}
