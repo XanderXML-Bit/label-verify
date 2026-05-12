@@ -32,9 +32,10 @@ const APPLICATION_MIME = new Set([
   "text/markdown",
   "text/x-markdown",
   "text/plain",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 
-const APPLICATION_EXT = new Set(["pdf", "json", "csv", "md", "txt"]);
+const APPLICATION_EXT = new Set(["pdf", "json", "csv", "md", "txt", "docx"]);
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "heic", "heif"]);
 
 export type FileKind = "image" | "application" | "other";

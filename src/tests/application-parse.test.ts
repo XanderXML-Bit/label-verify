@@ -182,7 +182,12 @@ describe("application/parse (dispatcher)", () => {
     ).rejects.toMatchObject({ code: "unsupported-mime", status: 415 });
   });
 
-  it("rejects DOCX with an informative error", async () => {
+  it("dispatches DOCX to the mammoth-backed parser", async () => {
+    // Bare "docx contents" bytes aren't a valid OOXML zip, so mammoth
+    // will reject. The point of this test is that the DISPATCH now
+    // routes DOCX to the DOCX parser (previously failed with an
+    // explicit "DOCX upload is not yet supported" message). The
+    // mammoth-emitted error makes it through as a parse-failed code.
     await expect(
       parseApplication({
         buffer: Buffer.from("docx contents"),
@@ -190,7 +195,7 @@ describe("application/parse (dispatcher)", () => {
         mime:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       }),
-    ).rejects.toThrow(/DOCX upload is not yet supported/);
+    ).rejects.toMatchObject({ code: "parse-failed" });
   });
 
   it("rejects an empty buffer", async () => {

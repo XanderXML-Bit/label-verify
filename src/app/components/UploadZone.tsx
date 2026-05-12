@@ -30,6 +30,7 @@ const DEFAULT_ACCEPT = [
   "text/markdown",
   "text/x-markdown",
   "text/plain",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
 export function UploadZone({

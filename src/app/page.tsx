@@ -644,6 +644,29 @@ export default function Home() {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  // Generate a manifest template seeded with one row
+                  // per uploaded image (filename pre-filled, other
+                  // columns blank). Lets the reviewer fill declared
+                  // fields per image without having to memorise the
+                  // header. Per REMAINING-IMPROVEMENTS F7 — a
+                  // lightweight take on the "fill each image's
+                  // declared fields manually" affordance.
+                  const header =
+                    "filename,brand_name,class_type,class_category,abv_percent,net_contents,producer,country_of_origin";
+                  const rows = stage.files
+                    .filter((f) => f.type.startsWith("image/"))
+                    .map((f) => `${f.name},,,,,,,`)
+                    .join("\n");
+                  setManifestText(`${header}\n${rows}`);
+                }}
+                className="min-h-[44px] rounded-md border border-blue-500 px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
+                title="Generate a CSV manifest with one row per uploaded image"
+              >
+                Generate manifest template
+              </button>
+              <button
+                type="button"
                 onClick={reset}
                 className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
               >

@@ -5,6 +5,7 @@ import {
 } from "./types";
 import { parseApplicationText } from "./parse-text";
 import { parseApplicationJson, parseApplicationCsv } from "./parse-structured";
+import { parseApplicationDocx } from "./parse-docx";
 import { extractPdfFirstPage, extractPdfText } from "@/lib/pdf";
 import { parseApplicationImage } from "./parse-image";
 
@@ -135,6 +136,16 @@ export async function parseApplication(
         `JSON parse failed: ${(err as Error).message}`,
       );
     }
+  }
+
+  // DOCX — Word document. mammoth extracts rendered text, fed into
+  // the same regex pipeline as the .txt / .md path.
+  if (
+    mime ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    ext === "docx"
+  ) {
+    return await parseApplicationDocx(args.buffer);
   }
 
   // CSV — structured.

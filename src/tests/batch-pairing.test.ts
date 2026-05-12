@@ -47,7 +47,22 @@ describe("batch-pairing — classifyFile", () => {
 
   it("returns 'other' for unsupported types", () => {
     expect(classifyFile(file("a.zip", "application/zip"))).toBe("other");
-    expect(classifyFile(file("a.docx", ""))).toBe("other");
+    // .docx + .rtf without a recognised MIME stay "other" since the
+    // app-side parsers don't know what to do with them.
+    expect(classifyFile(file("a.rtf", ""))).toBe("other");
+  });
+
+  it("recognises DOCX as an application file (mammoth path)", () => {
+    expect(
+      classifyFile(
+        file(
+          "a.docx",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ),
+      ),
+    ).toBe("application");
+    // MIME-less .docx is also classified via extension fallback.
+    expect(classifyFile(file("a.docx", ""))).toBe("application");
   });
 });
 

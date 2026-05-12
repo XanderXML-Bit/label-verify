@@ -1,0 +1,25 @@
+You are a senior engineer doing a final pre-submission review of LabelVerify, a TTB COLA verification prototype going to a U.S. Treasury hiring manager.
+
+Focus only on real, actionable items:
+- bugs or regressions
+- contradictions between README/docs and the actual code
+- security gaps
+- correctness issues a federal reviewer would actually flag
+
+Skip nits. Be specific: file paths, line numbers, exact code citations.
+
+Walk these files in particular:
+- src/lib/verify.ts (orchestrator)
+- src/lib/matching/*.ts (comparators)
+- src/lib/validation/government-warning-validator.ts
+- src/lib/batch-pairing.ts
+- src/lib/export-result.ts
+- src/lib/application/parse.ts
+- src/app/api/verify/route.ts
+- src/app/api/verify/batch/route.ts
+- src/app/api/verify/batch/[id]/stream/route.ts
+- src/middleware.ts
+
+Then check README.md and docs/openapi.yaml against the code.
+
+Report under 700 words. List the top 5 most-fixable real issues you find. If you find nothing material, say so explicitly and explain what you checked.
