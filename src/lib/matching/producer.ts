@@ -172,8 +172,19 @@ export function compareProducer(
   };
 
   const fails = Object.values(components).filter((s) => s === "fail").length;
+  // Country mismatch is regulator-disqualifying on its own — a label
+  // that prints a different country than the declared application is
+  // a hard TTB FAIL regardless of how many address components happen
+  // to coincidentally match (e.g. Portland, ME exists in both Maine
+  // and several other countries' city lists). Per code-review C1.
   const status: FieldStatus =
-    fails === 0 ? "pass" : fails <= 1 ? "review" : "fail";
+    components.country === "fail"
+      ? "fail"
+      : fails === 0
+        ? "pass"
+        : fails <= 1
+          ? "review"
+          : "fail";
 
   return {
     field: "producer",
@@ -185,6 +196,8 @@ export function compareProducer(
     reason:
       status === "pass"
         ? undefined
-        : `${fails} producer component${fails === 1 ? "" : "s"} did not match.`,
+        : components.country === "fail"
+          ? `Country component disagrees (declared "${declared.country ?? "—"}" vs printed "${extracted.country ?? "—"}") — regulator-disqualifying regardless of other component matches.`
+          : `${fails} producer component${fails === 1 ? "" : "s"} did not match.`,
   };
 }

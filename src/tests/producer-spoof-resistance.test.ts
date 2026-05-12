@@ -155,4 +155,34 @@ describe("producer comparator — spoof resistance", () => {
     const r = compareProducer(declaredUsa, extracted, 0.9);
     expect(r.components?.country).toBe("fail");
   });
+
+  // Per code-review C1: a country mismatch should hard-FAIL the producer
+  // verdict regardless of how many other components coincidentally
+  // match. Previously this returned REVIEW because the rollup only
+  // counted "≥ 2 fails" as a hard fail.
+  it("hard-FAILS when country mismatches even with every other component matching", () => {
+    // Declared US producer "Foo, Portland, ME 04101, USA". Label
+    // prints the same address but country = Mexico. The country
+    // mismatch alone is regulator-disqualifying.
+    const declared: ProducerAddress = {
+      name: "Foo Brewing Co.",
+      street: "1 Main St",
+      city: "Portland",
+      state: "ME",
+      postal_code: "04101",
+      country: "USA",
+    };
+    const extracted: ProducerAddress = {
+      name: "Foo Brewing Co.",
+      street: "1 Main St",
+      city: "Portland",
+      state: "ME",
+      postal_code: "04101",
+      country: "Mexico",
+    };
+    const r = compareProducer(declared, extracted, 0.9);
+    expect(r.components?.country).toBe("fail");
+    expect(r.status).toBe("fail");
+    expect(r.reason).toMatch(/Country component disagrees/);
+  });
 });
