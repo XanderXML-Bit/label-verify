@@ -1,0 +1,96 @@
+name: Post-deploy smoke
+
+# Probes the production deployment after every push to main. Hits the
+# public surface only (no Bearer token needed) and asserts:
+#   - / returns 200 with the expected HTML title
+#   - /api/health returns ready: true with the public minimal shape
+#   - /api/warmup returns ok:true within 30 s (Tesseract + Gemini SDK
+#     warm)
+#
+# A failure here means the latest deploy is unhealthy even though CI
+# was green pre-merge — usually a missing env var or Vercel build cache
+# regression. Surfaces fast.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Base URL to smoke-test'
+        required: false
+        default: 'https://label-verify-six.vercel.app'
+
+permissions:
+  contents: read
+
+jobs:
+  wait-for-deploy:
+    name: Wait for Vercel deploy then smoke-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Smoke-test production deployment
+        env:
+          BASE_URL: ${{ github.event.inputs.target || 'https://label-verify-six.vercel.app' }}
+        run: |
+          set -euo pipefail
+          # Vercel auto-deploys on push to main. Give it up to 4 minutes
+          # to swap in the new build before we probe. The SHA we just
+          # pushed isn't necessarily live the instant the workflow
+          # fires — the build takes ~2 minutes typically.
+          echo "Waiting up to 4 minutes for the latest deploy to land at $BASE_URL ..."
+          for i in $(seq 1 24); do
+            sleep 10
+            code=$(curl -sS -o /tmp/index.html -w "%{http_code}" "$BASE_URL/" || true)
+            if [ "$code" = "200" ]; then
+              echo "Got 200 after ~${i}0 s. Continuing smoke checks."
+              break
+            fi
+            if [ "$i" = "24" ]; then
+              echo "::error::Production URL $BASE_URL did not return 200 within 4 minutes."
+              echo "Last HTTP code: $code"
+              head -50 /tmp/index.html || true
+              exit 1
+            fi
+          done
+
+          # 1. Home page renders the expected title.
+          echo "→ Check 1: Home page HTML contains 'Label Verify'"
+          if ! grep -q "Label Verify" /tmp/index.html; then
+            echo "::error::Home page does not contain 'Label Verify' — wrong app or broken build?"
+            head -30 /tmp/index.html
+            exit 1
+          fi
+          echo "  ✓ passes"
+
+          # 2. /api/health returns the public-minimal shape with ready=true.
+          echo "→ Check 2: /api/health returns ready: true"
+          health=$(curl -sS "$BASE_URL/api/health" || true)
+          echo "  response: $health"
+          ok=$(echo "$health" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('ok'))" 2>/dev/null || echo "")
+          ready=$(echo "$health" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('ready'))" 2>/dev/null || echo "")
+          if [ "$ok" != "True" ] || [ "$ready" != "True" ]; then
+            echo "::error::/api/health did not return ok:true ready:true. Body: $health"
+            exit 1
+          fi
+          # Public shape must NOT include the provider matrix (deployment fingerprint guard).
+          if echo "$health" | grep -q "providers"; then
+            echo "::error::/api/health LEAKED the provider matrix to an anonymous caller. SECURITY: deployment fingerprint."
+            exit 1
+          fi
+          echo "  ✓ passes"
+
+          # 3. /api/warmup completes in <30 s.
+          echo "→ Check 3: /api/warmup returns 200"
+          warmup=$(curl -sS --max-time 30 "$BASE_URL/api/warmup" || true)
+          echo "  response: $warmup"
+          warmup_ok=$(echo "$warmup" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('ok'))" 2>/dev/null || echo "")
+          if [ "$warmup_ok" != "True" ]; then
+            echo "::error::/api/warmup did not return ok:true within 30s. Body: $warmup"
+            exit 1
+          fi
+          echo "  ✓ passes"
+
+          echo ""
+          echo "All post-deploy smoke checks passed against $BASE_URL"
