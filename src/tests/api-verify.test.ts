@@ -19,6 +19,7 @@ vi.mock("@/lib/verify", () => ({
 
 const fetchUrlImageMock = vi.fn();
 vi.mock("@/lib/input-handlers", async () => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest's documented partial-mock pattern requires `typeof import(...)` here
   const actual = await vi.importActual<typeof import("@/lib/input-handlers")>(
     "@/lib/input-handlers",
   );
@@ -30,6 +31,7 @@ vi.mock("@/lib/input-handlers", async () => {
 
 const extractPdfFirstPageMock = vi.fn();
 vi.mock("@/lib/pdf", async () => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest partial-mock pattern (see above)
   const actual = await vi.importActual<typeof import("@/lib/pdf")>("@/lib/pdf");
   return {
     ...actual,
