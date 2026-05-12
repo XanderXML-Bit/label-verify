@@ -4,6 +4,48 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Final audit pass] — 2026-05-12 night
+
+Two outside-reviewer CLI agents (Hermes / GPT-5.5, Codex / GPT-5.5
+local review) found a combined seven contradictions between the docs
+and the post-merge code. All cleared:
+
+- **MODEL-SELECTION §4.4** said the fallback is confidence-driven; code
+  is provider-failure-driven only. Rewrote the section. The doc also
+  claimed a T6 → T7b → T1 Tesseract-only degradation tier that does
+  not exist in production code; doc now states that and explains why.
+- **MODEL-SELECTION verdict-criteria check** cited a small-routine GW
+  FN-rate of 28.6 % while marking the criterion ✅. Reframed: that
+  small-corpus number is not evidence; the 170-image rerun's 5.1 %
+  point / 10.2 % CI upper is the real evidence, marked ⚠ for the
+  CI-not-95 %-confident edge.
+- **`extractOnly` was passing `ocrText` into the vision prompt** even
+  though README says "vision-only." Stripped it from the primary +
+  fallback paths. README claim is now true.
+- **`parseApplication` had a stale "DOCX upload is not yet supported"
+  block** shadowing the new DOCX dispatch. Removed.
+- **`vision/prompt.ts` header comment** said "Tesseract's OCR text
+  gets appended to every vision prompt as a hint" — true before the
+  C1 falsification, false now. Rewrote.
+
+Plus:
+- **DOCX application files** now supported via `mammoth`
+  (`src/lib/application/parse-docx.ts`). Closes F5.
+- **Manifest-template generator button** on the batch-pending screen
+  seeds a CSV with one row per uploaded image — lightweight take on F7.
+- **`docs/CUSTOM-DOMAIN.md`** click-by-click Cloudflare + Vercel setup
+  + troubleshooting + smoke commands. Per the project lead's earlier
+  ask to land `labelverify.xandermlopez.com`.
+- **PWA manifest** at `/public/manifest.webmanifest` wired through
+  `app/layout.tsx` for "Add to home screen" on phones/tablets.
+- **Bench rerun** on `test-data-combined` post-comparator-fixes:
+  93.8 % overall (n=1,169), 96.0 % ID, 88.4 % OOD, 5.1 % GW FN, **P50
+  3.0 s / P95 4.1 s** (improved from 3.2/4.6 — the OCR-text-removal
+  shaved ~500 ms off the tail).
+
+Validation: 405 tests pass (+4 DOCX, +1 DOCX classifier), tsc clean,
+lint clean, CI + post-deploy smoke green.
+
 ## [UX polish + reviewer-export] — 2026-05-12 late
 
 ### Added

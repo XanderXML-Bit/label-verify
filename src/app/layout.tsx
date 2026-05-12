@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Label Verify",
   description:
     "AI-powered TTB Certificate of Label Approval verification — prototype.",
+  // PWA manifest — "Add to home screen" works on iOS Safari + Chrome,
+  // useful for TTB ops reviewers who might pin this on a phone/tablet.
+  // The icon points at /icon.svg (already present); manifest at
+  // /public/manifest.webmanifest.
+  manifest: "/manifest.webmanifest",
   // Open Graph + Twitter so a shared link previews cleanly in iMessage,
   // Slack, Outlook, etc. Reviewers are >50; many will share via email.
   openGraph: {
