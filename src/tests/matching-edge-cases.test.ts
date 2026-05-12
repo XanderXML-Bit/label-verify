@@ -112,6 +112,35 @@ describe("matching — edge cases", () => {
       expect(r.components?.street).toBe("pass");
     });
 
+    // Per UI re-audit 2026-05-12 BLOCKER #1: the REVIEW sample on the
+    // home page relies on "Lager" vs "Pilsner" routing to REVIEW.
+    // Regression test for the bug where this returned FAIL because
+    // the ambiguous-check condition inverted when the declared side
+    // happened to be the review-canon itself.
+    it("class_type: 'Lager' vs 'Pilsner' (any case) returns REVIEW, not FAIL", () => {
+      const cases = [
+        ["Lager", "Pilsner"],
+        ["Lager", "PILSNER"],
+        ["Pilsner", "Lager"],
+        ["pilsner", "lager"],
+      ] as const;
+      for (const [declared, extracted] of cases) {
+        const r = compareClass(declared, extracted, 0.9);
+        expect(r.status, `${declared} vs ${extracted}`).toBe("review");
+        expect(r.reason).toMatch(/meaningfully different|please confirm/i);
+      }
+    });
+
+    it("class_type: 'Stout' vs 'Imperial Stout' returns REVIEW (style-strength distinction)", () => {
+      const r = compareClass("Stout", "Imperial Stout", 0.9);
+      expect(r.status).toBe("review");
+    });
+
+    it("class_type: 'IPA' vs 'India Pale Ale' still PASSES (true synonym)", () => {
+      const r = compareClass("India Pale Ale", "IPA", 0.9);
+      expect(r.status).toBe("pass");
+    });
+
     it("freeform declared compared against partially-populated extracted is forgiving", () => {
       // Freeform path uses a single fuzzy ratio over the joined fields.
       // Missing state/postal in the extracted side should still match.

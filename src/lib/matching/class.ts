@@ -89,10 +89,21 @@ export function compareClass(
   // Check ambiguous aliases — pilsner/lager, imperial stout/stout, etc.
   // These print interchangeably on real labels but are not literally the
   // same style. Surface as REVIEW so a human confirms.
+  //
+  // The two sides are "ambiguously equivalent" when:
+  //   (a) they map to the SAME review-canon, AND
+  //   (b) they map to DIFFERENT safe-canons (i.e., they're not already
+  //       treated as identical by the SAFE_ALIASES bidirectional set).
+  // The previous check used `dRev !== safeCanonical(declared)` only on
+  // the declared side, which incorrectly returned false when the
+  // declared value happened to be the review-canon itself (e.g.
+  // declared "Lager" against extracted "Pilsner" — both review-canon
+  // "lager", but declared's safe-canon is also "lager", so the old
+  // check inverted to false). Per UI re-audit 2026-05-12 BLOCKER #1.
   const ambiguous = (() => {
     const dRev = reviewCanonical(declared);
     const eRev = reviewCanonical(extracted);
-    return dRev === eRev && dRev !== safeCanonical(declared);
+    return dRev === eRev && a !== b;
   })();
   if (ambiguous) {
     return {
