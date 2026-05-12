@@ -16,14 +16,6 @@ import { QualityChip, VerdictChip } from "./StatusChip";
 // regulation check (27 CFR §16.21), independent of application data, so
 // it's still meaningful here.
 
-const MODE_LABEL: Record<string, string> = {
-  default: "Default",
-  fast: "Fast",
-  smart: "Smart",
-  local: "Local",
-  balanced: "Balanced",
-};
-
 interface Props {
   readonly result: {
     extracted: ExtractedFields;
@@ -52,7 +44,6 @@ export function ExtractionOnlyResult({
   onAnother,
 }: Props) {
   const { extracted, governmentWarning: gov } = result;
-  const modeLabel = MODE_LABEL[result.modeUsed] ?? result.modeUsed;
   const formatField = (v: unknown): string => {
     if (v == null) return "(not detected)";
     if (typeof v === "string") return v || "(empty)";
@@ -136,9 +127,6 @@ export function ExtractionOnlyResult({
                 <QualityChip quality={result.imageQuality} size="md" />
               </div>
             </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              Extracted using: <strong className="font-medium">{modeLabel}</strong>
-            </p>
             {result.imageQuality !== "good" && result.imageQualityReason && (
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
                 {result.imageQualityReason}

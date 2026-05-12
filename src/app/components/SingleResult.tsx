@@ -7,15 +7,7 @@ import { VerdictChip, QualityChip } from "./StatusChip";
 
 // Display labels for the model modes the verifier may return.
 // Mirrors @/lib/model-modes#MODES but is kept inline so this client
-// component doesn't drag the (server-only) vision adapters into the
 // browser bundle.
-const MODE_LABEL: Record<string, string> = {
-  default: "Default",
-  fast: "Fast",
-  smart: "Smart",
-  local: "Local",
-  balanced: "Balanced",
-};
 
 interface SingleResultProps {
   readonly result: VerifyResponse;
@@ -32,10 +24,6 @@ export function SingleResult({
   // emphasis on FAIL rows comes from `FieldRow` below.
   const fields = useMemo(() => orderedFields(result), [result]);
   const gov = result.governmentWarning;
-  // Mode caption: fall back to the raw `modeUsed` string if the catalogue
-  // lookup misses (e.g. server is on a newer release than the bundled
-  // catalogue). Never throws.
-  const modeLabel = MODE_LABEL[result.modeUsed] ?? result.modeUsed;
 
   return (
     <section aria-labelledby="results-heading" className="space-y-6">
@@ -81,9 +69,6 @@ export function SingleResult({
                 <VerdictChip verdict={result.verdict} size="lg" />
               </div>
             </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              Verified using: <strong className="font-medium">{modeLabel}</strong>
-            </p>
             {result.imageQuality !== "good" && (
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
                 <strong>Image quality is independent of compliance.</strong>{" "}

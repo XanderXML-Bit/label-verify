@@ -10,7 +10,6 @@ import { ExtractionOnlyResult } from "./components/ExtractionOnlyResult";
 import { BatchView, type BatchRow } from "./components/BatchView";
 import { SampleAffordance } from "./components/SampleAffordance";
 import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
-import { SettingsPanel, useModelMode } from "./components/SettingsPanel";
 import {
   ApplicationUpload,
   type ApplicationParsePayload,
@@ -37,7 +36,6 @@ type Stage =
 export default function Home() {
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
   const [manifestText, setManifestText] = useState("");
-  const { modeId, setModeId } = useModelMode();
   // Parsed application payload, used to prefill DeclaredForm. The
   // monotonic `version` counter is appended to the form key so the
   // controlled inputs re-initialise when a new file lands.
@@ -73,7 +71,6 @@ export default function Home() {
       const fd = new FormData();
       fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(sample.declared));
-      fd.append("mode", modeId);
       const res = await fetch("/api/verify", { method: "POST", body: fd });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -107,7 +104,6 @@ export default function Home() {
       const fd = new FormData();
       fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(declared));
-      fd.append("mode", modeId);
       const res = await fetch("/api/verify", { method: "POST", body: fd });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -143,7 +139,6 @@ export default function Home() {
       const uploadFile = await compressImageInBrowser(stage.file);
       const fd = new FormData();
       fd.append("image", uploadFile);
-      fd.append("mode", modeId);
       const res = await fetch("/api/extract", { method: "POST", body: fd });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -235,20 +230,14 @@ export default function Home() {
         <>
           <UploadZone onFiles={handleFiles} />
           <SampleAffordance onPick={handleSample} />
-          {/* Per docs/UI-SPEC §1.4 and user direction (2026-05-11),
-              non-reviewer controls collapse under a single disclosure so
-              the idle screen stays a two-affordance choice (upload OR
-              try a sample). Speed/accuracy mode, review queue, and the
-              prototype-context blurb all live here. */}
-          <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
-            <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
-              More options
-            </summary>
-            <div className="mt-4 space-y-6">
-              <SettingsPanel modeId={modeId} onModeChange={setModeId} />
-              <ReviewQueuePanel />
-            </div>
-          </details>
+          {/* Mode picker removed 2026-05-12: the bake-off
+              (docs/MODEL-SELECTION.md §4) showed three of the five
+              previously-offered modes were strictly worse than the
+              default on this corpus. Offering them mis-leads
+              non-technical reviewers. Underlying model-modes catalogue
+              + /api/verify?mode= parameter retained for the benchmark
+              harness and operator A/B testing. */}
+          <ReviewQueuePanel />
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
               About this prototype
