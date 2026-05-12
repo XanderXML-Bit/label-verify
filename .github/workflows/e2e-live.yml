@@ -1,0 +1,55 @@
+name: E2E against live deployment
+
+# Manual + nightly. Hits the production URL with Playwright so we
+# catch deployment regressions (broken CSP, missing env var, expired
+# vendor key) that local tests can't see. Per REMAINING-IMPROVEMENTS T1.
+#
+# Why not on every PR: each run hits the real Gemini API (billed) and
+# the production URL's rate limit. Nightly + on-demand keeps signal
+# without burning $$.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Base URL to test against'
+        required: false
+        default: 'https://label-verify-six.vercel.app'
+  schedule:
+    # 04:00 UTC = midnight ET — picks up overnight deploys.
+    - cron: '0 4 * * *'
+
+jobs:
+  e2e:
+    name: Playwright against ${{ github.event.inputs.target || 'production' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E against live URL
+        env:
+          E2E_BASE_URL: ${{ github.event.inputs.target || 'https://label-verify-six.vercel.app' }}
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

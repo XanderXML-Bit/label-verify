@@ -92,6 +92,58 @@
   170-image corpus.
 - Benchmark result JSON/MD pairs committed under `benchmarks/results/`
   so a reviewer can re-read any historical run.
+- **Per-image bench output** — `benchmarks/run.ts` now writes a
+  `<run-id>-per-image.json` alongside the summary so per-(image,field)
+  outcomes can be re-analysed offline without rerunning the bench.
+
+## [Submission polish] — 2026-05-12 afternoon
+
+### Validation
+
+- **Formal threshold calibration** of `REVIEW_CONFIDENCE_THRESHOLD`
+  via `scripts/calibrate-review-threshold.ts`. Sweeps τ ∈ [0.30, 0.95]
+  against the 170-image corpus under the pre-registered loss
+  (`3 · FPD + 5 · MWP`). Confirms current 0.55 is on the Pareto
+  plateau — no change. Full report in
+  `.review/threshold-calibration-report.md`.
+
+### Added
+
+- **X-Request-Id middleware** on every `/api/*` route. Inbound allowlist
+  (128 chars, `[A-Za-z0-9_-]`) or fresh UUIDv4. Error responses
+  surface the id in the body so users can paste it when reporting a
+  failure.
+- **Gemini SDK warmup** in `/api/warmup` (parallel with Tesseract).
+  Pulls the SDK module + client constructor into the function's
+  module cache during page-load warmup — saves ~150 ms on the first
+  user verify.
+- **Per-call cost pill** on SingleResult (`≈ $0.00025 per call` next
+  to latency). Hover shows the per-1k extrapolation.
+- **Mobile collapse** of the 4-part Gov-Warning subscore block under
+  `sm:hidden`; auto-opens on non-PASS so failure detail is still
+  immediate.
+- **Auto-expanded producer breakdown** on REVIEW/FAIL — reviewer sees
+  the failing component(s) without an extra click.
+- **"Look for:" hint** on the FAIL and REVIEW sample buttons —
+  defect readable from the thumbnail row.
+- **Stratified bench sanity test** (`bench-stratum-sanity.test.ts`)
+  — flags any (beverage × condition × field) stratum at 0 % over
+  n ≥ 20.
+- **Live-URL Playwright workflow** (`.github/workflows/e2e-live.yml`)
+  — nightly + on-demand against the production deployment.
+
+### Documentation
+
+- **`SECURITY.md`** at repo root — reporting channel, threat model,
+  mitigations.
+- **`CONTRIBUTING.md`** — setup, three common extensions, prompt-hash
+  contract, CI gates.
+- **`docs/FAILURE-MODES.md`** — 7 failure clusters + 3 orchestrator
+  safeguards + 3 known limits.
+- **`docs/openapi.yaml`** — full OpenAPI 3.1 spec for the public API
+  surface.
+- **`docs/DEPLOYMENT.md` §7a** — Hobby vs Pro Vercel-plan deltas with
+  upgrade procedure.
 
 ## [Pre-submission] — 2026-05-08 through 2026-05-11
 

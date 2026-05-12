@@ -19,13 +19,15 @@ because the scorer is binary. The right fix:
 - README: explicitly note that the OOD number undersells because of
   the binary scorer + the ground-truth's USA over-claims.
 
-### A2. Calibrate `REVIEW_CONFIDENCE_THRESHOLD` against the 170-image data
-Currently 0.55 — set by guess. Should sweep 0.30–0.95 against the
-per-image outcomes captured in
-`.review/t6-routine-per-image.json` (15 images) and a fresh 170-image
-pass with per-field confidence logged. Pick the threshold that
-minimises (false-positive-defers × 3 + missed-wrong-PASSes × 5) per
-the pre-registered weights in `docs/PROJECT-TODO.md`.
+### A2. Calibrate `REVIEW_CONFIDENCE_THRESHOLD` against the 170-image data — **DONE 2026-05-12**
+Implemented in `scripts/calibrate-review-threshold.ts`. Result:
+`loss(τ)` is flat at 30 across τ ∈ [0.30, 0.90] (6 missed wrong-PASSes
+× 5 weight, 0 false-positive defers). τ ≥ 0.91 adds 3 FPDs without
+catching any additional wrong PASSes. Current production τ = 0.55 is
+on the Pareto plateau — **no change needed**. Full sweep table and
+analysis in `.review/threshold-calibration-report.md`. The 6 wrong
+PASSes can't be caught by raising τ because the model was confidently
+wrong (conf ≥ 0.90) — they need a second-opinion model, see A8.
 
 ### A3. Re-run T6 with the new comparators to refresh the headline
 `compareCountry` was relaxed for US-domestic labels (REVIEW instead
@@ -35,11 +37,11 @@ accuracy. The per-field scorer treats REVIEW as wrong so the bare
 field-level number won't move, but the orchestrator-level
 PASS-FAIL-REVIEW breakdown will (fewer FALSE FAILs, more REVIEWs).
 
-### A4. Capture per-image outcomes during the formal bake-off
-`benchmarks/run.ts` only emits the aggregated `TechniqueSummary`
-today. Per-image outcomes get lost. A small change to write
-`<run-id>-per-image.json` alongside the summary would mean we can
-re-analyse without rerunning the bench.
+### A4. Capture per-image outcomes during the formal bake-off — **DONE 2026-05-12**
+`benchmarks/run.ts` now writes `<run-id>-per-image.json` alongside
+the summary JSON / MD. Contains per-(image,field) outcomes and per-
+trial latency / cost / error records. Enables offline calibration
+(see A2) and stratum re-analysis without rerunning the bench.
 
 ### A5. Ground-truth audit of the AI corpus
 Codex's `country_of_origin` field over-claims USA on labels that
@@ -73,24 +75,25 @@ $0.25 but is opt-in and only for borderline cases.
 
 ## UX & accessibility
 
-### U1. Mobile information density
-The result page on a phone (<480px) stacks 1500-2000px of content
-before the "Verify another label" CTA. The previous UX agent
-flagged this; today's fix collapses `conf 0.92` numbers on phones
-but the Gov-Warning subscore + per-field rows still stack
-vertically. A `<details>` collapse on mobile for the Gov-Warning
-breakdown would compress this further.
+### U1. Mobile information density — **DONE 2026-05-12**
+The Gov-Warning subscore block is now wrapped in a `<details>`
+element on `sm:hidden` (under 640 px). Auto-opens when the GW
+status is not PASS so reviewers still see the failure breakdown
+without an extra tap; collapses cleanly on PASS to shave ~400 px
+of mobile scroll. Desktop (≥ sm) keeps the always-visible flat
+list.
 
-### U2. FAIL sample's defect should be readable from the thumbnail
-Currently the FAIL sample (Mercer's Reserve Vodka, title-case prefix)
-shows a thumbnail too small to read the prefix casing. A hover-card
-or always-visible "Look for: title-case warning prefix" annotation
-would tell the reviewer what to look for *before* they click.
+### U2. FAIL sample's defect should be readable from the thumbnail — **DONE 2026-05-12**
+SampleAffordance now renders a "Look for: ..." italic hint under each
+non-PASS sample (`title-case warning prefix` for the FAIL sample;
+`borderline bold stroke width on prefix` for the REVIEW sample). The
+full `expectedNote` is in the `title` tooltip and aria-describedby
+sibling. PASS sample stays uncluttered.
 
-### U3. Per-component producer breakdown is opt-in via `<details>` — make it visible by default if there's a REVIEW
-Today: if `producer.status === "review"` the user sees "1 producer
-component did not match" but has to click "Per-component breakdown"
-to see which one. Auto-expand when status is REVIEW or FAIL.
+### U3. Per-component producer breakdown auto-expands on REVIEW/FAIL — **DONE 2026-05-12**
+SingleResult now adds `open` to the `<details>` element when
+`cmp.status !== "pass"`. Reviewer sees the component breakdown
+immediately on any non-pass producer verdict; PASS stays collapsed.
 
 ### U4. Keyboard navigation
 Tab through the idle screen, the form, the result. Likely-broken
@@ -103,23 +106,28 @@ StatusChip uses red/green/yellow with icon + word redundancy (✓ ✗ ⚠).
 Confirm with a deuteranopia simulator that PASS / FAIL are
 distinguishable on the chip background alone.
 
-### U6. Per-image cost surface
-The result panel today shows latency but not USD-per-call. Adding
-a tiny "≈ $0.0003" pill would tell a TTB ops person what a batch
-of 1,000 would cost — useful for procurement conversations.
+### U6. Per-image cost surface — **DONE 2026-05-12**
+SingleResult now renders `≈ $0.00025 per call` next to the latency
+in the header. Hover tooltip extrapolates to "≈ $0.25 per 1,000
+labels" for procurement conversations. Cost lookup via static table
+keyed on modelId so it works for fallback / Pro tiers too.
 
 ## Reliability & ops
 
-### R1. Tighter `/api/warmup` semantics
-Today warmup races Tesseract init against an 8s budget. Add a second
-warmup call that also pings Gemini (1-token prompt) so the function
-is fully warm on the first user call. Saves ~1s on cold-start
-verifies.
+### R1. Tighter `/api/warmup` semantics — **DONE 2026-05-12**
+`/api/warmup` now warms the Gemini SDK alongside Tesseract (parallel
+runs, max wall-clock). Deliberately does NOT make a real Gemini API
+call — that would burn tokens for marginal gain. The SDK
+module-load + client construction is the actual cold-start cost, and
+that's what we now eagerly pay during warmup. Saves ~150 ms on the
+first user call.
 
-### R2. Per-request `X-Request-Id` header
-Add a UUID per request, log it in `console.warn` lines and surface
-it in the response so a user reporting "this failed" gives the
-operator something to grep with. ~20 lines of middleware.
+### R2. Per-request `X-Request-Id` header — **DONE 2026-05-12**
+`src/middleware.ts` runs on every `/api/*` request. Reads inbound
+`X-Request-Id` (allowlist: 128 chars max, `[A-Za-z0-9_-]`) or
+generates a UUIDv4. Echoes back on the response. `/api/verify`
+error responses also include the id in the JSON body so users can
+copy it from a toast. Tests in `src/tests/middleware-request-id.test.ts`.
 
 ### R3. CSV export for batch results — verify it works end-to-end
 Documented but I haven't manually verified it produces useful output
@@ -130,60 +138,72 @@ Currently the application-parse route shares the rate-limit bucket
 but the bucket key is per-IP not per-endpoint. Verify the current
 behaviour is what we want; document.
 
-### R5. Vercel Pro upgrade — document the deltas
-Today we're on Hobby (30s timeout, 2GB memory). Pro lifts both. The
-README mentions cold-start can flirt with the 30s cap; an "upgrade
-path" section in DEPLOYMENT.md would help a future operator decide.
+### R5. Vercel Pro upgrade — document the deltas — **DONE 2026-05-12**
+Added `docs/DEPLOYMENT.md` §7a: Hobby → Pro table covering function
+timeout, memory, concurrency, bandwidth, team seats, analytics, log
+retention. Includes a 3-step upgrade procedure that does NOT require
+code changes (vercel.json memory/timeout settings can stay or bump).
 
 ## Tests & validation
 
-### T1. Playwright e2e against the LIVE URL
-The `e2e/` specs target `http://localhost:3100`. Add a CI mode that
-targets `https://label-verify-six.vercel.app` (already set in
-playwright.config via `E2E_BASE_URL`). Run on every PR.
+### T1. Playwright e2e against the LIVE URL — **DONE 2026-05-12**
+`.github/workflows/e2e-live.yml` runs Playwright against the live
+URL nightly (04:00 UTC) and on `workflow_dispatch`. Picks up
+deployment regressions (CSP, missing env, vendor key expiry) that
+local tests can't see. Not on every PR — would burn vendor $$.
 
-### T2. Per-component compareProducer tests for spoofing
-Already have spoof-resistance tests (committed). Add edge cases:
-- Producer with extracted.state="ME" but extracted.name="Mexican
-  Tequila Co" — should fail country (no corroborator).
-- Producer with all components matching except country printed as
-  "MEXICO" — should fail country.
+### T2. Per-component compareProducer tests for spoofing — **DONE 2026-05-12**
+Both edge cases now in `src/tests/producer-spoof-resistance.test.ts`:
+"rejects implicit-USA when state='ME' but name+city+street name a
+Mexican producer" + "rejects EXPLICIT 'MEXICO' even when every
+other component matches declared US producer". Suite is at 10 tests.
 
 ### T3. Visual regression test on the result panel
 Playwright `screenshot` + `toMatchSnapshot` on a fixed sample so
 UI regressions land in CI not in user reports.
 
-### T4. Stratified bench-result test
-The bench harness produces stratified data. Add a sanity test that
-verifies no stratum returns 0% over n=20+ (which would suggest a
-systematic data error rather than model error).
+### T4. Stratified bench-result test — **DONE 2026-05-12**
+`src/tests/bench-stratum-sanity.test.ts` loads the newest
+`benchmarks/results/*.json` summary and walks every technique's
+stratified table. Fails CI if any (beverage_type × condition × field)
+stratum returns 0 % over n ≥ 20. Skips cleanly when no bench result
+exists (fresh clone).
 
 ## Documentation
 
-### D1. Update README with the 170-image headline
-README currently says "93.3% on 140 images" — refresh with 93.7%
-on 170 once the country-comparator-fixed T6 rerun completes.
+### D1. Update README with the 170-image headline — **DONE 2026-05-12**
+README now shows 93.8 % on 170 images (1,169 fields), with 95.8 % ID
+/ 88.4 % OOD split and 5.1 % GW FN-rate. Source result file pointer
+updated. T6f comparison cross-ref added.
 
-### D2. Add a "Failure mode catalog" doc
-The bake-off identifies specific failure clusters (country_of_origin
-on photo labels, gov-warning paraphrase on clean labels). A short
-doc enumerating these, why they happen, and what the orchestrator
-does about each would help a reviewer understand the system's
-limits.
+### D2. Add a "Failure mode catalog" doc — **DONE 2026-05-12**
+`docs/FAILURE-MODES.md` enumerates 7 failure clusters (F1-F7) plus
+3 orchestrator safeguards and 3 limits. Each entry names the
+pattern, why it happens, what the orchestrator does, and the headline
+impact in % / count.
 
-### D3. OpenAPI spec for /api/verify and /api/extract
-For anyone embedding the verifier programmatically. ~1 hour to write.
+### D3. OpenAPI spec for /api/verify and /api/extract — **DONE 2026-05-12**
+`docs/openapi.yaml` covers /api/verify, /api/extract, /api/application/parse,
+/api/verify/batch (+ stream), /api/health, /api/warmup, /api/debug/last,
+and /api/queue. Includes DeclaredFields, FieldComparison,
+GovernmentWarning, and VerifyResponse schemas. Documents the
+X-Request-Id contract, rate-limit headers, and the debug-bearer auth
+scheme.
 
-### D4. SECURITY.md
-A `SECURITY.md` at the repo root tells a reviewer where to report
-issues + lists the mitigations already in place. Bonus: GitHub
-auto-links to it from the security tab.
+### D4. SECURITY.md — **DONE 2026-05-12**
+`/SECURITY.md` covers: reporting channel + 48hr SLA window, threat
+model (untrusted inputs, no auth, ephemeral data lifecycle),
+mitigations in place (8 categories: network/transport, SSRF, upload
+validation, prompt-injection, rate-limiting, producer-comparator
+hardening, observability, debug surfaces), known unmitigated gaps,
+and per-vendor data handling notes.
 
-### D5. CONTRIBUTING.md
-For self-hosters who want to add a new vision provider, a new
-ground-truth corpus, or a new test mode. Walks through
-`benchmarks/techniques.ts`, the prompt hash contract, and the
-CI gates.
+### D5. CONTRIBUTING.md — **DONE 2026-05-12**
+`/CONTRIBUTING.md` covers setup (incl. Windows), repo layout, 3
+common extensions (new vision provider, new ground-truth corpus, new
+test mode), the prompt-hash contract, CI gates, and code
+conventions. Cross-references ARCHITECTURE.md, MODEL-SELECTION.md,
+FAILURE-MODES.md, SECURITY.md.
 
 ### D6. Diagrams refresh
 The mermaid diagram in README still shows the old 4-contender mental

@@ -676,10 +676,34 @@ async function main(): Promise<void> {
   const stamp = summary.runAt.replace(/[:.]/g, "-");
   const jsonPath = join(RESULTS_DIR, `${stamp}.json`);
   const mdPath = join(RESULTS_DIR, `${stamp}.md`);
+  const perImagePath = join(RESULTS_DIR, `${stamp}-per-image.json`);
   await writeFile(jsonPath, JSON.stringify(summary, null, 2));
   await writeFile(mdPath, renderMarkdown(summary));
+  // Per-image outcome dump for offline re-analysis (REMAINING-IMPROVEMENTS A4).
+  // Lets reviewers (and the threshold calibration script) inspect individual
+  // (image, technique, field) outcomes without rerunning the bench.
+  await writeFile(
+    perImagePath,
+    JSON.stringify(
+      {
+        runAt: summary.runAt,
+        mode: summary.mode,
+        corpusRoot: summary.corpusRoot,
+        techniques: techRuns.map((run) => ({
+          id: run.id,
+          skipped: run.skipped ?? null,
+          outcomes: run.outcomes,
+          warningOutcomes: run.warningOutcomes,
+          trials: run.trials,
+        })),
+      },
+      null,
+      2,
+    ),
+  );
   console.warn(`[bench] wrote ${jsonPath}`);
   console.warn(`[bench] wrote ${mdPath}`);
+  console.warn(`[bench] wrote ${perImagePath}`);
 }
 
 main()

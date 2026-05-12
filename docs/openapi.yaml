@@ -1,0 +1,498 @@
+openapi: 3.1.0
+info:
+  title: LabelVerify API
+  version: "0.1.0"
+  description: |
+    HTTP surface for the LabelVerify prototype. Two primary endpoints —
+    `/api/verify` (compare a label image against declared application
+    data) and `/api/extract` (read fields from a label image without a
+    verdict). Auxiliary endpoints cover health, batch submission, and
+    review queue inspection.
+
+    All `/api/*` endpoints emit `X-Request-Id` on the response, echoing
+    the inbound id if the client sent a valid one. Quote the id when
+    reporting failures.
+  contact:
+    name: LabelVerify maintainer
+    email: xandermlopez@gmail.com
+servers:
+  - url: https://label-verify-six.vercel.app
+    description: Production demo
+  - url: http://localhost:3000
+    description: Local development
+
+components:
+  securitySchemes:
+    debugBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-string
+      description: |
+        Only required for `/api/debug/*` routes. Set via the
+        `DEBUG_TOKEN` env var in the deployment.
+  schemas:
+    NetContents:
+      type: object
+      required: [value, unit]
+      properties:
+        value:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+          enum: [ml, L, fl_oz, gal, qt, pt]
+    ProducerAddress:
+      type: object
+      properties:
+        name: { type: [string, "null"] }
+        street: { type: [string, "null"] }
+        city: { type: [string, "null"] }
+        state: { type: [string, "null"] }
+        postal_code: { type: [string, "null"] }
+        country: { type: [string, "null"] }
+    DeclaredFields:
+      type: object
+      required:
+        [brand_name, class_type, class_category, abv_percent, net_contents,
+         producer, country_of_origin]
+      properties:
+        brand_name: { type: string, minLength: 1 }
+        class_type: { type: string, minLength: 1 }
+        class_category:
+          type: string
+          enum: [beer, wine, distilled_spirits, fortified_wine]
+        abv_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        net_contents:
+          $ref: "#/components/schemas/NetContents"
+        producer:
+          oneOf:
+            - $ref: "#/components/schemas/ProducerAddress"
+            - type: string
+        country_of_origin:
+          type: string
+          minLength: 2
+    FieldComparison:
+      type: object
+      required: [field, status, expected, actual, confidence]
+      properties:
+        field: { type: string }
+        status:
+          type: string
+          enum: [pass, fail, review]
+        expected: {}
+        actual: {}
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        reason: { type: string }
+        components:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [pass, fail, review]
+    GovernmentWarning:
+      type: object
+      required: [status, subscores]
+      properties:
+        status:
+          type: string
+          enum: [pass, fail, review]
+        subscores:
+          type: object
+          required: [text, caps, bold, size]
+          properties:
+            text:
+              type: object
+              properties:
+                status: { type: string, enum: [pass, fail, review] }
+                confidence: { type: number, minimum: 0, maximum: 1 }
+            caps:
+              type: object
+              properties:
+                status: { type: string, enum: [pass, fail, review] }
+                confidence: { type: number, minimum: 0, maximum: 1 }
+            bold:
+              type: object
+              properties:
+                status: { type: string, enum: [pass, fail, review] }
+                confidence: { type: number, minimum: 0, maximum: 1 }
+            size:
+              type: object
+              properties:
+                status: { type: string, enum: [pass, fail, review] }
+                confidence: { type: number, minimum: 0, maximum: 1 }
+        reason: { type: string }
+    VerifyResponse:
+      type: object
+      required:
+        [verdict, imageQuality, fields, governmentWarning, extracted,
+         timings, modelId, modelVersion, requiresHumanReview, reviewReasons]
+      properties:
+        verdict:
+          type: string
+          enum: [pass, fail, review]
+        imageQuality:
+          type: string
+          enum: [good, low, bad]
+        imageQualityReason: { type: string }
+        fields:
+          type: object
+          required:
+            [brand_name, class_type, abv_percent, net_contents, producer,
+             country_of_origin]
+          properties:
+            brand_name: { $ref: "#/components/schemas/FieldComparison" }
+            class_type: { $ref: "#/components/schemas/FieldComparison" }
+            abv_percent: { $ref: "#/components/schemas/FieldComparison" }
+            net_contents: { $ref: "#/components/schemas/FieldComparison" }
+            producer: { $ref: "#/components/schemas/FieldComparison" }
+            country_of_origin: { $ref: "#/components/schemas/FieldComparison" }
+        governmentWarning:
+          $ref: "#/components/schemas/GovernmentWarning"
+        extracted:
+          type: object
+          description: Raw extractor output (per-field with confidence).
+        timings:
+          type: object
+          required: [preprocess, vision, matching, total]
+          properties:
+            preprocess: { type: number }
+            ocr:
+              type: [number, "null"]
+            vision: { type: number }
+            matching: { type: number }
+            total: { type: number }
+        modelId: { type: string }
+        modelVersion: { type: string }
+        modeUsed: { type: string }
+        requiresHumanReview: { type: boolean }
+        reviewReasons:
+          type: array
+          items: { type: string }
+        fallbackUsed: { type: boolean }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        aborted: { type: boolean }
+        requestId: { type: string }
+
+paths:
+  /api/verify:
+    post:
+      summary: Verify a label image against declared COLA application data
+      description: |
+        Accepts the image as multipart/form-data (`image` file +
+        `declared` JSON string) OR as application/json with a remote
+        `url` field. Returns a structured per-field PASS / FAIL /
+        REVIEW verdict plus the Government Warning subscore breakdown.
+
+        Rate-limited per IP (default 60/min). Sends
+        `X-RateLimit-Remaining` on success and `Retry-After` on 429.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, declared]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                declared:
+                  type: string
+                  description: JSON-encoded DeclaredFields
+                mode:
+                  type: string
+                  description: Optional model-mode id (e.g. "default").
+          application/json:
+            schema:
+              type: object
+              required: [url, declared]
+              properties:
+                url: { type: string, format: uri }
+                declared: { $ref: "#/components/schemas/DeclaredFields" }
+                mode: { type: string }
+      responses:
+        "200":
+          description: Verification succeeded
+          headers:
+            X-Request-Id:
+              schema: { type: string }
+            X-RateLimit-Remaining:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VerifyResponse" }
+        "400":
+          description: Malformed request (missing field, bad JSON, schema fail)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "413":
+          description: Image / PDF too large
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "415":
+          description: Unsupported MIME type
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Rate-limited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500":
+          description: Verification failed (unexpected error)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: URL fetch failed (SSRF guard, remote 4xx/5xx)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "504":
+          description: Vision call exceeded budget
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/extract:
+    post:
+      summary: Extract fields from a label image without verifying
+      description: |
+        Same input shape as /api/verify but does NOT compare against
+        declared application data. Use when you have an image and
+        want the structured fields back, but don't have an
+        application to check against. Returns extracted fields and
+        the Government Warning subscore (regulation, independent of
+        declared data).
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Extraction succeeded
+          headers:
+            X-Request-Id:
+              schema: { type: string }
+        "400":
+          description: Malformed request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "413":
+          description: Image too large
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "415":
+          description: Unsupported MIME type
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Rate-limited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500":
+          description: Extraction failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/application/parse:
+    post:
+      summary: Parse a COLA application file into structured fields
+      description: |
+        Accepts a PDF / DOCX-text / TXT / MD / JSON / CSV file OR an
+        image of the application form. Returns a best-effort partial
+        DeclaredFields object plus a confidence per field. Used by
+        the "Image + application file" flow on the home page.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Parse succeeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  declared: { $ref: "#/components/schemas/DeclaredFields" }
+                  confidences:
+                    type: object
+                    additionalProperties:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+        "400":
+          description: Malformed request
+        "415":
+          description: Unsupported MIME type
+        "429":
+          description: Rate-limited
+
+  /api/verify/batch:
+    post:
+      summary: Submit a batch of labels for asynchronous verification
+      description: |
+        Accepts up to MAX_BATCH (default 1000) labels via multipart
+        upload. Returns a `batchId`. Stream individual results via
+        the `/api/verify/batch/{id}/stream` Server-Sent Events
+        endpoint.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [manifest]
+              properties:
+                manifest:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Batch accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  batchId: { type: string }
+                  count: { type: integer }
+        "413":
+          description: Payload too large
+
+  /api/verify/batch/{id}/stream:
+    get:
+      summary: Server-sent events stream of per-label batch results
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream: {}
+
+  /api/health:
+    get:
+      summary: Liveness / readiness probe
+      description: |
+        Returns a minimal `{ok, service, ready}` shape to anonymous /
+        cross-origin callers, and a detailed `{model, providers,
+        version, timestamp, ready}` shape to same-origin callers or
+        callers presenting `Authorization: Bearer ${DEBUG_TOKEN}`.
+      responses:
+        "200":
+          description: OK (minimal or detailed depending on caller)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, service]
+                properties:
+                  ok: { type: boolean }
+                  service: { type: string }
+                  ready: { type: boolean }
+                  version: { type: string }
+                  model: { type: string }
+                  providers: { type: object }
+                  timestamp: { type: string, format: date-time }
+
+  /api/warmup:
+    get:
+      summary: Cold-start warmup (Tesseract WASM + Gemini SDK)
+      description: |
+        Touched by the home page on load. Initializes the Tesseract
+        WASM worker and the Gemini SDK in the serverless function so
+        the user's first /api/verify call doesn't pay the cold-start
+        tax. Always returns 200 even on partial failure.
+      responses:
+        "200":
+          description: Warmup attempted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  tesseract:
+                    type: string
+                    enum: [ok, timeout, failed]
+                  gemini:
+                    type: string
+                    enum: [ok, missing-key, failed]
+                  warmupMs: { type: integer }
+
+  /api/debug/last:
+    get:
+      summary: Inspect the in-memory verify trace ring buffer
+      security:
+        - debugBearer: []
+      description: |
+        Returns the most recent VerifyTrace objects (cap 20, wipes
+        on cold start). Gated on `Authorization: Bearer
+        ${DEBUG_TOKEN}`. When `DEBUG_TOKEN` is unset, the endpoint
+        returns 404 (indistinguishable from a non-existent route).
+      parameters:
+        - name: id
+          in: query
+          required: false
+          schema: { type: string }
+          description: A specific traceId; omit for the most recent 20.
+      responses:
+        "200":
+          description: Trace(s) returned
+        "401":
+          description: Wrong / missing bearer token
+        "404":
+          description: DEBUG_TOKEN unset on the deployment
+
+  /api/queue:
+    get:
+      summary: List pending human-review queue items
+      description: |
+        In-memory queue of labels where the verifier deferred to a
+        human. Same wipe-on-cold-start semantics as /api/debug/last.
+        Read-only; no auth on the prototype but a production fork
+        would add it.
+      responses:
+        "200":
+          description: Queue listing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object

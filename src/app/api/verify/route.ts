@@ -28,6 +28,10 @@ const MAX_BYTES = 10 * 1024 * 1024; // 10 MB (image upload ceiling)
 const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
 export async function POST(req: Request) {
+  // Middleware sets X-Request-Id on every inbound /api/* request — pick
+  // it up here so log lines and error responses are correlatable.
+  const requestId = req.headers.get("x-request-id") ?? undefined;
+
   // ─── Rate limit ──────────────────────────────────────────────────────────
   const key = callerKey(req.headers);
   const rl = rateLimit(`verify:${key}`, { perMinute: RATE_LIMIT_PER_MIN });
@@ -86,7 +90,7 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runVerify(fetched.buffer, parsed.data, rl, undefined, mode);
+    return runVerify(fetched.buffer, parsed.data, rl, undefined, mode, requestId);
   }
 
   // ─── multipart/form-data: { image, declared } ────────────────────────────
@@ -146,7 +150,7 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
-    return runVerify(fetched.buffer, parsed.data, rl, undefined, formMode);
+    return runVerify(fetched.buffer, parsed.data, rl, undefined, formMode, requestId);
   }
 
   if (!(file instanceof File)) {
@@ -223,7 +227,7 @@ export async function POST(req: Request) {
   } else {
     buffer = raw;
   }
-  return runVerify(buffer, parsed.data, rl, file.name, formMode);
+  return runVerify(buffer, parsed.data, rl, file.name, formMode, requestId);
 }
 
 function pdfErrorStatus(code: PdfExtractError["code"]): number {
@@ -251,15 +255,13 @@ async function runVerify(
   rl: import("@/lib/rate-limit").RateLimitResult,
   filename?: string,
   mode?: string,
+  requestId?: string,
 ) {
   try {
     const result = await verifyLabel(buffer, declared, {
       recordTrace,
       ...(mode ? { modelMode: mode } : {}),
     });
-    // Intelligence-first: if the verifier deferred, route the result to the
-    // human-review queue. Wrapped in try/catch so a queue bug never breaks
-    // a real verify response.
     if (result.requiresHumanReview) {
       try {
         enqueueForReview({
@@ -279,19 +281,30 @@ async function runVerify(
     return NextResponse.json(result, {
       headers: {
         "X-RateLimit-Remaining": String(rl.remaining),
+        ...(requestId ? { "X-Request-Id": requestId } : {}),
       },
     });
   } catch (err) {
     const e = err as Error;
     const aborted = e.name === "AbortError";
+    // Include the request id in the error body too — users reporting a
+    // failure can copy it out of the toast / error panel without having
+    // to inspect response headers (R2).
+    if (requestId) {
+      console.warn(`[verify] requestId=${requestId} failed: ${e.message}`);
+    }
     return NextResponse.json(
       {
         error: aborted
           ? "Vision call exceeded the 5 s budget."
           : `Verification failed: ${e.message}`,
         aborted,
+        ...(requestId ? { requestId } : {}),
       },
-      { status: aborted ? 504 : 500 },
+      {
+        status: aborted ? 504 : 500,
+        ...(requestId ? { headers: { "X-Request-Id": requestId } } : {}),
+      },
     );
   }
 }

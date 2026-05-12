@@ -92,13 +92,26 @@ function timeoutForMode(modeId: string | undefined): number | null {
  *
  * Calibration history:
  *   - 2026-05-11: Started at 0.75 (mid of empirical dead zone).
- *   - 2026-05-12: User observed over-deferral — many "borderline"
+ *   - 2026-05-12 (morning): User observed over-deferral — many "borderline"
  *     extractions turned out to be correct, so deferring them to
  *     a human costs more than the safety it bought. Dropped to 0.55.
- *     The bake-off run (npm run bench:bakeoff) measures the
- *     "deferred-but-correct" rate per technique. If the number is still
- *     high, tighten further; if too many wrong PASSes slip through,
- *     raise it again. See docs/MODEL-SELECTION.md §3.
+ *   - 2026-05-12 (afternoon): Formal calibration against the 170-image
+ *     combined corpus via `scripts/calibrate-review-threshold.ts`.
+ *     Findings (.review/threshold-calibration-report.md):
+ *       · 22 of 170 images have a base-PASS verdict (the others FAIL/REVIEW
+ *         on a comparator before τ gets a chance to fire).
+ *       · Of those 22: 16 are truly compliant, 6 have a wrong-PASS lurking
+ *         (the comparator passed an incorrect extraction).
+ *       · loss(τ) is FLAT at 30 (= 6 MWP × 5 weight, 0 FPD) across
+ *         τ ∈ [0.30, 0.90]. The threshold doesn't fire for any of those
+ *         6 wrong PASSes because the model was confidently wrong, not
+ *         borderline wrong.
+ *       · τ ≥ 0.91 adds 3 false-positive defers without catching any
+ *         additional wrong PASSes — strict loss increase.
+ *       · 0.55 is therefore on the Pareto plateau; no change.
+ *     Catching the remaining 6 wrong PASSes needs a different
+ *     intervention (second-opinion vision call, tighter comparator
+ *     gating) — not a threshold tweak. Tracked in REMAINING-IMPROVEMENTS A8.
  *
  * Per-field comparators (ABV, net-contents, etc.) still apply their own
  * field-specific thresholds. This is a *second-layer* floor that catches

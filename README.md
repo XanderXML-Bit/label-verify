@@ -20,31 +20,37 @@ country of origin, and the Government Warning statement under 27 CFR
 §16.21 / §16.22 (text, all-caps prefix, bold prefix, type size).
 
 The brief target was ≤ 5 s per label, beating the prior vendor's
-30–40 s. The deployed primary path runs in **2.4 s P50**, **3.3 s P95**
+30–40 s. The deployed primary path runs in **3.2 s P50**, **4.6 s P95**
 on Gemini 3.1 Flash Lite at **$0.25 per 1,000 labels**.
 
 ## Headline measurement — combined-corpus bake-off (2026-05-12)
 
-Field-level accuracy on a **140-image combined corpus**:
+Field-level accuracy on a **170-image combined corpus**:
 **90 SVG-rendered synthetic** labels (`test-data-v2/`) +
-**50 photo-realistic** labels rendered by Codex
-(`test-data/ai-generated/`). 973 field measurements (140 × 7 fields,
-minus one image that the extractor failed to parse). Wilson 95 % CIs.
+**80 photo-realistic** labels rendered by Codex across two batches
+(`test-data/ai-generated/`). 1,169 field measurements (170 × 7 fields,
+minus 3 images that the extractor failed to parse on the run). Wilson
+95 % CIs.
 
 | Subset | n | Accuracy | 95 % CI |
 |---|---|---|---|
-| **All** (combined) | 973 | **93.3 %** | [91.6, 94.7] |
-| ID — synthetic SVG | 630 | 96.0 % | [94.2, 97.3] |
-| OOD — photo-realistic | 343 | 88.3 % | [84.5, 91.3] |
-| Government Warning false-negative rate | 109 | 6.4 % | [3.1, 12.7] |
+| **All** (combined) | 1,169 | **93.8 %** | [92.2, 95.0] |
+| ID — synthetic SVG | 840 | 95.8 % | [94.3, 97.0] |
+| OOD — photo-realistic | 329 | 88.4 % | [84.5, 91.5] |
+| Government Warning false-negative rate | 137 | 5.1 % | [2.5, 10.2] |
 
 **Honest framing.** Synthetic SVG is the easy case (rendered text the
 model OCRs cleanly). The photo-realistic OOD subset is closer to real
 TTB submissions and gives the more conservative 88 % accuracy. The
-6.4 % Gov-Warning FN-rate is the regulator-dangerous direction (a
+5.1 % Gov-Warning FN-rate is the regulator-dangerous direction (a
 non-compliant warning slipping through as PASS); it's well inside the
 pre-registered ≤ 10 % criterion. Source result file:
-`benchmarks/results/2026-05-12T08-14-50-786Z.md`.
+`benchmarks/results/2026-05-12T17-10-53-642Z.md`. A side-by-side
+test of Gemini **3 Flash Preview** at the same time scored 94.3 %
+but failed the GW FN criterion (10.8 %) and cost 10× more per call,
+so 3.1 Flash Lite stays the deployed primary — see
+[`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.3a for the
+detailed comparison.
 
 This is the **bare-extractor** number — what the model alone gets
 right. The orchestrator above the extractor adds:
@@ -135,13 +141,16 @@ table and the criterion-by-criterion winner justification in
 [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.
 
 Why Gemini 3.1 Flash Lite won: 97.6 % on the routine 12-image
-subset → 93.3 % on the combined 140 corpus, 2.4 s P50, $0.25 per 1 k
-labels. The Pro Preview tier scored marginally higher (98.8 %) but at
-10× cost and 10× latency — Pareto-dominated for our 5-s budget. GPT-5.4
-nano sits as the fallback at 92.9 % / 3.2 s / $1.25 per 1 k — a
-different provider in case Google is unreachable, and only ~5 pp
-behind primary. The C1 hypothesis (OCR-as-hint improves vision) was
-**falsified** — OCR text fed into the vision prompt actually hurt
+subset → 93.8 % on the combined 170-image corpus, 3.2 s P50, $0.25 per
+1 k labels. The Pro Preview tier scored marginally higher (98.8 %) but
+at 10× cost and 10× latency — Pareto-dominated for our 5-s budget.
+Gemini 3 Flash Preview (newer, "smarter" sibling) was tested side-by-
+side and scored 94.3 % but **failed** the ≤ 10 % Gov-Warning FN-rate
+criterion (10.8 %) and cost 10× more per call — staying on 3.1 Flash
+Lite. GPT-5.4 nano sits as the fallback at 92.9 % / 3.2 s / $1.25 per
+1 k — a different provider in case Google is unreachable, and only
+~5 pp behind primary. The C1 hypothesis (OCR-as-hint improves vision)
+was **falsified** — OCR text fed into the vision prompt actually hurt
 accuracy on this corpus, because the model defers to OCR errors on
 stylised fonts. We ship vision-only.
 
@@ -160,13 +169,17 @@ reproducible: same script, same corpus, comparable numbers.
 
 ## Validation methodology
 
-- **Corpus.** 140 images. The 90 v2 labels are SVG-rendered from
+- **Corpus.** 170 images. The 90 v2 labels are SVG-rendered from
   deterministic templates with hand-controlled
   Government-Warning failure modes (see
   [`docs/government-warning-cases.md`](docs/government-warning-cases.md)
-  for the taxonomy). The 50 photo-realistic labels were rendered by
-  Codex's built-in image-gen tool, then visually audited by a
-  4-sub-agent chunked review (see `test-data/ai-generated/manifest.json`).
+  for the taxonomy). The 80 photo-realistic labels were rendered by
+  Codex's built-in image-gen tool across two batches (50 + 30) and
+  visually audited by a 4-sub-agent chunked review (see
+  `test-data/ai-generated/manifest.json`). Batch 02 specifically
+  targeted Gov-Warning paraphrase stress, photo-quality stress, and
+  novel beverage categories — see
+  [`docs/CODEX-BATCH-02-HANDOFF.md`](docs/CODEX-BATCH-02-HANDOFF.md).
 - **Ground truth.** Each image has a JSON ground-truth file with all
   seven declared fields plus Gov-Warning subscore truths. Adjudication
   was the prompt-declared field set for synthetic; visual audit for
@@ -305,15 +318,16 @@ reproducibility.
 
 ## What's still rough
 
-- **The 88.3 % OOD number.** Photo-realistic labels are harder than
+- **The 88.4 % OOD number.** Photo-realistic labels are harder than
   the SVG synthetics. The current orchestrator handles most of the
   gap via deferral (low-confidence PASS → REVIEW), but a future
   iteration would add a second-opinion vision call on borderline
   Government Warnings — calibrated against a larger real-photo
-  corpus we don't have yet. The Codex handoff at
+  corpus we don't have yet. Batch 02 (30 images focused on
+  Gov-Warning paraphrase stress, photo-quality stress, and novel
+  beverage categories) is already merged; the spec lives at
   [`docs/CODEX-BATCH-02-HANDOFF.md`](docs/CODEX-BATCH-02-HANDOFF.md)
-  is the next 30-image augmentation targeting Gov-Warning
-  paraphrases, photo-quality stress, and novel beverage categories.
+  for reproducible regeneration.
 - **Single point of dependency.** The deployed demo uses one Google
   API key; if that key is rate-limited, the fallback to GPT-5.4-nano
   fires but the OpenAI bill becomes the operator's problem.

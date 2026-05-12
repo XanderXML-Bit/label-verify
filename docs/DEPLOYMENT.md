@@ -115,6 +115,34 @@ Bare minimum for a prototype:
     would persist to a short-TTL KV (Upstash / Vercel KV). The cap keeps
     the worst-case memory footprint trivially bounded.
 
+## 7a. Vercel plan deltas (Hobby → Pro)
+
+The deployed demo runs on **Hobby**, which is sufficient for a
+take-home review. A TTB-deployed fork would want **Pro** for two
+reasons relevant to this app:
+
+| Limit | Hobby (current) | Pro | Why it matters here |
+|---|---|---|---|
+| Function timeout | 30 s | up to 300 s | Cold-start + a Smart-tier (Gemini 3.1 Pro Preview) verify call can flirt with 30 s. Pro removes the worry. |
+| Function memory | 2 GB | up to 3 GB (per-function override) | The vision call is small; the ceiling matters only if we ever introduce a local VLM. Headroom for `sharp` + `tesseract.js-core` is already comfortable at 2 GB. |
+| Concurrency | best-effort | provisioned concurrency available | Reduces cold starts during a batch upload of 1,000 labels. |
+| Bandwidth | 100 GB / mo | 1 TB / mo | Batch CSV / image traffic could plausibly exceed Hobby for a real ops team. |
+| Team seats | 1 | configurable | TTB review teams will want > 1 maintainer. |
+| Analytics | n/a | included | Useful for monitoring real-user verify latency. |
+| Log retention | 1 hour | up to 30 days | `X-Request-Id` tickets are only useful while logs are still around. |
+
+**Upgrade procedure.** No code changes needed — the codebase already
+declares its memory ceiling at 2048 MB in `vercel.json` (raise to 3009
+on Pro if desired). Steps:
+
+1. Vercel dashboard → Team → Plan → Upgrade to Pro.
+2. (Optional) In `vercel.json`, bump `functions[].memory` from 2048 to
+   3009 and `maxDuration` from 60 to 300.
+3. Re-deploy. The same code now runs with the higher limits.
+
+The README's "What's still rough" section mentions cold-start hits;
+Pro's provisioned concurrency is the production answer.
+
 ## 8. Rollback
 
 Vercel keeps every deploy. One click reverts. We don't need anything more

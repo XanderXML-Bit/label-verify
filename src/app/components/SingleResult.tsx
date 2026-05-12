@@ -5,6 +5,30 @@ import type { VerifyResponse } from "@/lib/types";
 import type { FieldComparison } from "@/lib/matching";
 import { VerdictChip, QualityChip } from "./StatusChip";
 
+// Approximate cost-per-call by model id, in USD. Refreshed from
+// `benchmarks/results/<latest>.md` columns "USD / call". Surfaced on
+// the result panel so a TTB ops viewer sees the order-of-magnitude
+// economics of a single verify alongside the latency — useful for
+// procurement conversations ("cost / 1k labels" = call × 1000).
+// REMAINING-IMPROVEMENTS.md U6.
+const COST_PER_CALL_BY_MODEL: Record<string, number> = {
+  "gemini:gemini-3.1-flash-lite": 0.00025,
+  "gemini:gemini-3-flash-preview": 0.00243,
+  "gemini:gemini-3.1-pro-preview": 0.00345,
+  "openai:gpt-5.4-nano": 0.00125,
+  "openai:gpt-4o-mini": 0.00045,
+};
+
+function approximateCostUsd(modelId: string | undefined): number | null {
+  if (!modelId) return null;
+  const direct = COST_PER_CALL_BY_MODEL[modelId];
+  if (typeof direct === "number") return direct;
+  // Best-effort prefix match: "gemini:..." → gemini lite default.
+  if (modelId.startsWith("gemini:")) return 0.00025;
+  if (modelId.startsWith("openai:")) return 0.00125;
+  return null;
+}
+
 // Display labels for the model modes the verifier may return.
 // Mirrors @/lib/model-modes#MODES but is kept inline so this client
 // browser bundle.
@@ -33,6 +57,21 @@ export function SingleResult({
         </h2>
         <span className="text-sm text-slate-500 dark:text-slate-400" aria-live="polite">
           Verified in {(result.timings.total / 1000).toFixed(1)} s
+          {(() => {
+            const usd = approximateCostUsd(result.modelId);
+            if (usd === null) return null;
+            const per1k = usd * 1000;
+            return (
+              <>
+                {" · "}
+                <span
+                  title={`Approximate per-call cost from ${result.modelId}. Extrapolates to ≈ $${per1k.toFixed(2)} per 1,000 labels.`}
+                >
+                  ≈ ${usd.toFixed(5)} per call
+                </span>
+              </>
+            );
+          })()}
         </span>
       </header>
 
@@ -102,26 +141,62 @@ export function SingleResult({
               Government Warning (27 CFR §16.21)
             </h3>
             <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-              <SubscoreRow
-                label="Exact text matches federal language?"
-                status={gov.subscores.text.status}
-                confidence={gov.subscores.text.confidence}
-              />
-              <SubscoreRow
-                label="Prefix all caps?"
-                status={gov.subscores.caps.status}
-                confidence={gov.subscores.caps.confidence}
-              />
-              <SubscoreRow
-                label="Prefix bold (vs body)?"
-                status={gov.subscores.bold.status}
-                confidence={gov.subscores.bold.confidence}
-              />
-              <SubscoreRow
-                label="Type size meets §16.22 minimum?"
-                status={gov.subscores.size.status}
-                confidence={gov.subscores.size.confidence}
-              />
+              {/* Desktop (≥ sm): always-visible flat subscore list. */}
+              <div className="hidden sm:block">
+                <SubscoreRow
+                  label="Exact text matches federal language?"
+                  status={gov.subscores.text.status}
+                  confidence={gov.subscores.text.confidence}
+                />
+                <SubscoreRow
+                  label="Prefix all caps?"
+                  status={gov.subscores.caps.status}
+                  confidence={gov.subscores.caps.confidence}
+                />
+                <SubscoreRow
+                  label="Prefix bold (vs body)?"
+                  status={gov.subscores.bold.status}
+                  confidence={gov.subscores.bold.confidence}
+                />
+                <SubscoreRow
+                  label="Type size meets §16.22 minimum?"
+                  status={gov.subscores.size.status}
+                  confidence={gov.subscores.size.confidence}
+                />
+              </div>
+              {/* Mobile (< sm): collapsed unless the verdict is not PASS,
+                  so reviewers don't have to scroll past 4 subscore rows on
+                  every result page. Per REMAINING-IMPROVEMENTS.md U1. */}
+              <details
+                className="sm:hidden"
+                {...(gov.status !== "pass" ? { open: true } : {})}
+              >
+                <summary className="cursor-pointer text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
+                  4-part subscore breakdown
+                </summary>
+                <div className="mt-2">
+                  <SubscoreRow
+                    label="Exact text matches federal language?"
+                    status={gov.subscores.text.status}
+                    confidence={gov.subscores.text.confidence}
+                  />
+                  <SubscoreRow
+                    label="Prefix all caps?"
+                    status={gov.subscores.caps.status}
+                    confidence={gov.subscores.caps.confidence}
+                  />
+                  <SubscoreRow
+                    label="Prefix bold (vs body)?"
+                    status={gov.subscores.bold.status}
+                    confidence={gov.subscores.bold.confidence}
+                  />
+                  <SubscoreRow
+                    label="Type size meets §16.22 minimum?"
+                    status={gov.subscores.size.status}
+                    confidence={gov.subscores.size.confidence}
+                  />
+                </div>
+              </details>
               {gov.reason && (
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{gov.reason}</p>
               )}
@@ -185,7 +260,14 @@ function FieldRow({ cmp }: { readonly cmp: FieldComparison }) {
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{cmp.reason}</p>
       )}
       {cmp.components && (
-        <details className="mt-2 text-sm">
+        // Auto-expand on REVIEW/FAIL so the reviewer immediately sees which
+        // component (street / city / state / postal / country) failed —
+        // saves a click on every non-pass and is the high-information case
+        // anyway. Stays collapsed on PASS to keep the panel tight.
+        <details
+          className="mt-2 text-sm"
+          {...(cmp.status !== "pass" ? { open: true } : {})}
+        >
           <summary className="cursor-pointer text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
             Per-component breakdown
           </summary>

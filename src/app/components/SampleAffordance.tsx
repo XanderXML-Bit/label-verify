@@ -43,14 +43,33 @@ export function SampleAffordance({ onPick, disabled }: SampleAffordanceProps) {
             type="button"
             onClick={() => activate(s)}
             disabled={disabled}
+            // Full expectedNote in the tooltip + on screen below the
+            // short description — REMAINING-IMPROVEMENTS U2: the FAIL
+            // sample's defect ("title-case warning prefix") should be
+            // readable from the thumbnail without clicking.
+            title={s.expectedNote}
             className={`group flex min-h-[88px] flex-col items-start gap-2 rounded-md border bg-slate-50 p-3 text-left transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 ${verdictRing(s.expectedVerdict)}`}
             aria-label={`Try the ${s.id} sample`}
+            aria-describedby={`sample-note-${s.id}`}
           >
             <span className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Expected: <span className={verdictText(s.expectedVerdict)}>{s.expectedVerdict.toUpperCase()}</span>
             </span>
             <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{s.label}</span>
             <span className="text-xs text-slate-600 dark:text-slate-400">{s.shortDescription}</span>
+            {s.expectedVerdict !== "pass" && (
+              <span
+                id={`sample-note-${s.id}`}
+                className="text-xs italic text-slate-500 dark:text-slate-400"
+              >
+                Look for:&nbsp;{lookForHint(s)}
+              </span>
+            )}
+            {s.expectedVerdict === "pass" && (
+              <span id={`sample-note-${s.id}`} className="sr-only">
+                {s.expectedNote}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -68,6 +87,22 @@ function verdictRing(v: Sample["expectedVerdict"]): string {
       return "border-yellow-300 hover:border-yellow-400 dark:border-yellow-700 dark:hover:border-yellow-500";
   }
 }
+// A terse 4-6 word "what to inspect" hint derived from the sample id.
+// Lives here (rather than in samples.ts) because it's a UI affordance,
+// not a behavioural property of the sample data — the data already
+// has a longer `expectedNote` and that's still the source of truth
+// for the title tooltip and aria-label.
+function lookForHint(s: Sample): string {
+  switch (s.id) {
+    case "fail":
+      return "title-case warning prefix";
+    case "review":
+      return "borderline bold stroke width on prefix";
+    default:
+      return s.expectedNote;
+  }
+}
+
 function verdictText(v: Sample["expectedVerdict"]): string {
   switch (v) {
     case "pass":

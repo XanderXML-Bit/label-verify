@@ -122,4 +122,37 @@ describe("producer comparator — spoof resistance", () => {
     const r = compareProducer(declaredUsa, extracted, 0.9);
     expect(r.components?.country).toBe("fail");
   });
+
+  // Per REMAINING-IMPROVEMENTS.md T2: an edge case where the model
+  // hallucinates a US-style state ("ME" / Maine) but every other
+  // textual field on the producer points to a Mexican producer.
+  // Country MUST fail — the corroborating-component rule is what
+  // prevents a single hallucinated state code from rubber-stamping
+  // an obvious mismatch.
+  it("rejects implicit-USA when state='ME' but name+city+street name a Mexican producer", () => {
+    const extracted: ProducerAddress = {
+      name: "Mexican Tequila Co",
+      street: "Calle Juarez 200",
+      city: "Guadalajara",
+      state: "ME", // hallucinated US-state code (Maine) but no actual US context
+      postal_code: "44100",
+      country: null,
+    };
+    const r = compareProducer(declaredUsa, extracted, 0.9);
+    expect(r.components?.country).toBe("fail");
+    expect(r.status).toBe("fail");
+  });
+
+  it("rejects EXPLICIT 'MEXICO' even when every other component matches declared US producer", () => {
+    // All five corroborating components match, but the label printed
+    // country "MEXICO". The explicit-country branch must override
+    // every other signal — the rule is "what the label SAYS is
+    // authoritative, what we INFER is hedge-only".
+    const extracted: ProducerAddress = {
+      ...declaredUsa,
+      country: "MEXICO",
+    };
+    const r = compareProducer(declaredUsa, extracted, 0.9);
+    expect(r.components?.country).toBe("fail");
+  });
 });
