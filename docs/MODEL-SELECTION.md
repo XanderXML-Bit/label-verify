@@ -170,6 +170,31 @@ The pre-registered prediction matrix in `APPROACH.md` §4 expected:
 | Tesseract beating hosted on Gov-Warning text-match | "plausible" | Tesseract Gov-Warning subscore tied or lost on every image | **Falsified for this corpus.** Hosted models do not paraphrase the Government Warning when explicitly instructed not to (the EXTRACTION_PROMPT's CRITICAL RULE #1 holds). |
 | Gemini 3.1 Pro Preview is the accuracy ceiling | "implicit" | T6c (Pro direct) = 96.4 % < T6 (Flash Lite direct) = 97.6 % | **Surprised us.** Pro Preview on this corpus *underperforms* the cheaper Flash Lite tier. Hypothesis: Pro's reasoning chain occasionally rewrites the Government Warning verbatim text, breaking RULE #1; Flash Lite is too small to second-guess. |
 
+### 4.3a Combined-corpus rerun (170 images, 2026-05-12 morning)
+
+After the initial bake-off settled on T6, the corpus was expanded to
+include 50 photo-realistic AI labels + 30 targeted Codex batch-02
+labels for a 170-image combined run. T6 was re-benched alongside T6f
+(Gemini 3 Flash Preview, the newer/larger Gemini Flash tier) to
+confirm the choice held:
+
+| ID | Model | Acc | ID | OOD | GW FN | P50 | $/1k |
+|----|-------|-----|----|----|-------|-----|------|
+| **T6** | **Gemini 3.1 Flash Lite (direct)** | **93.8 %** | 95.8 % | **88.3 %** | **5.0 %** | **3.2 s** | **$0.25** |
+| T6f | Gemini 3 Flash Preview (OpenRouter) | 94.3 % | 97.3 % | 87.2 % | 10.8 % | 4.0 s | $2.43 |
+
+T6f scores 0.5 pp higher overall and 1.5 pp higher on the synthetic
+(ID) subset — but **fails the Government-Warning FN-rate criterion**
+(10.8 % > 10 %), runs 25 % slower, costs ~10× more per 1k labels, and
+scores 1.1 pp LOWER on the photo-realistic (OOD) subset that matters
+most for real submissions. The regulator-dangerous-direction metric
+(Gov-Warning FN-rate) is the dealbreaker: T6f lets twice as many
+non-compliant warnings slip through as PASS. **T6 stays primary.**
+
+Result files committed: `benchmarks/results/2026-05-12T16-55-38-735Z.{md,json}`
+(initial T6 run), `2026-05-12T17-09-38-237Z.{md,json}` (T6f), and
+`2026-05-12T17-10-53-642Z.{md,json}` (T6 rerun for variance check).
+
 ### 4.4 Fallback chain (C5 tiered escalation)
 
 The orchestrator in `src/lib/verify.ts` defers to a fallback model when
