@@ -77,6 +77,34 @@ Order of priority — the higher row wins ties:
 If no technique satisfies (1) we declare the prototype *not yet
 production-ready* and document what would have to improve.
 
+## 3.5 Routine vs. full bake-off
+
+Running the full corpus on every commit is wasteful — and once vision
+contenders are wired up, outright expensive (USD per call × N labels × M
+trials adds up fast). The routine subset (`npm run bench:routine`) is a
+curated 15-label slice that hits every important axis with minimum
+overlap: 3 fully-compliant baselines, the dominant gov-warning
+non-compliance cases (X1 / T1 / C1 / B1 / S2 / X3), each degradation
+class (perspective / lowlight / occlusion / curved), a stylized-brand
+edge case, and a small-container compliant pair to the S2 fail. The list
+is hand-curated and committed (see `benchmarks/routine.ts` and
+`test-data-v2/routine-manifest.json`) so a routine run today compares
+apples-to-apples with the same run last week — random sampling would let
+the signal drift between commits.
+
+**When to use which:**
+
+| Mode | Command | Corpus | Trials | Use it for |
+|------|---------|--------|--------|------------|
+| Routine | `npm run bench:routine` | 15 curated | 1 | CI, fast feedback, cost-conscious "is anything obviously broken?" |
+| Routine bake-off | `npm run bench:routine:bakeoff` | 15 curated | 1 | Quick cross-technique sniff with API keys set |
+| Smoke (legacy) | `npm run bench:smoke` | first 20 | 1 | Kept for backward compatibility; prefer routine |
+| Full | `npm run bench` | all v2 (n≈90) | 3 | Local pre-bake-off rehearsal |
+| Bake-off | `npm run bench:bakeoff` | all v2 | 3 | Formal §4 decision run — fills in the table below |
+
+The decision in §4 is settled by the full bake-off, not by any routine
+result. Routine catches regressions; the bake-off picks the winner.
+
 ## 4. The bake-off result (fill in after run)
 
 Replace the placeholders below with the actual numbers from the run.

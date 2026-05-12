@@ -1,0 +1,33 @@
+{
+  "id": "ai-label-0033",
+  "image": "labels/ai-label-0033.jpg",
+  "source": {
+    "tool": "built-in image_gen",
+    "originalFile": "ig_0d57ecc6c7dba592016a02886de1e48197b79a77757626ed91.png",
+    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02886de1e48197b79a77757626ed91.png",
+    "generatedAtLocal": "2026-05-12T01:56:35.742Z",
+    "originalWidth": 1024,
+    "originalHeight": 1536
+  },
+  "format": "bottle",
+  "beverageType": "wine",
+  "conditionNotes": "diagonal glare over warning",
+  "intendedCompliance": "review",
+  "warningCase": "Q2_GLARE_WARNING",
+  "promptDeclaredFields": {
+    "brandName": "Five Sisters",
+    "classType": "Sparkling Wine",
+    "alcoholByVolume": "12.0%",
+    "netContents": "750 mL",
+    "producerAddress": "Five Sisters Winery, Traverse City, MI",
+    "countryOfOrigin": "USA",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+  },
+  "visualAudit": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "notes": [],
+    "strictBenchmarkReady": false
+  }
+}

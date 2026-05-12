@@ -6,9 +6,9 @@ AI-powered verification of beverage label artwork against declared
 application data. A prototype for the U.S. Department of the Treasury,
 Alcohol and Tobacco Tax and Trade Bureau (TTB).
 
-**Live demo:** _(deploys to `labelverify.zendren.net` — TBD)_
-**Status:** Vertical slice shipped (single + batch verify, four-technique
-benchmark harness, 100-label test corpus). Awaiting Vercel provisioning.
+**Live demo:** **<https://label-verify-six.vercel.app>** _(custom domain on `zendren.net` / `xandermlopez.com` TBD)_
+**Status:** Live. Single + batch verify working end-to-end. 8 extractor
+candidates registered; final bake-off pending the locked corpus.
 
 ## Architecture at a glance
 

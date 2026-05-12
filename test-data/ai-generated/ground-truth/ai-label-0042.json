@@ -1,0 +1,33 @@
+{
+  "id": "ai-label-0042",
+  "image": "labels/ai-label-0042.jpg",
+  "source": {
+    "tool": "built-in image_gen",
+    "originalFile": "ig_0d34551f0105b334016a028c82cd2881959bc70ec72af8e91f.png",
+    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028c82cd2881959bc70ec72af8e91f.png",
+    "generatedAtLocal": "2026-05-12T02:13:24.279Z",
+    "originalWidth": 1536,
+    "originalHeight": 1024
+  },
+  "format": "flat_label",
+  "beverageType": "beer",
+  "conditionNotes": "flat label missing warning",
+  "intendedCompliance": "non_compliant",
+  "warningCase": "X1_MISSING_WARNING",
+  "promptDeclaredFields": {
+    "brandName": "Tall Window Brewing",
+    "classType": "Italian Pilsner",
+    "alcoholByVolume": "5.1%",
+    "netContents": "12 FL OZ",
+    "producerAddress": "Tall Window Brewing, Madison, WI",
+    "countryOfOrigin": "USA",
+    "governmentWarning": null
+  },
+  "visualAudit": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "notes": [],
+    "strictBenchmarkReady": false
+  }
+}

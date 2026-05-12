@@ -59,6 +59,8 @@ function passingResponse(): VerifyResponse {
     timings: { preprocess: 100, ocr: null, vision: 1200, matching: 50, total: 2300 },
     modelId: "mock:test",
     modelVersion: "mock-v1",
+    requiresHumanReview: false,
+    reviewReasons: [],
   };
 }
 

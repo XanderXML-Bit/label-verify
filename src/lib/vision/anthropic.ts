@@ -216,6 +216,54 @@ export class ClaudeHaikuExtractor implements Extractor {
   }
 }
 
+// ─── Claude Opus extractor (T12 — frontier 1M-context tier) ─────────────────
+//
+// Anthropic's frontier tier. Heavier and slower than Sonnet but with the
+// 1M-context window available for long-document follow-up work; on a
+// single beverage-label image the context window is moot, so what we're
+// really measuring here is whether Opus's reasoning advantage actually
+// translates into verbatim-text-recall and bbox-localisation accuracy
+// worth the ~5x Sonnet cost. Same Messages API call path as Sonnet —
+// only the default model and prices change.
+
+const OPUS_MODEL_DEFAULT = "claude-opus-4-1";
+// Pricing per Anthropic's published Opus 4.x table:
+// $15 / 1M input, $75 / 1M output.
+const OPUS_PRICE_INPUT_PER_M = 15;
+const OPUS_PRICE_OUTPUT_PER_M = 75;
+
+export class ClaudeOpusExtractor implements Extractor {
+  readonly id: string;
+  readonly networkRequired = true;
+  readonly modelVersion: string;
+  private readonly client: Anthropic;
+
+  constructor(opts: { apiKey: string; modelVersion?: string }) {
+    if (!opts.apiKey) throw new Error("ClaudeOpusExtractor: missing apiKey");
+    this.modelVersion = opts.modelVersion ?? OPUS_MODEL_DEFAULT;
+    this.id = `anthropic:${this.modelVersion}`;
+    this.client = new Anthropic({ apiKey: opts.apiKey });
+  }
+
+  async extract(
+    image: Buffer,
+    ctx?: ExtractorContext,
+  ): Promise<ExtractorResult> {
+    return callAnthropic(
+      image,
+      ctx,
+      {
+        client: this.client,
+        modelVersion: this.modelVersion,
+        priceInputPerM: OPUS_PRICE_INPUT_PER_M,
+        priceOutputPerM: OPUS_PRICE_OUTPUT_PER_M,
+        errorTag: "ClaudeOpusExtractor",
+      },
+      this.id,
+    );
+  }
+}
+
 function abortPromise(signal: AbortSignal | undefined): Promise<never> {
   if (!signal) return new Promise(() => {}); // pending forever
   if (signal.aborted) {

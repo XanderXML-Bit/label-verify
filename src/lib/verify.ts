@@ -40,6 +40,33 @@ interface VerifyOptions {
 const DEFAULT_VISION_TIMEOUT_MS = 4500;
 
 /**
+ * Single source of truth for the per-field confidence floor below which we
+ * defer to a human reviewer rather than return PASS. Intelligence-first
+ * priority: if we can't be 100% certain, defer.
+ *
+ * Set to 0.75 because:
+ *   - Empirically the Gemini Flash extractor reports ≥ 0.85 on clean labels
+ *     and < 0.65 on the cases where it later turned out to be wrong. 0.75
+ *     puts the cutoff in the middle of the dead zone.
+ *   - Per-field comparators already downgrade to REVIEW at their own field-
+ *     specific thresholds (ABV/net-contents at 0.7, brand by token-set, etc.).
+ *     This is a *second-layer* floor that catches the cases where the
+ *     comparator returned PASS but the underlying extractor confidence is
+ *     borderline.
+ */
+export const REVIEW_CONFIDENCE_THRESHOLD = 0.75;
+
+/** Pretty per-field labels for the `reviewReasons` strings. */
+const FIELD_LABEL: Record<string, string> = {
+  brand_name: "Brand name",
+  class_type: "Class / type",
+  abv_percent: "ABV",
+  net_contents: "Net contents",
+  producer: "Producer / address",
+  country_of_origin: "Country of origin",
+};
+
+/**
  * Top-level verify orchestrator. Per ARCHITECTURE.md §3:
  *   1. preprocess
  *   2. OCR + vision in parallel (OCR is conditionally off-path —
@@ -157,10 +184,56 @@ export async function verifyLabel(
   const fieldResults = [brand, cls, abv, nc, producer, country];
 
   // VERDICT (compliance): worst field status + Gov Warning subscore.
-  const verdict: Verdict = aggregateVerdict([
+  let verdict: Verdict = aggregateVerdict([
     ...fieldResults.map((r) => r.status),
     gov.status,
   ]);
+
+  // ─── 5a. Intelligence-first deferral ─────────────────────────────────────
+  //
+  // Catch the case where every field comparator returned PASS individually
+  // but the underlying extractor confidence is borderline on one or more
+  // fields. Per the product priority: never return PASS when any field is
+  // borderline; route borderline cases to a human-review queue.
+  //
+  // FAIL is never downgraded to REVIEW — a clearly non-compliant label still
+  // fails, regardless of confidence. Only PASS is at risk of being too
+  // optimistic.
+  const reviewReasons: string[] = [];
+  for (const f of fieldResults) {
+    if (
+      f.status === "pass" &&
+      f.confidence < REVIEW_CONFIDENCE_THRESHOLD
+    ) {
+      const label = FIELD_LABEL[f.field] ?? f.field;
+      reviewReasons.push(
+        `${label} confidence ${f.confidence.toFixed(2)} below ${REVIEW_CONFIDENCE_THRESHOLD} — extractor could not confidently read this field from the label.`,
+      );
+    }
+  }
+  // The Government Warning validator already returns REVIEW on borderline
+  // bold; collect a human-readable reason when it does.
+  if (gov.status === "review") {
+    reviewReasons.push(
+      `Government Warning subscore is REVIEW${gov.reason ? ` — ${gov.reason}` : ""}.`,
+    );
+  }
+  // Per-field comparators that already returned REVIEW (e.g. ABV with low
+  // extractor confidence, brand near-miss) also contribute a reason so the
+  // reviewer sees the full picture in one place.
+  for (const f of fieldResults) {
+    if (f.status === "review") {
+      const label = FIELD_LABEL[f.field] ?? f.field;
+      reviewReasons.push(
+        `${label} returned REVIEW${f.reason ? ` — ${f.reason}` : ""}`,
+      );
+    }
+  }
+
+  if (verdict === "pass" && reviewReasons.length > 0) {
+    // Downgrade PASS → REVIEW. The reasons array is already populated.
+    verdict = "review";
+  }
 
   // IMAGE QUALITY (independent): driven by the extractor's per-field
   // confidence aggregate, not by the verdict. This is the critical UX
@@ -208,6 +281,8 @@ export async function verifyLabel(
     },
     modelId: extracted.modelId,
     modelVersion: extracted.modelVersion,
+    requiresHumanReview: verdict === "review",
+    reviewReasons: verdict === "review" ? reviewReasons : [],
     ...(imageQualityReason ? { imageQualityReason } : {}),
   };
 

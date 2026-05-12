@@ -28,6 +28,7 @@ import {
   partitionOod,
 } from "./score";
 import { BUILTIN_TECHNIQUES, BAKEOFF_TECHNIQUES, findTechnique, type TechniqueRunner } from "./techniques";
+import { ROUTINE_IDS, selectRoutine } from "./routine";
 import { scoreImage, type GroundTruth } from "./scorer";
 import { preprocessImage } from "../src/lib/preprocess";
 import type { ExtractorCost } from "../src/lib/vision/types";
@@ -35,17 +36,31 @@ import type { ExtractorCost } from "../src/lib/vision/types";
 // ─── CLI argument parsing ───────────────────────────────────────────────────
 
 interface CliArgs {
+  /** First-N slice of the corpus, 1 trial. Backward-compat legacy mode. */
   smoke: boolean;
+  /**
+   * Curated 15-label subset for routine / CI runs (see benchmarks/routine.ts).
+   * Cost-conscious "is anything obviously broken?" signal — the full corpus
+   * stays reserved for the formal bake-off (`--bake-off` without `--routine`).
+   */
+  routine: boolean;
   corpus: string;
   techniques: string[];
   bakeoff: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const out: CliArgs = { smoke: false, corpus: "test-data", techniques: [], bakeoff: false };
+  const out: CliArgs = {
+    smoke: false,
+    routine: false,
+    corpus: "test-data",
+    techniques: [],
+    bakeoff: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--smoke") out.smoke = true;
+    else if (a === "--routine") out.routine = true;
     else if (a === "--bake-off" || a === "--bakeoff") out.bakeoff = true;
     else if (a === "--corpus") {
       const v = argv[++i];
@@ -55,6 +70,17 @@ function parseArgs(argv: string[]): CliArgs {
       if (v) out.techniques.push(v);
     }
   }
+  // --smoke and --routine are mutually exclusive: they answer different
+  // questions (legacy first-N slice vs. curated coverage subset) and combining
+  // them would silently pick one. Fail loud so the caller updates their
+  // invocation rather than ship a confusing run.
+  if (out.smoke && out.routine) {
+    throw new Error(
+      "[bench] --smoke and --routine are mutually exclusive. " +
+        "Use --routine for the curated 15-label CI subset; --smoke is the " +
+        "legacy first-20 slice kept for backward compatibility.",
+    );
+  }
   return out;
 }
 
@@ -63,6 +89,9 @@ const ROOT = process.cwd();
 const RESULTS_DIR = join(ROOT, "benchmarks", "results");
 const TRIALS_FULL = 3;
 const TRIALS_SMOKE = 1;
+/** --routine matches --smoke: one trial per label. Routine is for fast feedback,
+ *  not latency-variance estimation; if you need that, run the full bake-off. */
+const TRIALS_ROUTINE = 1;
 const PER_IMAGE_TIMEOUT_MS = 60_000;
 
 // ─── Corpus loading ─────────────────────────────────────────────────────────
@@ -322,7 +351,13 @@ interface TechniqueSummary {
 
 interface BenchmarkSummary {
   runAt: string;
-  mode: "smoke" | "full";
+  /**
+   * "smoke" = legacy first-20 slice (1 trial).
+   * "routine" = curated 15-label coverage subset (1 trial) — see
+   *             benchmarks/routine.ts and docs/MODEL-SELECTION.md §3.5.
+   * "full" = full corpus, 3 trials — formal bake-off mode.
+   */
+  mode: "smoke" | "routine" | "full";
   corpusRoot: string;
   corpusSize: number;
   trialsPerImage: number;
@@ -503,8 +538,34 @@ function renderMarkdown(summary: BenchmarkSummary): string {
 
 async function main(): Promise<void> {
   const { truths, labelsDir, corpusRoot } = await loadCorpus(ARGS.corpus);
-  const subset = ARGS.smoke ? truths.slice(0, 20) : truths;
-  const trials = ARGS.smoke ? TRIALS_SMOKE : TRIALS_FULL;
+  // Corpus selection precedence:
+  //   --routine  → curated 15-label coverage subset (CI / fast feedback)
+  //   --smoke    → legacy first-20 slice (kept for backward compatibility)
+  //   default    → full corpus (formal bake-off territory)
+  // --smoke and --routine are forbidden together at parse time.
+  let subset: GroundTruth[];
+  let mode: BenchmarkSummary["mode"];
+  let trials: number;
+  if (ARGS.routine) {
+    subset = selectRoutine(truths);
+    mode = "routine";
+    trials = TRIALS_ROUTINE;
+    // Loud banner so the operator (and CI logs) can confirm the cost-conscious
+    // mode is engaged before any vision-extractor USD starts ticking.
+    console.warn(
+      `[bench] routine mode — ${ROUTINE_IDS.length} curated labels, ` +
+        `${trials} trial${trials === 1 ? "" : "s"} per label. ` +
+        `Full corpus is reserved for the formal bake-off (drop --routine to run it).`,
+    );
+  } else if (ARGS.smoke) {
+    subset = truths.slice(0, 20);
+    mode = "smoke";
+    trials = TRIALS_SMOKE;
+  } else {
+    subset = truths;
+    mode = "full";
+    trials = TRIALS_FULL;
+  }
 
   const selectedIds =
     ARGS.techniques.length > 0
@@ -516,7 +577,7 @@ async function main(): Promise<void> {
           ).map((t) => t.id);
 
   console.warn(
-    `[bench] mode=${ARGS.smoke ? "smoke" : "full"}  corpus=${subset.length}/${truths.length}  techniques=${selectedIds.join(",")}  trials=${trials}`,
+    `[bench] mode=${mode}  corpus=${subset.length}/${truths.length}  techniques=${selectedIds.join(",")}  trials=${trials}`,
   );
 
   const techRuns: TechniqueRun[] = [];
@@ -540,7 +601,7 @@ async function main(): Promise<void> {
 
   const summary: BenchmarkSummary = {
     runAt: new Date().toISOString(),
-    mode: ARGS.smoke ? "smoke" : "full",
+    mode,
     corpusRoot,
     corpusSize: subset.length,
     trialsPerImage: trials,

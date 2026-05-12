@@ -8,7 +8,16 @@ export {
   GeminiProExtractor,
 } from "./gemini";
 export { GPT4oMiniExtractor, GPT4oFullExtractor } from "./openai";
-export { ClaudeSonnetExtractor, ClaudeHaikuExtractor } from "./anthropic";
+export {
+  ClaudeSonnetExtractor,
+  ClaudeHaikuExtractor,
+  ClaudeOpusExtractor,
+} from "./anthropic";
+export { OpenRouterExtractor } from "./openrouter";
+export type {
+  OpenRouterPricing,
+  OpenRouterExtractorOptions,
+} from "./openrouter";
 export { TieredEscalationExtractor } from "./tiered";
 
 export { EXTRACTION_PROMPT, getPromptHash } from "./prompt";

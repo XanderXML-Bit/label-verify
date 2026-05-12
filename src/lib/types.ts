@@ -79,7 +79,32 @@ export interface VerifyResponse {
   /** Model that produced the extraction; surfaced only in /api/debug/last. */
   modelId: string;
   modelVersion: string;
+  /**
+   * True iff the aggregate verdict is `"review"`. Drives the human-review
+   * queue: the API route enqueues the response when this is true.
+   *
+   * NOTE: this is intentionally redundant with `verdict === "review"`. The
+   * boolean exists so downstream callers (logging, dashboards, batch CSVs)
+   * can branch on a single field without re-implementing the rule.
+   */
+  requiresHumanReview: boolean;
+  /**
+   * Human-readable reasons we routed this to review. Empty when
+   * `requiresHumanReview` is false. Each entry is one sentence; the UI
+   * concatenates them into a bullet list.
+   */
+  reviewReasons: string[];
 }
+
+// ─── Review queue types ─────────────────────────────────────────────────────
+//
+// Re-exported from review-queue.ts so consumers can grab the queue shape
+// from the same module that defines VerifyResponse. The runtime definitions
+// live in review-queue.ts to keep this file pure type declarations.
+export type {
+  ReviewQueueItem,
+  ReviewResolution,
+} from "./review-queue";
 
 // ─── VerifyTrace ────────────────────────────────────────────────────────────
 //

@@ -1,0 +1,33 @@
+{
+  "id": "ai-label-0009",
+  "image": "labels/ai-label-0009.jpg",
+  "source": {
+    "tool": "built-in image_gen",
+    "originalFile": "ig_0d57ecc6c7dba592016a027c9c61048197af2cc86fc3dfed43.png",
+    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027c9c61048197af2cc86fc3dfed43.png",
+    "generatedAtLocal": "2026-05-12T01:06:19.365Z",
+    "originalWidth": 1024,
+    "originalHeight": 1536
+  },
+  "format": "bottle",
+  "beverageType": "wine",
+  "conditionNotes": "missing government warning",
+  "intendedCompliance": "non_compliant",
+  "warningCase": "X1_MISSING_WARNING",
+  "promptDeclaredFields": {
+    "brandName": "Cote du Soir",
+    "classType": "Rose",
+    "alcoholByVolume": "12.6%",
+    "netContents": "750 mL",
+    "producerAddress": "Cote du Soir Cellars, Santa Barbara, CA",
+    "countryOfOrigin": "USA",
+    "governmentWarning": null
+  },
+  "visualAudit": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "notes": [],
+    "strictBenchmarkReady": false
+  }
+}

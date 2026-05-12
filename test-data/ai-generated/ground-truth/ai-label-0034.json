@@ -1,0 +1,33 @@
+{
+  "id": "ai-label-0034",
+  "image": "labels/ai-label-0034.jpg",
+  "source": {
+    "tool": "built-in image_gen",
+    "originalFile": "ig_0d34551f0105b334016a0289f3b1488195a640b7cd9cdb0c6f.png",
+    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a0289f3b1488195a640b7cd9cdb0c6f.png",
+    "generatedAtLocal": "2026-05-12T02:02:19.842Z",
+    "originalWidth": 1536,
+    "originalHeight": 1024
+  },
+  "format": "flat_label",
+  "beverageType": "beer",
+  "conditionNotes": "flat regulatory back-label",
+  "intendedCompliance": "compliant",
+  "warningCase": "C0",
+  "promptDeclaredFields": {
+    "brandName": "Riverbend Works",
+    "classType": "Kolsch Style Ale",
+    "alcoholByVolume": "4.7%",
+    "netContents": "12 FL OZ",
+    "producerAddress": "Riverbend Works Brewing Co., Dayton, OH",
+    "countryOfOrigin": "USA",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+  },
+  "visualAudit": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "notes": [],
+    "strictBenchmarkReady": false
+  }
+}

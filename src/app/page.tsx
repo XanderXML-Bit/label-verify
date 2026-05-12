@@ -7,6 +7,7 @@ import { DeclaredForm } from "./components/DeclaredForm";
 import { SingleResult } from "./components/SingleResult";
 import { BatchView, type BatchRow } from "./components/BatchView";
 import { SampleAffordance } from "./components/SampleAffordance";
+import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
 import type { Sample } from "@/lib/samples";
 
 type Stage =
@@ -153,6 +154,7 @@ export default function Home() {
         <>
           <UploadZone onFiles={handleFiles} />
           <SampleAffordance onPick={handleSample} />
+          <ReviewQueuePanel />
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
             <summary className="cursor-pointer font-medium text-slate-700">
               About this prototype

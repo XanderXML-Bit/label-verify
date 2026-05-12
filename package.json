@@ -14,6 +14,8 @@
     "test:coverage": "vitest run --coverage",
     "bench": "tsx benchmarks/run.ts",
     "bench:smoke": "tsx benchmarks/run.ts --smoke",
+    "bench:routine": "tsx benchmarks/run.ts --routine",
+    "bench:routine:bakeoff": "tsx benchmarks/run.ts --routine --bake-off",
     "bench:bakeoff": "tsx benchmarks/run.ts --bake-off",
     "bench:bakeoff:smoke": "tsx benchmarks/run.ts --bake-off --smoke",
     "gen:corpus": "tsx scripts/generate-corpus.ts",

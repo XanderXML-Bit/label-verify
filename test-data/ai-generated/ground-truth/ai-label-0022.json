@@ -1,0 +1,33 @@
+{
+  "id": "ai-label-0022",
+  "image": "labels/ai-label-0022.jpg",
+  "source": {
+    "tool": "built-in image_gen",
+    "originalFile": "ig_0d57ecc6c7dba592016a028224b2b08197972495c9788b074a.png",
+    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028224b2b08197972495c9788b074a.png",
+    "generatedAtLocal": "2026-05-12T01:30:03.623Z",
+    "originalWidth": 1024,
+    "originalHeight": 1536
+  },
+  "format": "flat_label",
+  "beverageType": "beer",
+  "conditionNotes": "flat missing warning",
+  "intendedCompliance": "non_compliant",
+  "warningCase": "X1_MISSING_WARNING",
+  "promptDeclaredFields": {
+    "brandName": "Half-Note",
+    "classType": "Porter",
+    "alcoholByVolume": "6.3%",
+    "netContents": "12 FL OZ",
+    "producerAddress": "Half-Note Brewing, Chicago, IL",
+    "countryOfOrigin": "USA",
+    "governmentWarning": null
+  },
+  "visualAudit": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "notes": [],
+    "strictBenchmarkReady": false
+  }
+}

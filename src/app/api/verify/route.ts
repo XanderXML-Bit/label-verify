@@ -4,6 +4,7 @@ import { DeclaredFieldsSchema } from "@/lib/types";
 import { UrlFetchError, fetchUrlImage } from "@/lib/input-handlers";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { recordTrace } from "@/lib/debug-trace";
+import { enqueueForReview, makeReviewItemId } from "@/lib/review-queue";
 import {
   MAX_PDF_BYTES,
   PdfExtractError,
@@ -218,7 +219,7 @@ export async function POST(req: Request) {
   } else {
     buffer = raw;
   }
-  return runVerify(buffer, parsed.data, rl);
+  return runVerify(buffer, parsed.data, rl, file.name);
 }
 
 function pdfErrorStatus(code: PdfExtractError["code"]): number {
@@ -244,9 +245,29 @@ async function runVerify(
   buffer: Buffer,
   declared: import("@/lib/types").DeclaredFields,
   rl: import("@/lib/rate-limit").RateLimitResult,
+  filename?: string,
 ) {
   try {
     const result = await verifyLabel(buffer, declared, { recordTrace });
+    // Intelligence-first: if the verifier deferred, route the result to the
+    // human-review queue. Wrapped in try/catch so a queue bug never breaks
+    // a real verify response.
+    if (result.requiresHumanReview) {
+      try {
+        enqueueForReview({
+          id: makeReviewItemId(),
+          source: "single",
+          ...(filename ? { filename } : {}),
+          enqueuedAt: Date.now(),
+          declared,
+          verifyResponse: result,
+          reasons: result.reviewReasons,
+        });
+      } catch {
+        // Swallow — the queue is an in-memory affordance, not a hard
+        // dependency. We must not turn a successful verify into a 500.
+      }
+    }
     return NextResponse.json(result, {
       headers: {
         "X-RateLimit-Remaining": String(rl.remaining),

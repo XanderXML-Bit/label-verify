@@ -1,535 +1,1667 @@
 {
-  "generated_at": "2026-05-12T01:58:02.358Z",
-  "count": 33,
-  "note": "AI-generated label tranche, separate from deterministic SVG-derived corpus.",
-  "items": [
+  "schemaVersion": "1.0.0",
+  "corpusId": "ai-generated-labels-2026-05-11",
+  "generatedBy": "Codex built-in image_gen tool",
+  "purpose": "AI-generated realism and OCR/vision stress tranche for LabelVerify. These assets complement deterministic SVG labels; their prompt-declared fields must be treated as intended truth until visual transcription/audit confirms exact in-image text.",
+  "sourceDirectory": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743",
+  "excludedSourceFiles": [
+    "ig_0d57ecc6c7dba592016a02795c4dac81978fbaa828eec7fa3c.png"
+  ],
+  "validationPolicy": {
+    "initialStatus": "prompt_declared_pending_visual_validation",
+    "benchmarkUse": "Use for visual realism/OOD and robustness tests immediately; use for strict field-level accuracy only after manifest visualAudit.status is accepted and extractedTextOverrides are filled where text drift exists.",
+    "textCaveat": "AI image generators can alter small text. Prompt-declared fields are not automatically exact ground truth."
+  },
+  "images": [
     {
       "id": "ai-label-0001",
-      "slug": "mill-creek-pilsner-bottle",
-      "kind": "bottle",
-      "beverage_type": "beer",
-      "brand_name": "Mill Creek",
-      "class_type": "Pilsner",
-      "abv_percent": 5.2,
-      "net_contents": "12 FL OZ",
-      "gov_case": null,
-      "condition": "straight bottle photo",
-      "image": "test-data/ai-generated/labels/ai-label-0001-mill-creek-pilsner-bottle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0279c62ab48197a03ef2310cf5051f.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0001.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0279c62ab48197a03ef2310cf5051f.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0279c62ab48197a03ef2310cf5051f.png",
+        "generatedAtLocal": "2026-05-12T00:53:40.312Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "beer",
+      "conditionNotes": "bottle photo; normal lighting",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Mill Creek",
+        "classType": "Pilsner",
+        "alcoholByVolume": "5.2%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Mill Creek Brewing Co., Portland, OR",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0002",
-      "slug": "vespera-chardonnay-bottle",
-      "kind": "bottle",
-      "beverage_type": "wine",
-      "brand_name": "Vespera",
-      "class_type": "Chardonnay",
-      "abv_percent": 13.2,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "slight angle bottle back label",
-      "image": "test-data/ai-generated/labels/ai-label-0002-vespera-chardonnay-bottle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027a1531788197b219f191ca08c5a2.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0002.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027a1531788197b219f191ca08c5a2.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027a1531788197b219f191ca08c5a2.png",
+        "generatedAtLocal": "2026-05-12T00:54:46.489Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "wine bottle back label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Vespera",
+        "classType": "Chardonnay",
+        "alcoholByVolume": "13.2%",
+        "netContents": "750 mL",
+        "producerAddress": "Vespera Cellars, Napa, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0003",
-      "slug": "six-foxes-bourbon-bottle",
-      "kind": "bottle",
-      "beverage_type": "spirits",
-      "brand_name": "Six Foxes",
-      "class_type": "Bourbon Whiskey",
-      "abv_percent": 45,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "curved spirits bottle",
-      "image": "test-data/ai-generated/labels/ai-label-0003-six-foxes-bourbon-bottle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027a575190819790731c3349bb9ac6.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0003.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027a575190819790731c3349bb9ac6.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027a575190819790731c3349bb9ac6.png",
+        "generatedAtLocal": "2026-05-12T00:55:46.746Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "spirits bottle",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Six Foxes",
+        "classType": "Bourbon Whiskey",
+        "alcoholByVolume": "45.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Six Foxes Distilling, Louisville, KY",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0004",
-      "slug": "hibiscus-salt-vodka-soda-can",
-      "kind": "can",
-      "beverage_type": "rtd",
-      "brand_name": "Hibiscus + Salt",
-      "class_type": "Vodka Soda",
-      "abv_percent": 5,
-      "net_contents": "355 ml",
-      "gov_case": null,
-      "condition": "condensation can",
-      "image": "test-data/ai-generated/labels/ai-label-0004-hibiscus-salt-vodka-soda-can.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027a93a27c8197819e8e2a50bacb0e.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0004.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027a93a27c8197819e8e2a50bacb0e.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027a93a27c8197819e8e2a50bacb0e.png",
+        "generatedAtLocal": "2026-05-12T00:56:51.280Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "can",
+      "beverageType": "ready_to_drink",
+      "conditionNotes": "RTD can",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Hibiscus + Salt",
+        "classType": "Vodka Soda",
+        "alcoholByVolume": "5.0%",
+        "netContents": "355 mL",
+        "producerAddress": "Hibiscus + Salt Beverage Co., Austin, TX",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0005",
-      "slug": "marbled-hills-pinot-lowlight",
-      "kind": "bottle",
-      "beverage_type": "wine",
-      "brand_name": "Marbled Hills",
-      "class_type": "Pinot Noir",
-      "abv_percent": 14.1,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "low light",
-      "image": "test-data/ai-generated/labels/ai-label-0005-marbled-hills-pinot-lowlight.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027ad41dbc819780e5a6d0a7f78c37.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0005.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027ad41dbc819780e5a6d0a7f78c37.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027ad41dbc819780e5a6d0a7f78c37.png",
+        "generatedAtLocal": "2026-05-12T00:57:52.889Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "low light bottle",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Marbled Hills",
+        "classType": "Pinot Noir",
+        "alcoholByVolume": "14.1%",
+        "netContents": "750 mL",
+        "producerAddress": "Marbled Hills Winery, Sonoma, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0006",
-      "slug": "cold-iron-amber-glare",
-      "kind": "bottle",
-      "beverage_type": "beer",
-      "brand_name": "Cold Iron",
-      "class_type": "Amber Ale",
-      "abv_percent": 7.2,
-      "net_contents": "500 ml",
-      "gov_case": null,
-      "condition": "glare over label",
-      "image": "test-data/ai-generated/labels/ai-label-0006-cold-iron-amber-glare.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027b11db9c81979a94dddb9e2c0092.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0006.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027b11db9c81979a94dddb9e2c0092.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027b11db9c81979a94dddb9e2c0092.png",
+        "generatedAtLocal": "2026-05-12T00:59:02.551Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "beer",
+      "conditionNotes": "glare on bottle",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Cold Iron",
+        "classType": "Amber Ale",
+        "alcoholByVolume": "7.2%",
+        "netContents": "500 mL",
+        "producerAddress": "Cold Iron Brewing, Milwaukee, WI",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0007",
-      "slug": "solano-reach-tequila-side",
-      "kind": "bottle",
-      "beverage_type": "spirits",
-      "brand_name": "Solano Reach",
-      "class_type": "Tequila Blanco",
-      "abv_percent": 40,
-      "net_contents": "700 ml",
-      "gov_case": null,
-      "condition": "side neck label",
-      "image": "test-data/ai-generated/labels/ai-label-0007-solano-reach-tequila-side.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027b5749748197bbfeea06c6f92396.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0007.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027b5749748197bbfeea06c6f92396.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027b5749748197bbfeea06c6f92396.png",
+        "generatedAtLocal": "2026-05-12T01:00:11.608Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "side/neck label; compact warning",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Solano Reach",
+        "classType": "Tequila Blanco",
+        "alcoholByVolume": "40.0%",
+        "netContents": "700 mL",
+        "producerAddress": "Solano Reach Imports, San Diego, CA",
+        "countryOfOrigin": "Mexico",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0008",
-      "slug": "stones-throw-porter-angle",
-      "kind": "bottle",
-      "beverage_type": "beer",
-      "brand_name": "Stone's Throw",
-      "class_type": "Porter",
-      "abv_percent": 5.8,
-      "net_contents": "355 ml",
-      "gov_case": null,
-      "condition": "bad angle",
-      "image": "test-data/ai-generated/labels/ai-label-0008-stones-throw-porter-angle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027b9c96948197b198f6470317a36c.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0008.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027b9c96948197b198f6470317a36c.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027b9c96948197b198f6470317a36c.png",
+        "generatedAtLocal": "2026-05-12T01:01:18.099Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "beer",
+      "conditionNotes": "bad angle bottle",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Stone's Throw",
+        "classType": "Porter",
+        "alcoholByVolume": "5.8%",
+        "netContents": "355 mL",
+        "producerAddress": "Stone's Throw Brewing, Boulder, CO",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0009",
-      "slug": "cote-du-soir-rose-missing-warning",
-      "kind": "bottle",
-      "beverage_type": "wine",
-      "brand_name": "Cote du Soir",
-      "class_type": "Rose",
-      "abv_percent": 12.6,
-      "net_contents": "750 ml",
-      "gov_case": "X1",
-      "condition": "missing warning",
-      "image": "test-data/ai-generated/labels/ai-label-0009-cote-du-soir-rose-missing-warning.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027c9c61048197af2cc86fc3dfed43.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0009.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027c9c61048197af2cc86fc3dfed43.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027c9c61048197af2cc86fc3dfed43.png",
+        "generatedAtLocal": "2026-05-12T01:06:19.365Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "missing government warning",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "X1_MISSING_WARNING",
+      "promptDeclaredFields": {
+        "brandName": "Cote du Soir",
+        "classType": "Rose",
+        "alcoholByVolume": "12.6%",
+        "netContents": "750 mL",
+        "producerAddress": "Cote du Soir Cellars, Santa Barbara, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": null
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0010",
-      "slug": "mercers-reserve-vodka-titlecase-warning",
-      "kind": "bottle",
-      "beverage_type": "spirits",
-      "brand_name": "Mercer's Reserve",
-      "class_type": "Vodka",
-      "abv_percent": 40,
-      "net_contents": "750 ml",
-      "gov_case": "C1",
-      "condition": "title-case warning",
-      "image": "test-data/ai-generated/labels/ai-label-0010-mercers-reserve-vodka-titlecase-warning.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027d0c7a308197ad4b3bb8ed33f124.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0010.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027d0c7a308197ad4b3bb8ed33f124.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027d0c7a308197ad4b3bb8ed33f124.png",
+        "generatedAtLocal": "2026-05-12T01:07:44.526Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "title-case warning prefix",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "T1_PREFIX_TITLE_CASE",
+      "promptDeclaredFields": {
+        "brandName": "Mercer's Reserve",
+        "classType": "Vodka",
+        "alcoholByVolume": "40.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Mercer's Reserve Distilling, Denver, CO",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0011",
-      "slug": "tin-roof-saison-lowercase-warning",
-      "kind": "bottle",
-      "beverage_type": "beer",
-      "brand_name": "Tin Roof",
-      "class_type": "Saison",
-      "abv_percent": 6.1,
-      "net_contents": "500 ml",
-      "gov_case": "C2",
-      "condition": "lowercase warning",
-      "image": "test-data/ai-generated/labels/ai-label-0011-tin-roof-saison-lowercase-warning.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027dc62a848197be02691605a7b12c.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0011.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027dc62a848197be02691605a7b12c.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027dc62a848197be02691605a7b12c.png",
+        "generatedAtLocal": "2026-05-12T01:10:50.146Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "beer",
+      "conditionNotes": "lowercase warning prefix",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "T2_PREFIX_LOWERCASE",
+      "promptDeclaredFields": {
+        "brandName": "Tin Roof",
+        "classType": "Saison",
+        "alcoholByVolume": "6.1%",
+        "netContents": "500 mL",
+        "producerAddress": "Tin Roof Brewing, Nashville, TN",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0012",
-      "slug": "solstice-vermouth-foreign-warning",
-      "kind": "bottle",
-      "beverage_type": "fortified_wine",
-      "brand_name": "Solstice Vermouth",
-      "class_type": "Vermouth",
-      "abv_percent": 18,
-      "net_contents": "750 ml",
-      "gov_case": "X3",
-      "condition": "foreign warning only",
-      "image": "test-data/ai-generated/labels/ai-label-0012-solstice-vermouth-foreign-warning.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027e1b213081978b48b4505e4f0685.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0012.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027e1b213081978b48b4505e4f0685.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027e1b213081978b48b4505e4f0685.png",
+        "generatedAtLocal": "2026-05-12T01:12:06.817Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "fortified_wine",
+      "conditionNotes": "Spanish warning only",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "X3_WRONG_LANGUAGE",
+      "promptDeclaredFields": {
+        "brandName": "Solstice Vermouth",
+        "classType": "Vermouth",
+        "alcoholByVolume": "18.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Solstice Aperitif Co., Sacramento, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0013",
-      "slug": "five-sisters-riesling-glare",
-      "kind": "bottle",
-      "beverage_type": "wine",
-      "brand_name": "Five Sisters",
-      "class_type": "Riesling",
-      "abv_percent": 11.8,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "glare on warning",
-      "image": "test-data/ai-generated/labels/ai-label-0013-five-sisters-riesling-glare.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027e67e36881978702a17e5d1b1b3a.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0013.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027e67e36881978702a17e5d1b1b3a.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027e67e36881978702a17e5d1b1b3a.png",
+        "generatedAtLocal": "2026-05-12T01:13:32.443Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "glare over warning",
+      "intendedCompliance": "review",
+      "warningCase": "Q2_GLARE_WARNING",
+      "promptDeclaredFields": {
+        "brandName": "Five Sisters",
+        "classType": "Riesling",
+        "alcoholByVolume": "11.8%",
+        "netContents": "750 mL",
+        "producerAddress": "Five Sisters Winery, Traverse City, MI",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0014",
-      "slug": "latitude-seven-hazy-ipa-occlusion",
-      "kind": "can",
-      "beverage_type": "beer",
-      "brand_name": "Latitude Seven",
-      "class_type": "Hazy IPA",
-      "abv_percent": 6.8,
-      "net_contents": "16 FL OZ",
-      "gov_case": null,
-      "condition": "sticker occlusion",
-      "image": "test-data/ai-generated/labels/ai-label-0014-latitude-seven-hazy-ipa-occlusion.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027ebd93588197acb3eceecfada029.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0014.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027ebd93588197acb3eceecfada029.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027ebd93588197acb3eceecfada029.png",
+        "generatedAtLocal": "2026-05-12T01:15:29.933Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "can",
+      "beverageType": "beer",
+      "conditionNotes": "sticker/partial occlusion",
+      "intendedCompliance": "review",
+      "warningCase": "Q3_PARTIAL_OCCLUSION",
+      "promptDeclaredFields": {
+        "brandName": "Latitude Seven",
+        "classType": "Hazy IPA",
+        "alcoholByVolume": "6.8%",
+        "netContents": "16 FL OZ",
+        "producerAddress": "Latitude Seven Brewing, Seattle, WA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0015",
-      "slug": "northmast-rye-blur",
-      "kind": "bottle",
-      "beverage_type": "spirits",
-      "brand_name": "Northmast",
-      "class_type": "Rye Whiskey",
-      "abv_percent": 50,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "tilt blur low light",
-      "image": "test-data/ai-generated/labels/ai-label-0015-northmast-rye-blur.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027f331bb081978b1da9ce0e974330.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0015.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027f331bb081978b1da9ce0e974330.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027f331bb081978b1da9ce0e974330.png",
+        "generatedAtLocal": "2026-05-12T01:17:06.813Z",
+        "originalWidth": 1023,
+        "originalHeight": 1537
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "blur, tilt, low light",
+      "intendedCompliance": "review",
+      "warningCase": "Q4_BLUR_LOW_LIGHT",
+      "promptDeclaredFields": {
+        "brandName": "Northmast",
+        "classType": "Rye Whiskey",
+        "alcoholByVolume": "50.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Northmast Distilling, Minneapolis, MN",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0016",
-      "slug": "black-cardamom-mezcal-mini",
-      "kind": "bottle",
-      "beverage_type": "spirits",
-      "brand_name": "Black Cardamom",
-      "class_type": "Mezcal",
-      "abv_percent": 36,
-      "net_contents": "50 ml",
-      "gov_case": null,
-      "condition": "mini bottle",
-      "image": "test-data/ai-generated/labels/ai-label-0016-black-cardamom-mezcal-mini.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027f940a6881978c0a3b9aa2de50a7.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0016.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a027f940a6881978c0a3b9aa2de50a7.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027f940a6881978c0a3b9aa2de50a7.png",
+        "generatedAtLocal": "2026-05-12T01:18:36.894Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "mini spirits bottle",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Black Cardamom",
+        "classType": "Mezcal",
+        "alcoholByVolume": "36.0%",
+        "netContents": "50 mL",
+        "producerAddress": "Black Cardamom Imports, Phoenix, AZ",
+        "countryOfOrigin": "Mexico",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0017",
-      "slug": "otter-bay-pale-ale-flat",
-      "kind": "straight_label",
-      "beverage_type": "beer",
-      "brand_name": "Otter Bay",
-      "class_type": "Pale Ale",
-      "abv_percent": 5.6,
-      "net_contents": "12 FL OZ",
-      "gov_case": null,
-      "condition": "flat label proof",
-      "image": "test-data/ai-generated/labels/ai-label-0017-otter-bay-pale-ale-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028039e9dc8197a73a011bb0dc0c90.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0017.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a028039e9dc8197a73a011bb0dc0c90.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028039e9dc8197a73a011bb0dc0c90.png",
+        "generatedAtLocal": "2026-05-12T01:21:20.318Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "flat label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Otter Bay",
+        "classType": "Pale Ale",
+        "alcoholByVolume": "5.6%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Otter Bay Brewing, Portland, ME",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0018",
-      "slug": "roan-stone-merlot-flat",
-      "kind": "straight_label",
-      "beverage_type": "wine",
-      "brand_name": "Roan & Stone",
-      "class_type": "Merlot",
-      "abv_percent": 13.8,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "flat label proof",
-      "image": "test-data/ai-generated/labels/ai-label-0018-roan-stone-merlot-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0280910dc481978b167c486b4406fc.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0018.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0280910dc481978b167c486b4406fc.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0280910dc481978b167c486b4406fc.png",
+        "generatedAtLocal": "2026-05-12T01:23:32.373Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "wine",
+      "conditionNotes": "flat wine label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Roan & Stone",
+        "classType": "Merlot",
+        "alcoholByVolume": "13.8%",
+        "netContents": "750 mL",
+        "producerAddress": "Roan & Stone Cellars, Paso Robles, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0019",
-      "slug": "ashby-drake-gin-flat",
-      "kind": "straight_label",
-      "beverage_type": "spirits",
-      "brand_name": "Ashby & Drake",
-      "class_type": "London Dry Gin",
-      "abv_percent": 42,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "flat label proof",
-      "image": "test-data/ai-generated/labels/ai-label-0019-ashby-drake-gin-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0281155088819780db614331b09444.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0019.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0281155088819780db614331b09444.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0281155088819780db614331b09444.png",
+        "generatedAtLocal": "2026-05-12T01:24:57.023Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "spirits",
+      "conditionNotes": "flat spirits label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Ashby & Drake",
+        "classType": "London Dry Gin",
+        "alcoholByVolume": "42.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Ashby & Drake Distillery, Brooklyn, NY",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0020",
-      "slug": "garden-highball-vodka-soda-flat",
-      "kind": "straight_label",
-      "beverage_type": "rtd",
-      "brand_name": "Garden Highball",
-      "class_type": "Vodka Soda",
-      "abv_percent": 4.8,
-      "net_contents": "355 ml",
-      "gov_case": null,
-      "condition": "flat can-wrap label proof",
-      "image": "test-data/ai-generated/labels/ai-label-0020-garden-highball-vodka-soda-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02816a21e48197a6dbf874e49624da.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0020.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a02816a21e48197a6dbf874e49624da.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02816a21e48197a6dbf874e49624da.png",
+        "generatedAtLocal": "2026-05-12T01:26:33.693Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "ready_to_drink",
+      "conditionNotes": "flat RTD label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Garden Highball",
+        "classType": "Vodka Soda",
+        "alcoholByVolume": "4.8%",
+        "netContents": "355 mL",
+        "producerAddress": "Garden Highball Co., Austin, TX",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0021",
-      "slug": "saltwood-cabernet-lowlight-flat",
-      "kind": "straight_label",
-      "beverage_type": "wine",
-      "brand_name": "Saltwood",
-      "class_type": "Cabernet Sauvignon",
-      "abv_percent": 14,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "flat low-light label",
-      "image": "test-data/ai-generated/labels/ai-label-0021-saltwood-cabernet-lowlight-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0281cab5e481979c67b60c3a997faf.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0021.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0281cab5e481979c67b60c3a997faf.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0281cab5e481979c67b60c3a997faf.png",
+        "generatedAtLocal": "2026-05-12T01:28:03.573Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "wine",
+      "conditionNotes": "flat low-light label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Saltwood",
+        "classType": "Cabernet Sauvignon",
+        "alcoholByVolume": "14.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Saltwood Cellars, Sonoma, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0022",
-      "slug": "half-note-porter-missing-warning-flat",
-      "kind": "straight_label",
-      "beverage_type": "beer",
-      "brand_name": "Half-Note",
-      "class_type": "Porter",
-      "abv_percent": 6.3,
-      "net_contents": "12 FL OZ",
-      "gov_case": "X1",
-      "condition": "flat missing warning",
-      "image": "test-data/ai-generated/labels/ai-label-0022-half-note-porter-missing-warning-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028224b2b08197972495c9788b074a.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0022.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a028224b2b08197972495c9788b074a.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028224b2b08197972495c9788b074a.png",
+        "generatedAtLocal": "2026-05-12T01:30:03.623Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "flat missing warning",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "X1_MISSING_WARNING",
+      "promptDeclaredFields": {
+        "brandName": "Half-Note",
+        "classType": "Porter",
+        "alcoholByVolume": "6.3%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Half-Note Brewing, Chicago, IL",
+        "countryOfOrigin": "USA",
+        "governmentWarning": null
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0023",
-      "slug": "marrow-bone-aged-rum-titlecase-flat",
-      "kind": "straight_label",
-      "beverage_type": "spirits",
-      "brand_name": "Marrow & Bone",
-      "class_type": "Aged Rum",
-      "abv_percent": 43.5,
-      "net_contents": "750 ml",
-      "gov_case": "C1",
-      "condition": "flat title-case warning",
-      "image": "test-data/ai-generated/labels/ai-label-0023-marrow-bone-aged-rum-titlecase-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02829c8e988197929c6878ea2669e1.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0023.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a02829c8e988197929c6878ea2669e1.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02829c8e988197929c6878ea2669e1.png",
+        "generatedAtLocal": "2026-05-12T01:31:40.345Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "spirits",
+      "conditionNotes": "flat title-case prefix",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "T1_PREFIX_TITLE_CASE",
+      "promptDeclaredFields": {
+        "brandName": "Marrow & Bone",
+        "classType": "Aged Rum",
+        "alcoholByVolume": "43.5%",
+        "netContents": "750 mL",
+        "producerAddress": "Marrow & Bone Distilling, Tampa, FL",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0024",
-      "slug": "quiet-bear-wheat-lowercase-flat",
-      "kind": "straight_label",
-      "beverage_type": "beer",
-      "brand_name": "Quiet Bear",
-      "class_type": "Wheat Beer",
-      "abv_percent": 4.9,
-      "net_contents": "12 FL OZ",
-      "gov_case": "C2",
-      "condition": "flat lowercase warning",
-      "image": "test-data/ai-generated/labels/ai-label-0024-quiet-bear-wheat-lowercase-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0282fd60dc81979bac03142633c611.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0024.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0282fd60dc81979bac03142633c611.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0282fd60dc81979bac03142633c611.png",
+        "generatedAtLocal": "2026-05-12T01:33:24.190Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "flat lowercase prefix",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "T2_PREFIX_LOWERCASE",
+      "promptDeclaredFields": {
+        "brandName": "Quiet Bear",
+        "classType": "Wheat Beer",
+        "alcoholByVolume": "4.9%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Quiet Bear Brewing, Boise, ID",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0025",
-      "slug": "wandering-coyote-hazy-bottle",
-      "kind": "bottle",
-      "beverage_type": "beer",
-      "brand_name": "Wandering Coyote",
-      "class_type": "Hazy IPA",
-      "abv_percent": 6.9,
-      "net_contents": "16 FL OZ",
-      "gov_case": null,
-      "condition": "bottle glare",
-      "image": "test-data/ai-generated/labels/ai-label-0025-wandering-coyote-hazy-bottle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0283ce8d7081979b3c3ca300d133fb.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0025.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0283ce8d7081979b3c3ca300d133fb.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0283ce8d7081979b3c3ca300d133fb.png",
+        "generatedAtLocal": "2026-05-12T01:36:58.291Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "beer",
+      "conditionNotes": "bottle/can-style photo",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Wandering Coyote",
+        "classType": "Hazy IPA",
+        "alcoholByVolume": "6.9%",
+        "netContents": "16 FL OZ",
+        "producerAddress": "Wandering Coyote Brewing, Flagstaff, AZ",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0026",
-      "slug": "mira-vista-sauvignon-stain-flat",
-      "kind": "straight_label",
-      "beverage_type": "wine",
-      "brand_name": "Mira Vista",
-      "class_type": "Sauvignon Blanc",
-      "abv_percent": 12.9,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "flat stained label",
-      "image": "test-data/ai-generated/labels/ai-label-0026-mira-vista-sauvignon-stain-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02843b66108197ac84f7bbea4db9a5.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0026.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a02843b66108197ac84f7bbea4db9a5.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02843b66108197ac84f7bbea4db9a5.png",
+        "generatedAtLocal": "2026-05-12T01:38:35.963Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "wine",
+      "conditionNotes": "coffee-ring stain",
+      "intendedCompliance": "review",
+      "warningCase": "Q5_STAIN",
+      "promptDeclaredFields": {
+        "brandName": "Mira Vista",
+        "classType": "Sauvignon Blanc",
+        "alcoholByVolume": "12.9%",
+        "netContents": "750 mL",
+        "producerAddress": "Mira Vista Cellars, Monterey, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0027",
-      "slug": "argenton-riesling-bottle",
-      "kind": "bottle",
-      "beverage_type": "wine",
-      "brand_name": "Argenton",
-      "class_type": "Riesling",
-      "abv_percent": 11.5,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "bottle curvature",
-      "image": "test-data/ai-generated/labels/ai-label-0027-argenton-riesling-bottle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02849cdf488197804824f14b367b63.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0027.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a02849cdf488197804824f14b367b63.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02849cdf488197804824f14b367b63.png",
+        "generatedAtLocal": "2026-05-12T01:40:07.256Z",
+        "originalWidth": 1024,
+        "originalHeight": 1535
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "wine bottle",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Argenton",
+        "classType": "Riesling",
+        "alcoholByVolume": "11.5%",
+        "netContents": "750 mL",
+        "producerAddress": "Argenton Winery, Finger Lakes, NY",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0028",
-      "slug": "citrus-range-seltzer-can",
-      "kind": "can",
-      "beverage_type": "rtd",
-      "brand_name": "Citrus Range",
-      "class_type": "Hard Seltzer",
-      "abv_percent": 5,
-      "net_contents": "12 FL OZ",
-      "gov_case": null,
-      "condition": "condensation can",
-      "image": "test-data/ai-generated/labels/ai-label-0028-citrus-range-seltzer-can.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0285c08fc881979b4b6add9e9b7425.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0028.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0285c08fc881979b4b6add9e9b7425.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0285c08fc881979b4b6add9e9b7425.png",
+        "generatedAtLocal": "2026-05-12T01:44:54.828Z",
+        "originalWidth": 864,
+        "originalHeight": 1821
+      },
+      "format": "can",
+      "beverageType": "ready_to_drink",
+      "conditionNotes": "can label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Citrus Range",
+        "classType": "Hard Seltzer",
+        "alcoholByVolume": "5.0%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Citrus Range Beverage Co., Denver, CO",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0029",
-      "slug": "vagrant-tide-rum-flat-bent",
-      "kind": "straight_label",
-      "beverage_type": "spirits",
-      "brand_name": "Vagrant Tide",
-      "class_type": "White Rum",
-      "abv_percent": 37.5,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "flat bent corner",
-      "image": "test-data/ai-generated/labels/ai-label-0029-vagrant-tide-rum-flat-bent.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028695b3cc8197bf3818e65a11f1ee.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0029.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a028695b3cc8197bf3818e65a11f1ee.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028695b3cc8197bf3818e65a11f1ee.png",
+        "generatedAtLocal": "2026-05-12T01:48:51.182Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "spirits",
+      "conditionNotes": "flat spirits label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Vagrant Tide",
+        "classType": "White Rum",
+        "alcoholByVolume": "37.5%",
+        "netContents": "750 mL",
+        "producerAddress": "Vagrant Tide Spirits, Charleston, SC",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0030",
-      "slug": "cloister-hill-rye-lowlight-bottle",
-      "kind": "bottle",
-      "beverage_type": "spirits",
-      "brand_name": "Cloister Hill",
-      "class_type": "Rye Whiskey",
-      "abv_percent": 48,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "low-light bottle",
-      "image": "test-data/ai-generated/labels/ai-label-0030-cloister-hill-rye-lowlight-bottle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028704508c8197812e87cd8610c59d.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0030.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a028704508c8197812e87cd8610c59d.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a028704508c8197812e87cd8610c59d.png",
+        "generatedAtLocal": "2026-05-12T01:50:53.473Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "low-light bottle",
+      "intendedCompliance": "review",
+      "warningCase": "Q4_LOW_LIGHT",
+      "promptDeclaredFields": {
+        "brandName": "Cloister Hill",
+        "classType": "Rye Whiskey",
+        "alcoholByVolume": "48.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Cloister Hill Distilling, Louisville, KY",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0031",
-      "slug": "old-schoolhouse-zinfandel-upside-down-flat",
-      "kind": "straight_label",
-      "beverage_type": "wine",
-      "brand_name": "Old Schoolhouse",
-      "class_type": "Zinfandel",
-      "abv_percent": 14.4,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "upside-down flat label",
-      "image": "test-data/ai-generated/labels/ai-label-0031-old-schoolhouse-zinfandel-upside-down-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02877e97308197a9aa0b1fb1729df9.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0031.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a02877e97308197a9aa0b1fb1729df9.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02877e97308197a9aa0b1fb1729df9.png",
+        "generatedAtLocal": "2026-05-12T01:52:43.256Z",
+        "originalWidth": 1086,
+        "originalHeight": 1448
+      },
+      "format": "flat_label",
+      "beverageType": "wine",
+      "conditionNotes": "upside-down flat label",
+      "intendedCompliance": "review",
+      "warningCase": "Q6_ROTATED_180",
+      "promptDeclaredFields": {
+        "brandName": "Old Schoolhouse",
+        "classType": "Zinfandel",
+        "alcoholByVolume": "14.4%",
+        "netContents": "750 mL",
+        "producerAddress": "Old Schoolhouse Cellars, Lodi, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0032",
-      "slug": "tin-roof-saison-missing-comma-flat",
-      "kind": "straight_label",
-      "beverage_type": "beer",
-      "brand_name": "Tin Roof",
-      "class_type": "Saison",
-      "abv_percent": 6.1,
-      "net_contents": "500 ml",
-      "gov_case": "T3",
-      "condition": "flat missing comma warning",
-      "image": "test-data/ai-generated/labels/ai-label-0032-tin-roof-saison-missing-comma-flat.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0287ec59348197ad2068fd7784f089.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0032.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a0287ec59348197ad2068fd7784f089.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a0287ec59348197ad2068fd7784f089.png",
+        "generatedAtLocal": "2026-05-12T01:54:53.202Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "missing comma after Surgeon General",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "X4_MISSING_COMMA",
+      "promptDeclaredFields": {
+        "brandName": "Tin Roof",
+        "classType": "Saison",
+        "alcoholByVolume": "6.1%",
+        "netContents": "500 mL",
+        "producerAddress": "Tin Roof Brewing, Nashville, TN",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     },
     {
       "id": "ai-label-0033",
-      "slug": "five-sisters-sparkling-glare-bottle",
-      "kind": "bottle",
-      "beverage_type": "wine",
-      "brand_name": "Five Sisters",
-      "class_type": "Sparkling Wine",
-      "abv_percent": 12,
-      "net_contents": "750 ml",
-      "gov_case": null,
-      "condition": "bottle glare on warning",
-      "image": "test-data/ai-generated/labels/ai-label-0033-five-sisters-sparkling-glare-bottle.jpg",
-      "original": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02886de1e48197b79a77757626ed91.png",
-      "status": "needs_visual_transcription_validation",
-      "notes": "AI-generated raster image. Use for visual robustness; exact text must be visually audited before using as ground-truth benchmark item."
+      "image": "labels/ai-label-0033.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d57ecc6c7dba592016a02886de1e48197b79a77757626ed91.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a02886de1e48197b79a77757626ed91.png",
+        "generatedAtLocal": "2026-05-12T01:56:35.742Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "diagonal glare over warning",
+      "intendedCompliance": "review",
+      "warningCase": "Q2_GLARE_WARNING",
+      "promptDeclaredFields": {
+        "brandName": "Five Sisters",
+        "classType": "Sparkling Wine",
+        "alcoholByVolume": "12.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Five Sisters Winery, Traverse City, MI",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0034",
+      "image": "labels/ai-label-0034.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a0289f3b1488195a640b7cd9cdb0c6f.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a0289f3b1488195a640b7cd9cdb0c6f.png",
+        "generatedAtLocal": "2026-05-12T02:02:19.842Z",
+        "originalWidth": 1536,
+        "originalHeight": 1024
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "flat regulatory back-label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Riverbend Works",
+        "classType": "Kolsch Style Ale",
+        "alcoholByVolume": "4.7%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Riverbend Works Brewing Co., Dayton, OH",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0035",
+      "image": "labels/ai-label-0035.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028a2d06d48195aae13c97114d930e.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028a2d06d48195aae13c97114d930e.png",
+        "generatedAtLocal": "2026-05-12T02:03:19.460Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "bottle back label with glare",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Hollow Pine Cellars",
+        "classType": "Red Table Wine",
+        "alcoholByVolume": "13.6%",
+        "netContents": "750 mL",
+        "producerAddress": "Hollow Pine Cellars, Walla Walla, WA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0036",
+      "image": "labels/ai-label-0036.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028a686f0081959cd3bb38a588e9ee.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028a686f0081959cd3bb38a588e9ee.png",
+        "generatedAtLocal": "2026-05-12T02:04:19.304Z",
+        "originalWidth": 1536,
+        "originalHeight": 1024
+      },
+      "format": "flat_label",
+      "beverageType": "spirits",
+      "conditionNotes": "flat title-case warning prefix",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "T1_PREFIX_TITLE_CASE",
+      "promptDeclaredFields": {
+        "brandName": "Copper Gate Distilling",
+        "classType": "Small Batch Vodka",
+        "alcoholByVolume": "40%",
+        "netContents": "750 mL",
+        "producerAddress": "Copper Gate Distilling, St. Louis, MO",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0037",
+      "image": "labels/ai-label-0037.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028aa42a188195b6605972c20561d5.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028aa42a188195b6605972c20561d5.png",
+        "generatedAtLocal": "2026-05-12T02:05:18.577Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "can",
+      "beverageType": "cider",
+      "conditionNotes": "curved can label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Mountain Lark Cider",
+        "classType": "Dry Hard Cider",
+        "alcoholByVolume": "6.2%",
+        "netContents": "16 FL OZ",
+        "producerAddress": "Mountain Lark Cidery, Burlington, VT",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0038",
+      "image": "labels/ai-label-0038.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028adf823c81958dd9a6cf52c7f979.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028adf823c81958dd9a6cf52c7f979.png",
+        "generatedAtLocal": "2026-05-12T02:06:49.906Z",
+        "originalWidth": 1536,
+        "originalHeight": 1024
+      },
+      "format": "flat_label",
+      "beverageType": "wine",
+      "conditionNotes": "flat label with wrinkle/stain",
+      "intendedCompliance": "review",
+      "warningCase": "Q5_STAIN_WRINKLE",
+      "promptDeclaredFields": {
+        "brandName": "Lumen Ridge",
+        "classType": "Sparkling Brut",
+        "alcoholByVolume": "12.1%",
+        "netContents": "750 mL",
+        "producerAddress": "Lumen Ridge Winery, Sonoma, CA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0039",
+      "image": "labels/ai-label-0039.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028b39cf1c81959570e90255ef7265.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028b39cf1c81959570e90255ef7265.png",
+        "generatedAtLocal": "2026-05-12T02:09:25.361Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "warm low light and slight blur",
+      "intendedCompliance": "review",
+      "warningCase": "Q4_LOW_LIGHT_BLUR",
+      "promptDeclaredFields": {
+        "brandName": "Black Sail House",
+        "classType": "Dark Rum",
+        "alcoholByVolume": "43.0%",
+        "netContents": "750 mL",
+        "producerAddress": "Black Sail House, Tampa, FL",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0040",
+      "image": "labels/ai-label-0040.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028c0302d881958caf45015a7a7e7d.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028c0302d881958caf45015a7a7e7d.png",
+        "generatedAtLocal": "2026-05-12T02:11:12.785Z",
+        "originalWidth": 1536,
+        "originalHeight": 1024
+      },
+      "format": "flat_label",
+      "beverageType": "fortified_wine",
+      "conditionNotes": "missing colon after GOVERNMENT WARNING",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "X5_MISSING_PREFIX_COLON",
+      "promptDeclaredFields": {
+        "brandName": "South Harbor Cellars",
+        "classType": "Fortified Red Wine",
+        "alcoholByVolume": "19.0%",
+        "netContents": "500 mL",
+        "producerAddress": "South Harbor Cellars, Richmond, VA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0041",
+      "image": "labels/ai-label-0041.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028c42718c8195a0e6a6190a5bdc53.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028c42718c8195a0e6a6190a5bdc53.png",
+        "generatedAtLocal": "2026-05-12T02:12:17.581Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "frosted bottle angled",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Cedar Moon",
+        "classType": "Rice Wine",
+        "alcoholByVolume": "15.5%",
+        "netContents": "720 mL",
+        "producerAddress": "Cedar Moon Fermentation Co., Portland, OR",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0042",
+      "image": "labels/ai-label-0042.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028c82cd2881959bc70ec72af8e91f.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028c82cd2881959bc70ec72af8e91f.png",
+        "generatedAtLocal": "2026-05-12T02:13:24.279Z",
+        "originalWidth": 1536,
+        "originalHeight": 1024
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "flat label missing warning",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "X1_MISSING_WARNING",
+      "promptDeclaredFields": {
+        "brandName": "Tall Window Brewing",
+        "classType": "Italian Pilsner",
+        "alcoholByVolume": "5.1%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Tall Window Brewing, Madison, WI",
+        "countryOfOrigin": "USA",
+        "governmentWarning": null
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0043",
+      "image": "labels/ai-label-0043.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028cc53d348195893c1ab79dbf7c19.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028cc53d348195893c1ab79dbf7c19.png",
+        "generatedAtLocal": "2026-05-12T02:14:33.152Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "can",
+      "beverageType": "ready_to_drink",
+      "conditionNotes": "slim can lowercase prefix",
+      "intendedCompliance": "non_compliant",
+      "warningCase": "T2_PREFIX_LOWERCASE",
+      "promptDeclaredFields": {
+        "brandName": "Basil Spring",
+        "classType": "Gin Highball",
+        "alcoholByVolume": "7.0%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Basil Spring Beverage Co., Austin, TX",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0044",
+      "image": "labels/ai-label-0044.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028d0a6f948195aeaf93ec921cf360.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028d0a6f948195aeaf93ec921cf360.png",
+        "generatedAtLocal": "2026-05-12T02:15:46.973Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "flat_label",
+      "beverageType": "spirits",
+      "conditionNotes": "importer back label",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Sierra Lamparo",
+        "classType": "Tequila Reposado",
+        "alcoholByVolume": "40%",
+        "netContents": "750 mL",
+        "producerAddress": "Sierra Lamparo Imports, San Diego, CA",
+        "countryOfOrigin": "Mexico",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0045",
+      "image": "labels/ai-label-0045.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028d543f008195b74837637bb60c28.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028d543f008195b74837637bb60c28.png",
+        "generatedAtLocal": "2026-05-12T02:17:00.790Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "thumb partially covers producer address",
+      "intendedCompliance": "review",
+      "warningCase": "Q3_PARTIAL_OCCLUSION",
+      "promptDeclaredFields": {
+        "brandName": "Valle D'Oro",
+        "classType": "Pinot Grigio",
+        "alcoholByVolume": "12.5%",
+        "netContents": "750 mL",
+        "producerAddress": "Valle D'Oro USA, New York, NY",
+        "countryOfOrigin": "Italy",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0046",
+      "image": "labels/ai-label-0046.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028d9df9b4819592a977523e00178f.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028d9df9b4819592a977523e00178f.png",
+        "generatedAtLocal": "2026-05-12T02:18:33.452Z",
+        "originalWidth": 1254,
+        "originalHeight": 1254
+      },
+      "format": "flat_label",
+      "beverageType": "mead",
+      "conditionNotes": "warning intentionally tiny",
+      "intendedCompliance": "review",
+      "warningCase": "S2_WARNING_TOO_SMALL",
+      "promptDeclaredFields": {
+        "brandName": "Golden Hive",
+        "classType": "Traditional Mead",
+        "alcoholByVolume": "11.0%",
+        "netContents": "375 mL",
+        "producerAddress": "Golden Hive Meadery, Asheville, NC",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0047",
+      "image": "labels/ai-label-0047.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028dfabff08195981532a2665140b1.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028dfabff08195981532a2665140b1.png",
+        "generatedAtLocal": "2026-05-12T02:19:48.688Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "wine",
+      "conditionNotes": "flash glare crosses class/type",
+      "intendedCompliance": "review",
+      "warningCase": "Q2_FLASH_GLARE",
+      "promptDeclaredFields": {
+        "brandName": "Sunfall Vineyard",
+        "classType": "Skin-Contact White Wine",
+        "alcoholByVolume": "13.1%",
+        "netContents": "750 mL",
+        "producerAddress": "Sunfall Vineyard, Yakima, WA",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0048",
+      "image": "labels/ai-label-0048.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028e45f0188195a96852e3f2c1643b.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028e45f0188195a96852e3f2c1643b.png",
+        "generatedAtLocal": "2026-05-12T02:21:06.493Z",
+        "originalWidth": 1536,
+        "originalHeight": 1024
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "dark background light text",
+      "intendedCompliance": "compliant",
+      "warningCase": "C0",
+      "promptDeclaredFields": {
+        "brandName": "Night Orchard",
+        "classType": "Oatmeal Stout",
+        "alcoholByVolume": "6.7%",
+        "netContents": "1 PT 0 FL OZ",
+        "producerAddress": "Night Orchard Brewing, Cleveland, OH",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0049",
+      "image": "labels/ai-label-0049.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028e908cbc81959328942d3161671e.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028e908cbc81959328942d3161671e.png",
+        "generatedAtLocal": "2026-05-12T02:22:18.268Z",
+        "originalWidth": 1024,
+        "originalHeight": 1536
+      },
+      "format": "bottle",
+      "beverageType": "spirits",
+      "conditionNotes": "mini bottle, tiny text",
+      "intendedCompliance": "review",
+      "warningCase": "S2_MINI_TINY_TEXT",
+      "promptDeclaredFields": {
+        "brandName": "Ember Vale",
+        "classType": "Cinnamon Liqueur",
+        "alcoholByVolume": "32%",
+        "netContents": "50 mL",
+        "producerAddress": "Ember Vale Spirits, Louisville, KY",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
+    },
+    {
+      "id": "ai-label-0050",
+      "image": "labels/ai-label-0050.jpg",
+      "source": {
+        "tool": "built-in image_gen",
+        "originalFile": "ig_0d34551f0105b334016a028ed8f55c8195924f06de2f72df58.png",
+        "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028ed8f55c8195924f06de2f72df58.png",
+        "generatedAtLocal": "2026-05-12T02:23:39.433Z",
+        "originalWidth": 1536,
+        "originalHeight": 1024
+      },
+      "format": "flat_label",
+      "beverageType": "beer",
+      "conditionNotes": "flat label upside-down",
+      "intendedCompliance": "review",
+      "warningCase": "Q6_ROTATED_180",
+      "promptDeclaredFields": {
+        "brandName": "Little Quarry",
+        "classType": "Hefeweizen",
+        "alcoholByVolume": "5.4%",
+        "netContents": "12 FL OZ",
+        "producerAddress": "Little Quarry Brewing, Boise, ID",
+        "countryOfOrigin": "USA",
+        "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+      },
+      "visualAudit": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null,
+        "notes": [],
+        "strictBenchmarkReady": false
+      }
     }
   ]
 }

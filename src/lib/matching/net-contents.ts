@@ -34,7 +34,10 @@ export function compareNetContents(
   const dMl = toMl(declared);
   const eMl = toMl(extracted);
   const pass = Math.abs(dMl - eMl) <= ML_TOLERANCE;
-  const review = pass && extractedConfidence < 0.6;
+  // Floor bumped from 0.60 → 0.70 to align with the intelligence-first
+  // deferral policy in verify.ts: when the extractor isn't confident,
+  // prefer a human reviewer over a possibly-wrong PASS.
+  const review = pass && extractedConfidence < 0.7;
   return {
     field: "net_contents",
     status: review ? "review" : pass ? "pass" : "fail",

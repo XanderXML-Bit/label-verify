@@ -60,6 +60,15 @@ export const BAKEOFF_TECHNIQUES: readonly string[] = [
   "T6",
   "T6b",
   "T6c",
+  "T6d",
+  "T6e",
+  "T7",
+  "T7b",
+  "T8",
+  "T9",
+  "T10",
+  "T11",
+  "T12",
   "C1",
 ];
 
@@ -511,6 +520,434 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       }
       const extractor = new mod.GeminiProExtractor({ apiKey });
       return new VisionExtractorRunner("T6c", extractor, false);
+    },
+  },
+  // ─── Frontier 2026 candidates (T6d / T6e / T7 / T7b / T8 / T9 / T10 /
+  // T11 / T12) ──────────────────────────────────────────────────────────────
+  //
+  // The user's intelligence-first priority calls for the bake-off to cover
+  // the 2026 frontier across every major provider — not just the
+  // Gemini/GPT-4o/Sonnet trio. These factories route through OpenRouter
+  // (https://openrouter.ai), which proxies dozens of providers behind an
+  // OpenAI-compatible API and is reachable with the existing `openai`
+  // dependency. Each factory hard-codes the per-1M token pricing the
+  // caller saw on OpenRouter's published table at the user's knowledge
+  // cutoff (2026-05); a comment flags any rate that's an estimate.
+  //
+  // Model availability caveat: OpenRouter's catalogue moves faster than
+  // this file. If a slug is renamed or paused upstream the build() call
+  // will surface OpenRouter's 404 body verbatim; that's the right failure
+  // mode — we want the operator to update the slug, not silently substitute.
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    // T6d — Gemini 3 Pro (frontier Google tier). Prefer direct Google SDK
+    // by bumping GeminiProExtractor's modelVersion if the env hints the
+    // direct path is available; otherwise route via OpenRouter so the
+    // candidate is testable even before @google/generative-ai catches up
+    // to the gemini-3-* line.
+    id: "T6d",
+    networkRequired: true,
+    build: async () => {
+      const directKey = process.env.GOOGLE_API_KEY;
+      const routerKey = process.env.OPENROUTER_API_KEY;
+      // Direct Google SDK path: only taken if the operator explicitly opts
+      // in (MODEL_GEMINI_3_DIRECT=1). The SDK may still 404 on the slug at
+      // any moment, so the OpenRouter fallback below is the safer default.
+      if (directKey && process.env.MODEL_GEMINI_3_DIRECT === "1") {
+        let mod: {
+          GeminiProExtractor: new (opts: {
+            apiKey: string;
+            modelVersion?: string;
+          }) => Extractor;
+        };
+        try {
+          mod = (await import("../src/lib/vision/gemini")) as typeof mod;
+        } catch (err) {
+          throw new Error(
+            `T6d extractor module not available: ${(err as Error).message}. ` +
+              `Expected src/lib/vision/gemini.ts to export GeminiProExtractor.`,
+          );
+        }
+        const extractor = new mod.GeminiProExtractor({
+          apiKey: directKey,
+          modelVersion: process.env.MODEL_GEMINI_3_PRO ?? "gemini-3-pro-preview",
+        });
+        return new VisionExtractorRunner("T6d", extractor, false);
+      }
+      if (!routerKey) {
+        throw new Error(
+          "T6d requires OPENROUTER_API_KEY (Gemini 3 Pro via OpenRouter). " +
+            "Or set GOOGLE_API_KEY + MODEL_GEMINI_3_DIRECT=1 to use the " +
+            "direct Google SDK path if Gemini 3.x is reachable there.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T6d extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      // Estimated pricing — refresh from https://openrouter.ai/google/gemini-3-pro-preview
+      // when the public listing lands.
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey: routerKey,
+        modelSlug: "google/gemini-3-pro-preview",
+        pricing: { inputPer1M: 2.5, outputPer1M: 10 }, // TODO: confirm vs OpenRouter
+        structuredOutput: true,
+      });
+      return new VisionExtractorRunner("T6d", extractor, false);
+    },
+  },
+  {
+    // T6e — Gemini 3 Flash Lite (cheap & fast frontier Google tier).
+    // Routed via OpenRouter because the direct @google/generative-ai SDK
+    // may not expose the flash-lite preview slug yet.
+    id: "T6e",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T6e requires OPENROUTER_API_KEY (Gemini 3 Flash Lite via OpenRouter). " +
+            "See https://openrouter.ai/models for the current slug.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T6e extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        modelSlug: "google/gemini-3-flash-lite-preview",
+        // Estimated: the flash-lite tier historically prices at ~0.10/0.40 per 1M.
+        pricing: { inputPer1M: 0.1, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        structuredOutput: true,
+      });
+      return new VisionExtractorRunner("T6e", extractor, false);
+    },
+  },
+  {
+    // T7 — GPT-5 (OpenAI frontier). Routed via OpenRouter since the direct
+    // openai SDK may lag on the gpt-5 model slug at the user's cutoff;
+    // bumping the GPT4oFullExtractor default would silently break callers
+    // still on gpt-4o, so a separate technique ID is the safer wiring.
+    id: "T7",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T7 requires OPENROUTER_API_KEY (GPT-5 via OpenRouter). " +
+            "See https://openrouter.ai/openai/gpt-5 for the current slug + pricing.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T7 extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        modelSlug: "openai/gpt-5",
+        // GPT-5 list pricing as of 2026-05 (OpenRouter): refresh from the
+        // model page if OpenAI re-tiers.
+        pricing: { inputPer1M: 5, outputPer1M: 20 }, // TODO: confirm vs OpenRouter
+        structuredOutput: true,
+      });
+      return new VisionExtractorRunner("T7", extractor, false);
+    },
+  },
+  {
+    // T7b — GPT-5 nano (OpenAI's smallest, fastest frontier tier).
+    id: "T7b",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T7b requires OPENROUTER_API_KEY (GPT-5 nano via OpenRouter). " +
+            "See https://openrouter.ai/openai/gpt-5-nano for the current slug + pricing.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T7b extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        modelSlug: "openai/gpt-5-nano",
+        pricing: { inputPer1M: 0.1, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        structuredOutput: true,
+      });
+      return new VisionExtractorRunner("T7b", extractor, false);
+    },
+  },
+  {
+    // T8 — GPT-OSS-120B (open-weights frontier). Useful as a self-hosting
+    // candidate: if accuracy is within tolerance we can pin a private
+    // deployment later. OpenRouter's structured-output support for
+    // open-weight models is patchy, so structuredOutput stays false.
+    id: "T8",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T8 requires OPENROUTER_API_KEY (GPT-OSS-120B via OpenRouter). " +
+            "See https://openrouter.ai/openai/gpt-oss-120b for the current slug.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T8 extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        modelSlug: "openai/gpt-oss-120b",
+        // Open-weight pricing on OpenRouter typically sits well under the
+        // frontier closed-source rates; estimate refreshable from the
+        // OpenRouter model page.
+        pricing: { inputPer1M: 0.3, outputPer1M: 0.5 }, // TODO: confirm vs OpenRouter
+        structuredOutput: false,
+      });
+      return new VisionExtractorRunner("T8", extractor, false);
+    },
+  },
+  {
+    // T9 — NVIDIA Nemotron (vision-language tuned). Slug guess based on
+    // OpenRouter's nvidia/* namespace; refresh if the catalogue moves.
+    id: "T9",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T9 requires OPENROUTER_API_KEY (NVIDIA Nemotron via OpenRouter). " +
+            "See https://openrouter.ai/models?q=nemotron for the current slug.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T9 extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        // TODO: confirm — Nemotron 3 Super may also appear as
+        // `nvidia/nemotron-3-super`. The nano-9b-v2 listing is the safer
+        // bet today; bump if Super is GA on OpenRouter.
+        modelSlug: "nvidia/nemotron-nano-9b-v2",
+        pricing: { inputPer1M: 0.2, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        structuredOutput: false,
+      });
+      return new VisionExtractorRunner("T9", extractor, false);
+    },
+  },
+  {
+    // T10 — Mistral Pixtral Large (Mistral's frontier vision tier).
+    id: "T10",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T10 requires OPENROUTER_API_KEY (Mistral Pixtral Large via OpenRouter). " +
+            "See https://openrouter.ai/mistralai/pixtral-large-latest for the current slug.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T10 extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        modelSlug: "mistralai/pixtral-large-latest",
+        pricing: { inputPer1M: 2, outputPer1M: 6 }, // TODO: confirm vs OpenRouter
+        structuredOutput: false,
+      });
+      return new VisionExtractorRunner("T10", extractor, false);
+    },
+  },
+  {
+    // T11 — Llama 3.x Vision (open-weight vision baseline).
+    id: "T11",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T11 requires OPENROUTER_API_KEY (Llama 3.2 90B Vision via OpenRouter). " +
+            "See https://openrouter.ai/meta-llama/llama-3.2-90b-vision-instruct for the current slug.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T11 extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey,
+        modelSlug: "meta-llama/llama-3.2-90b-vision-instruct",
+        pricing: { inputPer1M: 0.4, outputPer1M: 0.4 }, // TODO: confirm vs OpenRouter
+        structuredOutput: false,
+      });
+      return new VisionExtractorRunner("T11", extractor, false);
+    },
+  },
+  {
+    // T12 — Claude Opus 4.x (Anthropic's frontier 1M-context tier). We
+    // prefer the direct Anthropic SDK path (ClaudeOpusExtractor) over the
+    // OpenRouter proxy when ANTHROPIC_API_KEY is set, since direct calls
+    // expose Opus's full context window and prompt-caching surface. Falls
+    // back to OpenRouter only if the operator hasn't wired the Anthropic
+    // key — useful for bake-off operators who consolidate billing there.
+    id: "T12",
+    networkRequired: true,
+    build: async () => {
+      const directKey = process.env.ANTHROPIC_API_KEY;
+      const routerKey = process.env.OPENROUTER_API_KEY;
+      if (directKey) {
+        let mod: {
+          ClaudeOpusExtractor: new (opts: {
+            apiKey: string;
+            modelVersion?: string;
+          }) => Extractor;
+        };
+        try {
+          mod = (await import("../src/lib/vision/anthropic")) as typeof mod;
+        } catch (err) {
+          throw new Error(
+            `T12 extractor module not available: ${(err as Error).message}. ` +
+              `Expected src/lib/vision/anthropic.ts to export ClaudeOpusExtractor.`,
+          );
+        }
+        const extractor = new mod.ClaudeOpusExtractor({
+          apiKey: directKey,
+          modelVersion: process.env.MODEL_CLAUDE_OPUS ?? undefined,
+        });
+        return new VisionExtractorRunner("T12", extractor, false);
+      }
+      if (!routerKey) {
+        throw new Error(
+          "T12 requires ANTHROPIC_API_KEY (direct, preferred) or " +
+            "OPENROUTER_API_KEY (proxied via OpenRouter). Set one in .env.local.",
+        );
+      }
+      let mod: {
+        OpenRouterExtractor: new (opts: {
+          apiKey: string;
+          modelSlug: string;
+          pricing: { inputPer1M: number; outputPer1M: number };
+          structuredOutput?: boolean;
+        }) => Extractor;
+      };
+      try {
+        mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+      } catch (err) {
+        throw new Error(
+          `T12 extractor module not available: ${(err as Error).message}. ` +
+            `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+        );
+      }
+      const extractor = new mod.OpenRouterExtractor({
+        apiKey: routerKey,
+        modelSlug: "anthropic/claude-opus-4-1",
+        // Opus list price on OpenRouter matches the direct Anthropic table.
+        pricing: { inputPer1M: 15, outputPer1M: 75 },
+        structuredOutput: false, // Anthropic Messages API doesn't honour json_schema
+      });
+      return new VisionExtractorRunner("T12", extractor, false);
     },
   },
 ];

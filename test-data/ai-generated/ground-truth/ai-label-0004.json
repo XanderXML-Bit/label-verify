@@ -1,0 +1,33 @@
+{
+  "id": "ai-label-0004",
+  "image": "labels/ai-label-0004.jpg",
+  "source": {
+    "tool": "built-in image_gen",
+    "originalFile": "ig_0d57ecc6c7dba592016a027a93a27c8197819e8e2a50bacb0e.png",
+    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d57ecc6c7dba592016a027a93a27c8197819e8e2a50bacb0e.png",
+    "generatedAtLocal": "2026-05-12T00:56:51.280Z",
+    "originalWidth": 1024,
+    "originalHeight": 1536
+  },
+  "format": "can",
+  "beverageType": "ready_to_drink",
+  "conditionNotes": "RTD can",
+  "intendedCompliance": "compliant",
+  "warningCase": "C0",
+  "promptDeclaredFields": {
+    "brandName": "Hibiscus + Salt",
+    "classType": "Vodka Soda",
+    "alcoholByVolume": "5.0%",
+    "netContents": "355 mL",
+    "producerAddress": "Hibiscus + Salt Beverage Co., Austin, TX",
+    "countryOfOrigin": "USA",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+  },
+  "visualAudit": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null,
+    "notes": [],
+    "strictBenchmarkReady": false
+  }
+}

@@ -52,7 +52,9 @@ export function compareAbv(
   const delta = Math.abs(declared - extracted);
   const pass = delta <= tol;
   // Even a passing match returns REVIEW if the extractor confidence is low.
-  const review = pass && extractedConfidence < 0.6;
+  // Floor bumped from 0.60 → 0.70 to align with the intelligence-first
+  // deferral policy: when the extractor isn't confident, prefer a human.
+  const review = pass && extractedConfidence < 0.7;
   return {
     field: "abv_percent",
     status: review ? "review" : pass ? "pass" : "fail",

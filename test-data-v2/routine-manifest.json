@@ -1,0 +1,84 @@
+{
+  "$comment": "Audit trail for the LabelVerify routine-test subset. The runtime ID list lives in benchmarks/routine.ts; this file is the human-readable index that explains why each label was picked. If you change one, change the other in the same commit. See docs/MODEL-SELECTION.md §3.5 for the policy on routine vs. full bake-off.",
+  "version": 1,
+  "corpus": "test-data-v2",
+  "size": 15,
+  "rationale": "Hand-curated minimum-overlap subset covering every important axis: beverage type (beer / wine / spirits / fortified-wine), government-warning non-compliance taxonomy (X1 / T1 / C1 / B1 / S2 / X3), degradation classes (perspective / lowlight / occlusion / curved), and historically-tricky cases (stylized all-caps brand, small container). Reproducibility matters more than coverage maximization here — a routine run today must compare apples-to-apples with the same run last week, which is why the set is committed rather than sampled.",
+  "labels": [
+    {
+      "id": "syn-beer-0001",
+      "axis": "compliant beer",
+      "reason": "Synthetic beer, 200 ml, single-brand archetype, gov_warning_case=null. Baseline pass case for the beer beverage type."
+    },
+    {
+      "id": "syn-wine-0002",
+      "axis": "compliant wine",
+      "reason": "Synthetic wine, 355 ml, single-brand archetype, gov_warning_case=null. Baseline pass case for the wine beverage type."
+    },
+    {
+      "id": "syn-spirits-0001",
+      "axis": "compliant spirits",
+      "reason": "Synthetic spirits (Fox's Lantern), 355 ml, gov_warning_case=null. Baseline pass case for the distilled-spirits beverage type."
+    },
+    {
+      "id": "syn-beer-0019",
+      "axis": "X1 — warning missing",
+      "reason": "Government warning entirely absent. The hardest-fail case in the taxonomy; routine must catch it."
+    },
+    {
+      "id": "syn-beer-0007",
+      "axis": "T1 — word substitution",
+      "reason": "Warning body contains a paraphrased word ('issues' for 'problems'). Exercises the exact-text regulation check, not just presence detection."
+    },
+    {
+      "id": "syn-spirits-0010",
+      "axis": "C1 — title-case prefix",
+      "reason": "Prefix rendered as 'Government Warning:' instead of 'GOVERNMENT WARNING:'. Exercises the all-caps prefix detector independently of the body text."
+    },
+    {
+      "id": "syn-beer-0014",
+      "axis": "B1 — prefix not bold",
+      "reason": "Prefix in regular font weight (matches the body). Exercises the bold-prefix detector that pixel-density heuristics alone are weak on."
+    },
+    {
+      "id": "syn-beer-0017",
+      "axis": "S2 — below size minimum",
+      "reason": "100 ml container with prefix glyph below the 1 mm minimum. Exercises the size-vs-container-volume rule (§ 16.22)."
+    },
+    {
+      "id": "syn-fortified_wine-0006",
+      "axis": "X3 — Spanish-only / English missing",
+      "reason": "Foreign-language paraphrase present but the regulated English statement is absent. Routine must not silently pass bilingual fakeouts."
+    },
+    {
+      "id": "deg-beer-0002",
+      "axis": "perspective-degraded compliant",
+      "reason": "Compliant content (gov_warning_case=null) under 9° perspective skew. Catches preprocessor / homography regressions independently of any warning fault."
+    },
+    {
+      "id": "deg-wine-0002",
+      "axis": "lowlight-degraded compliant",
+      "reason": "Compliant content with lowlight:0.35 illumination drop. Catches CLAHE / tone-curve preprocessor regressions; OCR-only baselines historically degrade fast here."
+    },
+    {
+      "id": "deg-beer-0001",
+      "axis": "occlusion-degraded compliant",
+      "reason": "Compliant content with occlusion:0.12 (12 % of the label face blocked). Routine sanity-check for partial-label robustness."
+    },
+    {
+      "id": "deg-beer-0013",
+      "axis": "curved-degraded (also gov_warning_case=T4)",
+      "reason": "Curved label surface with a T4 numeral-reorder fault layered on top. Exercises both the dewarp preprocessor and the warning-text exactness check in one cheap label. No purely curved-and-compliant label exists in the corpus today; picking this two-fault case is the highest-value substitute."
+    },
+    {
+      "id": "syn-spirits-0007",
+      "axis": "stylized-brand compliant",
+      "reason": "All-caps stylized brand (SALTGRASS) on an otherwise compliant label. Catches the failure mode where a brand-name detector trips on the GOVERNMENT WARNING prefix or vice versa."
+    },
+    {
+      "id": "syn-wine-0001",
+      "axis": "small-container compliant",
+      "reason": "100 ml wine label that meets the size minimum. Pairs with syn-beer-0017 above to disambiguate true-pass vs. true-fail on small containers — the size rule depends on the container volume, not just the glyph size."
+    }
+  ]
+}
