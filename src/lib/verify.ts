@@ -220,19 +220,40 @@ export async function verifyLabel(
       if (!fallbackKey) {
         throw primaryErr;
       }
+      // SECURITY: don't reuse the primary controller's signal — it has
+      // probably already aborted (which is why the primary call threw).
+      // Reusing it would either short-circuit the fallback to an
+      // immediate AbortError OR let the fallback run unbounded
+      // depending on the SDK. Allocate a fresh controller with the
+      // remaining budget (capped at 25s so we stay under the Vercel
+      // Hobby 30s function timeout even when the primary burned most
+      // of the original budget). 2026-05-12 security audit finding #4.
+      const remainingMs = Math.min(
+        25_000,
+        Math.max(5_000, visionTimeoutMs - (performance.now() - startTotal)),
+      );
+      const fbCtrl = new AbortController();
+      const fbTimer = setTimeout(() => fbCtrl.abort(), remainingMs);
+      const fallbackCtx: ExtractorContext = {
+        ocrText,
+        ocrWords,
+        signal: fbCtrl.signal,
+      };
       try {
         const mod = await import("./vision/openai");
         const fallbackExtractor = new mod.GPT4oMiniExtractor({
           apiKey: fallbackKey,
           modelVersion: fallbackModel,
         });
-        extracted = await fallbackExtractor.extract(pre.buffer, visionCtx);
+        extracted = await fallbackExtractor.extract(pre.buffer, fallbackCtx);
         fallbackUsed = fallbackModel;
       } catch (_fallbackErr) {
         // Both providers failed. Surface the primary error — it's more
         // diagnostic than the fallback (the user can fix the primary,
         // the fallback is best-effort).
         throw primaryErr;
+      } finally {
+        clearTimeout(fbTimer);
       }
     }
   } finally {

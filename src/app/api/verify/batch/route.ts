@@ -30,7 +30,30 @@ const ACCEPTED_MIME = new Set([
  * which kicks off per-item verifications (one Vercel function invocation
  * per item) and streams results back.
  */
+// Aggregate batch-size cap (DoS guard). With MAX_BATCH=1000 and
+// per-file MAX_IMAGE_BYTES=10MB, a client could theoretically post a
+// 10GB body before any per-file check runs; `await req.formData()`
+// buffers the whole body into the 2GB Vercel function memory and
+// either OOMs or starves every concurrent invocation. We pre-check the
+// Content-Length header and reject anything that's clearly outside a
+// reasonable batch. The cap is intentionally generous (5GB) — it just
+// has to be SOMETHING. 2026-05-12 security audit finding #1.
+const MAX_BATCH_BYTES = 5 * 1024 * 1024 * 1024;
+
 export async function POST(req: Request) {
+  const lenHeader = req.headers.get("content-length");
+  if (lenHeader) {
+    const declared = Number(lenHeader);
+    if (Number.isFinite(declared) && declared > MAX_BATCH_BYTES) {
+      return NextResponse.json(
+        {
+          error: `Batch body exceeds ${MAX_BATCH_BYTES} bytes. Split the upload into multiple smaller batches.`,
+        },
+        { status: 413 },
+      );
+    }
+  }
+
   let form: FormData;
   try {
     form = await req.formData();

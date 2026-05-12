@@ -52,15 +52,21 @@ function statusFor(declared: string, actual: string | null): FieldStatus {
 /**
  * Country comparator with implicit-USA inference. Real TTB labels
  * routinely omit an explicit country line — they rely on the state
- * (e.g. "Portland, ME 04101") to imply USA. If the declared country
- * is USA and the extracted state is a recognised US state code, we
- * accept null/empty extracted.country as PASS. Otherwise fall back to
- * the same fuzzy-match rule used for the other components.
+ * (e.g. "Portland, ME 04101") to imply USA.
+ *
+ * SECURITY: the inference is only applied when the extracted state is
+ * a strict-format US state code AND at least one other producer
+ * component (street / city / postal_code) ALSO matches the declared
+ * structured address. Without those guards, a hallucinated
+ * `extracted.state = "ME"` could downgrade a clearly-non-compliant
+ * label (e.g. "Producer: …, Mexico") to PASS on the country axis. See
+ * the 2026-05-12 security audit, finding #2 + #3.
  */
 function countryStatus(
   declaredCountry: string,
   extractedCountry: string | null,
   extractedState: string | null,
+  hasCorroboratingComponent: boolean,
 ): FieldStatus {
   if (!declaredCountry) return "pass";
   // The label printed an explicit country — use the standard rule.
@@ -70,12 +76,22 @@ function countryStatus(
       ? "pass"
       : "fail";
   }
-  // No explicit country on the label. If declared is USA AND the
-  // producer state is a US state code, infer USA. This matches how
-  // real labels are printed.
-  if (isUsa(declaredCountry) && extractedState) {
-    const code = extractedState.toUpperCase().replace(/[^A-Z]/g, "");
-    if (US_STATE_CODES.has(code)) return "pass";
+  // No explicit country on the label. Infer USA only when:
+  //   1. declared is USA
+  //   2. extracted state is a strict-format US state code (no
+  //      punctuation, no noise); validates against the canonical form
+  //      BEFORE upper-casing so we don't silently accept "m.e." etc.
+  //   3. at least one OTHER producer component matches — so a
+  //      hallucinated state alone can't downgrade a non-compliant
+  //      Mexico-produced label.
+  if (
+    isUsa(declaredCountry) &&
+    extractedState &&
+    /^[A-Za-z]{2}$/.test(extractedState) &&
+    US_STATE_CODES.has(extractedState.toUpperCase()) &&
+    hasCorroboratingComponent
+  ) {
+    return "pass";
   }
   return "fail";
 }
@@ -123,16 +139,35 @@ export function compareProducer(
     };
   }
 
+  // Score the address-shaped components first so the country check
+  // can require at least one of them to be a corroborating PASS.
+  const nameStatus = statusFor(declared.name ?? "", extracted.name);
+  const streetStatus = statusFor(declared.street ?? "", extracted.street);
+  const cityStatus = statusFor(declared.city ?? "", extracted.city);
+  const stateStatus = statusFor(declared.state ?? "", extracted.state);
+  const postalStatus = statusFor(
+    declared.postal_code ?? "",
+    extracted.postal_code,
+  );
+  // "Corroborating component" excludes `state` itself, since the
+  // implicit-USA rule already inspects state — using it as its own
+  // corroborator would be circular.
+  const corroborating =
+    nameStatus === "pass" ||
+    streetStatus === "pass" ||
+    cityStatus === "pass" ||
+    postalStatus === "pass";
   const components: Record<string, FieldStatus> = {
-    name: statusFor(declared.name ?? "", extracted.name),
-    street: statusFor(declared.street ?? "", extracted.street),
-    city: statusFor(declared.city ?? "", extracted.city),
-    state: statusFor(declared.state ?? "", extracted.state),
-    postal_code: statusFor(declared.postal_code ?? "", extracted.postal_code),
+    name: nameStatus,
+    street: streetStatus,
+    city: cityStatus,
+    state: stateStatus,
+    postal_code: postalStatus,
     country: countryStatus(
       declared.country ?? "",
       extracted.country,
       extracted.state,
+      corroborating,
     ),
   };
 
