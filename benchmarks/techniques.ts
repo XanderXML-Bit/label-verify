@@ -455,10 +455,45 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
     id: "T5b",
     networkRequired: true,
     build: async () => {
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) {
+      // Prefer OpenRouter when its key is set — same model, no
+      // dependency on the Anthropic direct-SDK key being valid (the
+      // current Zendren-shared key returns 401 invalid). Direct path
+      // stays available for environments that have a live Anthropic key
+      // and want to consolidate billing there.
+      const routerKey = process.env.OPENROUTER_API_KEY;
+      const directKey = process.env.ANTHROPIC_API_KEY;
+      const preferRouter =
+        process.env.ANTHROPIC_USE_OPENROUTER === "1" ||
+        (routerKey && !directKey);
+      if (routerKey && preferRouter) {
+        let mod: {
+          OpenRouterExtractor: new (opts: {
+            apiKey: string;
+            modelSlug: string;
+            pricing: { inputPer1M: number; outputPer1M: number };
+            structuredOutput?: boolean;
+          }) => Extractor;
+        };
+        try {
+          mod = (await import("../src/lib/vision/openrouter")) as typeof mod;
+        } catch (err) {
+          throw new Error(
+            `T5b extractor module not available: ${(err as Error).message}. ` +
+              `Expected src/lib/vision/openrouter.ts to export OpenRouterExtractor.`,
+          );
+        }
+        const extractor = new mod.OpenRouterExtractor({
+          apiKey: routerKey,
+          modelSlug: "anthropic/claude-haiku-4.5",
+          pricing: { inputPer1M: 1, outputPer1M: 5 },
+          structuredOutput: false,
+        });
+        return new VisionExtractorRunner("T5b", extractor, false);
+      }
+      if (!directKey) {
         throw new Error(
-          "T5b requires ANTHROPIC_API_KEY (Claude Haiku Vision). Set it in .env.local.",
+          "T5b requires ANTHROPIC_API_KEY (direct, preferred) or " +
+            "OPENROUTER_API_KEY (proxied via OpenRouter). Set one in .env.local.",
         );
       }
       let mod: { ClaudeHaikuExtractor: new (opts: { apiKey: string }) => Extractor };
@@ -470,7 +505,7 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
             `Expected src/lib/vision/anthropic.ts to export ClaudeHaikuExtractor.`,
         );
       }
-      const extractor = new mod.ClaudeHaikuExtractor({ apiKey });
+      const extractor = new mod.ClaudeHaikuExtractor({ apiKey: directKey });
       return new VisionExtractorRunner("T5b", extractor, false);
     },
   },
@@ -900,7 +935,12 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
     build: async () => {
       const directKey = process.env.ANTHROPIC_API_KEY;
       const routerKey = process.env.OPENROUTER_API_KEY;
-      if (directKey) {
+      // Same preference logic as T5b — let the operator force the
+      // OpenRouter path when the direct Anthropic key is rotten.
+      const preferRouter =
+        process.env.ANTHROPIC_USE_OPENROUTER === "1" ||
+        (routerKey && !directKey);
+      if (directKey && !preferRouter) {
         let mod: {
           ClaudeOpusExtractor: new (opts: {
             apiKey: string;
