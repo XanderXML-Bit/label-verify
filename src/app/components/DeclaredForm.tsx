@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { DeclaredFields } from "@/lib/types";
 
 interface DeclaredFormProps {
@@ -14,6 +14,19 @@ export function DeclaredForm({
   disabled,
   initial,
 }: DeclaredFormProps) {
+  // Stable, unique ids per field so the wrapping <label> can use
+  // htmlFor — needed so screen readers tie the visual label to its input
+  // even when the input is two children deep.
+  const ids = {
+    brand: useId(),
+    classType: useId(),
+    classCategory: useId(),
+    abv: useId(),
+    ncValue: useId(),
+    ncUnit: useId(),
+    producer: useId(),
+    country: useId(),
+  };
   const [brand, setBrand] = useState(initial?.brand_name ?? "");
   const [classType, setClassType] = useState(initial?.class_type ?? "");
   const [classCategory, setClassCategory] = useState<
@@ -66,6 +79,9 @@ export function DeclaredForm({
     });
   }
 
+  const inputClass =
+    "w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-slate-50";
+
   return (
     <form onSubmit={submit} aria-label="Declared application data" className="space-y-4">
       <h2 className="text-lg font-semibold text-slate-800">
@@ -77,33 +93,38 @@ export function DeclaredForm({
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Brand name" required>
+        <Field id={ids.brand} label="Brand name" required>
           <input
+            id={ids.brand}
             type="text"
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
             disabled={disabled}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            autoComplete="off"
+            className={inputClass}
           />
         </Field>
-        <Field label="Class / type" required>
+        <Field id={ids.classType} label="Class / type" required>
           <input
+            id={ids.classType}
             type="text"
             value={classType}
             onChange={(e) => setClassType(e.target.value)}
             disabled={disabled}
+            autoComplete="off"
             placeholder="e.g. India Pale Ale"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
           />
         </Field>
-        <Field label="Category" required>
+        <Field id={ids.classCategory} label="Category" required>
           <select
+            id={ids.classCategory}
             value={classCategory}
             onChange={(e) =>
               setClassCategory(e.target.value as DeclaredFields["class_category"])
             }
             disabled={disabled}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
           >
             <option value="beer">Beer / Malt Beverage</option>
             <option value="wine">Wine</option>
@@ -111,37 +132,42 @@ export function DeclaredForm({
             <option value="fortified_wine">Fortified Wine</option>
           </select>
         </Field>
-        <Field label="ABV (%)" required>
+        <Field id={ids.abv} label="ABV (%)" required>
           <input
+            id={ids.abv}
             type="number"
             step="0.1"
             min="0"
             max="100"
+            inputMode="decimal"
             value={abv}
             onChange={(e) => setAbv(e.target.value)}
             disabled={disabled}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
           />
         </Field>
-        <Field label="Net contents value" required>
+        <Field id={ids.ncValue} label="Net contents value" required>
           <input
+            id={ids.ncValue}
             type="number"
             step="0.1"
             min="0"
+            inputMode="decimal"
             value={ncValue}
             onChange={(e) => setNcValue(e.target.value)}
             disabled={disabled}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
           />
         </Field>
-        <Field label="Net contents unit" required>
+        <Field id={ids.ncUnit} label="Net contents unit" required>
           <select
+            id={ids.ncUnit}
             value={ncUnit}
             onChange={(e) =>
               setNcUnit(e.target.value as "fl_oz" | "ml" | "L" | "cl")
             }
             disabled={disabled}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
           >
             <option value="fl_oz">fl oz</option>
             <option value="ml">ml</option>
@@ -149,22 +175,25 @@ export function DeclaredForm({
             <option value="L">L</option>
           </select>
         </Field>
-        <Field label="Producer / address">
+        <Field id={ids.producer} label="Producer / address">
           <textarea
+            id={ids.producer}
             value={producer}
             onChange={(e) => setProducer(e.target.value)}
             disabled={disabled}
             rows={2}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
           />
         </Field>
-        <Field label="Country of origin" required>
+        <Field id={ids.country} label="Country of origin" required>
           <input
+            id={ids.country}
             type="text"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
             disabled={disabled}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            autoComplete="country-name"
+            className={inputClass}
           />
         </Field>
       </div>
@@ -172,10 +201,11 @@ export function DeclaredForm({
       {errors.length > 0 && (
         <div
           role="alert"
-          aria-live="polite"
+          aria-live="assertive"
           className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800"
         >
-          <ul className="list-inside list-disc">
+          <h3 className="font-semibold">Fix these before continuing</h3>
+          <ul className="mt-1 list-inside list-disc">
             {errors.map((e) => (
               <li key={e}>{e}</li>
             ))}
@@ -186,7 +216,7 @@ export function DeclaredForm({
       <button
         type="submit"
         disabled={disabled}
-        className="rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="min-h-[44px] w-full rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         Verify
       </button>
@@ -195,16 +225,18 @@ export function DeclaredForm({
 }
 
 function Field({
+  id,
   label,
   children,
   required,
 }: {
+  readonly id: string;
   readonly label: string;
   readonly children: React.ReactNode;
   readonly required?: boolean;
 }) {
   return (
-    <label className="block">
+    <label htmlFor={id} className="block">
       <span className="mb-1 block text-label font-medium text-slate-700">
         {label}
         {required && (

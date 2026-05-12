@@ -95,9 +95,18 @@ function fieldWithConfidence(inner: any) {
   };
 }
 
-// ─── Gemini Flash extractor (T6 — gemini-2.0-flash-001) ─────────────────────
+// ─── Gemini Flash extractor (T6 — gemini-3.1-flash-lite by default) ─────────
+//
+// Probe results (scripts/probe-gemini.ts, 2026-05-12):
+//   gemini-3.1-flash-lite          ✓ available
+//   gemini-3.1-flash-lite-preview  ✓ available
+//   gemini-3.1-flash               ✗ 404 (only -preview, no GA name)
+// `gemini-2.0-flash-001` was decommissioned for new users early-2026 and
+// has been replaced. We default to 3.1-flash-lite for the "fast tier"
+// because it (a) responds, (b) is current per the user's directive, and
+// (c) has measured P50 ≈ 2 s on test-data-v2.
 
-const MODEL_DEFAULT = "gemini-2.0-flash-001";
+const MODEL_DEFAULT = "gemini-3.1-flash-lite";
 
 // Pricing per Google's published table (refresh if the SDK changes):
 // Flash tier (2.0 + 2.5 flash): $0.075 / 1M input, $0.300 / 1M output.
@@ -249,6 +258,10 @@ export class GeminiFlashExtractor implements Extractor {
 // generation, which historically improves multilingual and OCR-on-image
 // performance versus the 2.0 line. Same SDK, same schema, same prompt.
 
+// Probe results (scripts/probe-gemini.ts, 2026-05-12): gemini-3.1-flash
+// (no "-preview") returns 404 against the generativelanguage API. The
+// flash-lite variant DOES respond. We pin to the 2.5 generation for the
+// "full Flash" tier until Google removes the preview gate on 3.1-flash.
 const FLASH_FULL_MODEL_DEFAULT = "gemini-2.5-flash";
 
 export class GeminiFlashFullExtractor implements Extractor {
@@ -291,7 +304,12 @@ export class GeminiFlashFullExtractor implements Extractor {
 // long-context billing would need a separate adapter if we ever batched
 // many images per request.
 
-const PRO_MODEL_DEFAULT = "gemini-2.5-pro";
+// Probe results (scripts/probe-gemini.ts, 2026-05-12): gemini-3.1-pro
+// returns 404; gemini-3.1-pro-preview works. We default to the 3.1
+// preview because the user explicitly wants frontier; 2.5-pro stays
+// available via the MODEL_GEMINI_PRO env var override if anyone wants
+// to A/B against the older generation.
+const PRO_MODEL_DEFAULT = "gemini-3.1-pro-preview";
 
 export class GeminiProExtractor implements Extractor {
   readonly id: string;

@@ -8,7 +8,9 @@ import { SingleResult } from "./components/SingleResult";
 import { BatchView, type BatchRow } from "./components/BatchView";
 import { SampleAffordance } from "./components/SampleAffordance";
 import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
+import { SettingsPanel, useModelMode } from "./components/SettingsPanel";
 import type { Sample } from "@/lib/samples";
+import { compressImageInBrowser } from "@/lib/client-compress";
 
 type Stage =
   | { kind: "idle" }
@@ -22,6 +24,7 @@ type Stage =
 export default function Home() {
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
   const [manifestText, setManifestText] = useState("");
+  const { modeId, setModeId } = useModelMode();
 
   // Warm the function + Tesseract worker on page load (DEPLOYMENT.md §6).
   useEffect(() => {
@@ -44,9 +47,11 @@ export default function Home() {
     const url = URL.createObjectURL(file);
     setStage({ kind: "single-verifying", file, previewUrl: url });
     try {
+      const uploadFile = await compressImageInBrowser(file);
       const fd = new FormData();
-      fd.append("image", file);
+      fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(sample.declared));
+      fd.append("mode", modeId);
       const res = await fetch("/api/verify", { method: "POST", body: fd });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -74,9 +79,13 @@ export default function Home() {
     if (stage.kind !== "single-pending") return;
     setStage({ ...stage, kind: "single-verifying" });
     try {
+      // Compress in the browser before upload. Cuts a 4–8 MB phone photo
+      // to ~250–500 KB and shaves multi-second uploads on cellular.
+      const uploadFile = await compressImageInBrowser(stage.file);
       const fd = new FormData();
-      fd.append("image", stage.file);
+      fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(declared));
+      fd.append("mode", modeId);
       const res = await fetch("/api/verify", { method: "POST", body: fd });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -153,6 +162,7 @@ export default function Home() {
       {stage.kind === "idle" && (
         <>
           <UploadZone onFiles={handleFiles} />
+          <SettingsPanel modeId={modeId} onModeChange={setModeId} />
           <SampleAffordance onPick={handleSample} />
           <ReviewQueuePanel />
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
@@ -177,7 +187,7 @@ export default function Home() {
       )}
 
       {stage.kind === "single-pending" && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="space-y-3">
             <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500">
               Uploaded image
@@ -186,12 +196,14 @@ export default function Home() {
             <img
               src={stage.previewUrl}
               alt="Uploaded label preview"
-              className="max-h-96 rounded-lg border border-slate-200 bg-white object-contain p-2"
+              loading="lazy"
+              decoding="async"
+              className="max-h-96 w-full rounded-lg border border-slate-200 bg-white object-contain p-2"
             />
             <button
               type="button"
               onClick={reset}
-              className="text-sm text-slate-500 underline hover:text-slate-700"
+              className="rounded px-1 py-0.5 text-sm text-slate-500 underline hover:text-slate-700"
             >
               Replace image
             </button>
@@ -225,12 +237,12 @@ export default function Home() {
           aria-live="assertive"
           className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800"
         >
-          <p className="font-semibold">Verification failed</p>
+          <h2 className="text-base font-semibold">Verification failed</h2>
           <p className="mt-1">{stage.message}</p>
           <button
             type="button"
             onClick={reset}
-            className="mt-3 rounded-md bg-red-700 px-4 py-2 text-white"
+            className="mt-3 min-h-[44px] rounded-md bg-red-700 px-4 py-2.5 font-semibold text-white hover:bg-red-800"
           >
             Try again
           </button>
@@ -261,22 +273,23 @@ export default function Home() {
               rows={8}
               value={manifestText}
               onChange={(e) => setManifestText(e.target.value)}
+              aria-label="Batch manifest (CSV or JSON)"
               className="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Stone's Throw IPA,India Pale Ale,beer,6.4,12 fl_oz,USA`}
             />
-            <div className="mt-3 flex gap-3">
+            <div className="mt-3 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={submitBatch}
                 disabled={!manifestText.trim()}
-                className="rounded-md bg-blue-600 px-5 py-2 text-base font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Verify batch
               </button>
               <button
                 type="button"
                 onClick={reset}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100"
               >
                 Cancel
               </button>

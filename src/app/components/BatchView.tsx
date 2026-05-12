@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { VerifyResponse } from "@/lib/types";
 import { VerdictChip, QualityChip } from "./StatusChip";
 
@@ -141,16 +141,27 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
         <FilterPill label={`Errored (${counts.errored})`} active={filter === "error"} onClick={() => setFilter("error")} />
       </div>
 
-      <div className="overflow-auto rounded-lg border border-slate-200 bg-white" style={{ maxHeight: "60vh" }}>
+      <div
+        className="-mx-4 overflow-x-auto rounded-lg border border-slate-200 bg-white sm:mx-0"
+        style={{ maxHeight: "60vh" }}
+        role="region"
+        aria-label="Batch results table"
+        tabIndex={0}
+      >
         <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <caption className="sr-only">
+            One row per uploaded label, with verdict, image quality, and timing.
+          </caption>
           <thead className="sticky top-0 bg-slate-50 text-left text-slate-600">
             <tr>
-              <th className="px-4 py-2 font-semibold">#</th>
-              <th className="px-4 py-2 font-semibold">File</th>
-              <th className="px-4 py-2 font-semibold">Verdict</th>
-              <th className="px-4 py-2 font-semibold">Image quality</th>
-              <th className="px-4 py-2 font-semibold">Time</th>
-              <th className="px-4 py-2 font-semibold sr-only">Open</th>
+              <th scope="col" className="px-4 py-2 font-semibold">#</th>
+              <th scope="col" className="px-4 py-2 font-semibold">File</th>
+              <th scope="col" className="px-4 py-2 font-semibold">Verdict</th>
+              <th scope="col" className="px-4 py-2 font-semibold">Image quality</th>
+              <th scope="col" className="px-4 py-2 font-semibold">Time</th>
+              <th scope="col" className="px-4 py-2 font-semibold">
+                <span className="sr-only">Open</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -162,33 +173,94 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
       </div>
 
       {drilled && drilled.status === "done" && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-lg font-semibold text-slate-800">
-            {drilled.filename}
-          </h3>
-          <pre className="mt-2 max-h-96 overflow-auto text-xs">
-            {JSON.stringify(drilled.result, null, 2)}
-          </pre>
-          <button
-            type="button"
-            onClick={() => setDrilled(null)}
-            className="mt-3 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-          >
-            Close
-          </button>
-        </div>
+        <DrilldownPanel row={drilled} onClose={() => setDrilled(null)} />
       )}
 
       {done && (
         <button
           type="button"
           onClick={() => downloadCsv(rows)}
-          className="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
         >
           Download CSV
         </button>
       )}
     </section>
+  );
+}
+
+// Detail panel for a drilled-down batch row. Implements a soft focus
+// trap: Tab cycles within the panel until the user presses Escape or
+// clicks Close. We intentionally don't full-modalize (the rest of the
+// page stays visible and scrollable) — it's a side panel, not a dialog.
+function DrilldownPanel({
+  row,
+  onClose,
+}: {
+  readonly row: BatchRow & { status: "done" };
+  readonly onClose: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const headingId = useId();
+
+  // Move focus into the panel on open.
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+  }, []);
+
+  // Escape closes, Tab cycles within the panel.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = containerRef.current;
+      if (!root) return;
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={containerRef}
+      role="region"
+      aria-labelledby={headingId}
+      className="rounded-lg border border-slate-200 bg-white p-4"
+    >
+      <h3 id={headingId} className="text-lg font-semibold text-slate-800">
+        {row.filename}
+      </h3>
+      <pre className="mt-2 max-h-96 overflow-auto text-xs">
+        {JSON.stringify(row.result, null, 2)}
+      </pre>
+      <button
+        ref={closeBtnRef}
+        type="button"
+        onClick={onClose}
+        className="mt-3 min-h-[44px] rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+      >
+        Close
+      </button>
+    </div>
   );
 }
 
@@ -219,7 +291,8 @@ function Row({ row, onOpen }: { readonly row: BatchRow; readonly onOpen: () => v
           <button
             type="button"
             onClick={onOpen}
-            className="text-xs text-blue-600 hover:underline"
+            aria-label={`Open details for ${row.filename}`}
+            className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 hover:underline"
           >
             Open
           </button>
@@ -245,7 +318,7 @@ function FilterPill({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1 ring-1 ring-inset transition-colors ${
+      className={`rounded-full px-3 py-1.5 ring-1 ring-inset transition-colors ${
         active
           ? "bg-blue-600 text-white ring-blue-600"
           : "bg-white text-slate-700 ring-slate-300 hover:bg-slate-100"

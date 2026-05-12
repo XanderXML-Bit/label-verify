@@ -15,6 +15,15 @@ const nextConfig = {
       bodySizeLimit: "12mb",
     },
   },
+  // Forward-compatibility for any future `next/image` usage. Today no
+  // component uses next/image, so this block is effectively dormant — but
+  // having it in place means a later refactor picks up WebP + the right
+  // breakpoint set without touching infra.
+  images: {
+    formats: ["image/webp"],
+    deviceSizes: [360, 640, 768, 1024, 1280, 1536],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
 };
 
 module.exports = nextConfig;

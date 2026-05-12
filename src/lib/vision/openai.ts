@@ -159,32 +159,46 @@ async function callOpenAI(
   const signal = ctx?.signal;
   const imageDataUrl = `data:image/jpeg;base64,${image.toString("base64")}`;
 
-  const response = await Promise.race([
-    cfg.client.chat.completions.create(
+  // GPT-5 series (probed 2026-05-12) rejects `max_tokens` and requires
+  // `max_completion_tokens` — and also rejects non-default `temperature`.
+  // Detect by model-name prefix and switch params accordingly. GPT-4.x +
+  // earlier accept both shapes.
+  const isGpt5 = /^gpt-5(\b|[._-])/i.test(cfg.modelVersion);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createParams: any = {
+    model: cfg.modelVersion,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "extracted_label_fields",
+        strict: true,
+        schema: RESPONSE_SCHEMA,
+      },
+    },
+    messages: [
       {
-        model: cfg.modelVersion,
-        temperature: 0,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "extracted_label_fields",
-            strict: true,
-            schema: RESPONSE_SCHEMA,
-          },
-        },
-        messages: [
+        role: "user",
+        content: [
+          { type: "text", text: promptText },
           {
-            role: "user",
-            content: [
-              { type: "text", text: promptText },
-              {
-                type: "image_url",
-                image_url: { url: imageDataUrl, detail: "high" },
-              },
-            ],
+            type: "image_url",
+            image_url: { url: imageDataUrl, detail: "high" },
           },
         ],
       },
+    ],
+  };
+  if (!isGpt5) {
+    createParams.temperature = 0;
+  }
+  // For GPT-5 we don't set a token cap — the structured-output schema
+  // bounds the response anyway, and the reasoning tier can need more
+  // headroom. For GPT-4.x we leave defaults (no max_tokens) for the
+  // same reason.
+
+  const response = await Promise.race([
+    cfg.client.chat.completions.create(
+      createParams,
       signal ? { signal } : {},
     ),
     abortPromise(signal),
@@ -236,12 +250,18 @@ async function callOpenAI(
 
 // ─── GPT-4o-mini extractor (T4) ─────────────────────────────────────────────
 
-const MODEL_DEFAULT = "gpt-4o-mini-2024-07-18";
+// User directive (2026-05-12): default to current GPT-5 nano tier. The
+// older gpt-4o-mini default remains available via MODEL_PRIMARY override
+// for A/B comparison.
+const MODEL_DEFAULT = "gpt-5-nano";
 
-// Pricing per OpenAI's published table (as of the pinned model release):
-// gpt-4o-mini: $0.150 / 1M input, $0.600 / 1M output.
-const PRICE_INPUT_PER_M = 0.15;
-const PRICE_OUTPUT_PER_M = 0.6;
+// Pricing for the default tier. Defaults are the published rates for
+// `gpt-5-nano` as of the user's 2026-05-12 directive; if you override
+// modelVersion to gpt-4o-mini (mini was $0.150 / $0.600 per 1M), bump
+// the rates accordingly. Treat as approximate — bench harness records
+// actual usage tokens; rates feed the USD-per-1k extrapolation only.
+const PRICE_INPUT_PER_M = 0.05;
+const PRICE_OUTPUT_PER_M = 0.4;
 
 export class GPT4oMiniExtractor implements Extractor {
   readonly id: string;
@@ -282,8 +302,15 @@ export class GPT4oMiniExtractor implements Extractor {
 // in the bake-off — the question is whether the accuracy gain is worth
 // the cost multiplier on a small label image.
 
-const FULL_MODEL_DEFAULT = "gpt-4o-2024-11-20";
-const FULL_PRICE_INPUT_PER_M = 2.5;
+// User directive (2026-05-12): default the "full / dear / smartest"
+// OpenAI tier to GPT-5. The older gpt-4o default stays accessible via
+// the modelVersion option for direct A/B comparison.
+const FULL_MODEL_DEFAULT = "gpt-5";
+// User directive (2026-05-12): default rates for gpt-5 full. The older
+// gpt-4o full was $2.50 / $10 per 1M — those are the rates if you
+// override modelVersion. Refresh against the current OpenAI rate card
+// before relying on the USD-per-1k bench column for a deploy decision.
+const FULL_PRICE_INPUT_PER_M = 1.25;
 const FULL_PRICE_OUTPUT_PER_M = 10;
 
 export class GPT4oFullExtractor implements Extractor {

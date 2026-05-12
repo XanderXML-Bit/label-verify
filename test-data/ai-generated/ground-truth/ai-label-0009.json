@@ -24,10 +24,22 @@
     "governmentWarning": null
   },
   "visualAudit": {
-    "status": "pending",
-    "reviewer": null,
-    "reviewedAt": null,
-    "notes": [],
-    "strictBenchmarkReady": false
+    "status": "accepted",
+    "usageTier": "strictBenchmarkReady",
+    "reviewer": "Codex + 4 sub-agent chunk audit",
+    "reviewedAt": "2026-05-12T03:00:34.714Z",
+    "notes": [
+      "Missing government warning defect clearly confirmed."
+    ],
+    "strictBenchmarkReady": true
+  },
+  "expectedFields": {
+    "brandName": "Cote du Soir",
+    "classType": "Rose",
+    "alcoholByVolume": "12.6%",
+    "netContents": "750 mL",
+    "producerAddress": "Cote du Soir Beverage Co., Sonoma, CA",
+    "countryOfOrigin": "USA",
+    "governmentWarning": null
   }
 }

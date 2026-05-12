@@ -24,10 +24,22 @@
     "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
   "visualAudit": {
-    "status": "pending",
-    "reviewer": null,
-    "reviewedAt": null,
-    "notes": [],
+    "status": "robustnessOnly",
+    "usageTier": "robustnessOnly",
+    "reviewer": "Codex + 4 sub-agent chunk audit",
+    "reviewedAt": "2026-05-12T03:00:34.714Z",
+    "notes": [
+      "Mini bottle tiny curved warning; keep robustness-only."
+    ],
     "strictBenchmarkReady": false
+  },
+  "expectedFields": {
+    "brandName": "Ember Vale",
+    "classType": "Cinnamon Liqueur",
+    "alcoholByVolume": "32%",
+    "netContents": "50 mL",
+    "producerAddress": "Ember Vale Spirits, Louisville, KY",
+    "countryOfOrigin": "USA",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   }
 }

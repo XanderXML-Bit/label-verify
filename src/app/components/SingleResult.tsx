@@ -5,6 +5,18 @@ import type { VerifyResponse } from "@/lib/types";
 import type { FieldComparison } from "@/lib/matching";
 import { VerdictChip, QualityChip } from "./StatusChip";
 
+// Display labels for the model modes the verifier may return.
+// Mirrors @/lib/model-modes#MODES but is kept inline so this client
+// component doesn't drag the (server-only) vision adapters into the
+// browser bundle.
+const MODE_LABEL: Record<string, string> = {
+  default: "Default",
+  fast: "Fast",
+  smart: "Smart",
+  local: "Local",
+  balanced: "Balanced",
+};
+
 interface SingleResultProps {
   readonly result: VerifyResponse;
   readonly imagePreviewUrl: string;
@@ -20,6 +32,10 @@ export function SingleResult({
   // emphasis on FAIL rows comes from `FieldRow` below.
   const fields = useMemo(() => orderedFields(result), [result]);
   const gov = result.governmentWarning;
+  // Mode caption: fall back to the raw `modeUsed` string if the catalogue
+  // lookup misses (e.g. server is on a newer release than the bundled
+  // catalogue). Never throws.
+  const modeLabel = MODE_LABEL[result.modeUsed] ?? result.modeUsed;
 
   return (
     <section aria-labelledby="results-heading" className="space-y-6">
@@ -32,13 +48,15 @@ export function SingleResult({
         </span>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-1">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-3 md:col-span-1">
           {imagePreviewUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image */
             <img
               src={imagePreviewUrl}
               alt="Submitted label preview"
+              loading="lazy"
+              decoding="async"
               className="h-full max-h-96 w-full rounded-md object-contain"
             />
           ) : (
@@ -47,7 +65,7 @@ export function SingleResult({
             </div>
           )}
         </div>
-        <div className="space-y-4 sm:col-span-2">
+        <div className="space-y-4 md:col-span-2">
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-3">
@@ -63,6 +81,9 @@ export function SingleResult({
                 <VerdictChip verdict={result.verdict} size="lg" />
               </div>
             </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Verified using: <strong className="font-medium">{modeLabel}</strong>
+            </p>
             {result.imageQuality !== "good" && (
               <p className="mt-3 text-sm text-slate-600">
                 <strong>Image quality is independent of compliance.</strong>{" "}
@@ -118,7 +139,7 @@ export function SingleResult({
           <button
             type="button"
             onClick={onAnother}
-            className="rounded-md bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            className="min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
           >
             Verify another label
           </button>

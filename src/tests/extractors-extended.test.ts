@@ -174,8 +174,11 @@ describe("GeminiProExtractor", () => {
     const ext = new GeminiProExtractor({ apiKey: "test-key" });
     const result = await ext.extract(TINY_IMAGE);
 
-    expect(result.modelVersion).toBe("gemini-2.5-pro");
-    expect(result.modelId).toBe("gemini:gemini-2.5-pro");
+    // Default bumped 2026-05-12 to gemini-3.1-pro-preview after live
+    // probe confirmed (-preview is the only Pro-tier 3.1 SKU that
+    // responds; the bare gemini-3.1-pro returns 404).
+    expect(result.modelVersion).toBe("gemini-3.1-pro-preview");
+    expect(result.modelId).toBe("gemini:gemini-3.1-pro-preview");
     expect(result.cost.inputTokens).toBe(800);
     expect(result.cost.outputTokens).toBe(200);
     // Pro pricing: 800/1M * 1.25 + 200/1M * 5.00 = 0.001 + 0.001 = 0.002
@@ -208,18 +211,23 @@ describe("GPT4oFullExtractor", () => {
     const ext = new GPT4oFullExtractor({ apiKey: "test-key" });
     const result = await ext.extract(TINY_IMAGE);
 
-    expect(result.modelVersion).toBe("gpt-4o-2024-11-20");
-    expect(result.modelId).toBe("openai:gpt-4o-2024-11-20");
+    // Default bumped 2026-05-12 to gpt-5 per user directive. Older
+    // gpt-4o default still available via modelVersion override.
+    expect(result.modelVersion).toBe("gpt-5");
+    expect(result.modelId).toBe("openai:gpt-5");
     expect(result.cost.inputTokens).toBe(1000);
     expect(result.cost.outputTokens).toBe(300);
-    // Full pricing: 1000/1M * 2.5 + 300/1M * 10 = 0.0025 + 0.003 = 0.0055
-    expect(result.cost.costUsd).toBeCloseTo(0.0055, 6);
+    // gpt-5 pricing: 1000/1M * 1.25 + 300/1M * 10 = 0.00125 + 0.003 = 0.00425
+    expect(result.cost.costUsd).toBeCloseTo(0.00425, 6);
 
     // Also assert request shape uses the same strict json_schema mode.
     const callArg = openaiCreate.mock.calls[0]?.[0];
-    expect(callArg.model).toBe("gpt-4o-2024-11-20");
+    expect(callArg.model).toBe("gpt-5");
     expect(callArg.response_format.type).toBe("json_schema");
     expect(callArg.response_format.json_schema.strict).toBe(true);
+    // GPT-5 series rejects custom temperature; the adapter must not
+    // send one. (See src/lib/vision/openai.ts `isGpt5` branch.)
+    expect(callArg.temperature).toBeUndefined();
   });
 
   it("respects AbortSignal", async () => {

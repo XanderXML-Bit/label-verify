@@ -121,7 +121,8 @@ export function ReviewQueuePanel({
             <button
               type="button"
               onClick={() => void refresh()}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+              aria-label="Refresh review queue"
+              className="min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
             >
               Refresh
             </button>
@@ -135,7 +136,7 @@ export function ReviewQueuePanel({
                 handleOpenQueue();
               }
             }}
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700"
+            className="min-h-[44px] rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
           >
             {open && hasToken ? "Close queue" : "Open queue"}
           </button>

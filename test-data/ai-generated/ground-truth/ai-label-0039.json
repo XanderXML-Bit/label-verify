@@ -24,10 +24,22 @@
     "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
   "visualAudit": {
-    "status": "pending",
-    "reviewer": null,
-    "reviewedAt": null,
-    "notes": [],
+    "status": "robustnessOnly",
+    "usageTier": "robustnessOnly",
+    "reviewer": "Codex + 4 sub-agent chunk audit",
+    "reviewedAt": "2026-05-12T03:00:34.714Z",
+    "notes": [
+      "Warm low-light/blur bottle; not strict exact-text material."
+    ],
     "strictBenchmarkReady": false
+  },
+  "expectedFields": {
+    "brandName": "Black Sail House",
+    "classType": "Dark Rum",
+    "alcoholByVolume": "43.0%",
+    "netContents": "750 mL",
+    "producerAddress": "Black Sail House, Tampa, FL",
+    "countryOfOrigin": "USA",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   }
 }

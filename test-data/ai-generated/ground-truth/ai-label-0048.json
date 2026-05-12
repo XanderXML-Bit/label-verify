@@ -12,8 +12,8 @@
   "format": "flat_label",
   "beverageType": "beer",
   "conditionNotes": "dark background light text",
-  "intendedCompliance": "compliant",
-  "warningCase": "C0",
+  "intendedCompliance": "non_compliant",
+  "warningCase": "N1_NET_CONTENTS_LETTER_O",
   "promptDeclaredFields": {
     "brandName": "Night Orchard",
     "classType": "Oatmeal Stout",
@@ -24,10 +24,26 @@
     "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
   "visualAudit": {
-    "status": "pending",
-    "reviewer": null,
-    "reviewedAt": null,
-    "notes": [],
-    "strictBenchmarkReady": false
+    "status": "accepted",
+    "usageTier": "strictBenchmarkReady",
+    "reviewer": "Codex + 4 sub-agent chunk audit",
+    "reviewedAt": "2026-05-12T03:00:34.714Z",
+    "notes": [
+      "Dark label remains legible.",
+      "Net contents appears as letter O instead of zero; recorded as subtle non-warning defect."
+    ],
+    "strictBenchmarkReady": true
+  },
+  "fieldDefects": [
+    "net_contents_uses_letter_o_instead_of_zero"
+  ],
+  "expectedFields": {
+    "brandName": "Night Orchard",
+    "classType": "Oatmeal Stout",
+    "alcoholByVolume": "6.7%",
+    "netContents": "1 PT O FL OZ",
+    "producerAddress": "Night Orchard Brewing, Cleveland, OH",
+    "countryOfOrigin": "USA",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   }
 }

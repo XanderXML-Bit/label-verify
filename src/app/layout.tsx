@@ -1,10 +1,33 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Label Verify",
   description:
     "AI-powered TTB Certificate of Label Approval verification — prototype.",
+  // Open Graph + Twitter so a shared link previews cleanly in iMessage,
+  // Slack, Outlook, etc. Reviewers are >50; many will share via email.
+  openGraph: {
+    title: "Label Verify — TTB COLA prototype",
+    description:
+      "Verify alcohol label images against application data in under 5 seconds.",
+    type: "website",
+    siteName: "Label Verify",
+  },
+  twitter: {
+    card: "summary",
+    title: "Label Verify — TTB COLA prototype",
+    description:
+      "Verify alcohol label images against application data in under 5 seconds.",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0f172a",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -22,7 +45,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-4 sm:flex-nowrap">
             <h1 className="text-xl font-semibold tracking-tight">
               Label Verify
             </h1>
@@ -31,7 +54,7 @@ export default function RootLayout({
             </p>
           </div>
         </header>
-        <main id="main" className="mx-auto max-w-5xl px-4 py-8">
+        <main id="main" className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
           {children}
         </main>
         <footer className="mx-auto max-w-5xl px-4 py-8 text-xs text-slate-400">

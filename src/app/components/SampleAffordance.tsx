@@ -43,7 +43,7 @@ export function SampleAffordance({ onPick, disabled }: SampleAffordanceProps) {
             type="button"
             onClick={() => activate(s)}
             disabled={disabled}
-            className={`group flex flex-col items-start gap-2 rounded-md border bg-slate-50 p-3 text-left transition-colors hover:bg-slate-100 ${verdictRing(s.expectedVerdict)}`}
+            className={`group flex min-h-[88px] flex-col items-start gap-2 rounded-md border bg-slate-50 p-3 text-left transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 ${verdictRing(s.expectedVerdict)}`}
             aria-label={`Try the ${s.id} sample`}
           >
             <span className="text-label font-semibold uppercase tracking-wide text-slate-500">

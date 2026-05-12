@@ -1,6 +1,7 @@
 import { preprocessImage } from "./preprocess";
 import { GeminiFlashExtractor } from "./vision/gemini";
 import { tesseractEngine } from "./ocr/tesseract";
+import { DEFAULT_MODE_ID, getMode } from "./model-modes";
 import {
   compareBrand,
   compareAbv,
@@ -35,6 +36,14 @@ interface VerifyOptions {
    * populate the in-memory ring buffer; never affects the response.
    */
   recordTrace?: (trace: VerifyTrace) => void;
+  /**
+   * Optional model-mode ID (see lib/model-modes.ts). When provided and
+   * recognised, the orchestrator builds the extractor via that mode's
+   * factory. Falls through to `extractor` first (explicit beats mode) and
+   * to `buildDefaultExtractor()` last. Unknown IDs are silently ignored:
+   * the orchestrator must never 500 because the UI sent a stale mode.
+   */
+  modelMode?: string;
 }
 
 const DEFAULT_VISION_TIMEOUT_MS = 4500;
@@ -92,8 +101,27 @@ export async function verifyLabel(
   const ctrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
 
-  const extractor =
-    opts.extractor ?? buildDefaultExtractor();
+  // Extractor selection precedence:
+  //   1. opts.extractor — explicit instance (tests, custom callers)
+  //   2. opts.modelMode — selectable mode (Settings panel / API `mode` field)
+  //   3. buildDefaultExtractor() — legacy MODEL_PRIMARY path
+  // Unknown modeIds fall through to the legacy default so a stale
+  // client-side value never breaks the request.
+  let modeUsed: string = DEFAULT_MODE_ID;
+  let extractor: Extractor;
+  if (opts.extractor) {
+    extractor = opts.extractor;
+  } else if (opts.modelMode) {
+    const mode = getMode(opts.modelMode);
+    if (mode) {
+      extractor = mode.extractorFactory();
+      modeUsed = mode.id;
+    } else {
+      extractor = buildDefaultExtractor();
+    }
+  } else {
+    extractor = buildDefaultExtractor();
+  }
 
   // OCR may finish first; if it does, we hand its text to the vision call.
   // If it doesn't, the vision call goes without (C1 degenerates to T6).
@@ -281,6 +309,7 @@ export async function verifyLabel(
     },
     modelId: extracted.modelId,
     modelVersion: extracted.modelVersion,
+    modeUsed,
     requiresHumanReview: verdict === "review",
     reviewReasons: verdict === "review" ? reviewReasons : [],
     ...(imageQualityReason ? { imageQualityReason } : {}),

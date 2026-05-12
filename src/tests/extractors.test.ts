@@ -107,7 +107,13 @@ describe("GPT4oMiniExtractor", () => {
     openaiCreate.mockResolvedValueOnce(
       fakeOpenAIResponse(HIGH_CONFIDENCE_FIELDS),
     );
-    const ext = new GPT4oMiniExtractor({ apiKey: "test-key" });
+    // Pin the legacy gpt-4o-mini model so the temperature=0 assertion
+    // holds. The new default is gpt-5-nano which doesn't accept
+    // temperature; that path is covered in extractors-extended.test.ts.
+    const ext = new GPT4oMiniExtractor({
+      apiKey: "test-key",
+      modelVersion: "gpt-4o-mini-2024-07-18",
+    });
     const result = await ext.extract(TINY_IMAGE);
 
     expect(openaiCreate).toHaveBeenCalledTimes(1);

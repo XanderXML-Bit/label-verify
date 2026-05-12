@@ -24,10 +24,22 @@
     "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
   "visualAudit": {
-    "status": "pending",
-    "reviewer": null,
-    "reviewedAt": null,
-    "notes": [],
+    "status": "robustnessOnly",
+    "usageTier": "robustnessOnly",
+    "reviewer": "Codex + 4 sub-agent chunk audit",
+    "reviewedAt": "2026-05-12T03:00:34.714Z",
+    "notes": [
+      "Upside-down orientation case; keep robustness-only."
+    ],
     "strictBenchmarkReady": false
+  },
+  "expectedFields": {
+    "brandName": "Little Quarry",
+    "classType": "Hefeweizen",
+    "alcoholByVolume": "5.4%",
+    "netContents": "12 FL OZ",
+    "producerAddress": "Little Quarry Brewing, Boise, ID",
+    "countryOfOrigin": "USA",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   }
 }
