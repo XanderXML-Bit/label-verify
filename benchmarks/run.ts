@@ -208,7 +208,7 @@ async function runTechnique(
         // Score only the first successful trial. Additional trials are kept
         // for latency variance only (per APPROACH.md §5 step 3).
         if (!scored) {
-          const result = scoreImage(gt, extracted, {
+          const result = await scoreImage(gt, extracted, {
             width: pre.width,
             height: pre.height,
           });

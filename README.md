@@ -1,5 +1,7 @@
 # Label Verify
 
+[![CI](https://github.com/XanderXML-Bit/label-verify/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/XanderXML-Bit/label-verify/actions/workflows/ci.yml)
+
 AI-powered verification of beverage label artwork against declared
 application data. A prototype for the U.S. Department of the Treasury,
 Alcohol and Tobacco Tax and Trade Bureau (TTB).
@@ -112,11 +114,12 @@ npm run lint
 ## What's deployed
 
 - `/`                              — single-image verify + batch UI
-- `POST /api/verify`               — multipart upload OR JSON `{ url, declared }`
+- `POST /api/verify`               — multipart upload (JPEG / PNG / WebP / `application/pdf`) OR JSON `{ url, declared }`
 - `POST /api/verify/batch`         — multipart manifest + folder of images
 - `GET  /api/verify/batch/:id/stream` — SSE per-item streaming
 - `GET  /api/health`               — `{ ok, model, version }`
 - `GET  /api/warmup`               — warms sharp + Tesseract worker
+- `GET  /api/debug/last`           — last 20 verifications, in-memory (gated by `DEBUG_TOKEN` env var)
 
 All endpoints rate-limited (60/min/IP by default). SSRF-safe URL fetch.
 

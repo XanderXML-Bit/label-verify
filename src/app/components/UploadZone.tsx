@@ -9,7 +9,12 @@ interface UploadZoneProps {
   readonly disabled?: boolean;
 }
 
-const DEFAULT_ACCEPT = ["image/jpeg", "image/png", "image/webp"];
+const DEFAULT_ACCEPT = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
 
 export function UploadZone({
   onFiles,
@@ -71,7 +76,7 @@ export function UploadZone({
         Drop label images here
       </div>
       <div className="mt-1 text-sm text-slate-500">
-        or click to browse · JPEG, PNG, WebP
+        or click to browse · JPEG, PNG, WebP, PDF
       </div>
       <div className="mt-1 text-xs text-slate-400">
         Single image, batch upload, or a folder

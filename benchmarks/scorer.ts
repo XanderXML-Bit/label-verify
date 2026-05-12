@@ -90,11 +90,11 @@ export interface ScoredImage {
   warningOutcome: PerItemWarningOutcome;
 }
 
-export function scoreImage(
+export async function scoreImage(
   gt: GroundTruth,
   extracted: ExtractedFields,
   imageDimsPx?: { width: number; height: number },
-): ScoredImage {
+): Promise<ScoredImage> {
   const strata = strataFor(gt);
   const ood = gt.source === "real";
   const outcomes: PerItemOutcome[] = [];
@@ -143,7 +143,7 @@ export function scoreImage(
   push("producer", producer.status === "pass");
 
   // ─── Government Warning ────────────────────────────────────────────────────
-  const gw = validateGovernmentWarning({
+  const gw = await validateGovernmentWarning({
     extracted: extracted.government_warning.value ?? {
       raw_text: null,
       prefix_text: null,

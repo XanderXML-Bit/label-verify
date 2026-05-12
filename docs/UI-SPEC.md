@@ -200,8 +200,12 @@ keeping it.
 - **File too large** (> 10 MB / image): rejected client-side before
   upload with a clear suggestion ("compress this image to ≤ 5 MB").
 - **MIME not allowed**: a per-file rejection ("This .heic file isn't
-  supported yet — please save as JPEG or PNG."). HEIC support is on the
-  P1 list.
+  supported yet — please save as JPEG, PNG, WebP, or PDF."). HEIC support
+  is on the P1 list. Single-page PDFs are accepted: the first page is
+  rasterized server-side and run through the standard pipeline.
+  Password-protected PDFs are rejected with a clear "PDF is
+  password-protected" message; multi-page PDFs are processed using
+  page 1 only.
 - **URL fetch blocked**: if the upstream URL is unreachable (CORS, gov
   firewall, 404), the UI prompts the reviewer to download the image
   locally and drag it in instead.

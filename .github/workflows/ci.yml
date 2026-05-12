@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck + Lint + Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20.x']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Upload coverage (if present)
+        if: always() && hashFiles('coverage/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-node-${{ matrix.node-version }}
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache .next
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Build
+        run: npm run build
+
+  bench-smoke:
+    name: Corpus-smoke benchmark (T1)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run smoke benchmark (Tesseract baseline)
+        run: npm run bench:smoke -- --corpus test-data-v2 --technique T1
+
+      - name: Locate latest results
+        id: results
+        run: |
+          set -euo pipefail
+          latest_md=$(ls -1t benchmarks/results/*.md | head -n1)
+          latest_json=$(ls -1t benchmarks/results/*.json | head -n1)
+          echo "md=$latest_md" >> "$GITHUB_OUTPUT"
+          echo "json=$latest_json" >> "$GITHUB_OUTPUT"
+          echo "Found markdown: $latest_md"
+          echo "Found json:     $latest_json"
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-smoke-results
+          path: |
+            ${{ steps.results.outputs.md }}
+            ${{ steps.results.outputs.json }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce T1 accuracy floor (>=15%)
+        env:
+          MD_FILE: ${{ steps.results.outputs.md }}
+        run: |
+          set -euo pipefail
+          # Row format in results .md:
+          # | T1 | 19.3% (n=140) [13.6, 26.6] | ...
+          # Extract the first percentage in the T1 row.
+          t1_line=$(grep -E '^\|\s*T1\s*\|' "$MD_FILE" | head -n1 || true)
+          if [ -z "$t1_line" ]; then
+            echo "::error::Could not find T1 row in $MD_FILE"
+            cat "$MD_FILE"
+            exit 1
+          fi
+          acc=$(echo "$t1_line" | grep -oE '[0-9]+\.[0-9]+%' | head -n1 | tr -d '%')
+          if [ -z "$acc" ]; then
+            echo "::error::Could not parse accuracy from T1 row: $t1_line"
+            exit 1
+          fi
+          echo "T1 accuracy: ${acc}%"
+          # Floor is 15% — Tesseract baseline historically scores ~19% on the
+          # v2 corpus; a drop below 15% indicates a real regression in OCR
+          # preprocessing, the corpus loader, or the scorer.
+          awk -v a="$acc" 'BEGIN { exit (a + 0 >= 15.0) ? 0 : 1 }' || {
+            echo "::error::T1 accuracy ${acc}% is below the 15% regression floor."
+            exit 1
+          }
+          echo "T1 accuracy ${acc}% is at or above the 15% floor."

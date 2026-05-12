@@ -80,3 +80,9 @@ export interface VerifyResponse {
   modelId: string;
   modelVersion: string;
 }
+
+// ─── VerifyTrace ────────────────────────────────────────────────────────────
+//
+// Re-exported from lib/debug-trace.ts so consumers can pull both the response
+// shape and the trace shape from one place.
+export type { VerifyTrace } from "./debug-trace";

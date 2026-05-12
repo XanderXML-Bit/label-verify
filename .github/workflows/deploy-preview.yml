@@ -1,0 +1,45 @@
+name: Vercel preview URL comment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  comment-preview-url:
+    name: Post predicted Vercel preview URL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute predicted preview URL
+        id: url
+        env:
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          short_sha="${SHA:0:7}"
+          # Vercel preview URLs follow the pattern <project>-<sha>.vercel.app
+          # for git-based previews. This is informational only — Vercel itself
+          # provisions the actual preview from its GitHub integration.
+          url="https://label-verify-${short_sha}.vercel.app"
+          echo "url=$url"      >> "$GITHUB_OUTPUT"
+          echo "short=$short_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Vercel preview (predicted)
+
+            Once Vercel finishes building this commit (`${{ steps.url.outputs.short }}`),
+            the preview should be available at:
+
+            **${{ steps.url.outputs.url }}**
+
+            > This URL is predicted from the commit SHA — Vercel's GitHub
+            > integration provisions the actual deployment. If the link 404s,
+            > check the Vercel dashboard for the canonical preview URL.
+          edit-mode: replace

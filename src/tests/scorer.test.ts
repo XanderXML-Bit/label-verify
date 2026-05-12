@@ -74,8 +74,8 @@ function perfectExtracted(): ExtractedFields {
 }
 
 describe("scoreImage", () => {
-  it("perfect extraction → all outcomes correct", () => {
-    const result = scoreImage(GT, perfectExtracted(), {
+  it("perfect extraction → all outcomes correct", async () => {
+    const result = await scoreImage(GT, perfectExtracted(), {
       width: 1600,
       height: 1200,
     });
@@ -87,16 +87,16 @@ describe("scoreImage", () => {
     expect(result.warningOutcome.predictedPass).toBe(true);
   });
 
-  it("mutated brand → only brand_name flagged incorrect", () => {
+  it("mutated brand → only brand_name flagged incorrect", async () => {
     const ext = perfectExtracted();
     ext.brand_name = { value: "Totally Different Brand", confidence: 0.95 };
-    const result = scoreImage(GT, ext, { width: 1600, height: 1200 });
+    const result = await scoreImage(GT, ext, { width: 1600, height: 1200 });
     const wrong = result.outcomes.filter((o) => !o.correct).map((o) => o.field);
     expect(wrong).toEqual(["brand_name"]);
   });
 
-  it("strata derived from synthetic-clean GT", () => {
-    const result = scoreImage(GT, perfectExtracted(), {
+  it("strata derived from synthetic-clean GT", async () => {
+    const result = await scoreImage(GT, perfectExtracted(), {
       width: 1600,
       height: 1200,
     });
@@ -105,9 +105,9 @@ describe("scoreImage", () => {
     expect(result.outcomes[0]?.ood).toBe(false);
   });
 
-  it("non-compliant GT + predicted-pass → warning outcome flags FN risk", () => {
+  it("non-compliant GT + predicted-pass → warning outcome flags FN risk", async () => {
     const failGt: GroundTruth = { ...GT, gov_warning_case: "T1" };
-    const result = scoreImage(failGt, perfectExtracted(), {
+    const result = await scoreImage(failGt, perfectExtracted(), {
       width: 1600,
       height: 1200,
     });

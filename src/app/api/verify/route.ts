@@ -3,19 +3,27 @@ import { verifyLabel } from "@/lib/verify";
 import { DeclaredFieldsSchema } from "@/lib/types";
 import { UrlFetchError, fetchUrlImage } from "@/lib/input-handlers";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
+import { recordTrace } from "@/lib/debug-trace";
+import {
+  MAX_PDF_BYTES,
+  PdfExtractError,
+  extractPdfFirstPage,
+} from "@/lib/pdf";
 
 export const runtime = "nodejs";
 // Vercel max for hobby plan is 10s; we run within a 5s vision budget.
 export const maxDuration = 60;
 
+const PDF_MIME = "application/pdf";
 const ACCEPTED_MIME = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/heic",
   "image/heif",
+  PDF_MIME,
 ]);
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB (image upload ceiling)
 const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
 export async function POST(req: Request) {
@@ -142,15 +150,23 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (file.size > MAX_BYTES) {
+  const isPdf = file.type === PDF_MIME;
+  const sizeCap = isPdf ? MAX_PDF_BYTES : MAX_BYTES;
+  if (file.size > sizeCap) {
     return NextResponse.json(
-      { error: `Image exceeds ${MAX_BYTES} bytes. Please compress first.` },
+      {
+        error: isPdf
+          ? `PDF exceeds ${sizeCap} bytes.`
+          : `Image exceeds ${sizeCap} bytes. Please compress first.`,
+      },
       { status: 413 },
     );
   }
   if (!ACCEPTED_MIME.has(file.type)) {
     return NextResponse.json(
-      { error: `Unsupported MIME type "${file.type}". Use JPEG, PNG, or WebP.` },
+      {
+        error: `Unsupported MIME type "${file.type}". Use JPEG, PNG, WebP, or PDF.`,
+      },
       { status: 415 },
     );
   }
@@ -181,8 +197,47 @@ export async function POST(req: Request) {
     );
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const raw = Buffer.from(await file.arrayBuffer());
+  let buffer: Buffer;
+  if (isPdf) {
+    try {
+      const extracted = await extractPdfFirstPage(raw);
+      buffer = extracted.pngBuffer;
+    } catch (err) {
+      if (err instanceof PdfExtractError) {
+        return NextResponse.json(
+          { error: pdfErrorMessage(err) },
+          { status: pdfErrorStatus(err.code) },
+        );
+      }
+      return NextResponse.json(
+        { error: `PDF processing failed: ${(err as Error).message}` },
+        { status: 500 },
+      );
+    }
+  } else {
+    buffer = raw;
+  }
   return runVerify(buffer, parsed.data, rl);
+}
+
+function pdfErrorStatus(code: PdfExtractError["code"]): number {
+  switch (code) {
+    case "encrypted":
+      return 415;
+    case "empty":
+      return 400;
+    case "too-large":
+      return 413;
+    case "render-failed":
+      return 500;
+  }
+}
+
+function pdfErrorMessage(err: PdfExtractError): string {
+  if (err.code === "encrypted") return "PDF is password-protected.";
+  if (err.code === "empty") return "PDF has no pages.";
+  return err.message;
 }
 
 async function runVerify(
@@ -191,7 +246,7 @@ async function runVerify(
   rl: import("@/lib/rate-limit").RateLimitResult,
 ) {
   try {
-    const result = await verifyLabel(buffer, declared);
+    const result = await verifyLabel(buffer, declared, { recordTrace });
     return NextResponse.json(result, {
       headers: {
         "X-RateLimit-Remaining": String(rl.remaining),

@@ -96,8 +96,8 @@ describe("validateGovernmentWarning", () => {
     prefix_appears_caps: true,
   };
 
-  it("PASS on a fully compliant extraction", () => {
-    const r = validateGovernmentWarning({
+  it("PASS on a fully compliant extraction", async () => {
+    const r = await validateGovernmentWarning({
       extracted: fullyCompliant,
       declaredNetContents: LARGE_CONTAINER,
       imageDimsPx: IMG_DIMS,
@@ -109,8 +109,8 @@ describe("validateGovernmentWarning", () => {
     expect(r.subscores.size.status).toBe("pass");
   });
 
-  it("FAIL on substituted body word (T1)", () => {
-    const r = validateGovernmentWarning({
+  it("FAIL on substituted body word (T1)", async () => {
+    const r = await validateGovernmentWarning({
       extracted: {
         ...fullyCompliant,
         raw_text: COMPLIANT_TEXT.replace(
@@ -125,8 +125,8 @@ describe("validateGovernmentWarning", () => {
     expect(r.subscores.text.status).toBe("fail");
   });
 
-  it("FAIL on title-case prefix (C1)", () => {
-    const r = validateGovernmentWarning({
+  it("FAIL on title-case prefix (C1)", async () => {
+    const r = await validateGovernmentWarning({
       extracted: {
         ...fullyCompliant,
         prefix_text: "Government Warning",
@@ -138,8 +138,8 @@ describe("validateGovernmentWarning", () => {
     expect(r.subscores.caps.status).toBe("fail");
   });
 
-  it("FAIL when prefix is not bold (B1)", () => {
-    const r = validateGovernmentWarning({
+  it("FAIL when prefix is not bold (B1)", async () => {
+    const r = await validateGovernmentWarning({
       extracted: {
         ...fullyCompliant,
         prefix_appears_bold: false,
@@ -151,8 +151,8 @@ describe("validateGovernmentWarning", () => {
     expect(r.subscores.bold.status).toBe("fail");
   });
 
-  it("REVIEW when bold is null (extractor unsure)", () => {
-    const r = validateGovernmentWarning({
+  it("REVIEW when bold is null (extractor unsure)", async () => {
+    const r = await validateGovernmentWarning({
       extracted: {
         ...fullyCompliant,
         prefix_appears_bold: null,
@@ -165,8 +165,8 @@ describe("validateGovernmentWarning", () => {
     expect(r.status).toBe("review");
   });
 
-  it("FAIL on type-size below §16.22 minimum (S1)", () => {
-    const r = validateGovernmentWarning({
+  it("FAIL on type-size below §16.22 minimum (S1)", async () => {
+    const r = await validateGovernmentWarning({
       extracted: { ...fullyCompliant, prefix_bbox: BBOX_TINY },
       declaredNetContents: LARGE_CONTAINER,
       imageDimsPx: IMG_DIMS,
@@ -175,11 +175,11 @@ describe("validateGovernmentWarning", () => {
     expect(r.status).toBe("fail");
   });
 
-  it("uses the SMALL container minimum (1mm) for ≤237ml containers", () => {
+  it("uses the SMALL container minimum (1mm) for ≤237ml containers", async () => {
     // A bbox that would FAIL for a large container at 2mm should still
     // PASS for a small container at 1mm if the px-height is enough.
     const okForSmall = { x: 0, y: 0, width: 400, height: 12 };
-    const r = validateGovernmentWarning({
+    const r = await validateGovernmentWarning({
       extracted: { ...fullyCompliant, prefix_bbox: okForSmall },
       declaredNetContents: SMALL_CONTAINER,
       imageDimsPx: IMG_DIMS,
@@ -187,7 +187,7 @@ describe("validateGovernmentWarning", () => {
     // 12px / (1600px / 30mm) = ~0.225mm — too small for any container.
     // Switch to bigger bbox to verify the SMALL-vs-LARGE threshold logic.
     const okForSmallBig = { x: 0, y: 0, width: 400, height: 64 };
-    const r2 = validateGovernmentWarning({
+    const r2 = await validateGovernmentWarning({
       extracted: { ...fullyCompliant, prefix_bbox: okForSmallBig },
       declaredNetContents: SMALL_CONTAINER,
       imageDimsPx: IMG_DIMS,
@@ -197,8 +197,8 @@ describe("validateGovernmentWarning", () => {
     expect(["pass", "fail", "review"]).toContain(r2.subscores.size.status);
   });
 
-  it("REVIEW on missing bbox or image dims (size unknowable)", () => {
-    const r = validateGovernmentWarning({
+  it("REVIEW on missing bbox or image dims (size unknowable)", async () => {
+    const r = await validateGovernmentWarning({
       extracted: { ...fullyCompliant, prefix_bbox: null },
       declaredNetContents: LARGE_CONTAINER,
       imageDimsPx: IMG_DIMS,
@@ -206,9 +206,9 @@ describe("validateGovernmentWarning", () => {
     expect(r.subscores.size.status).toBe("review");
   });
 
-  it("aggregate confidence is the minimum across subscores", () => {
+  it("aggregate confidence is the minimum across subscores", async () => {
     // Construct an input where caps confidence is forced low by null prefix.
-    const r = validateGovernmentWarning({
+    const r = await validateGovernmentWarning({
       extracted: {
         ...fullyCompliant,
         prefix_appears_bold: null,
@@ -220,8 +220,8 @@ describe("validateGovernmentWarning", () => {
     expect(r.confidence).toBeLessThanOrEqual(0.5);
   });
 
-  it("FAIL when raw_text is null entirely (X1 — missing)", () => {
-    const r = validateGovernmentWarning({
+  it("FAIL when raw_text is null entirely (X1 — missing)", async () => {
+    const r = await validateGovernmentWarning({
       extracted: {
         raw_text: null,
         prefix_text: null,

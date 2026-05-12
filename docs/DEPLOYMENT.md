@@ -95,8 +95,25 @@ Bare minimum for a prototype:
 
 - Vercel built-in request logs.
 - `/api/health` returns `{ ok: true, model: MODEL_PRIMARY, version: SHA }`.
-- A `/api/debug/last` (gated by an env-only password) returns the last
-  request's full pipeline trace — useful if the reviewer reports an issue.
+- **`GET /api/debug/last`** — reviewer introspection for the most recent
+  verification(s).
+  - **Auth.** Gated by the `DEBUG_TOKEN` env var. Callers send
+    `Authorization: Bearer <DEBUG_TOKEN>`. When `DEBUG_TOKEN` is unset, the
+    endpoint returns `404 Not Found` (not `401`) so that a deployment that
+    has not opted into debug mode is indistinguishable from one where the
+    route does not exist. A wrong bearer returns `401`.
+  - **Query.** `?id=<traceId>` returns one trace; no `id` returns the most
+    recent 20, newest first.
+  - **Payload.** Each trace contains the declared inputs, preprocessed
+    image dimensions, model id + version + prompt hash, raw OCR text
+    (redacted to the first 1000 chars), the raw extractor output, and the
+    `VerifyResponse` the user saw. The bearer token itself is never
+    logged.
+  - **In-memory caveat.** The store is a module-scope ring buffer (cap 20)
+    that wipes on every cold start and is not shared between serverless
+    instances. This is an explicit prototype tradeoff — a hosted version
+    would persist to a short-TTL KV (Upstash / Vercel KV). The cap keeps
+    the worst-case memory footprint trivially bounded.
 
 ## 8. Rollback
 

@@ -15,6 +15,7 @@ import type {
   ImageQuality,
   Verdict,
   VerifyResponse,
+  VerifyTrace,
 } from "./types";
 import type {
   Extractor,
@@ -28,6 +29,12 @@ interface VerifyOptions {
   extractor?: Extractor;
   /** Hard wall-clock budget for the vision call in ms. */
   visionTimeoutMs?: number;
+  /**
+   * Optional sink for a {@link VerifyTrace} describing this run. Invoked once
+   * after the response is built. Default is no-op. Used by /api/debug/last to
+   * populate the in-memory ring buffer; never affects the response.
+   */
+  recordTrace?: (trace: VerifyTrace) => void;
 }
 
 const DEFAULT_VISION_TIMEOUT_MS = 4500;
@@ -125,7 +132,11 @@ export async function verifyLabel(
   );
 
   // ─── 4. Government Warning ───────────────────────────────────────────────
-  const gov = validateGovernmentWarning({
+  // Wait for OCR to finish before validating: if it succeeded, the validator
+  // uses Tesseract word bboxes (pixel-tight) for the bold + size subscores
+  // instead of the vision model's noisy self-reported `prefix_bbox`.
+  const ocrFinal = await ocrPromise;
+  const gov = await validateGovernmentWarning({
     extracted: f.government_warning.value ?? {
       raw_text: null,
       prefix_text: null,
@@ -135,6 +146,10 @@ export async function verifyLabel(
     },
     declaredNetContents: declared.net_contents,
     imageDimsPx: { width: pre.width, height: pre.height },
+    ocrContext:
+      ocrFinal && ocrFinal.words.length > 0
+        ? { words: ocrFinal.words, imageBuffer: pre.buffer }
+        : undefined,
   });
   const matchElapsed = performance.now() - matchStart;
 
@@ -195,7 +210,36 @@ export async function verifyLabel(
     modelVersion: extracted.modelVersion,
     ...(imageQualityReason ? { imageQualityReason } : {}),
   };
+
+  // Hand the trace to the optional sink (used by /api/debug/last). Wrapped
+  // in try/catch so an instrumentation bug can never break a real verify.
+  if (opts.recordTrace) {
+    try {
+      opts.recordTrace({
+        id: makeTraceId(),
+        receivedAt: Date.now(),
+        declared,
+        preprocessedDims: { w: pre.width, h: pre.height },
+        modelId: extracted.modelId,
+        modelVersion: extracted.modelVersion,
+        promptHash: extracted.promptHash,
+        ocrText: ocrText ?? null,
+        rawExtraction: extracted.rawOutput,
+        response,
+      });
+    } catch {
+      // Swallow — debug instrumentation must never affect the response.
+    }
+  }
+
   return response;
+}
+
+function makeTraceId(): string {
+  // Short, URL-safe, sortable-by-creation: timestamp + random tail. Not a
+  // cryptographic id — this is a debug breadcrumb, not a security boundary.
+  const tail = Math.random().toString(36).slice(2, 8);
+  return `${Date.now().toString(36)}-${tail}`;
 }
 
 function aggregateVerdict(statuses: ("pass" | "fail" | "review")[]): Verdict {

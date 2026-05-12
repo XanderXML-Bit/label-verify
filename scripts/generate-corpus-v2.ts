@@ -950,7 +950,11 @@ function makeSyntheticSpec(
   const labelFace: LabelFace = pick(rng, ["front", "front", "front", "back", "neck"]);
 
   const mutation = applyMutation(caseTag);
-  const prefixFontSize = Math.round(28 * mutation.prefixSizeMul);
+  // Bumped to 38px (from 28px) so compliant labels render the prefix at
+  // >=2mm on a 750ml bottle (≈100mm label height) under the §16.22 size
+  // check's pixel-to-mm conversion. S1/S2 mutations still drop to ~0.4×
+  // (15px / 0.4mm), which is unambiguously below the regulator floor.
+  const prefixFontSize = Math.round(38 * mutation.prefixSizeMul);
   const bodyFontSize = 17;
   const warning: RenderedWarning = {
     visible: mutation.visible,
