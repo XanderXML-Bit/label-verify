@@ -30,7 +30,14 @@ export const DeclaredFieldsSchema = z.object({
    * either and normalizes internally.
    */
   producer: z.union([ProducerAddressSchema, z.string()]),
-  country_of_origin: z.string().min(2),
+  /**
+   * Country of origin. Nullable because TTB only requires country
+   * marking on imports (27 CFR §4.39 / §5.36); a US-domestic
+   * application may legitimately omit it. When null, the comparator
+   * PASSes if the label is also missing a country marking and the
+   * producer address looks US-domestic, and REVIEWs otherwise.
+   */
+  country_of_origin: z.string().min(2).nullable(),
 });
 export type DeclaredFields = z.infer<typeof DeclaredFieldsSchema>;
 
