@@ -207,16 +207,7 @@ That's it — the dev server runs the same Next.js App Router build as productio
 | `GEMINI_RPM_LIMIT` | optional | Project-level Gemini RPM. Batch capacity derives from this × the 300 s SSE window. Defaults to 30. |
 | `DEBUG_TOKEN` | optional | Bearer-gated access to `/api/debug/last` ring buffer. Timing-safe compare. |
 
-#### Custom domain (optional)
-
-```
-Vercel → Project Settings → Domains → Add → labelverify.yourdomain.com
-       → Vercel issues a CNAME target (cname.vercel-dns.com)
-DNS provider → add CNAME record → "DNS only" (gray-cloud on Cloudflare)
-       → wait ~30 s for DNS to propagate
-```
-
-Don't proxy through Cloudflare's orange-cloud — it caches SSE responses and breaks the batch-verify stream. DNS-only is the supported path. Full runbook: [`docs/CUSTOM-DOMAIN.md`](docs/CUSTOM-DOMAIN.md).
+Deploy → Vercel hands you a `*.vercel.app` URL. That's the production URL for the prototype; no custom domain is wired and none is needed. (If you want one on your own deploy: `Project Settings → Domains → Add`, then a `CNAME` to `cname.vercel-dns.com` at your DNS provider, DNS-only — don't proxy through Cloudflare's orange-cloud, it caches SSE and breaks the batch-verify stream.)
 
 ---
 
@@ -363,12 +354,11 @@ No persistent storage. No PII collection. The review queue is in-process; the ba
 6. [`docs/government-warning-cases.md`](docs/government-warning-cases.md) — §16.21/§16.22 non-compliance taxonomy.
 7. [`docs/REMAINING-IMPROVEMENTS.md`](docs/REMAINING-IMPROVEMENTS.md) — what we'd do next.
 8. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) + [`docs/DEPLOYMENT-CHECKLIST.md`](docs/DEPLOYMENT-CHECKLIST.md) + [`docs/PRODUCTION-SMOKE.md`](docs/PRODUCTION-SMOKE.md) — production runbook.
-9. [`docs/CUSTOM-DOMAIN.md`](docs/CUSTOM-DOMAIN.md) — point your own domain at the deployment.
-10. [`docs/openapi.yaml`](docs/openapi.yaml) — public API surface.
-11. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — what's tested where and why.
-12. [`SECURITY.md`](SECURITY.md) — threat model + mitigations.
-13. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points.
-14. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline + audit findings closed.
+9. [`docs/openapi.yaml`](docs/openapi.yaml) — public API surface.
+10. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — what's tested where and why.
+11. [`SECURITY.md`](SECURITY.md) — threat model + mitigations.
+12. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points.
+13. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline + audit findings closed.
 
 **Pre-implementation planning docs** (kept for the audit trail; the current state of the code is the authority):
 - [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) — pre-registered hypotheses.

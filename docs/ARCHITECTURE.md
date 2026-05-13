@@ -35,7 +35,7 @@ deployment (R8), keeps the prototype legible to reviewers (eval criteria #2).
 | Validation | Hand-rolled rules + zod schemas | Government Warning rule is too strict and too specific to outsource (R5). |
 | Tests | **vitest** | Same as Splitful; ESM-friendly, fast. |
 | Benchmarks | Custom harness in `benchmarks/` | See `TEST-STRATEGY.md`. |
-| Deploy | **Vercel** + custom domain (`labelverify.zendren.net` candidate) | Free, fast, edge-friendly, public URL satisfies R8. |
+| Deploy | **Vercel** (`label-verify-six.vercel.app`) | Free, fast, edge-friendly, public URL satisfies R8. |
 
 ## 3. Verification Pipeline
 

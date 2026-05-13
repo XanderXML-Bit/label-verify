@@ -4,6 +4,27 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Custom-domain scrap + postcss CVE fix] — 2026-05-12 night
+
+- **Dropped the planned custom domain** (`labelverify.xandermlopez.com`).
+  The Vercel URL is the production URL; no custom domain is wired and
+  none is needed. Rationale: the Vercel deployment is fully functional,
+  TTB reviewers land there from the README's live-demo link, and a
+  half-wired custom domain (Vercel-side alias set but DNS unresolved)
+  is *worse* than no custom domain — anyone copying the URL hits
+  NXDOMAIN and thinks the site is broken. Removed the
+  `labelverify.xandermlopez.com` alias from the Vercel project,
+  deleted `docs/CUSTOM-DOMAIN.md`, stripped references from
+  `README.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`,
+  `docs/DEPLOYMENT.md`, and `docs/DEPLOYMENT-CHECKLIST.md`. Archived
+  pre-implementation `docs/archive/TODO.md` mentions of a "P0 custom
+  domain" task are intentionally left as historical record.
+- **Bumped `postcss` 8.4.49 → 8.5.14** to close GHSA-qx2v-qp2m-jg93
+  (XSS via unescaped `</style>` in CSS stringifier, CVSS 6.1). Added
+  `overrides.postcss: ^8.5.14` so Next's nested 8.4.31 also resolves
+  to the patched version. **`npm audit --omit=dev`: 0 vulnerabilities**
+  (was 2). Documented in `SECURITY.md`.
+
 ## [Pre-submission audit-fix wave] — 2026-05-12 late night
 
 Four parallel deep audits (Hermes / Codex / UX sub-agent / code-review
@@ -135,9 +156,6 @@ Plus:
   (`src/lib/application/parse-docx.ts`). Closes F5.
 - **Manifest-template generator button** on the batch-pending screen
   seeds a CSV with one row per uploaded image — lightweight take on F7.
-- **`docs/CUSTOM-DOMAIN.md`** click-by-click Cloudflare + Vercel setup
-  + troubleshooting + smoke commands. Per the project lead's earlier
-  ask to land `labelverify.xandermlopez.com`.
 - **PWA manifest** at `/public/manifest.webmanifest` wired through
   `app/layout.tsx` for "Add to home screen" on phones/tablets.
 - **Bench rerun** on `test-data-combined` post-comparator-fixes:
