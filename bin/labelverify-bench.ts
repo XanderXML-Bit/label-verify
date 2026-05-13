@@ -148,6 +148,21 @@ interface CallRecord {
   elapsedMs: number;
   error?: string;
   govWarningCase?: string | null;
+  /** Derived 9-bucket classification of (condition, expected, actual).
+   *  Set at push time so summary + per-image emit consistent values.
+   *  See `src/lib/bench-classify.ts` for the taxonomy.
+   *  Wave-13: per-image traceability. */
+  bucket?: import("../src/lib/bench-classify").Bucket;
+  /** Application data sent to verifyLabel for this task, after Zod
+   *  validation. `null` when the task errored before validation
+   *  (e.g. GT was missing required fields). Surfaced so a reviewer
+   *  can correlate "we said X on image Y against this declared
+   *  payload" without re-running the bench. Wave-13. */
+  declared?: import("../src/lib/types").DeclaredFields | null;
+  /** Path of the GT file used for this task (correct or
+   *  declared-wrong directory). Lets a reviewer trace a
+   *  surprising verdict back to the exact row. Wave-13. */
+  gtPath?: string;
 }
 
 function isGtCompliant(gt: GtFile): boolean {
@@ -237,6 +252,9 @@ async function cmdCrossPair(args: Args): Promise<void> {
 
   const { verifyLabel } = await import("../src/lib/verify");
   const { DeclaredFieldsSchema } = await import("../src/lib/types");
+  // Hoisted so both the pump loop AND the post-loop auto-save block
+  // can call classifyBucket without re-importing inside a sync map().
+  const { classifyBucket } = await import("../src/lib/bench-classify");
 
   const records: CallRecord[] = [];
   let cursor = 0;
@@ -246,16 +264,32 @@ async function cmdCrossPair(args: Args): Promise<void> {
       if (i >= tasks.length) return;
       const task = tasks[i]!;
       const t0 = Date.now();
+      // `declaredForPush` is set as soon as we have a validated
+      // declared object so that it is included in the record even
+      // when verifyLabel throws partway through. Wave-13 traceability.
+      let declaredForPush: import("../src/lib/types").DeclaredFields | null = null;
       const push = (partial: Partial<CallRecord> & Pick<CallRecord, "actual" | "imageQuality">): void => {
-        records.push({
+        const base: CallRecord = {
           image: basename(task.imagePath),
           condition: task.condition,
           expected: task.expectedVerdict,
           timings: null,
           elapsedMs: Date.now() - t0,
           govWarningCase: task.govWarningCase,
+          declared: declaredForPush,
+          gtPath: task.gtPath,
           ...partial,
+          // Re-spread the required actual + imageQuality from `partial`
+          // so the spread above doesn't drop them.
+          actual: partial.actual,
+          imageQuality: partial.imageQuality,
+        };
+        base.bucket = classifyBucket({
+          condition: base.condition,
+          expected: base.expected,
+          actual: base.actual,
         });
+        records.push(base);
       };
       try {
         const gt = JSON.parse(await readFile(task.gtPath, "utf8")) as GtFile;
@@ -269,6 +303,7 @@ async function cmdCrossPair(args: Args): Promise<void> {
           push({ actual: "error", imageQuality: "schema", error: validated.error.issues[0]?.message ?? "schema error" });
           continue;
         }
+        declaredForPush = validated.data;
         const r = await verifyLabel(await readFile(task.imagePath), validated.data);
         push({ actual: r.verdict, imageQuality: r.imageQuality, timings: r.timings });
       } catch (err) {
@@ -350,6 +385,59 @@ async function cmdCrossPair(args: Args): Promise<void> {
   // --no-track or by deleting the file.
   const trackingResult = await trackBestKnown(summary, args.corpus, args.noTrack);
 
+  // Auto-save per-image artifacts (Wave-13). The bench always writes
+  // both a full JSON record AND an operator-facing per-image
+  // Markdown report under `benchmarks/results/cross-pair-<iso>.{json,md}`
+  // so per-image traceability is preserved across runs without the
+  // operator having to remember `--out`. The `--out` flag (if set)
+  // is still honored in addition.
+  const isoSlug = summary.runAt.replace(/[:.]/g, "-");
+  const autoJsonPath = join(root, "benchmarks", "results", `cross-pair-${isoSlug}.json`);
+  const autoMdPath = join(root, "benchmarks", "results", `cross-pair-${isoSlug}.md`);
+  await mkdir(dirname(autoJsonPath), { recursive: true });
+  await writeFile(autoJsonPath, JSON.stringify(report, null, 2));
+  const { renderPerImageMarkdown } = await import(
+    "../src/lib/bench-per-image-report"
+  );
+  const md = renderPerImageMarkdown({
+    corpus: args.corpus,
+    runAt: summary.runAt,
+    commit: gitHeadShort() === "no-git" ? null : gitHeadShort().slice(0, 7),
+    summary: {
+      images: summary.images,
+      tasks: summary.tasks,
+      completed: summary.completed,
+      errors: summary.errors,
+      passRateOnCorrect: summary.passRateOnCorrect,
+      failOrReviewRateOnWrong: summary.failOrReviewRateOnWrong,
+    },
+    records: records.map((r) => ({
+      image: r.image,
+      condition: r.condition,
+      expected: r.expected,
+      actual: r.actual,
+      bucket:
+        r.bucket ??
+        // Defensive fallback if a record somehow shipped without a
+        // bucket — recompute via the hoisted classifier so the
+        // report still renders. Should never fire in practice; the
+        // push() helper sets bucket at record time.
+        classifyBucket({
+          condition: r.condition,
+          expected: r.expected,
+          actual: r.actual,
+        }),
+      imageQuality: r.imageQuality,
+      govWarningCase: r.govWarningCase ?? null,
+      elapsedMs: r.elapsedMs,
+      timings: r.timings,
+      error: r.error,
+      declared: r.declared ?? null,
+      gtPath: r.gtPath ?? "",
+    })),
+  });
+  await writeFile(autoMdPath, md);
+
   if (args.out) {
     await mkdir(dirname(args.out), { recursive: true });
     await writeFile(args.out, JSON.stringify(report, null, 2));
@@ -375,6 +463,8 @@ async function cmdCrossPair(args: Args): Promise<void> {
     }
   }
   if (args.out) console.log(`\n  Wrote ${args.out}`);
+  console.log(`  Per-image trace: ${autoMdPath}`);
+  console.log(`  Per-image JSON:  ${autoJsonPath}`);
   if (trackingResult.improvements.length > 0 || trackingResult.regressions.length > 0) {
     console.log(`\n  Best-known-record comparison (benchmarks/.best-known.json):`);
     for (const imp of trackingResult.improvements) {
