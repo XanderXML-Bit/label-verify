@@ -33,3 +33,5 @@ eng.traineddata
 # benchmarks/results/ + .review/threshold-calibration-*.{json,md} are
 # the durable artifacts.
 .review/calibrate-log.txt
+
+audit-report.html
