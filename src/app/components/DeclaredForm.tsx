@@ -58,26 +58,42 @@ export function DeclaredForm({
   );
   const [country, setCountry] = useState(initial?.country_of_origin ?? "USA");
 
+  // Per-field "user has interacted with this control" flags. Needed for the
+  // three fields whose default is a non-empty value (classCategory="beer",
+  // ncUnit="fl_oz", country="USA"). For text fields a "" check is enough —
+  // if the user typed and cleared it, the most charitable read is they
+  // want a fresh prefill. But for select/non-empty defaults we cannot
+  // distinguish "the form just rendered with the default" from "the user
+  // explicitly chose this option that happens to be the default". A late
+  // prefill that disagrees with their choice would silently overwrite it,
+  // which is what the UI audit caught. Sticky `touched` flags fix that:
+  // once the user clicks the control we never overwrite, regardless of
+  // current value. (Text fields use empty-string check via `!brand`, etc.)
+  const [touched, setTouched] = useState<{
+    classCategory: boolean;
+    ncUnit: boolean;
+    country: boolean;
+  }>({ classCategory: false, ncUnit: false, country: false });
+
   // When `initial` updates AFTER the form has mounted (e.g. a background
   // application parse lands while the user is on the single-pending
   // screen), merge it in WITHOUT clobbering anything the user has
-  // already typed. Rule: per field, if the user's state is still the
-  // initial-empty value AND the new prefill has a value, apply it;
-  // otherwise leave the user's input alone. This means a late-arriving
-  // prefill can populate a blank form but won't steamroller a user who
-  // started typing while the parse was in flight.
+  // already touched. Rule: per field, if the user hasn't interacted with
+  // it AND the new prefill has a value, apply it; otherwise leave the
+  // user's input alone. Late-arriving prefill can populate a fresh form
+  // but won't steamroller an explicit choice (UI audit fix).
   useEffect(() => {
     if (!initial) return;
     if (!brand && initial.brand_name) setBrand(initial.brand_name);
     if (!classType && initial.class_type) setClassType(initial.class_type);
-    if (classCategory === "beer" && initial.class_category) {
+    if (!touched.classCategory && initial.class_category) {
       setClassCategory(initial.class_category);
     }
     if (!abv && initial.abv_percent != null) setAbv(String(initial.abv_percent));
     if (!ncValue && initial.net_contents?.value != null) {
       setNcValue(String(initial.net_contents.value));
     }
-    if (ncUnit === "fl_oz" && initial.net_contents?.unit) {
+    if (!touched.ncUnit && initial.net_contents?.unit) {
       setNcUnit(initial.net_contents.unit);
     }
     if (!producer) {
@@ -87,7 +103,7 @@ export function DeclaredForm({
           : initial.producer?.name;
       if (incoming) setProducer(incoming);
     }
-    if (country === "USA" && initial.country_of_origin) {
+    if (!touched.country && initial.country_of_origin) {
       setCountry(initial.country_of_origin);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,9 +229,10 @@ export function DeclaredForm({
             id={ids.classCategory}
             name="class_category"
             value={classCategory}
-            onChange={(e) =>
-              setClassCategory(e.target.value as DeclaredFields["class_category"])
-            }
+            onChange={(e) => {
+              setClassCategory(e.target.value as DeclaredFields["class_category"]);
+              setTouched((t) => ({ ...t, classCategory: true }));
+            }}
             disabled={disabled}
             className={inputClass}
           >
@@ -270,9 +287,10 @@ export function DeclaredForm({
             id={ids.ncUnit}
             name="net_contents_unit"
             value={ncUnit}
-            onChange={(e) =>
-              setNcUnit(e.target.value as "fl_oz" | "ml" | "L" | "cl")
-            }
+            onChange={(e) => {
+              setNcUnit(e.target.value as "fl_oz" | "ml" | "L" | "cl");
+              setTouched((t) => ({ ...t, ncUnit: true }));
+            }}
             disabled={disabled}
             className={inputClass}
           >
@@ -304,7 +322,10 @@ export function DeclaredForm({
             name="country_of_origin"
             type="text"
             value={country}
-            onChange={(e) => setCountry(e.target.value)}
+            onChange={(e) => {
+              setCountry(e.target.value);
+              setTouched((t) => ({ ...t, country: true }));
+            }}
             disabled={disabled}
             autoComplete="country-name"
             aria-invalid={!!fieldErrors.country}

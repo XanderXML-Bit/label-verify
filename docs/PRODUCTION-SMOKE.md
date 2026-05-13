@@ -50,13 +50,16 @@ If any step fails, the deployment is **not** ready to ship. See
      "service": "label-verify",
      "ready": true,
      "model": "gemini-3.1-flash-lite",
-     "fallbackModel": "gpt-5.4-nano",
-     "providers": { "google": true, "openai": true },
+     "fallback": "gpt-5.4-nano",
+     "providers": { "google": true, "openai": true, "anthropic": false, "openrouter": false },
+     "debugTokenEnabled": true,
      "version": "a1b2c3d",
      "timestamp": "2026-05-12T...",
      "notes": []
    }
    ```
+   (The field name is `fallback`, not `fallbackModel`. The detailed
+   shape was renamed when the code-review pass caught the drift.)
 4. **Failure looks like:**
    - `404` → routing broken, redeploy.
    - `ready: false` with `notes` listing a missing key → set the

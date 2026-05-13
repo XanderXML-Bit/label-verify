@@ -100,8 +100,11 @@ const FIELD_LABEL: Record<string, string> = {
 /**
  * Top-level verify orchestrator. Per ARCHITECTURE.md §3:
  *   1. preprocess
- *   2. OCR + vision in parallel (OCR is conditionally off-path —
- *      we feed it to the vision prompt only if it returns in time)
+ *   2. OCR + vision in parallel; vision is invoked WITHOUT the OCR
+ *      text (the C1 "OCR-as-hint" hypothesis was falsified in the
+ *      bake-off — see docs/MODEL-SELECTION.md §4.3). OCR's only
+ *      role today is to feed the classical-CV stroke-width bold +
+ *      type-size subscores on the Government Warning validator.
  *   3. match per-field
  *   4. validate the Government Warning
  *   5. aggregate verdict + image-quality
@@ -393,6 +396,26 @@ export async function verifyLabel(
   if (gov.status === "review") {
     reviewReasons.push(
       `Government Warning subscore is REVIEW${gov.reason ? ` — ${gov.reason}` : ""}.`,
+    );
+  }
+  // Codex audit fix: when OCR specifically failed or timed out, the GW
+  // validator has to fall back to the vision model's self-reported
+  // bold + size — its aggregate confidence drops to the no-OCR
+  // baseline (≤ 0.6, with size capped at 0.4). A PASS in that band
+  // hides the loss of the pixel-tight classical-CV measurement the
+  // README advertises. Route those PASS cases to REVIEW so a human
+  // confirms. Note we gate on `ocrFinal === null` (OCR was attempted
+  // and didn't produce usable output) NOT on gov.confidence alone:
+  // a high-confidence vision-only PASS that the validator returns
+  // confidently is still fine. This narrows the new gate to the
+  // genuinely-degraded path Codex flagged.
+  if (
+    gov.status === "pass" &&
+    ocrFinal === null &&
+    gov.confidence < REVIEW_CONFIDENCE_THRESHOLD
+  ) {
+    reviewReasons.push(
+      `Government Warning PASS at confidence ${gov.confidence.toFixed(2)} without OCR corroboration — pixel-level bold/size measurement was unavailable (OCR failed or timed out). A human reviewer should confirm the warning's appearance.`,
     );
   }
   // Per-field comparators that already returned REVIEW (e.g. ABV with low

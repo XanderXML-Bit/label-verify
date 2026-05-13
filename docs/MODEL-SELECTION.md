@@ -180,7 +180,7 @@ The pre-registered prediction matrix in `APPROACH.md` §4 expected:
 
 | Prediction | Predicted | Measured | Verdict |
 |------------|-----------|----------|---------|
-| C1 (OCR + Vision combined) beats vision-only by ≥ 3 pp on Gov-Warning | C1 ≈ 90–96 % | C1 = 89.3 % (n=84) vs T6 = 97.6 % | **Falsified** — OCR-as-hint *hurt* the model on this corpus. T1-text + T6-vision is worse than T6 alone. The vision model trusts the OCR string for stylized brand fonts where the OCR mis-reads, then the vision call defers. The C1 thesis ships as a NON-default mode (Settings panel "Local + Hybrid"); T6 is the deployed primary. |
+| C1 (OCR + Vision combined) beats vision-only by ≥ 3 pp on Gov-Warning | C1 ≈ 90–96 % | C1 = 89.3 % (n=84) vs T6 = 97.6 % | **Falsified** — OCR-as-hint *hurt* the model on this corpus. T1-text + T6-vision is worse than T6 alone. The vision model trusts the OCR string for stylized brand fonts where the OCR mis-reads, then the vision call defers. **C1 does NOT ship in production** — `src/lib/verify.ts` is a single vision-only path with no Settings panel and no mode selector. The wrapping helper (`buildOcrHintSection`) is retained for benchmark mode + defensive future use only. T6 is the deployed primary. |
 | Gemini Flash beating GPT-4o-mini by ≥ 5 pp at half cost | "plausible" | T6 = 97.6 %, T4 = 91.7 %, Δ = 5.9 pp, T6 is 50% cheaper | **Confirmed.** |
 | Tesseract beating hosted on Gov-Warning text-match | "plausible" | Tesseract Gov-Warning subscore tied or lost on every image | **Falsified for this corpus.** Hosted models do not paraphrase the Government Warning when explicitly instructed not to (the EXTRACTION_PROMPT's CRITICAL RULE #1 holds). |
 | Gemini 3.1 Pro Preview is the accuracy ceiling | "implicit" | T6c (Pro direct) = 96.4 % < T6 (Flash Lite direct) = 97.6 % | **Surprised us.** Pro Preview on this corpus *underperforms* the cheaper Flash Lite tier. Hypothesis: Pro's reasoning chain occasionally rewrites the Government Warning verbatim text, breaking RULE #1; Flash Lite is too small to second-guess. |
@@ -246,12 +246,16 @@ defensive fallback. The hosted prototype deliberately doesn't ship
 it because returning a 33%-accurate verdict to a TTB reviewer is
 worse than returning an error they can retry.
 
-### 4.4 What we're not deciding here
+### 4.5 What we're not deciding here
 
 - Whether a future model release moves the frontier — that's a re-run.
-- The fallback tiered-escalation threshold (lives in
-  `lib/vision/tiered.ts`); calibrate it against the same bake-off run
-  with a separate sub-experiment.
+- A tiered-escalation threshold (per-field confidence routing across
+  multiple providers). The phantom `lib/vision/tiered.ts` referenced
+  in earlier drafts of this document was never built; production
+  fallback is provider-failure-only and lives in
+  `src/lib/verify.ts:188-247`. If a future build re-introduces
+  multi-tier escalation, calibrate the threshold against this same
+  bake-off run with a separate sub-experiment.
 - Per-field model assignment ("Gemini for brand, Claude for warning
   text") — out of scope for v1; would require a multi-model orchestrator
   and a much larger corpus to justify.

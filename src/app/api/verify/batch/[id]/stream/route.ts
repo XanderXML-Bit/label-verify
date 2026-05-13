@@ -34,8 +34,11 @@ const CONCURRENCY = 2;
  * Realistic batch ceiling: the POST route caps item count at
  * `MAX_BATCH_ITEMS` derived from `GEMINI_RPM_LIMIT` × the 300 s
  * stream window in `lib/batch-capacity.ts` (default ~100). On Hobby
- * plans the function's 60 s ceiling lowers the effective drain to
- * ~160 items at CONCURRENCY=8 / ~3 s per call; reconnects currently
+ * plans the function's 60 s ceiling at CONCURRENCY=2 caps the
+ * effective drain at ~40 items per stream-open (60 s / ~3 s per call
+ * × 2 parallel). CONCURRENCY=2 is deliberately conservative: the
+ * Gemini free-tier RPM is 15 and a single batch shares that quota
+ * with any concurrent /api/verify calls. Reconnects currently
  * restart from item 0 (tracked in REMAINING-IMPROVEMENTS R6).
  */
 export async function GET(

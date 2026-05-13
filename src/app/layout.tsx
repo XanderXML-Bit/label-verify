@@ -99,7 +99,13 @@ export default function RootLayout({
         <main id="main" className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
           {children}
         </main>
-        <footer className="mx-auto max-w-5xl px-4 py-8 text-xs text-slate-400 dark:text-slate-500">
+        {/* `pb-[env(safe-area-inset-bottom)]` adds breathing room below
+            the GitHub link on iPhones with a home indicator — without
+            it the underline sits under the indicator on iOS Safari
+            when `viewportFit: "cover"` is set on the viewport meta.
+            UX audit P-9. The inset is 0 on devices that don't have one,
+            so it's a no-op everywhere else. */}
+        <footer className="mx-auto max-w-5xl px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-xs text-slate-400 dark:text-slate-500">
           Prototype for the U.S. Department of the Treasury, Alcohol and
           Tobacco Tax and Trade Bureau. Not a production verification
           service. See{" "}

@@ -24,6 +24,22 @@ describe("batch-pairing — stem helper", () => {
     // Without the flag the tag stays.
     expect(stem("123456-front.jpg")).toBe("123456-front");
   });
+
+  it("optionally strips a trailing app-tag (Hermes audit fix)", () => {
+    // App-side suffixes should ALSO be strippable so a file named
+    // `123456-app.pdf` reduces to `123456` for the relaxed pass,
+    // matching `123456-front.jpg` once both sides are normalized.
+    expect(stem("123456-app.pdf", { stripAppTag: true })).toBe("123456");
+    expect(stem("123456-application.json", { stripAppTag: true })).toBe("123456");
+    expect(stem("123456-cola.csv", { stripAppTag: true })).toBe("123456");
+    expect(stem("123456_form.md", { stripAppTag: true })).toBe("123456");
+    // Without the flag the suffix stays.
+    expect(stem("123456-app.pdf")).toBe("123456-app");
+    // Both flags compose correctly.
+    expect(
+      stem("123456-front.jpg", { stripFaceTag: true, stripAppTag: true }),
+    ).toBe("123456");
+  });
 });
 
 describe("batch-pairing — classifyFile", () => {
@@ -94,6 +110,23 @@ describe("batch-pairing — pairByFilenameStem", () => {
     expect(result.paired[0]!.applicationFile.name).toBe("123456.pdf");
     expect(result.paired[1]!.applicationFile.name).toBe("123456.pdf");
     expect(result.unpairedImages).toHaveLength(0);
+  });
+
+  it("pairs an image with an `-app`-tagged application via the relaxed pass (Hermes audit fix)", () => {
+    // Hermes finding: docs claimed `123456-front.jpg ↔ 123456-app.pdf`
+    // worked, but the stem helper only stripped image-side face tags,
+    // so the app's relaxed stem stayed `123456-app` and never matched
+    // the image's relaxed stem `123456`. Fixed by adding stripAppTag.
+    const result = pairByFilenameStem([
+      file("123456-front.jpg", "image/jpeg"),
+      file("123456-back.jpg", "image/jpeg"),
+      file("123456-app.pdf", "application/pdf"),
+    ]);
+    expect(result.paired).toHaveLength(2);
+    expect(result.paired[0]!.applicationFile.name).toBe("123456-app.pdf");
+    expect(result.paired[1]!.applicationFile.name).toBe("123456-app.pdf");
+    expect(result.unpairedImages).toHaveLength(0);
+    expect(result.unpairedApplications).toHaveLength(0);
   });
 
   it("prefers a strict-stem match over a face-tag-stripped one", () => {

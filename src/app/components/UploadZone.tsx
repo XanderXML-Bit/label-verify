@@ -9,6 +9,29 @@ interface UploadZoneProps {
   readonly disabled?: boolean;
 }
 
+// Extension → MIME fallback table for the cases where the browser
+// reports `f.type === ""`. Windows Explorer routinely does this for
+// `.csv`, `.md`, `.heic`, and `.docx` (especially on Edge/Win11), so
+// the previous strict `accept.includes(f.type)` check rejected files
+// that the OS picker had just shown to the user. UI audit blocker #3.
+// Module-scope const so React-hooks/exhaustive-deps doesn't complain
+// about a moving reference inside the filterAccepted useCallback.
+const EXT_TO_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  heic: "image/heic",
+  heif: "image/heif",
+  pdf: "application/pdf",
+  json: "application/json",
+  csv: "text/csv",
+  md: "text/markdown",
+  markdown: "text/markdown",
+  txt: "text/plain",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+};
+
 // The unified dropzone accepts both label images (the gating input)
 // and application documents (PDF/JSON/CSV/MD/TXT). Intent inference
 // in page.tsx → handleFiles decides the flow per the drop's contents:
@@ -57,8 +80,24 @@ export function UploadZone({
       const kept: File[] = [];
       const rejected: File[] = [];
       for (const f of files) {
-        if (accept.includes(f.type)) kept.push(f);
-        else rejected.push(f);
+        // Primary check: browser-reported MIME matches the allow-list.
+        if (f.type && accept.includes(f.type)) {
+          kept.push(f);
+          continue;
+        }
+        // Fallback: browser reported empty/unknown MIME (Windows
+        // Explorer does this for several types). Use the file's
+        // extension to look up the canonical MIME and re-check.
+        const dot = f.name.lastIndexOf(".");
+        if (dot !== -1) {
+          const ext = f.name.slice(dot + 1).toLowerCase();
+          const guessed = EXT_TO_MIME[ext];
+          if (guessed && accept.includes(guessed)) {
+            kept.push(f);
+            continue;
+          }
+        }
+        rejected.push(f);
       }
       return { kept, rejected };
     },

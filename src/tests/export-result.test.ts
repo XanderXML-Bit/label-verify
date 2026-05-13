@@ -131,6 +131,34 @@ describe("export-result — CSV", () => {
     // doubling — `"quoted"` → `""quoted""`.
     expect(csv).toContain(`""quoted""`);
   });
+
+  it("CSV neutralizes formula-injection prefixes per OWASP", () => {
+    // A malicious filename or model-derived reason that starts with =,
+    // +, -, @, tab, or CR auto-executes as a spreadsheet formula on
+    // open in Excel/Sheets/LibreOffice. We prefix a leading apostrophe
+    // so the cell is treated as literal text. Regression test for the
+    // multi-audit finding (Hermes + code review + Codex agree).
+    const mal = fakeResult({
+      verdict: "review",
+      reviewReasons: [
+        "=SUM(A1:A10)",
+        "+1234567890",
+        "-1",
+        "@import",
+        "\tstart with tab",
+        "normal reason",
+      ],
+    });
+    const csv = singleResultToCsv("=cmd|' /C calc'!A0.jpg", mal);
+    // Filename column should be neutralized.
+    expect(csv).toContain(`"'=cmd|' /C calc'!A0.jpg"`);
+    // review_reasons concatenates with ' | ', and the very first char
+    // is `=`, which must be prefixed.
+    expect(csv).toContain(`"'=SUM(A1:A10) | +1234567890`);
+    // Sanity: an actual benign string is NOT prefixed.
+    expect(csv).toContain(`"pass"`);
+    expect(csv).not.toContain(`"'pass"`);
+  });
 });
 
 describe("export-result — JSON", () => {

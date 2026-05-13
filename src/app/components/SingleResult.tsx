@@ -74,11 +74,18 @@ export function SingleResult({
               usd < 0.01
                 ? `≈ ${per1k < 100 ? `$${per1k.toFixed(2)}` : `$${per1k.toFixed(0)}`} per 1,000 labels`
                 : `≈ $${usd.toFixed(4)} per call`;
+            // The tooltip used to expose the raw model id
+            // (`gemini:gemini-3.1-flash-lite`) to TTB reviewers — vendor
+            // names + per-call economics read as procurement-deck stray
+            // copy on a compliance verdict page (UX audit P-6). Strip
+            // the model id so the user-visible tooltip only restates
+            // the per-1k figure in plain English. Telemetry still has
+            // the model id via /api/health and the JSON export envelope.
             return (
               <>
                 {" · "}
                 <span
-                  title={`Approximate per-call cost from ${result.modelId}. Extrapolates to ≈ $${per1k.toFixed(2)} per 1,000 labels.`}
+                  title={`Approximate per-call cost. Extrapolates to ≈ $${per1k.toFixed(2)} per 1,000 labels.`}
                 >
                   {displayCost}
                 </span>

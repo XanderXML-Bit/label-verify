@@ -290,11 +290,15 @@ Mitigations applied (full audit trail in commit messages, last review
   forms (decimal `2130706433`, hex `0x7f000001`, octal
   `017700000001`). Manual redirect-following with re-validation at
   every hop.
-- Prompt-injection guard — Tesseract OCR text is wrapped in an
-  `<untrusted_ocr>` block with a length cap (4 KB), control-char
-  strip, and a closing-tag escape so a label can't break out of the
-  block. EXTRACTION_PROMPT Rule #11 tells the model to ignore
-  instructions found inside that block.
+- Prompt-injection guard — production paths omit OCR text from the
+  vision prompt entirely (the C1 "OCR-as-hint" hypothesis was
+  falsified in the bake-off, see `docs/MODEL-SELECTION.md` §3.5).
+  The wrapping helper (`buildOcrHintSection` in
+  `src/lib/vision/prompt.ts`) is retained for benchmark mode and as
+  a defensive harness if the hypothesis is revisited: it caps at
+  4 KB, strips control chars, escapes closing tags, and is paired
+  with `EXTRACTION_PROMPT` Rule #11 telling the model to ignore any
+  instructions found inside an `<untrusted_ocr>` block.
 - Strict MIME allowlist on every upload endpoint (image: jpeg/png/
   webp/heic/heif; application: pdf/json/csv/md/txt/those images). SVG
   / GIF / BMP are 415'd at the route rather than rewritten upstream.

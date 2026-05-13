@@ -4,6 +4,108 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Pre-submission audit-fix wave] — 2026-05-12 late night
+
+Four parallel deep audits (Hermes / Codex / UX sub-agent / code-review
+sub-agent) found a unanimous **security finding** plus 20 other items
+across correctness, doc drift, and UX polish. All addressed:
+
+### Security
+- **CSV formula injection (3-audit consensus).** `lib/export-result.ts`
+  only RFC4180-escaped cells before. A filename like `=cmd|' /C calc'!A0.jpg`
+  or a model-derived review reason starting with `=`/`+`/`-`/`@` would
+  execute as a formula when opened in Excel/Sheets/LibreOffice. Per
+  OWASP, leading dangerous chars are now prefixed with `'` before the
+  CSV quote pass. Regression test covers the full set of OWASP prefixes.
+
+### Correctness fixes
+- **`DeclaredForm` late-prefill clobber (UX-agent blocker #1).** When a
+  reviewer dropped image + app together, then explicitly picked the
+  default value for `class_category` / `ncUnit` / `country` while the
+  app parse was in flight, an arriving prefill silently overwrote
+  their choice (the "still empty?" check used equality-with-default
+  as a proxy for untouched). Replaced with sticky per-field `touched`
+  flags wired to `onChange`. Test pending; manual reproduction confirmed.
+- **Surplus app files silently dropped (UX-agent blocker #2).** Dropping
+  N application files alongside one image kept the best-stem-match
+  and `console.warn`ed the rest — invisible to the reviewer. Now
+  surfaces a yellow status pill next to the form listing the ignored
+  files and explaining why.
+- **`UploadZone` rejected empty-MIME files (UX-agent blocker #3).**
+  Windows Explorer + Edge return `f.type === ""` for `.csv`/`.md`/
+  `.docx`/`.heic`. The strict `accept.includes(f.type)` filter
+  rejected files the OS picker had just shown the user, surfacing a
+  misleading "unsupported type" error. Added extension → MIME fallback
+  for the 13 supported extensions. Regression tests cover accept-via-
+  extension and unknown-extension rejection on the drop path.
+- **GW PASS at no-OCR low confidence (Codex finding #2).** When OCR
+  failed or timed out, the validator's bold/size subscores fell back
+  to the model's self-reported flags at ≤ 0.6 baseline confidence
+  (size capped at 0.4). The §5a deferral loop skipped `gov`, so a
+  no-OCR PASS slipped through despite the README advertising pixel-
+  level stroke-width measurement. Now routes to REVIEW with an
+  explicit human-readable reason when `ocrFinal === null` AND
+  `gov.status === "pass"` AND `gov.confidence < 0.55`. The gate is
+  narrow: high-confidence vision-only PASS still passes; only the
+  genuinely-degraded path defers.
+- **Scanned-PDF batch path silently dropped warnings (Codex #3).**
+  Batch auto-pair calls `parseApplication`, which for scanned PDFs
+  falls back to vision OCR and returns `{ confidence: "low",
+  warnings: [...] }`. The route validated `parsed.fields` and dropped
+  the rest — reviewer never saw that a row's declared values came
+  from OCR-on-a-scan. Now surfaces a `pairingWarnings` array in the
+  batch response alongside `pairingErrors`.
+- **Batch pairing missed `-app`-tagged applications (Hermes #4).**
+  Docs claimed `123456-front.jpg ↔ 123456-app.pdf` worked, but the
+  stem helper's `stripFaceTag` only stripped image-side suffixes —
+  the app's relaxed stem stayed `123456-app` and never matched.
+  Added `stripAppTag` option, enabled it on the relaxed pass for
+  applications. Test locks in the documented behavior.
+
+### Doc drift
+- **README §"Security model"** still claimed Tesseract OCR was wrapped
+  in `<untrusted_ocr>` for the production vision prompt — falsified
+  by C1 removal. Rewrote: helper retained for benchmark + defensive
+  future use, production omits OCR text.
+- **MODEL-SELECTION §4.3 row** said C1 ships as a non-default "Settings
+  panel: Local + Hybrid" mode. Settings panel was never built;
+  production is single vision-only path. Rewrote the row.
+- **MODEL-SELECTION §4.5** referenced a non-existent
+  `lib/vision/tiered.ts` for tiered-escalation threshold tuning.
+  Rewrote — no tiered escalation exists; fallback is provider-
+  failure-only per `verify.ts:188-247`.
+- **`verify.ts:101` function header** still said "we feed OCR to the
+  vision prompt only if it returns in time" — false since C1
+  falsification. Rewrote to state OCR's only role is bold/size
+  subscores.
+- **`vision/gemini.ts:156` comment** also claimed OCR appended to
+  prompt. Rewrote.
+- **PRODUCTION-SMOKE Check 3** documented a field name `fallbackModel`
+  that the actual `/api/health` route returns as `fallback`. Aligned.
+- **`stream/route.ts` CONCURRENCY math** said "drain ~160 items at
+  CONCURRENCY=8" but `CONCURRENCY = 2`. Rewrote the comment with
+  correct math + rationale (free-tier RPM 15 shared with /api/verify).
+
+### UX polish
+- **Verdict-review chip contrast.** `#a16207` on `bg-yellow-100`
+  rendered at `text-xs` (12px) gave 4.33:1 — fails WCAG AA small
+  (needs 4.5:1). Darkened to `#854d0e` (yellow-800), gives 6.04:1.
+  Same shade applied to `quality.low` for visual consistency.
+- **Idle-screen subhead.** Added one line noting the application
+  file is optional (the extract-only path was previously only
+  discoverable from the form's secondary button).
+- **Cost-display tooltip** leaked the raw model id
+  (`gemini:gemini-3.1-flash-lite`) to TTB reviewers. Stripped —
+  telemetry still has it via `/api/health` and JSON export envelope.
+- **Warmup `AbortController`** added to prevent stacked warmups on
+  fast tab close/reopen + React StrictMode double-invoke.
+- **`document.title`** now toggles to `"(Verifying…) Label Verify"`
+  during async work so reviewers can tell from the tab strip when
+  to switch back from email.
+- **Footer safe-area-inset** for iOS home-indicator clearance.
+- **`SampleAffordance`** sample-image fetch now shows per-button
+  pending spinner + visible error alert on 404 / network blip.
+
 ## [Final audit pass] — 2026-05-12 night
 
 Two outside-reviewer CLI agents (Hermes / GPT-5.5, Codex / GPT-5.5
