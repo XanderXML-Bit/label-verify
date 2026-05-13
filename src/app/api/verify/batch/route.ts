@@ -14,10 +14,15 @@ import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { rowToDeclared } from "@/lib/application/row-to-declared";
 import { parseApplication } from "@/lib/application/parse";
 import {
+  pairByContent,
   pairByFilenameStem,
   summarize,
+  type ApplicationFingerprint,
+  type ImageFingerprint,
   type PairingSummary,
 } from "@/lib/batch-pairing";
+import { preprocessImage } from "@/lib/preprocess";
+import { GeminiFlashExtractor } from "@/lib/vision/gemini";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -262,13 +267,141 @@ export async function POST(req: Request) {
       );
     }
     const pairResult = pairByFilenameStem(allFiles);
-    pairing = summarize(pairResult, "auto-stem");
+    let pairingMode: PairingSummary["mode"] = "auto-stem";
+
+    // Content-based fallback pairing. When filename stems don't fully
+    // pair the upload (e.g. the reviewer dropped randomly-named files,
+    // or the apps and images came from different export pipelines with
+    // different conventions), extract a fingerprint from each unpaired
+    // image and fuzzy-match against the parsed brand/class of each
+    // unpaired application. Cost: one Gemini Flash Lite call per
+    // unpaired image; only fires when stem pairing leaves anything
+    // unpaired. User-explicit ask (2026-05-12): the system should
+    // figure out which image goes with which app even on completely
+    // randomly named files.
+    if (
+      pairResult.unpairedImages.length > 0 &&
+      pairResult.unpairedApplications.length > 0 &&
+      process.env.GOOGLE_API_KEY
+    ) {
+      try {
+        const apiKey = process.env.GOOGLE_API_KEY;
+        // Parse each unpaired app's fingerprint (brand_name +
+        // class_type + abv_percent are enough to disambiguate). The
+        // full parse is needed downstream anyway for the verify
+        // path, but we don't double-buffer here: we parse them up
+        // front, hold the parsed payloads in a map, and reuse them
+        // in the loop below so each app file is read once.
+        const parsedAppFingerprints: Array<{
+          file: File;
+          fingerprint: ApplicationFingerprint;
+          // Stash the parsed payload so the per-pair loop below can
+          // reuse it without re-parsing.
+          parsed: Awaited<ReturnType<typeof parseApplication>>;
+        }> = [];
+        for (const app of pairResult.unpairedApplications) {
+          try {
+            const buf = Buffer.from(await app.arrayBuffer());
+            const parsed = await parseApplication({
+              buffer: buf,
+              filename: app.name,
+              mime: app.type,
+              apiKey,
+            });
+            parsedAppFingerprints.push({
+              file: app,
+              fingerprint: {
+                brand_name: parsed.fields.brand_name ?? null,
+                class_type: parsed.fields.class_type ?? null,
+                abv_percent: parsed.fields.abv_percent ?? null,
+              },
+              parsed,
+            });
+          } catch {
+            // Best-effort: a broken app file just means no content
+            // fingerprint; filename pairing already failed, so it
+            // remains unpaired. Surface in pairingErrors below.
+          }
+        }
+        // Extract a fingerprint from each unpaired image using a
+        // bare Gemini Flash Lite call. Run in parallel — there are
+        // typically a handful of unpaired items.
+        const extractor = new GeminiFlashExtractor({ apiKey });
+        const imageFingerprints: Array<{
+          file: File;
+          fingerprint: ImageFingerprint;
+        }> = await Promise.all(
+          pairResult.unpairedImages.map(async (img) => {
+            try {
+              const buf = Buffer.from(await img.arrayBuffer());
+              const pre = await preprocessImage(buf);
+              const result = await extractor.extract(pre.buffer);
+              return {
+                file: img,
+                fingerprint: {
+                  brand_name: result.fields.brand_name.value ?? null,
+                  class_type: result.fields.class_type.value ?? null,
+                  abv_percent: result.fields.abv_percent.value ?? null,
+                },
+              };
+            } catch {
+              return { file: img, fingerprint: {} };
+            }
+          }),
+        );
+        // Fuzzy-match.
+        const contentPaired = pairByContent(
+          imageFingerprints,
+          parsedAppFingerprints.map((x) => ({
+            file: x.file,
+            fingerprint: x.fingerprint,
+          })),
+        );
+        if (contentPaired.paired.length > 0) {
+          pairingMode = "auto-stem+content";
+          // Merge content pairs into the main pairing result so the
+          // rest of the route can iterate over a single list.
+          pairResult.paired.push(...contentPaired.paired);
+          pairResult.unpairedImages = contentPaired.remainingImages;
+          pairResult.unpairedApplications = contentPaired.remainingApplications;
+          // For each content-paired item, stash the already-parsed
+          // app payload on the route's contextual map so the loop
+          // below doesn't re-parse the file. We attach it as a
+          // hidden property; the loop checks for it before
+          // re-parsing.
+          for (const hit of contentPaired.paired) {
+            const stashed = parsedAppFingerprints.find(
+              (p) => p.file === hit.applicationFile,
+            );
+            if (stashed) {
+              // @ts-expect-error — runtime-only annotation
+              hit.applicationFile.__cachedParsed = stashed.parsed;
+            }
+          }
+          // Surface what was content-paired so the reviewer sees it.
+          for (const hit of contentPaired.paired) {
+            pairingWarnings.push(
+              `${hit.imageFile.name} ↔ ${hit.applicationFile.name}: paired by CONTENT (filename stems didn't match; brand/class similarity score ${hit.score?.toFixed(2)}). Verify the pairing if the brand/class looks wrong.`,
+            );
+          }
+        }
+      } catch (err) {
+        // Content pairing is best-effort. Any failure leaves the
+        // filename-only pairing as the final result; the existing
+        // unpaired list is what the reviewer sees.
+        pairingErrors.push(
+          `Content-pairing fallback failed: ${(err as Error).message}. Filenames are the only pairing signal.`,
+        );
+      }
+    }
+
+    pairing = summarize(pairResult, pairingMode);
 
     if (pairResult.paired.length === 0) {
       return NextResponse.json(
         {
           error:
-            "No image-application pairs found. Either include a 'manifest' field, OR upload paired files where each label image (.jpg/.png/.webp) has a matching application file (.pdf/.json/.csv/.md/.txt) with the same filename stem.",
+            "No image-application pairs found. Either include a 'manifest' field, OR upload paired files where each label image has a matching application file (the system will match by filename stem first, then by brand/class content similarity).",
           pairing,
         },
         { status: 400 },
@@ -297,22 +430,33 @@ export async function POST(req: Request) {
       // to vision OCR when GOOGLE_API_KEY is configured (covers
       // scanned application PDFs without forcing the operator to
       // re-upload them as images).
-      let parsed;
-      try {
-        const appBuf = Buffer.from(await applicationFile.arrayBuffer());
-        parsed = await parseApplication({
-          buffer: appBuf,
-          filename: applicationFile.name,
-          mime: applicationFile.type,
-          ...(process.env.GOOGLE_API_KEY
-            ? { apiKey: process.env.GOOGLE_API_KEY }
-            : {}),
-        });
-      } catch (err) {
-        pairingErrors.push(
-          `${imageFile.name} ↔ ${applicationFile.name}: application parse failed — ${(err as Error).message}`,
-        );
-        continue;
+      // Content-paired items already had their application parsed
+      // during the content-pairing fingerprint step — reuse that
+      // payload instead of re-parsing the same file.
+      // @ts-expect-error — runtime annotation set on content-paired pairs
+      const cachedParsed = applicationFile.__cachedParsed as
+        | Awaited<ReturnType<typeof parseApplication>>
+        | undefined;
+      let parsed: Awaited<ReturnType<typeof parseApplication>>;
+      if (cachedParsed) {
+        parsed = cachedParsed;
+      } else {
+        try {
+          const appBuf = Buffer.from(await applicationFile.arrayBuffer());
+          parsed = await parseApplication({
+            buffer: appBuf,
+            filename: applicationFile.name,
+            mime: applicationFile.type,
+            ...(process.env.GOOGLE_API_KEY
+              ? { apiKey: process.env.GOOGLE_API_KEY }
+              : {}),
+          });
+        } catch (err) {
+          pairingErrors.push(
+            `${imageFile.name} ↔ ${applicationFile.name}: application parse failed — ${(err as Error).message}`,
+          );
+          continue;
+        }
       }
       // The parser returns Partial<DeclaredFields>. Batch verify
       // requires the full set — anything missing fails closed.
