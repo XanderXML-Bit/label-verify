@@ -3,6 +3,7 @@ import {
   fileIdentityKey,
   mergeFilesForRestage,
   isLikelyIos,
+  supportsFolderUpload,
 } from "@/lib/upload-merge";
 
 function makeFile(
@@ -16,9 +17,12 @@ function makeFile(
 }
 
 describe("fileIdentityKey", () => {
-  it("includes name + size + lastModified", () => {
+  it("includes webkitRelativePath + name + size + lastModified", () => {
     const f = makeFile("a.png", "abc", 12345);
-    expect(fileIdentityKey(f)).toBe("a.png::3::12345");
+    // No webkitRelativePath set on a synthetic File — the empty
+    // string is part of the key so plain `name::size::mtime` keys
+    // stay consistent for non-folder picks.
+    expect(fileIdentityKey(f)).toBe("::a.png::3::12345");
   });
 
   it("differs on different names with same body + timestamp", () => {
@@ -31,6 +35,31 @@ describe("fileIdentityKey", () => {
     const a = new File(["abc"], "a.png", { type: "image/png", lastModified: 1 });
     const b = new File(["abc"], "a.png", { type: "image/heic", lastModified: 1 });
     expect(fileIdentityKey(a)).toBe(fileIdentityKey(b));
+  });
+
+  it("treats same-named files in different folders as DISTINCT (review fix)", () => {
+    // Wave-12 hypercritical review: camera-burst photos with
+    // identical name/size/mtime can legitimately exist in two
+    // different sibling folders (e.g. iCloud-synced duplicate
+    // batches). Including `webkitRelativePath` in the key keeps
+    // them distinct.
+    const a = new File(["abc"], "photo.jpg", {
+      type: "image/jpeg",
+      lastModified: 1,
+    });
+    Object.defineProperty(a, "webkitRelativePath", {
+      value: "batch1/photo.jpg",
+      configurable: true,
+    });
+    const b = new File(["abc"], "photo.jpg", {
+      type: "image/jpeg",
+      lastModified: 1,
+    });
+    Object.defineProperty(b, "webkitRelativePath", {
+      value: "batch2/photo.jpg",
+      configurable: true,
+    });
+    expect(fileIdentityKey(a)).not.toBe(fileIdentityKey(b));
   });
 });
 
@@ -147,5 +176,42 @@ describe("isLikelyIos", () => {
       maxTouchPoints: 5,
     } as Navigator);
     expect(isLikelyIos()).toBe(false);
+  });
+});
+
+describe("supportsFolderUpload", () => {
+  it("returns false in non-browser environments (SSR-safe)", () => {
+    const origWindow = globalThis.window;
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(supportsFolderUpload()).toBe(false);
+    } finally {
+      vi.stubGlobal("window", origWindow);
+    }
+  });
+
+  it("returns true under the JSDOM happy path (webkitdirectory + DataTransferItem.webkitGetAsEntry exist)", () => {
+    // JSDOM provides `document.createElement("input")` with the
+    // `webkitdirectory` property, and exposes a `DataTransferItem`
+    // global whose prototype has `webkitGetAsEntry`. If either is
+    // missing the function returns false; under happy-path JSDOM
+    // both are present.
+    if (
+      typeof window === "undefined" ||
+      typeof DataTransferItem === "undefined"
+    ) {
+      // Skip on environments that don't provide the globals.
+      return;
+    }
+    const probe = document.createElement("input");
+    probe.type = "file";
+    if (
+      "webkitdirectory" in probe &&
+      "webkitGetAsEntry" in DataTransferItem.prototype
+    ) {
+      expect(supportsFolderUpload()).toBe(true);
+    } else {
+      expect(supportsFolderUpload()).toBe(false);
+    }
   });
 });

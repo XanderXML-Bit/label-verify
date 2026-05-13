@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isLikelyIos } from "@/lib/upload-merge";
+import { isLikelyIos, supportsFolderUpload } from "@/lib/upload-merge";
+import {
+  extractEntriesFromDataTransfer,
+  flattenEntries,
+} from "@/lib/folder-traversal";
 
 interface UploadZoneProps {
   readonly onFiles: (files: File[]) => void;
@@ -88,8 +92,16 @@ export function UploadZone({
   // (matches the SSR HTML); the post-mount setState repaints with
   // the iOS hint when relevant.
   const [iosHinted, setIosHinted] = useState(false);
+  // Whether to show the "Choose folder" affordance. Feature-detected
+  // post-mount rather than UA-sniffed because folder support is now
+  // available on Chromium-on-iPadOS 16.4+, Chrome / Edge / Firefox
+  // 50+ / Safari 11.1+ — every major non-iOS-Safari browser, and
+  // even some iOS variants. The probe is cheaper to maintain than a
+  // per-OS-version compatibility table.
+  const [folderSupported, setFolderSupported] = useState(false);
   useEffect(() => {
     if (isLikelyIos()) setIosHinted(true);
+    if (supportsFolderUpload()) setFolderSupported(true);
   }, []);
   // Last-accepted file list — surfaced to assistive tech via aria-live so a
   // screen reader hears "3 files selected: a.png, b.png, c.png" the instant
@@ -113,6 +125,29 @@ export function UploadZone({
   // the main one that opens an images-only picker. Desktop / Android
   // users never see this button.
   const photoInputRef = useRef<HTMLInputElement>(null);
+  // Hidden input wired to the "Choose folder" button. The
+  // `webkitdirectory` attribute (and TypeScript-friendly cast applied
+  // at render time) tells the browser to expose its directory picker.
+  // The resulting FileList is already flattened by the browser, so
+  // the change handler can reuse `handleSelect` verbatim.
+  const folderInputRef = useRef<HTMLInputElement>(null);
+  // (Previously tracked whether the most-recent action was a folder
+  // vs. a file pick to switch notice copy. After the wave-12 review
+  // pass split the empty-folder notice into "truly empty" vs.
+  // "all rejected" via `emptyFolderHadFiles`, the source-was-folder
+  // flag became redundant — the presence of `emptyFolderName`
+  // alone implies a folder source. Field removed; kept this comment
+  // so future contributors don't reintroduce it.)
+  // Notice when a folder drop / pick yielded zero valid files. Shown
+  // in addition to (or instead of) the per-file rejection notice so
+  // the user understands their action didn't silently no-op.
+  const [emptyFolderName, setEmptyFolderName] = useState<string>("");
+  // Whether the empty folder also contained NO files at all (truly
+  // empty) vs. files-but-all-rejected. Used to switch the notice
+  // copy ("the folder was empty" vs. "we found files but none
+  // matched the accepted types"). The per-file rejection notice
+  // surfaces the rejected names separately when applicable.
+  const [emptyFolderHadFiles, setEmptyFolderHadFiles] = useState(false);
 
   const filterAccepted = useCallback(
     (files: File[]): { kept: File[]; rejected: File[] } => {
@@ -144,7 +179,16 @@ export function UploadZone({
   );
 
   const announceRejection = useCallback((rejected: File[]) => {
-    if (rejected.length === 0) return;
+    if (rejected.length === 0) {
+      // Clear any stale rejection notice from a previous attempt.
+      // We make this the single source of truth for the rejection
+      // state so the kept-branch in handleDrop/handleSelect doesn't
+      // need to call `setRejection("")` separately — and so the
+      // common case of "1 valid + 1 invalid in the same drop"
+      // surfaces the invalid-file notice instead of being clobbered.
+      setRejection("");
+      return;
+    }
     const names = rejected.map((f) => f.name).join(", ");
     setRejection(
       `Rejected ${rejected.length} file${rejected.length === 1 ? "" : "s"} ` +
@@ -153,17 +197,66 @@ export function UploadZone({
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
+    async (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setDragOver(false);
       if (disabled) return;
-      const all = Array.from(e.dataTransfer.files);
+      // CRITICAL: capture every piece of state we need from the event
+      // object SYNCHRONOUSLY, before any `await`. The handler became
+      // async to support folder traversal, but `e.dataTransfer.items`
+      // and `e.dataTransfer.files` are live browser objects that some
+      // browsers clear once the drop event returns to the event loop.
+      // After `await flattenEntries(...)`, attempting to read
+      // `e.dataTransfer.files` may yield an empty list. Snapshot here.
+      const items = e.dataTransfer.items;
+      const droppedFilesSnapshot = Array.from(e.dataTransfer.files);
+      const entries =
+        typeof DataTransferItem !== "undefined" && items
+          ? extractEntriesFromDataTransfer(items)
+          : [];
+      const hasDirectory = entries.some((entry) => entry.isDirectory);
+      let all: File[];
+      let folderName = "";
+      let sourceWasFolder = false;
+      if (hasDirectory) {
+        sourceWasFolder = true;
+        // Pick the FIRST directory's name as the displayed folder
+        // (multi-folder drops are unusual; using "multiple folders"
+        // copy when the user dropped two folders is acceptable).
+        const firstDir = entries.find((entry) => entry.isDirectory);
+        // `firstDir?.name` can be the empty string on some exotic
+        // file systems (encrypted volume mount points). Fall back to
+        // a generic label so the notice doesn't render as "in ''".
+        folderName = firstDir?.name?.trim() || "folder";
+        try {
+          all = await flattenEntries(entries);
+        } catch {
+          // Defensive — flattenEntries already swallows subtree errors;
+          // a top-level throw should never happen, but if it does we
+          // fall back to the pre-await files snapshot.
+          all = droppedFilesSnapshot;
+        }
+      } else {
+        all = droppedFilesSnapshot;
+      }
       const { kept, rejected } = filterAccepted(all);
       announceRejection(rejected);
+      // Always reset the source / folder-name state on every entry so
+      // a stale amber notice from a previous folder action doesn't
+      // linger after a subsequent non-folder pick.
+      setEmptyFolderName("");
+      setEmptyFolderHadFiles(false);
       if (kept.length) {
-        setRejection("");
         setLastAccepted(kept.map((f) => f.name));
         onFiles(kept);
+      } else if (sourceWasFolder) {
+        // Folder drop with zero kept files — surface a focused notice
+        // so the user knows the action happened. We deliberately do
+        // NOT call onFiles so the parent stage doesn't churn. The
+        // `hadFiles` flag drives the notice copy: an empty folder
+        // vs. a folder of unsupported files reads differently.
+        setEmptyFolderName(folderName);
+        setEmptyFolderHadFiles(all.length > 0);
       }
     },
     [announceRejection, disabled, filterAccepted, onFiles],
@@ -177,12 +270,41 @@ export function UploadZone({
       // rejected file shows a clear in-page error rather than
       // silently filling the form and 415-ing at Verify time.
       const all = Array.from(e.target.files ?? []);
+      // Folder picks come through `<input webkitdirectory>` already
+      // flattened by the browser; each File has a `webkitRelativePath`
+      // like "myfolder/sub/a.png". Detect this and switch the
+      // empty-result notice copy accordingly. We can't rely on
+      // `e.target` having a webkitdirectory attribute because the
+      // photo-picker input might share the handler in future
+      // refactors — the per-File `webkitRelativePath` is the
+      // canonical signal.
+      type FileWithRel = File & { webkitRelativePath?: string };
+      const firstWithRel = all.find(
+        (f) => !!(f as FileWithRel).webkitRelativePath,
+      ) as FileWithRel | undefined;
+      const isFolderPick = !!firstWithRel;
+      let folderName = "";
+      if (isFolderPick) {
+        const seg = (firstWithRel.webkitRelativePath ?? "").split("/")[0];
+        // `seg` may be `""` when the browser populated an empty
+        // `webkitRelativePath` (rare, but observed on some Chromium
+        // forks). `String.split` always returns ≥ 1 element so the
+        // `?? "folder"` chain that lived here previously was dead
+        // code — fall back via `||` instead.
+        folderName = (seg ?? "").trim() || "folder";
+      }
       const { kept, rejected } = filterAccepted(all);
       announceRejection(rejected);
+      // Always reset on every entry so a stale folder-pick notice
+      // doesn't linger after a subsequent single-file pick.
+      setEmptyFolderName("");
+      setEmptyFolderHadFiles(false);
       if (kept.length) {
-        setRejection("");
         setLastAccepted(kept.map((f) => f.name));
         onFiles(kept);
+      } else if (isFolderPick) {
+        setEmptyFolderName(folderName);
+        setEmptyFolderHadFiles(all.length > 0);
       }
       e.target.value = "";
     },
@@ -220,7 +342,7 @@ export function UploadZone({
               Add more files
             </div>
             <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Drop or pick more images and application files — they&apos;ll be added to what&apos;s already staged.
+              Drop or pick more images, application files, or a whole folder — every selection is added to what&apos;s already staged.
             </div>
             {iosHinted ? (
               <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
@@ -231,13 +353,13 @@ export function UploadZone({
         ) : (
           <>
             <div className="text-lg font-medium text-slate-800 dark:text-slate-100 sm:text-xl">
-              Drop a label image (+ application file, optional)
+              Drop a label image, folder, or application file
             </div>
             <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              or use the button below · images: JPEG, PNG, WebP, HEIC · applications: PDF, JSON, CSV, MD, TXT, DOCX
+              or use the buttons below · images: JPEG, PNG, WebP, HEIC · applications: PDF, JSON, CSV, MD, TXT, DOCX · folders are scanned recursively
             </div>
             <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-              Drop one image to verify single; image + matching application file to pre-fill the form; or N image/application pairs for batch.
+              Drop one image to verify single; image + matching application file to pre-fill the form; or N image/application pairs (or a folder of them) for batch. Files we don&apos;t recognise are ignored with a list.
             </div>
             {iosHinted ? (
               <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
@@ -287,6 +409,28 @@ export function UploadZone({
               Choose photos (multi-select)
             </button>
           ) : null}
+          {/* Tertiary button: folder picker. The browser flattens the
+              selected folder into a FileList for us (each entry gets a
+              `webkitRelativePath`), so the same handleSelect handles
+              the result — no separate dispatch. Feature-detected
+              (post-mount) rather than UA-sniffed so capable browsers
+              get the affordance even on iPadOS 16.4+; incapable
+              browsers (older iOS Safari) silently lose the button. */}
+          {folderSupported ? (
+            <button
+              type="button"
+              aria-label="Choose a folder of label images and application files"
+              className={`min-h-[44px] rounded-md border text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
+                isAppend
+                  ? "border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  : "border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              }`}
+              disabled={disabled}
+              onClick={() => folderInputRef.current?.click()}
+            >
+              Choose folder
+            </button>
+          ) : null}
         </div>
         <input
           ref={inputRef}
@@ -307,6 +451,21 @@ export function UploadZone({
           multiple={multiple}
           onChange={handleSelect}
         />
+        {/* Folder picker input. `webkitdirectory` / `directory` are not
+            in lib.dom.d.ts on every TS version, so we cast through a
+            spread of any-typed attributes. The browser populates each
+            File's `webkitRelativePath`, which `handleSelect` uses to
+            detect that the source was a folder and switch copy on
+            the empty-result notice. */}
+        <input
+          ref={folderInputRef}
+          type="file"
+          className="hidden"
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- webkitdirectory not in lib.dom yet
+          {...({ webkitdirectory: "", directory: "" } as any)}
+          multiple
+          onChange={handleSelect}
+        />
       </div>
       {/* Visible rejection notice when a non-allowed file is picked. */}
       {rejection ? (
@@ -315,6 +474,41 @@ export function UploadZone({
           className="rounded-md border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:border-red-400 dark:bg-red-950/60 dark:text-red-200"
         >
           {rejection}
+        </div>
+      ) : null}
+      {/* Folder-scan-found-nothing notice. Shown in addition to (or
+          instead of) the rejection notice so the user understands
+          their drop/pick happened but contained no valid label or
+          application files. Copy switches based on whether the
+          folder was truly empty vs. contained files but none of
+          the right type — the latter case is paired with the
+          red per-file rejection notice that lists the file names. */}
+      {emptyFolderName ? (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-200"
+        >
+          {emptyFolderHadFiles ? (
+            <>
+              <p className="font-semibold">
+                No valid label images or application files in &quot;
+                <span className="font-mono">{emptyFolderName}</span>&quot;
+              </p>
+              <p className="mt-0.5">
+                We scanned the folder and found files, but none matched the accepted types — see the red list above for what was rejected. Drop a folder that contains at least one JPEG / PNG / WebP / HEIC label image, or use <span className="font-semibold">Choose files</span> to pick one directly.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold">
+                &quot;<span className="font-mono">{emptyFolderName}</span>&quot; looks empty
+              </p>
+              <p className="mt-0.5">
+                We scanned the folder but didn&apos;t find any files at all. Drop a folder that contains at least one label image (JPEG / PNG / WebP / HEIC) — and optionally an application file (PDF / JSON / CSV / MD / TXT / DOCX) per image — or use <span className="font-semibold">Choose files</span> to pick them individually.
+              </p>
+            </>
+          )}
         </div>
       ) : null}
       {/* Screen-reader announcement of the accepted file set. Visually
