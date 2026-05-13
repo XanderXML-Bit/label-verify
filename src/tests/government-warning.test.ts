@@ -11,6 +11,7 @@ import {
 import {
   validateGovernmentWarning,
   scoreBold,
+  sizeFromMm,
 } from "@/lib/validation/government-warning-validator";
 
 const COMPLIANT_TEXT = canonicalStatement();
@@ -311,6 +312,35 @@ describe("validateGovernmentWarning", () => {
       fontBoldFractionBody: 0.1, // mostly NOT bold
     });
     expect(result.status).toBe("review");
+  });
+
+  // ─── sizeFromMm contract (wave-15 experiment reverted, see commit log) ───
+
+  it("sizeFromMm: prefixMm >= 0.8 * minMm → PASS at full confidence", () => {
+    const r = sizeFromMm(/* prefixMm */ 1.6, /* minMm */ 2.0, /* confidence */ 0.6);
+    expect(r.status).toBe("pass");
+    expect(r.confidence).toBe(0.6);
+  });
+
+  it("sizeFromMm: prefixMm below 0.8 * minMm → REVIEW (S-case detector)", () => {
+    // The threshold was relaxed to 0.5× in wave-15 (attempted two-tier
+    // band) but reverted after the empirical N=2 cross-pair experiment
+    // showed 4 new deterministic false-passes on synthetic S1/S2/B1
+    // defect cases — violated the pre-registered "false-pass-on-correct
+    // must not increase by > 2" criterion. The cliff at 0.8× is
+    // preserved for now; a tighter-floor variant is queued as wave-16
+    // in REMAINING-IMPROVEMENTS.md.
+    const r = sizeFromMm(/* prefixMm */ 1.2, /* minMm */ 2.0, /* confidence */ 0.6);
+    expect(r.status).toBe("review");
+    expect(r.confidence).toBeLessThanOrEqual(0.5);
+  });
+
+  it("sizeFromMm: S1 synthetic case (prefixMm = 0.45 * minMm) → REVIEW", () => {
+    // Pin the explicit S1 case from generate-corpus-v2.ts. Any future
+    // size-band relaxation must keep this REVIEW to catch the
+    // synthetic size-defect labels.
+    const r = sizeFromMm(/* prefixMm */ 0.9, /* minMm */ 2.0, /* confidence */ 0.6);
+    expect(r.status).toBe("review");
   });
 
   it("FAIL when raw_text is null entirely (X1 — missing)", async () => {

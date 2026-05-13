@@ -407,7 +407,19 @@ function scoreSize(
  * estimate causes too many false-FAILs on the photo-realistic OOD
  * corpus. Documented as advisory in README + SECURITY.
  */
-function sizeFromMm(
+// Exported for unit testing.
+//
+// Wave-15 history: attempted to relax the `< 0.8×minMm → REVIEW` cliff
+// into a two-tier `pass at degraded confidence` band starting at 0.5×.
+// Empirical N=2 bench result violated the pre-registered "false-pass-
+// on-correct must not increase by > 2" criterion — 4 new deterministic
+// false-passes on synthetic S1/S2/B1 defect cases (the px-to-mm
+// conversion over-estimated some labels above the 0.5× floor, AND
+// the degraded-confidence PASS aggregated against high-confidence
+// other subscores produced an overall PASS that bypassed the safety
+// net). Reverted; tighter-floor variant queued as wave-16 in
+// docs/REMAINING-IMPROVEMENTS.md.
+export function sizeFromMm(
   prefixMm: number,
   minMm: number,
   confidence: number,

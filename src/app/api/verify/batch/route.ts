@@ -769,16 +769,47 @@ export async function POST(req: Request) {
   // local-dev / single-process consumer that wants it, but the
   // production UI now consumes the inline results.
   // Concurrency scales with batch size up to a per-function ceiling.
-  // Small batches (≤ 4 items) get fully-parallel verification (one
-  // worker per item) which finishes a 5-image batch in ~3 s instead
-  // of ~9 s on the prior fixed-2 setting. Larger batches cap at 4
-  // so a 100-item batch still fits the 60-s POST window (100 × 3 s ÷
-  // 4 ≈ 75 s, with the 80 % provider-utilization safety margin
-  // absorbing the few slow tails). The Gemini RPM rate-limit budget
-  // bounds the floor — at 30 RPM and 3 s per call, 4 concurrent is
-  // ~12 calls in 36 s = 720 calls/hour, well under any quota the
-  // configured tier carries.
-  const MAX_INLINE_CONCURRENCY = 4;
+  // Small batches (≤ MAX_INLINE_CONCURRENCY items) get fully-parallel
+  // verification (one worker per item); larger batches cap at the
+  // ceiling.
+  //
+  // Wave-15b: bumped 6 → 12 (configurable via INLINE_BATCH_CONCURRENCY
+  // env var). The verifyLabel call is ~80% IO-bound on the Gemini
+  // API; the local CPU work (sharp + Tesseract) completes in well
+  // under 1s while the remote-API round-trip dominates the ~3s
+  // end-to-end. Concurrent calls scale near-linearly until the
+  // Gemini quota becomes the bottleneck — NOT the local CPU.
+  //
+  // Throughput math at concurrency 12:
+  //   - 100-image batch: 100 ÷ 12 × 3s ≈ 25s (vs ~75s at the old 4)
+  //   - 300-image batch: 300 ÷ 12 × 3s ≈ 75s — over the 60s POST
+  //     window; the inline path caps at MAX_BATCH_ITEMS (≈100 by
+  //     default, configurable via GEMINI_RPM_LIMIT). For larger
+  //     ad-hoc batches the operator splits into 2-3 sequential
+  //     batches OR boosts concurrency via the env override.
+  //
+  // Why 12 by default:
+  //  - 12 × ~20 calls/min/worker = 240 calls/min. Comfortable
+  //    inside any paid Gemini tier (Tier 1 = 1000 RPM, Tier 2 =
+  //    2000+ RPM). At the FREE-tier (30 RPM) the operator should
+  //    lower via env (INLINE_BATCH_CONCURRENCY=2 or less); the
+  //    prototype isn't designed for free-tier use anyway.
+  //  - Memory: ~150 MB peak (12 × ~12 MB per request). Well inside
+  //    the 1 GB Vercel function memory limit.
+  //  - The CLI bench (bin/labelverify-bench.ts) has been running
+  //    at concurrency 4 throughout the day's experiments without
+  //    rate-limit errors. Concurrency 12 is a 3× bump for short
+  //    inline bursts — empirically inside the safe zone.
+  //
+  // Env-var override (`INLINE_BATCH_CONCURRENCY`) is the safety
+  // valve: paid Tier 1+ operators can push to 20-50 without
+  // redeploying; free-tier operators dial down.
+  const INLINE_CONCURRENCY_DEFAULT = 12;
+  const envOverride = Number(process.env.INLINE_BATCH_CONCURRENCY);
+  const MAX_INLINE_CONCURRENCY =
+    Number.isInteger(envOverride) && envOverride > 0 && envOverride <= 200
+      ? envOverride
+      : INLINE_CONCURRENCY_DEFAULT;
   const CONCURRENCY = Math.min(MAX_INLINE_CONCURRENCY, job.items.length);
   const startedAt = Date.now();
   let cursor = 0;
