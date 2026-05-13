@@ -10,6 +10,7 @@ import { ExtractionOnlyResult } from "./components/ExtractionOnlyResult";
 import { VerifyProgress } from "./components/VerifyProgress";
 import { ApiStatusBanner } from "./components/ApiStatusBanner";
 import { BatchView, type BatchRow } from "./components/BatchView";
+import { BatchProgress, type BatchPhase } from "./components/BatchProgress";
 import { SampleAffordance } from "./components/SampleAffordance";
 // ReviewQueuePanel intentionally not imported on the idle screen — it
 // surfaces a DEBUG_TOKEN access-code prompt to public visitors, which
@@ -23,6 +24,15 @@ import {
 import type { Sample } from "@/lib/samples";
 import { compressImageInBrowser } from "@/lib/client-compress";
 import { classifyFile } from "@/lib/batch-pairing";
+
+// Minimal HTTP error carrier so the batch XHR pipeline can surface
+// status codes to friendlyError() the same way the fetch() path
+// did. Not exported — the catch site re-narrows.
+class HttpError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
 
 // Translate raw API error strings into plain-language copy a senior
 // reviewer can act on. The raw `HTTP 503` / `FUNCTION_INVOCATION_
@@ -454,6 +464,25 @@ export default function Home() {
   // the SSE stream opened, which felt unresponsive on slow networks).
   // Per user feedback 2026-05-13.
   const [batchSubmitting, setBatchSubmitting] = useState(false);
+  // Determinate-progress state for the batch flow. The bar accounts
+  // for the three observable phases (upload, server-side pairing
+  // through the four-stage pipeline, per-row verification) and uses
+  // real upload bytes from XHR onprogress + estimated time-vs-
+  // budget for the server-side phases.
+  const [batchPhase, setBatchPhase] = useState<BatchPhase>("idle");
+  const [batchUploadFraction, setBatchUploadFraction] = useState<
+    number | undefined
+  >(undefined);
+  const [batchStartedAt, setBatchStartedAt] = useState<number | null>(null);
+  // Re-render ticker for the progress bar's elapsed-time estimate.
+  // The interval lives in the BatchProgress component itself, but we
+  // also need a way to compute elapsedMs here for the prop.
+  const [, setNowTick] = useState(0);
+  useEffect(() => {
+    if (batchPhase === "idle") return;
+    const id = setInterval(() => setNowTick((t) => t + 1), 200);
+    return () => clearInterval(id);
+  }, [batchPhase]);
 
   // The `manifestOverride` parameter exists to dodge a real React state
   // race: `setManifestText("")` schedules an update, but `submitBatch`
@@ -467,33 +496,22 @@ export default function Home() {
     if (stage.kind !== "batch-pending") return;
     const manifest = manifestOverride ?? manifestText;
     setBatchSubmitting(true);
+    setBatchPhase("uploading");
+    setBatchUploadFraction(undefined);
+    setBatchStartedAt(Date.now());
     const fd = new FormData();
     fd.append("manifest", manifest);
     for (const f of stage.files) fd.append(f.name, f);
+    // Use XHR rather than fetch so the upload's onprogress is real
+    // data (fetch does not surface POST-upload progress in any
+    // browser we care about). After upload completes the bar
+    // estimates the remaining phases from elapsed time vs the
+    // per-image P50 budget — see BatchProgress.
     try {
-      const res = await fetch("/api/verify/batch", { method: "POST", body: fd });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        setStage({
-          kind: "batch-pending",
-          files: stage.files,
-          autoPair: stage.autoPair,
-          submitError: friendlyError(
-            err.error ?? `HTTP ${res.status}`,
-            res.status,
-          ),
-        });
-        setBatchSubmitting(false);
-        return;
-      }
-      const body = (await res.json()) as {
+      const body = await new Promise<{
         batchId: string;
         count: number;
         pairingErrors?: string[];
-        // The inline-batch path (2026-05-13 fix for Vercel serverless
-        // instance isolation) returns the FULL result set in the POST
-        // response. If `inline === true`, skip the SSE handshake and
-        // render directly from `results`.
         inline?: boolean;
         results?: Array<{
           index: number;
@@ -502,7 +520,44 @@ export default function Home() {
           result?: VerifyResponse;
           error?: string;
         }>;
-      };
+      }>((resolveBody, rejectBody) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/verify/batch");
+        xhr.responseType = "json";
+        xhr.upload.onprogress = (e: ProgressEvent): void => {
+          if (e.lengthComputable && e.total > 0) {
+            setBatchUploadFraction(e.loaded / e.total);
+          }
+        };
+        xhr.upload.onload = (): void => {
+          // Upload bytes complete → server is now pairing + verifying.
+          setBatchUploadFraction(1);
+          setBatchPhase("pairing");
+          // After ~2 s of pairing budget, switch to "verifying" so the
+          // bar label matches reality even though we have no real
+          // signal from the server about which phase it's in.
+          setTimeout(() => setBatchPhase("verifying"), 2_000);
+        };
+        xhr.onload = (): void => {
+          setBatchPhase("finalising");
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const parsed =
+              typeof xhr.response === "object" && xhr.response !== null
+                ? xhr.response
+                : JSON.parse(xhr.responseText);
+            resolveBody(parsed);
+          } else {
+            const err =
+              (xhr.response && (xhr.response as { error?: string }).error) ??
+              `HTTP ${xhr.status}`;
+            rejectBody(new HttpError(err, xhr.status));
+          }
+        };
+        xhr.onerror = (): void => {
+          rejectBody(new Error("Network error during batch upload."));
+        };
+        xhr.send(fd);
+      });
       if (body.inline && body.results) {
         // Inline batch — render results immediately.
         const rows: BatchRow[] = body.results.map((r) =>
@@ -531,14 +586,17 @@ export default function Home() {
         setStage({ kind: "batch-running", batchId: body.batchId, rows });
       }
       setBatchSubmitting(false);
+      setBatchPhase("idle");
     } catch (e) {
+      const httpStatus = e instanceof HttpError ? e.status : undefined;
       setStage({
         kind: "batch-pending",
         files: stage.files,
         autoPair: stage.autoPair,
-        submitError: friendlyError((e as Error).message),
+        submitError: friendlyError((e as Error).message, httpStatus),
       });
       setBatchSubmitting(false);
+      setBatchPhase("idle");
     }
   }
 
@@ -842,20 +900,15 @@ export default function Home() {
                 </div>
               </div>
               {batchSubmitting && (
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className="mt-3 flex items-center gap-3 rounded-md border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-200"
-                >
-                  <span aria-hidden className="inline-block animate-spin">⏳</span>
-                  <span>
-                    Uploading {imageFiles.length} image
-                    {imageFiles.length === 1 ? "" : "s"} + {appFiles.length}{" "}
-                    application file{appFiles.length === 1 ? "" : "s"} and
-                    pairing them on the server… verification will start as
-                    soon as pairing completes.
-                  </span>
-                </div>
+                <BatchProgress
+                  phase={batchPhase}
+                  imageCount={imageFiles.length}
+                  appCount={appFiles.length}
+                  uploadFraction={batchUploadFraction}
+                  elapsedMs={
+                    batchStartedAt ? Date.now() - batchStartedAt : 0
+                  }
+                />
               )}
               <div className="mt-3 flex flex-wrap gap-3">
                 <button

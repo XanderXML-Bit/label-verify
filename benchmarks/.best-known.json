@@ -1,0 +1,46 @@
+{
+  "champions": {
+    "passRateOnCorrect": {
+      "value": 0.7653061224489796,
+      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
+      "benchAt": "2026-05-13T09:23:12.849Z",
+      "corpus": "test-data-combined"
+    },
+    "failOrReviewRateOnWrong": {
+      "value": 1,
+      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
+      "benchAt": "2026-05-13T09:23:12.849Z",
+      "corpus": "test-data-combined"
+    },
+    "p50_total": {
+      "value": 3213,
+      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
+      "benchAt": "2026-05-13T09:23:12.849Z",
+      "corpus": "test-data-combined"
+    },
+    "p95_total": {
+      "value": 7317,
+      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
+      "benchAt": "2026-05-13T09:23:12.849Z",
+      "corpus": "test-data-combined"
+    },
+    "p50_vision": {
+      "value": 2701,
+      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
+      "benchAt": "2026-05-13T09:23:12.849Z",
+      "corpus": "test-data-combined"
+    },
+    "p95_vision": {
+      "value": 3769,
+      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
+      "benchAt": "2026-05-13T09:23:12.849Z",
+      "corpus": "test-data-combined"
+    },
+    "errors": {
+      "value": 76,
+      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
+      "benchAt": "2026-05-13T09:23:12.849Z",
+      "corpus": "test-data-combined"
+    }
+  }
+}
