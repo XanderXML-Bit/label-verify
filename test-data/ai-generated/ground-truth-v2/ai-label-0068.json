@@ -11,8 +11,8 @@
   "fields": {
     "brand_name": "Wrapwater",
     "class_type": "Hard Seltzer Malt Beverage",
-    "class_category": "malt_beverage",
-    "abv_percent": 5.0,
+    "class_category": "beer",
+    "abv_percent": 5,
     "net_contents": {
       "value": 12,
       "unit": "fl_oz"

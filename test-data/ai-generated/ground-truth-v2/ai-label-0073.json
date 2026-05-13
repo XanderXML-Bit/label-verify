@@ -9,8 +9,8 @@
   "fields": {
     "brand_name": "Juniper Kite",
     "class_type": "Hard Kombucha",
-    "class_category": "malt_beverage",
-    "abv_percent": 6.0,
+    "class_category": "beer",
+    "abv_percent": 6,
     "net_contents": {
       "value": 16,
       "unit": "fl_oz"

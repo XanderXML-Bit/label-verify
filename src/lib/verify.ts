@@ -1,6 +1,22 @@
 import { preprocessImage } from "./preprocess";
 import { GeminiFlashExtractor } from "./vision/gemini";
 import { tesseractEngine } from "./ocr/tesseract";
+
+// Lazy-but-memoized loader for the OpenAI extractor module. Previously
+// re-imported on every borderline second-opinion + every fallback path
+// (3 dynamic `await import("./vision/openai")` sites) — Node caches
+// the module after the first call, but each `await import` still
+// resolves a microtask. Cheap, but free is cheaper. Per Agent D
+// code-quality audit 2026-05-13.
+let _openaiModuleCache:
+  | Promise<typeof import("./vision/openai")>
+  | null = null;
+function loadOpenAiModule(): Promise<typeof import("./vision/openai")> {
+  if (!_openaiModuleCache) {
+    _openaiModuleCache = import("./vision/openai");
+  }
+  return _openaiModuleCache;
+}
 import {
   compareBrand,
   compareAbv,
@@ -238,7 +254,7 @@ export async function verifyLabel(
         signal: fbCtrl.signal,
       };
       try {
-        const mod = await import("./vision/openai");
+        const mod = await loadOpenAiModule();
         const fallbackExtractor = new mod.GPT4oMiniExtractor({
           apiKey: fallbackKey,
           modelVersion: fallbackModel,
@@ -399,24 +415,34 @@ export async function verifyLabel(
       `Government Warning subscore is REVIEW${gov.reason ? ` — ${gov.reason}` : ""}.`,
     );
   }
-  // Codex audit fix: when OCR specifically failed or timed out, the GW
-  // validator has to fall back to the vision model's self-reported
-  // bold + size — its aggregate confidence drops to the no-OCR
-  // baseline (≤ 0.6, with size capped at 0.4). A PASS in that band
-  // hides the loss of the pixel-tight classical-CV measurement the
-  // README advertises. Route those PASS cases to REVIEW so a human
-  // confirms. Note we gate on `ocrFinal === null` (OCR was attempted
-  // and didn't produce usable output) NOT on gov.confidence alone:
-  // a high-confidence vision-only PASS that the validator returns
-  // confidently is still fine. This narrows the new gate to the
-  // genuinely-degraded path Codex flagged.
+  // Confidence-floor gate on Government-Warning PASS.
+  //
+  // The validator's per-subscore confidence drops to the no-OCR /
+  // model-self-report fallback band (≤ 0.6, with size capped at 0.4)
+  // whenever the pixel-tight classical-CV measurement is unavailable
+  // — either because OCR failed entirely or because OCR ran but did
+  // not locate the prefix bbox needed for the stroke-width transform.
+  // Both branches degrade the bold and size subscores to the model's
+  // self-reported flags, which the bench has shown can be over-
+  // permissive on B1/B2/B3 (model says "bold" on a not-bold prefix)
+  // and S1/S3 (model says "meets minimum" on a too-small prefix).
+  //
+  // The gate routes any PASS verdict whose GW aggregate confidence is
+  // below REVIEW_CONFIDENCE_THRESHOLD to REVIEW so a human confirms.
+  // The earlier ocrFinal-only gate missed the OCR-ran-but-found-no-
+  // prefix case; this version catches both. A high-confidence PASS
+  // (the pixel measurement actually agreed) is unaffected because
+  // gov.confidence stays well above 0.55 in that path.
   if (
     gov.status === "pass" &&
-    ocrFinal === null &&
     gov.confidence < REVIEW_CONFIDENCE_THRESHOLD
   ) {
+    const reason =
+      ocrFinal === null
+        ? "OCR failed or timed out, so the pixel-level bold/size measurement was unavailable."
+        : "OCR ran but did not locate the Government-Warning prefix; the bold/size subscores fell back to the vision model's self-reported flags.";
     reviewReasons.push(
-      `Government Warning PASS at confidence ${gov.confidence.toFixed(2)} without OCR corroboration — pixel-level bold/size measurement was unavailable (OCR failed or timed out). A human reviewer should confirm the warning's appearance.`,
+      `Government Warning PASS at aggregate confidence ${gov.confidence.toFixed(2)} — ${reason} A human reviewer should confirm the warning's appearance.`,
     );
   }
   // Per-field comparators that already returned REVIEW (e.g. ABV with low
@@ -549,7 +575,7 @@ export async function verifyLabel(
       externalAbort.addEventListener("abort", onExternalAbortSo, { once: true });
     }
     try {
-      const soMod = await import("./vision/openai");
+      const soMod = await loadOpenAiModule();
       const soExtractor = new soMod.GPT4oMiniExtractor({
         apiKey: process.env.OPENAI_API_KEY,
         modelVersion: process.env.MODEL_FALLBACK ?? "gpt-5.4-nano",
@@ -754,7 +780,7 @@ export async function extractOnly(
       const fbCtrl = new AbortController();
       const fbTimer = setTimeout(() => fbCtrl.abort(), remainingMs);
       try {
-        const mod = await import("./vision/openai");
+        const mod = await loadOpenAiModule();
         const fallbackExtractor = new mod.GPT4oMiniExtractor({
           apiKey: fallbackKey,
           modelVersion: fallbackModel,

@@ -148,16 +148,13 @@ computed across the 5 successful images.
 
 **Verdict-decision criteria check (from §3):**
 
-> **Honest framing on Gov-Warning FN.** The small 12-image routine
-> run reported a Gov-Warning FN-rate of 28.6 % (n=7 non-compliant
-> labels) — that small-sample number is **NOT** evidence that T6
-> meets the criterion. The criterion-check below uses the
-> 170-image combined-corpus run
-> (`benchmarks/results/2026-05-12T23-44-56-393Z.md`) where T6's
-> Gov-Warning FN-rate is **5.1 % (n=137, Wilson 95 % CI [2.5,
-> 10.2])**. Point estimate is inside the criterion; the CI upper
-> bound is at 10.2 % so the criterion holds at the point estimate
-> but the corpus is too small to be 95 %-confident.
+> **Government-Warning FN-rate measurement.** Use the 170-image
+> combined-corpus run for the criterion check, not the 12-image
+> routine slice (n = 7 non-compliant labels is too small to
+> support a 10 % criterion). T6 on the 170-image corpus:
+> **5.1 % (n = 137, Wilson 95 % CI [2.5, 10.2])**. Point estimate
+> clears the criterion; the upper Wilson bound does not, given the
+> n = 137 sample size for the non-compliant stratum.
 
 1. ⚠ Gov-Warning FN ≤ 10 %: point estimate 5.1 % is inside;
    Wilson 95 % CI upper bound 10.2 % is just over. T6's

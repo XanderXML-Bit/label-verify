@@ -9,7 +9,7 @@
   "fields": {
     "brand_name": "Citrus Loom",
     "class_type": "Mango Lime Malt Seltzer",
-    "class_category": "malt_beverage",
+    "class_category": "beer",
     "abv_percent": 5.5,
     "net_contents": {
       "value": 16,
@@ -33,5 +33,6 @@
     }
   },
   "gov_warning_case": "compliant",
-  "notes": "Fruit-flavored malt seltzer tall can with compliant warning."
+  "notes": "Fruit-flavored malt seltzer tall can with compliant warning.",
+  "_class_category_note": "TTB Part 16 treats malt beverages (hard seltzer / hard kombucha / flavored malt beverages) as beer for ABV tolerance and Government-Warning purposes; the DeclaredFields enum reflects that. The corpus-stratification beverage_type stays \"malt_beverage\" for the bench analysis."
 }

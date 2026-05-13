@@ -1,87 +1,29 @@
 # Test Strategy
 
-> How we generate test labels, store ground truth, run benchmarks, and prove
-> the system works.
+How the project is tested, what corpus the benchmark runs against, what statistical conventions the bench applies, and which test surfaces catch which class of regression.
 
-## 1. Why This Matters
+## 1. Test surface inventory
 
-Without a corpus of labels with **known correct field values**, we cannot:
+| Surface | Count | Runtime | Purpose |
+|---|---:|---|---|
+| Vitest specs (unit + integration) | 474 across 56 files | ~10 s (`npm test`) | Pipeline correctness: matchers, validators, scorers, route handlers, schemas, CLI argument parsing. |
+| Playwright E2E specs | 9 spec files | ~30–60 s with `npm run dev` (`npm run test:e2e`) | Browser-driven user-flow validation. Covers idle screen + samples, application-input prefill, batch autopair, form validation, friendlyError mapping, upload rejection, sample retry, API status banner, extract-only. |
+| Benchmark harness | `benchmarks/run.ts` (T-variant tournament) + `bin/labelverify-bench.ts` (cross-pair) | ~5 min routine, ~30 min full bake-off, ~15 min cross-pair | Accuracy + latency measurement on the corpus. |
+| CLI smoke tests | 3 test files (`cli.test.ts`, `cli-web.test.ts`, `bench-cross-pair.test.ts`) | included in Vitest | Subprocess-level argument parsing, help, exit-code semantics for all three CLIs. |
+| Production smoke | `.github/workflows/post-deploy-smoke.yml` | < 1 min on every push to `main` | `/api/health` and a single live verify against the deployed URL. |
 
-- Compare extraction techniques (`APPROACH.md`).
-- Detect regressions when we change prompts or models.
-- Make any defensible claim about accuracy to the evaluator.
+## 2. Test corpus
 
-The corpus is the foundation. We build it first.
+170 images on disk in `test-data-combined/`. Two strata:
 
-## 2. Corpus Composition Targets
+- **Synthetic SVG (n = 90).** Vector-rendered from deterministic templates. The Government-Warning failure modes are hand-controlled and catalogued in [`government-warning-cases.md`](government-warning-cases.md).
+- **Photo-realistic AI-generated (n = 80).** Codex `image_gen` renders across two batches (50 + 30). Stress-cases include Government-Warning paraphrase, photo-quality degradation (perspective, glare, lowlight, occlusion, motion blur, aged paper, shrink-wrap, curved substrate), bilingual EN/ES warnings, and novel beverage categories (hard cider, sake, hard kombucha, RTD cocktail, mead, malt seltzer).
 
-Minimum **100 labels** for the v1 benchmark. Composition reflects the
-narrower 4-contender benchmark (see `APPROACH.md` §2) — with 4 techniques
-not 13, 100 labels gives ≈ ±5 pp Wilson CI per cell, which is defensible.
+Each image has a ground-truth JSON with the seven declared fields and four Government-Warning compliance booleans (`present`, `text_matches_regulation`, `prefix_all_caps`, `prefix_bold`, `meets_size_minimum`). Ground-truth provenance is documented in [`CORPORA.md`](CORPORA.md).
 
-| Axis | Targets |
-|------|---------|
-| Beverage type | 35 beer, 30 wine, 25 spirits, 10 fortified wine / RTD |
-| Label face | 60 front, 30 back (Gov Warning lives on back for most spirits), 10 neck/side |
-| Image quality | 35 clean, 25 angled / perspective-skewed, 15 low-light, 10 glare, 10 partial occlusion, 5 curved-bottle/wrap distortion |
-| **Government Warning correctness** | **40 compliant, 40 non-compliant (per `government-warning-cases.md` taxonomy), 20 missing entirely** — flipped from the first-draft split because the false-negative rate (passing a non-compliant label) is the dangerous direction for a regulator and needs adequate samples to estimate |
-| Brand name complexity | 35 single-word, 30 multi-word, 20 with apostrophes/punctuation, 15 with stylized caps |
-| ABV range | Beer 3.5–8 %, wine 11–14.5 %, spirits 35–55 %, fortified 17–22 % |
-| Container size | 25 small (≤ 237 ml), 75 large (> 237 ml) — drives §16.22 type-size minimums |
+A parallel `test-data-combined/declared-wrong/` directory carries one programmatically-perturbed payload per ground-truth file (brand swap, ABV +2.0 pp, class swap to a non-alias sibling, ×2 net_contents, country swap). Regenerated deterministically by `npm run bench:perturb`.
 
-Synthetic edge cases are intentional: a model that only handles clean photos
-fails R4. Real-world COLA submissions are not uniform.
-
-## 3. How We Generate Labels
-
-We don't need real submissions. We generate ours, three ways:
-
-### 3.1 Synthetic Renders (primary, ~70 labels)
-
-- HTML/CSS templates parameterized by JSON spec → rendered to PNG via
-  Puppeteer / Playwright.
-- Templates cover the common label layouts (front, back, neck).
-- Each template randomizes: brand name (from a curated faux-brand list),
-  ABV, net contents, country, address, warning text.
-- Ground-truth JSON is emitted *as part of generation* — by construction, it
-  matches the rendered pixels.
-
-### 3.2 Degradation Pipeline (~30 labels)
-
-Take a clean synthetic label, apply transforms:
-
-- Perspective warp (homography matrix) → "photographed at an angle."
-- Gaussian + Poisson noise → "phone camera."
-- Brightness curves → "low light" / "glare patches."
-- Partial mask → "thumb covering corner."
-
-Ground truth is unchanged from the source render. We log which transform
-was applied, so we can compute per-condition accuracy.
-
-### 3.3 Public-Domain Real Labels (10 labels, reported as out-of-distribution)
-
-A small set of real beverage labels (sourced from TTB's public COLA
-registry / Public COLA Registry disclosures) for sanity-checking that we
-haven't overfit to synthetic artifacts.
-
-**Reported as OOD, not folded into the headline number.** This is the
-honest read: 10 labels cannot statistically defend a "we work on real
-labels" claim. They can show direction. The benchmark write-up reports a
-*separate column* for real-label accuracy, with a footnote stating
-n = 10 and the implied CI.
-
-Ground truth is **hand-transcribed by the author**, then verified by a
-top-tier vision model, **then diffed**. Where the human and the model
-disagree, the human resolves. Where they *agree*, we still spot-check
-(LLMs can share correlated errors on stylized text — see §5).
-
-If we land time for a v2 corpus expansion, the priority is more real
-labels (target 25–30) rather than more synthetic. P1 in
-`docs/archive/TODO.md`.
-
-## 4. Ground Truth Format
-
-One JSON file per image, same basename:
+## 3. Ground-truth format
 
 ```json
 {
@@ -89,139 +31,128 @@ One JSON file per image, same basename:
   "source": "synthetic",
   "image": "test-data/labels/syn-beer-0042.png",
   "degradations": ["perspective:15deg", "lowlight:0.6"],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 355,
   "fields": {
     "brand_name": "Stone's Throw Brewing",
     "class_type": "India Pale Ale",
-    "abv": 6.4,
+    "class_category": "beer",
+    "abv_percent": 6.4,
     "net_contents": { "value": 12, "unit": "fl_oz" },
+    "producer": "Stone's Throw Brewing Co., 14 Mill St, Asheville, NC 28801, USA",
+    "country_of_origin": "USA",
     "government_warning": {
       "present": true,
-      "exact_match": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
       "prefix_bold": true,
-      "prefix_caps": true
-    },
-    "producer_name_address": "Stone's Throw Brewing Co., 14 Mill St, Asheville, NC 28801, USA",
-    "country_of_origin": "USA"
+      "meets_size_minimum": true
+    }
   },
+  "gov_warning_case": null,
   "notes": "Standard front label, well-lit, no glare."
 }
 ```
 
-## 5. Ground-Truth Validation
+The `gov_warning_case` field uses the case taxonomy in [`government-warning-cases.md`](government-warning-cases.md) (`C1_PREFIX_TITLE_CASE`, `T1_WORD_SUBSTITUTION`, `B1_PREFIX_NOT_BOLD`, etc.). `null` means the warning is fully compliant.
 
-For real labels and any high-stakes edge case, we cross-check ground truth
-with a *separate, advanced* model (e.g., Claude Opus or GPT-4o on the full
-high-resolution image). Any disagreement is human-resolved before the label
-enters the benchmark set.
+## 4. Benchmark harness
 
-**Caveat (the correlated-error trap):** large vision-language models share
-training corpora and fail in correlated ways on the same hard cases —
-stylized type, foil, ambiguous bold weights. If both human and model
-agree, the ground truth is still wrong in that subset. Mitigations:
+Two complementary runners:
 
-- **100 % human-authored ground truth on the 10 real-label OOD set** —
-  the model is *validator*, never *author*.
-- **Spot-check pass on synthetic ground truth** — the same author re-checks
-  20 % of synthetic entries a day later. Catches transcription mistakes
-  from the generator.
-- **Borderline-bold cases are not in the benchmark.** If even the author
-  cannot confidently call the prefix bold or not-bold by eye, we exclude
-  the label from the bold-detection sub-score (it can still score on text
-  match and caps) rather than encode a confused answer.
-
-Without this discipline the answer key silently grades a flawed technique
-as "wrong" or a wrong technique as "right." We will not let that happen.
-
-## 6. Benchmark Harness
-
-`benchmarks/run.ts`:
+### 4.1 Model tournament — `benchmarks/run.ts`
 
 ```
 for each technique in techniques:
   for each image in corpus:
-    repeat 3:
+    repeat N trials:
       record { latency, raw_output, parsed_fields, errors }
     score parsed_fields vs ground_truth
-  aggregate accuracy, P50/P95 latency, error rate
-write results to benchmarks/results/<iso-timestamp>.json
+  aggregate accuracy, P50/P95 latency, error rate, cost
+write results to benchmarks/results/<iso>.json
 emit Markdown summary
 ```
 
-Outputs are committed. Each commit that changes a prompt or model triggers
-a benchmark run (manual at first, GitHub Action later).
+Variants are registered in `benchmarks/techniques.ts`. The tournament supports a smoke mode (`--smoke`, 20 images, 1 trial), a routine mode (`--routine`, 15 images, 3 trials), and a full bake-off (`--bake-off`, all images, 3 trials).
 
-## 7. Scoring Rules
+### 4.2 Cross-pair benchmark — `bin/labelverify-bench.ts`
 
-- **Exact-match fields** (Government Warning text, country, class/type):
-  binary pass/fail after Unicode-normalize + smart-quote-fold +
-  whitespace-collapse.
-- **Numeric fields**:
-  - **ABV**: `pass` if `|measured − declared| ≤ tolerance(class)`. Tolerance
-    is the TTB-style absolute percentage-point band per class — beer ±0.3 pp,
-    wine ±0.5 pp (under 14 % ABV) / ±1.0 pp (≥ 14 %), distilled spirits
-    ±0.15 pp. ("±0.1 %" was ambiguous — these are percentage *points*,
-    absolute, not relative.)
-  - **Net contents**: `pass` if values match exactly after unit conversion;
-    "12 fl oz" matches "355 ml" (within ±1 ml rounding).
-- **Fuzzy fields** (brand name, producer name/address):
-  - Normalize (Unicode-fold, lowercase, strip punctuation, collapse
-    whitespace).
-  - Default `pass` if Levenshtein ratio ≥ 0.92 **AND** token-set ratio ≥
-    0.85. The token-set backstop handles short brands where one edit can
-    sink the Levenshtein ratio — e.g. "Bud" vs "Sud" (ratio 0.67) fails
-    cleanly, while "Coors Light" vs "Coots Light" rightly fails despite a
-    misleading 0.91 character-ratio.
-  - Producer/address: compared per *component* (street / city / state / zip)
-    after structured parsing; one mismatched component returns `REVIEW`
-    rather than collapsing the whole field to FAIL.
-- **Government Warning** scored as four sub-scores:
-  - `text`: normalized exact match against `GOVERNMENT_WARNING_BODY`.
-  - `caps`: prefix is all-caps after Unicode-fold.
-  - `bold`: prefix stroke width ≥ 1.4 × body stroke width (relative, not
-    absolute). Ambiguous middle (1.2–1.4×) returns `status = "review"`
-    → counted as REVIEW, not pass.
-  - `size`: prefix glyph height ≥ §16.22 minimum (1 mm or 2 mm depending
-    on inferred container size).
-  - Aggregate `pass = min(subscores)`; aggregate confidence = `min`
-    confidence across sub-scores. One weak signal poisons the field, which
-    is the right semantic for the strictest rule.
+Runs every image × {correct ground-truth, perturbed wrong-declared} through the production `verifyLabel` orchestrator. Reports pass-rate on correct, fail-or-review rate on wrong, P50/P95 total + vision latency, and per-`gov_warning_case` breakdown. See [`CLI.md`](CLI.md) for invocation.
 
-## 7a. Statistical Reporting (the part that makes the claim defensible)
+## 5. Scoring rules
 
-Headline numbers without confidence intervals are not defensible. Every
-benchmark run reports:
+- **Exact-match fields** (Government-Warning text, country, class/type): binary pass/fail after Unicode normalization, smart-quote folding, dash variant folding, whitespace collapse, and non-printing-space folding (NBSP, narrow NBSP, en-quad through hair-space, medium math space, ideographic space, zero-width space, BOM).
+- **ABV**: `pass` if `|measured − declared| ≤ tolerance(class_category)`. Per-class tolerances are TTB-style absolute percentage points: beer ±0.3 pp, wine ±0.5 pp under 14 % ABV / ±1.0 pp at or above 14 %, distilled spirits ±0.15 pp.
+- **Net contents**: `pass` if values match after unit conversion within `max(1.5 ml, 0.5 %)` tolerance. "12 fl oz" matches "355 ml" within ~0.1 ml.
+- **Brand name**: normalize (Unicode-fold, lowercase, strip punctuation, collapse whitespace), then `pass` if Levenshtein ratio ≥ 0.92 AND token-set ratio ≥ 0.85. The token-set backstop prevents single-edit short brands from sneaking past Levenshtein.
+- **Producer / address**: structured per-component comparison (street, city, state, postal_code, country). A single mismatched component routes to REVIEW rather than collapsing the whole field to FAIL. US-domestic inference (label prints state code but no explicit "USA") is gated on a strict 2-letter state code plus at least one corroborating component.
+- **Country**: synonym table across 7 languages and 25 countries (`src/lib/matchers/country.ts`). French `RÉPUBLIQUE FRANÇAISE` matches `France`; Japanese `日本` matches `Japan`.
+- **Class / type**: alias table with two tiers — `SAFE_ALIASES` (auto-PASS for known interchangeable terms like Whisky/Whiskey) and `REVIEW_ALIASES` (route to REVIEW for terms that are commonly used interchangeably but are distinct under TTB classification, e.g. Lager / Pilsner).
+- **Government Warning** has four subscores:
+  - `text`: normalized exact match against the canonical §16.21 body.
+  - `caps`: prefix is all-caps after Unicode-fold (including small-caps codepoints).
+  - `bold`: prefix stroke width ≥ 1.4 × body stroke width via the classical-CV stroke-width transform (`src/lib/validation/bold-size.ts`). Ambiguous middle (1.2–1.4×) returns `review`. Falls back to the model's `prefix_appears_bold` flag at advisory 0.6 confidence when OCR cannot locate the prefix.
+  - `size`: prefix glyph height ≥ §16.22 minimum (1 mm small container / 2 mm large), bbox → mm via declared net contents.
+  - Aggregate: worst-of across the four subscores.
+
+## 6. Statistical reporting
+
+Every benchmark run reports:
 
 - **Wilson 95 % CI** on every accuracy point estimate.
-- **Stratified accuracy table** — per (beverage type × image condition ×
-  field). The reviewer sees "we fail 18 % on low-light spirits Gov
-  Warning," not just "94 % overall." This is what a regulator wants.
-- **Per-technique-pair McNemar's test** — for any "A is better than B"
-  claim in the decision record, the p-value is reported. Two techniques
-  inside the CI of each other are reported as a tie, not a winner.
-- **Per-field false-negative rate** for Government Warning, separately
-  from overall accuracy. FN = "passed a non-compliant label" — the
-  regulator-dangerous direction.
-- **Out-of-distribution column** — accuracy on the 10 real labels,
-  reported separately from the synthetic+degraded headline.
+- **Stratified accuracy table** — per (beverage type × image condition × field). The reviewer sees a column for "low-light spirits Government-Warning" rather than only the aggregate.
+- **Per-technique-pair McNemar's test** — for any "A is better than B" claim in the decision record, the p-value is reported. Two techniques inside each other's CI are reported as a tie.
+- **Per-field false-negative rate for Government Warning**, separately from overall accuracy. FN = "passed a non-compliant label" — the regulator-relevant direction.
+- **Per-stratum breakdown** (SVG synthetic vs photo-realistic AI), reported separately rather than pooled.
 
-## 8. Continuous Validation
+The bench scorer treats a `REVIEW` outcome the same as a `FAIL` when computing accuracy — only an unambiguous PASS counts as correct. This is a deliberately strict measurement convention. In the production orchestrator, REVIEW is a routed-to-human verdict with a regulation-citing reason, so the headline metric understates the operator-level outcome (see [`FAILURE-MODES.md`](FAILURE-MODES.md) §F1).
 
-Even after picking a technique, the corpus stays alive:
+## 7. Ground-truth validation
 
-- Every PR that touches the extractor runs `npm run bench:smoke` (a 20-image
-  subset) and must not regress.
-- A nightly full-run records drift if any hosted model silently updates.
+For the photo-realistic stratum (which was not generated from a deterministic template), ground truth was cross-validated by an independent vision-model oracle pass (Gemini 3.1 Pro Preview) and a four-sub-agent visual audit. The cross-validation report is at `.review/ai-corpus-cross-validation.md`. Human-resolved ground truth is the source of truth where automated cross-checks disagree.
 
-## 9. What We Will Not Test (Yet)
+Borderline-bold cases are excluded from the bold-detection subscore (they still score on text match, caps, and size). Encoding a confused answer in the ground truth would silently grade a flawed technique as wrong, or a confused technique as right.
+
+## 8. E2E coverage
+
+Playwright specs under `e2e/`:
+
+| Spec | Covers |
+|---|---|
+| `idle-and-sample.spec.ts` | Idle-screen affordances; dark-mode toggle persistence; three sample buttons end-to-end. |
+| `application-input-flow.spec.ts` | Image + JSON application-file upload → form prefill → Verify; image + Skip → extract-only. |
+| `batch-autopair.spec.ts` | Drop 2 images + 2 stem-matched application JSONs → autopair detection → inline batch result. |
+| `form-validation.spec.ts` | Empty form, ABV bounds, net-contents validation reach the user. |
+| `error-mapping.spec.ts` | 429 / 413 / 415 / 503 / 504 / 500 / network failure all surface friendly copy, not raw HTTP. |
+| `upload-rejection.spec.ts` | `.exe` / `.gif` / app-only rejection paths surface inline errors. |
+| `sample-retry.spec.ts` | Sample 500 → "Retry this sample" → succeeds on second attempt. |
+| `api-status-banner.spec.ts` | `/api/health` notes surface in the page-load banner; healthy → banner hidden. |
+
+E2E specs use `page.route(...).fulfill(...)` mocks for the verify endpoints so the suite does not depend on a real vision API key, runs offline-safe, and is deterministic in CI.
+
+## 9. CLI test surfaces
+
+| File | Covers |
+|---|---|
+| `src/tests/cli.test.ts` | Operator CLI (`bin/labelverify.ts`) — help, arg parsing, samples, health (offline commands only; network-touching paths are exercised by the bench and live smoke). |
+| `src/tests/cli-web.test.ts` | Web-app driver CLI (`bin/labelverify-web.ts`) — help, arg parsing, samples (offline), plus source-shape regression guards that lock the `/api/application/parse` and `/api/verify` response field names. |
+| `src/tests/bench-cross-pair.test.ts` | Perturbation helper (`perturb()`) determinism + mutations-are-distinct + null-country handling, plus bench CLI help and `GOOGLE_API_KEY` exit-1 guard. |
+
+## 10. Continuous validation
+
+- Every push to `main` triggers `.github/workflows/ci.yml` (typecheck + lint + test + production build) and `.github/workflows/post-deploy-smoke.yml` (`/api/health` + one live verify against the deployed URL).
+- Routine bench (`npm run bench:routine`) is the recommended local sanity check before any prompt or model change. Results land in `benchmarks/results/<iso>.md`.
+- Full bake-off (`npm run bench:bakeoff`) is run on demand; the result table is committed to the repo and cross-referenced from [`MODEL-SELECTION.md`](MODEL-SELECTION.md) §4.
+
+## 11. Out of scope
 
 - Adversarial labels designed to fool the model.
-- Non-English-character labels (out of scope for prototype).
-- Live load tests beyond the quota-derived interactive batch case (which the architecture
-  already handles).
+- Live load tests beyond the interactive batch ceiling derived from the Vercel Hobby plan's 60-s function cap.
+- Real submitted COLA labels. The corpus is an in-house bench; field-validation against real submissions is the natural next step before drawing field-deployment conclusions.
 
-## 10. Reproducibility Checklist
+## 12. Reproducibility
 
-- [ ] Test corpus generation script is deterministic given a seed.
-- [ ] Ground-truth JSON is committed alongside images.
-- [ ] Benchmark results record model version + prompt hash.
-- [ ] `npm run bench` works from a clean clone.
+- The synthetic corpus is generated by `scripts/generate-corpus.ts` and `scripts/generate-corpus-v2.ts` with deterministic seeds. The perturbation generator (`scripts/perturb-declared.ts`) is hash-deterministic per ground-truth `id`.
+- Every benchmark result records the model version, prompt hash, and per-image cost.
+- `npm run bench`, `npm run bench:routine`, `npm run bench:cross-pair`, and `npm test` all work from a clean clone with only `GOOGLE_API_KEY` (and optionally `OPENAI_API_KEY` for the fallback) in `.env.local`.

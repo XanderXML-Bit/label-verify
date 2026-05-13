@@ -140,6 +140,43 @@ export function detectJsonManifestShape(text: string): ManifestShape {
     };
   }
   if (typeof parsed === "object" && parsed !== null) {
+    // Filename-keyed object map.
+    //
+    // The natural shape a reviewer writes when assembling a batch
+    // manifest by hand: `{ "<image-filename>": { <row> }, ... }`.
+    // Detect it by checking whether every top-level key looks like
+    // an image filename (matching the same MIME allow-list the route
+    // accepts), and treat each entry as one manifest row with an
+    // implicit `filename` field. Without this branch, the
+    // single-row fallback would flatten every nested key into the
+    // top-level object and the downstream parser would see garbage
+    // field names like `deg-beer-0005.png_brand_name`.
+    const keys = Object.keys(parsed as Record<string, unknown>);
+    const imageKeyRe = /\.(jpe?g|png|webp|heic|heif|tiff?|bmp)$/i;
+    const allImageKeys =
+      keys.length > 0 && keys.every((k) => imageKeyRe.test(k));
+    if (allImageKeys) {
+      const rows: Record<string, string>[] = keys.map((k) => {
+        const inner = coerceToRow((parsed as Record<string, unknown>)[k]);
+        // Override or set the `filename` key so the route's
+        // inline-manifest pairer can resolve each row to its image.
+        inner.filename = k;
+        return inner;
+      });
+      if (rows.length === 1) {
+        return {
+          kind: "single-row",
+          rows: [rows[0]!],
+          hasFilenameColumn: false,
+        };
+      }
+      return {
+        kind: "multi-row",
+        rows,
+        hasFilenameColumn: true,
+        filenameColumn: "filename",
+      };
+    }
     return {
       kind: "single-row",
       rows: [coerceToRow(parsed)],
@@ -151,13 +188,31 @@ export function detectJsonManifestShape(text: string): ManifestShape {
 
 /** Flatten one level of nested object → string-valued top-level row.
  *  Matches the convention `parseApplicationJson` already uses so the
- *  downstream `rowToDeclared` accepts both shapes uniformly. */
+ *  downstream `rowToDeclared` accepts both shapes uniformly.
+ *
+ *  Special case: a top-level `fields` wrapper (the convention the
+ *  project's own ground-truth files use, and a natural shape for a
+ *  reviewer-authored manifest) is hoisted directly to the row's top
+ *  level rather than being prefixed with `fields_*`. This means
+ *  `{ id: "x", fields: { brand_name: "X" } }` becomes
+ *  `{ id: "x", brand_name: "X" }` — exactly what `rowToDeclared`
+ *  expects to consume. */
 function coerceToRow(record: unknown): Record<string, string> {
   if (typeof record !== "object" || record === null) return {};
   const row: Record<string, string> = {};
   for (const [k, v] of Object.entries(record as Record<string, unknown>)) {
     if (v == null) continue;
     if (typeof v === "object" && !Array.isArray(v)) {
+      // `fields` wrapper hoists to top level. Recursively flatten so
+      // any nested net_contents / producer object inside also reaches
+      // the row uniformly.
+      if (k === "fields") {
+        const inner = coerceToRow(v);
+        for (const [ik, iv] of Object.entries(inner)) {
+          row[ik] = iv;
+        }
+        continue;
+      }
       for (const [sk, sv] of Object.entries(v as Record<string, unknown>)) {
         if (sv == null) continue;
         row[`${k}_${sk}`] = String(sv);
