@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { ModeToggle } from "./components/ModeToggle";
 
 export const metadata: Metadata = {
   title: "Label Verify",
@@ -60,20 +61,48 @@ const THEME_INIT_SCRIPT = `
 })();
 `.trim();
 
+// Pre-paint view-mode bootstrap. Sets <html data-mode="simple|detailed">
+// before React hydrates so simple-mode visitors don't briefly see the
+// full detailed UI render and then collapse. Default is "simple" — a
+// first-time non-technical reviewer should land on the simpler surface
+// (and we expect repeat operators to flip it to "detailed" and have the
+// choice persist).
+const MODE_INIT_SCRIPT = `
+(function () {
+  try {
+    var k = 'labelverify:mode';
+    var s = window.localStorage.getItem(k);
+    var m = s === 'simple' || s === 'detailed' ? s : 'simple';
+    document.documentElement.setAttribute('data-mode', m);
+  } catch (_) {
+    document.documentElement.setAttribute('data-mode', 'simple');
+  }
+})();
+`.trim();
+
 export default function RootLayout({
   children,
 }: {
   readonly children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="light"
+      data-mode="simple"
+      suppressHydrationWarning
+    >
       <head>
-        {/* Pre-paint theme bootstrap — see THEME_INIT_SCRIPT above. The
-            script body is a string literal under our control; there is no
-            user-provided content here, so dangerouslySetInnerHTML is safe. */}
+        {/* Pre-paint theme + mode bootstraps — see *_INIT_SCRIPT above.
+            Script bodies are string literals under our control; no
+            user-provided content, so dangerouslySetInnerHTML is safe. */}
         <script
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: MODE_INIT_SCRIPT }}
         />
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
@@ -93,7 +122,10 @@ export default function RootLayout({
                 TTB COLA prototype
               </p>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <ModeToggle />
+              <ThemeToggle />
+            </div>
           </div>
         </header>
         <main id="main" className="mx-auto max-w-5xl px-4 py-6 sm:py-8">

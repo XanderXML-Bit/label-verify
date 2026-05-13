@@ -14,6 +14,7 @@
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 
 function loadDotenv(path: string): void {
   if (!existsSync(path)) return;
@@ -40,10 +41,14 @@ interface Args {
   out?: string;
   json: boolean;
   help: boolean;
+  /** When true, do not read or write `benchmarks/.best-known.json`.
+   *  Useful for ad-hoc local runs the operator does NOT want to count
+   *  as official records (e.g. testing a half-applied change). */
+  noTrack: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const a: Args = { command: "", corpus: "test-data-combined", limit: 10, concurrency: 2, json: false, help: false };
+  const a: Args = { command: "", corpus: "test-data-combined", limit: 10, concurrency: 2, json: false, help: false, noTrack: false };
   // Parse numeric flag with explicit Number.isFinite + non-negative check.
   // Earlier shape `Number(x) || default` silently swallowed `0` (falsy) —
   // breaking the advertised `--limit 0 = all` convention. Caught by
@@ -60,6 +65,7 @@ function parseArgs(argv: string[]): Args {
     const t = argv[i]!;
     if (t === "--json") a.json = true;
     else if (t === "--help" || t === "-h") a.help = true;
+    else if (t === "--no-track") a.noTrack = true;
     else if (t === "--corpus") {
       const v = argv[++i];
       if (v === undefined) throw new Error("--corpus requires a directory path");
@@ -91,9 +97,19 @@ Flags:
   --concurrency <K>                Parallel verifies (default: 2).
   --out <path>                     Write JSON report to file.
   --json                           Emit JSON to stdout.
+  --no-track                       Skip the best-known-record comparison
+                                   (benchmarks/.best-known.json). Use for
+                                   ad-hoc local runs you do not want to
+                                   record as official records.
   --help, -h                       Print this help.
 
 Example: npm run bench:cross-pair -- --limit 5
+
+Regression tracking: by default the bench reads benchmarks/.best-known.json
+and prints "NEW RECORD" / "REGRESSION" lines per metric so you see
+immediately whether the current run is better than the prior best.
+The file is updated only on improvements and is committed to the repo
+so the champion travels with history.
 `);
 }
 
@@ -145,10 +161,16 @@ function isGtCompliant(gt: GtFile): boolean {
 
 function toDeclared(gt: GtFile): import("../src/lib/types").DeclaredFields | null {
   const f = gt.fields;
-  // GT.country_of_origin is null on some `ai-label-*` rows because Codex
-  // couldn't visually confirm it. Skip those on the correct pass — there's
-  // no honest expected verdict when the application has a null required field.
-  if (typeof f.country_of_origin !== "string" || f.country_of_origin.length < 2) return null;
+  // GT.country_of_origin is null on the `ai-label-*` rows where Codex
+  // couldn't visually confirm a country marking. That's a legitimate
+  // declared value — TTB only requires country marking on imports
+  // (27 CFR §4.39 / §5.36) so a US-domestic application that didn't
+  // declare a country should still verify. Pass null through to the
+  // nullish schema branch in DeclaredFieldsSchema (wave-8 hotfix).
+  const country =
+    typeof f.country_of_origin === "string" && f.country_of_origin.length >= 2
+      ? f.country_of_origin
+      : null;
   return {
     brand_name: f.brand_name,
     class_type: f.class_type,
@@ -156,7 +178,7 @@ function toDeclared(gt: GtFile): import("../src/lib/types").DeclaredFields | nul
     abv_percent: f.abv_percent,
     net_contents: f.net_contents as { value: number; unit: "fl_oz" | "ml" | "L" | "cl" },
     producer: f.producer as string | import("../src/lib/types").DeclaredFields["producer"],
-    country_of_origin: f.country_of_origin,
+    country_of_origin: country,
   };
 }
 
@@ -313,12 +335,29 @@ async function cmdCrossPair(args: Args): Promise<void> {
   };
   const report = { summary, records };
 
+  // ─── Best-known-record tracking ──────────────────────────────────────────
+  //
+  // Compare this run's headline metrics against the per-metric
+  // champions recorded in `benchmarks/.best-known.json`. For each
+  // metric (higher-is-better or lower-is-better), if this run beats
+  // the champion, update the record (with the current commit SHA and
+  // bench filename) and emit a "NEW RECORD" line. If this run regresses,
+  // emit a "REGRESSION" warning so the operator sees that something has
+  // gotten worse before publishing the result.
+  //
+  // The file is committed to the repo so the champion travels with
+  // history. Users running a one-off bench locally can opt out with
+  // --no-track or by deleting the file.
+  const trackingResult = await trackBestKnown(summary, args.corpus, args.noTrack);
+
   if (args.out) {
     await mkdir(dirname(args.out), { recursive: true });
     await writeFile(args.out, JSON.stringify(report, null, 2));
   }
   if (args.json) {
-    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+    process.stdout.write(
+      JSON.stringify({ ...report, bestKnown: trackingResult }, null, 2) + "\n",
+    );
     return;
   }
   /* eslint-disable no-console */
@@ -336,7 +375,172 @@ async function cmdCrossPair(args: Args): Promise<void> {
     }
   }
   if (args.out) console.log(`\n  Wrote ${args.out}`);
+  if (trackingResult.improvements.length > 0 || trackingResult.regressions.length > 0) {
+    console.log(`\n  Best-known-record comparison (benchmarks/.best-known.json):`);
+    for (const imp of trackingResult.improvements) {
+      console.log(
+        `    [+] NEW RECORD: ${imp.metric} ${formatMetric(imp.metric, imp.from)} -> ${formatMetric(imp.metric, imp.to)}`,
+      );
+    }
+    for (const reg of trackingResult.regressions) {
+      console.log(
+        `    [!] REGRESSION: ${reg.metric} ${formatMetric(reg.metric, reg.from)} -> ${formatMetric(reg.metric, reg.to)} (best stays ${formatMetric(reg.metric, reg.from)} at ${reg.bestCommit.slice(0, 7)})`,
+      );
+    }
+  } else {
+    console.log(`\n  Best-known-record comparison: no metric changed.`);
+  }
   /* eslint-enable no-console */
+}
+
+// ─── Best-known-record tracking helpers ─────────────────────────────────────
+
+interface MetricChampion {
+  value: number;
+  commit: string;
+  benchAt: string;
+  corpus: string;
+}
+
+interface BestKnownFile {
+  champions: Record<string, MetricChampion>;
+}
+
+const METRIC_DIRECTION: Record<string, "higher-better" | "lower-better"> = {
+  passRateOnCorrect: "higher-better",
+  failOrReviewRateOnWrong: "higher-better",
+  p50_total: "lower-better",
+  p95_total: "lower-better",
+  p50_vision: "lower-better",
+  p95_vision: "lower-better",
+  errors: "lower-better",
+};
+
+function formatMetric(metric: string, value: number): string {
+  if (metric.startsWith("p")) return `${Math.round(value)} ms`;
+  if (metric === "errors") return String(Math.round(value));
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function gitHeadShort(): string {
+  // execFileSync with a constant arg list (no shell, no user input)
+  // satisfies the no-shell-injection rule; gives the champion record
+  // the git commit it was achieved at for provenance.
+  try {
+    return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  } catch {
+    return "no-git";
+  }
+}
+
+interface TrackingResult {
+  improvements: Array<{ metric: string; from: number; to: number }>;
+  regressions: Array<{
+    metric: string;
+    from: number;
+    to: number;
+    bestCommit: string;
+  }>;
+  unchanged: string[];
+}
+
+async function trackBestKnown(
+  summary: {
+    corpus: string;
+    passRateOnCorrect: number;
+    failOrReviewRateOnWrong: number;
+    errors: number;
+    latencyMs: {
+      p50_total: number;
+      p95_total: number;
+      p50_vision: number;
+      p95_vision: number;
+    };
+  },
+  corpus: string,
+  noTrack: boolean,
+): Promise<TrackingResult> {
+  const result: TrackingResult = {
+    improvements: [],
+    regressions: [],
+    unchanged: [],
+  };
+  if (noTrack) return result;
+
+  const filePath = resolve("benchmarks/.best-known.json");
+  let file: BestKnownFile = { champions: {} };
+  if (existsSync(filePath)) {
+    try {
+      file = JSON.parse(readFileSync(filePath, "utf8")) as BestKnownFile;
+      if (!file.champions) file.champions = {};
+    } catch {
+      // Corrupt file — start fresh rather than crash the bench.
+      file = { champions: {} };
+    }
+  }
+
+  const candidates: Record<string, number> = {
+    passRateOnCorrect: summary.passRateOnCorrect,
+    failOrReviewRateOnWrong: summary.failOrReviewRateOnWrong,
+    p50_total: summary.latencyMs.p50_total,
+    p95_total: summary.latencyMs.p95_total,
+    p50_vision: summary.latencyMs.p50_vision,
+    p95_vision: summary.latencyMs.p95_vision,
+    errors: summary.errors,
+  };
+  const commit = gitHeadShort();
+  const now = new Date().toISOString();
+
+  for (const [metric, candidateValue] of Object.entries(candidates)) {
+    const direction = METRIC_DIRECTION[metric] ?? "higher-better";
+    const champion = file.champions[metric];
+    const sameCorpus = champion && champion.corpus === corpus;
+    if (!sameCorpus) {
+      // No champion or different corpus: this is the new baseline for
+      // this corpus. Record without flagging (first-runs shouldn't
+      // emit improvement/regression noise).
+      file.champions[metric] = {
+        value: candidateValue,
+        commit,
+        benchAt: now,
+        corpus,
+      };
+      continue;
+    }
+    const isImprovement =
+      direction === "higher-better"
+        ? candidateValue > champion.value
+        : candidateValue < champion.value;
+    const isRegression =
+      direction === "higher-better"
+        ? candidateValue < champion.value
+        : candidateValue > champion.value;
+    if (isImprovement) {
+      result.improvements.push({
+        metric,
+        from: champion.value,
+        to: candidateValue,
+      });
+      file.champions[metric] = {
+        value: candidateValue,
+        commit,
+        benchAt: now,
+        corpus,
+      };
+    } else if (isRegression) {
+      result.regressions.push({
+        metric,
+        from: champion.value,
+        to: candidateValue,
+        bestCommit: champion.commit,
+      });
+    } else {
+      result.unchanged.push(metric);
+    }
+  }
+
+  await writeFile(filePath, JSON.stringify(file, null, 2) + "\n");
+  return result;
 }
 
 async function main(): Promise<void> {

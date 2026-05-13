@@ -35,3 +35,6 @@ eng.traineddata
 .review/calibrate-log.txt
 
 audit-report.html
+.inv*.json
+bench-wave*.json
+bench-investigation*.json

@@ -36,6 +36,20 @@ function approximateCostUsd(modelId: string | undefined): number | null {
   return null;
 }
 
+/** Plain-English field labels for the simple-mode "things to double-
+ *  check" summary. Maps the per-field comparator's `field` key to a
+ *  reviewer-friendly label. Used only in simple mode; detailed mode
+ *  surfaces the canonical FieldRow component instead. */
+const FIELD_LABEL_FROM_KEY: Record<string, string> = {
+  brand_name: "Brand name",
+  class_type: "Class / type",
+  abv_percent: "ABV",
+  net_contents: "Net contents",
+  producer: "Producer",
+  country_of_origin: "Country of origin",
+  government_warning: "Government warning",
+};
+
 
 interface SingleResultProps {
   readonly result: VerifyResponse;
@@ -62,7 +76,10 @@ export function SingleResult({
         <h2 id="results-heading" className="text-xl font-semibold text-slate-800 dark:text-slate-100">
           Verification result
         </h2>
-        <span className="text-sm text-slate-500 dark:text-slate-400" aria-live="polite">
+        <span
+          className="detailed-only text-sm text-slate-500 dark:text-slate-400"
+          aria-live="polite"
+        >
           Verified in {(result.timings.total / 1000).toFixed(1)} s
           {(() => {
             const usd = approximateCostUsd(result.modelId);
@@ -101,16 +118,10 @@ export function SingleResult({
           role="alert"
           className="rounded-lg border-l-4 border-yellow-500 bg-yellow-50 p-3 text-sm text-yellow-900 dark:border-yellow-400 dark:bg-yellow-950/60 dark:text-yellow-200"
         >
-          <p className="font-semibold">
-            <span aria-hidden className="mr-1">⚠</span>
-            We used a backup verifier for this one
-          </p>
-          <p className="mt-1">
-            Our main AI service was briefly unavailable, so a backup
-            took over. The result below is still trustworthy, but if
-            anything looks off you can verify the label again in a
-            minute or two when the main service is back.
-          </p>
+          <span aria-hidden className="mr-1">⚠</span>
+          <strong>Verified by the backup AI</strong> — primary was
+          briefly unavailable. The result is still valid; re-verify in
+          a moment if anything looks off.
         </div>
       )}
 
@@ -155,9 +166,30 @@ export function SingleResult({
 
           <div className="space-y-2">
             <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Government Warning (27 CFR §16.21)
+              <span className="detailed-only">Government Warning (27 CFR §16.21)</span>
+              <span className="simple-only">Government warning</span>
             </h3>
-            <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+            {/* Simple-mode: collapsed one-line summary instead of the
+                4-part subscore detail. Reason still surfaces below
+                because it's the actionable bit on FAIL / REVIEW. */}
+            <div className="simple-only rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-center justify-between gap-2">
+                <span>Government warning check</span>
+                <span className="font-semibold uppercase">
+                  {gov.status === "pass"
+                    ? "Pass"
+                    : gov.status === "fail"
+                      ? "Fail"
+                      : "Needs review"}
+                </span>
+              </div>
+              {gov.reason && (
+                <p className="mt-1 text-slate-600 dark:text-slate-300">
+                  {gov.reason}
+                </p>
+              )}
+            </div>
+            <div className="detailed-only rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
               {/* Desktop (≥ sm): always-visible flat subscore list. */}
               <div className="hidden sm:block">
                 <SubscoreRow
@@ -236,7 +268,7 @@ export function SingleResult({
               <div
                 role="region"
                 aria-label="Independent second opinion on Government Warning"
-                className={`rounded-lg border-l-4 p-3 text-sm ${
+                className={`detailed-only rounded-lg border-l-4 p-3 text-sm ${
                   result.secondOpinion.agreesWithPrimary
                     ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-200"
                     : "border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-200"
@@ -285,9 +317,54 @@ export function SingleResult({
                 )}
               </div>
             )}
+            {/* Simple-mode condensed banner: surface ONLY the
+                actionable signal — a model disagreement — in one line.
+                Agreement stays invisible in simple mode so the surface
+                isn't cluttered with "everything is fine" reassurance. */}
+            {result.secondOpinion &&
+              !result.secondOpinion.agreesWithPrimary && (
+                <div
+                  role="alert"
+                  className="simple-only rounded-md border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-200"
+                >
+                  <span aria-hidden className="mr-1">⚖</span>
+                  We double-checked with a second AI and they disagree —
+                  a human reviewer should confirm.
+                </div>
+              )}
           </div>
 
-          <div className="space-y-2">
+          {/* Simple-mode: only surface failing/review fields with their
+              reasons. PASS fields are noise to a non-technical reviewer
+              on a successful verdict. */}
+          {fields.some((f) => f.status !== "pass") && (
+            <div className="simple-only space-y-2">
+              <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Things to double-check
+              </h3>
+              <ul className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+                {fields
+                  .filter((f) => f.status !== "pass")
+                  .map((f) => (
+                    <li
+                      key={f.field}
+                      className={
+                        f.status === "fail"
+                          ? "text-rose-800 dark:text-rose-200"
+                          : "text-amber-800 dark:text-amber-200"
+                      }
+                    >
+                      <span className="font-medium">
+                        {(FIELD_LABEL_FROM_KEY[f.field] ?? f.field) + ": "}
+                      </span>
+                      {f.status === "fail" ? "Failed" : "Needs review"}
+                      {f.reason ? <> — {f.reason}</> : null}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+          <div className="detailed-only space-y-2">
             <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Other declared fields
             </h3>

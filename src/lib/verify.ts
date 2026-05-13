@@ -8,10 +8,14 @@ import { tesseractEngine } from "./ocr/tesseract";
 // the module after the first call, but each `await import` still
 // resolves a microtask. Cheap, but free is cheaper. Per Agent D
 // code-quality audit 2026-05-13.
-let _openaiModuleCache:
-  | Promise<typeof import("./vision/openai")>
-  | null = null;
-function loadOpenAiModule(): Promise<typeof import("./vision/openai")> {
+// `type OpenAiModule = typeof import("./vision/openai")` would
+// trip @typescript-eslint/consistent-type-imports; declare a typed
+// alias up front with a type-only import. The runtime import is the
+// dynamic one below.
+type OpenAiModule = typeof OpenAiModuleNS;
+import type * as OpenAiModuleNS from "./vision/openai";
+let _openaiModuleCache: Promise<OpenAiModule> | null = null;
+function loadOpenAiModule(): Promise<OpenAiModule> {
   if (!_openaiModuleCache) {
     _openaiModuleCache = import("./vision/openai");
   }

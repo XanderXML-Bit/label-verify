@@ -35,6 +35,16 @@ interface ParseArgs {
    * with a "re-upload as image" message (current behaviour).
    */
   apiKey?: string;
+  /**
+   * Optional filename of the image being verified. Used by the JSON
+   * and CSV parsers to pick the matching row out of a multi-row
+   * manifest (filename-keyed object map or `filename`-column manifest).
+   * Set this when the caller is verifying a single image and the
+   * application file is a roster covering that image plus others; it
+   * lets the parser return the right row instead of falling back to
+   * the first one.
+   */
+  imageFilename?: string;
 }
 
 export async function parseApplication(
@@ -121,7 +131,9 @@ export async function parseApplication(
   ) {
     const text = args.buffer.toString("utf8");
     try {
-      const parsed = parseApplicationJson(text);
+      const parsed = parseApplicationJson(text, {
+        imageFilename: args.imageFilename,
+      });
       return {
         fields: parsed.fields,
         source: "json",
@@ -155,7 +167,9 @@ export async function parseApplication(
   ) {
     const text = args.buffer.toString("utf8");
     try {
-      const parsed = parseApplicationCsv(text);
+      const parsed = parseApplicationCsv(text, {
+        imageFilename: args.imageFilename,
+      });
       return {
         fields: parsed.fields,
         source: "csv",

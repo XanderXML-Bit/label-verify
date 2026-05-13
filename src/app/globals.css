@@ -118,3 +118,27 @@ body {
   h1 { font-size: 1.25rem; }
   h2 { font-size: 1.25rem; }
 }
+
+/*
+ * Simple-mode visibility contracts. The ModeToggle writes
+ * <html data-mode="simple|detailed">; the inline pre-paint script in
+ * layout.tsx sets it before React hydrates so there's no FOUC.
+ *
+ *   .detailed-only — visible only in detailed mode.
+ *   .simple-only   — visible only in simple mode.
+ *
+ * Components mark detail-rich pieces with .detailed-only (cost,
+ * timings, per-subscore confidences, second-opinion panel, etc.);
+ * simple mode hides them. Anything not marked stays visible in both.
+ *
+ * Justification: the GUI audit recommended a structural toggle rather
+ * than per-component conditional rendering so the simple-mode contract
+ * is reviewable in one place (this CSS block + a list of .detailed-only
+ * call sites) and the React component code stays mode-agnostic.
+ */
+html[data-mode="simple"] .detailed-only {
+  display: none !important;
+}
+html[data-mode="detailed"] .simple-only {
+  display: none !important;
+}

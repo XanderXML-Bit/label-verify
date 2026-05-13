@@ -16,15 +16,17 @@
 | Question | Answer |
 |---|---|
 | **What does it do?** | Drop a label image + COLA application data → get a `pass` / `fail` / `review` verdict on each of the 7 regulated fields plus the Government Warning subscore (27 CFR §16.21 / §16.22). |
-| **Latency** | **3.0 s P50 · 4.1 s P95** end-to-end (warm function, single image). |
-| **Field-level accuracy** | **~99 %** overall on the 170-image bench corpus (90 SVG-rendered synthetic + 80 photo-realistic AI-generated labels). **~5 %** Government-Warning false-negative rate (Wilson 95 % CI upper 10.2 %, n = 137 non-compliant labels). The corpus is an in-house stress benchmark — not a sample of real submitted COLA labels. See [Headline measurement](#headline-measurement) and [Scope and limitations](#scope-and-limitations) for the scientific framing. |
-| **Cost** | **≈ $0.25 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite). Second-opinion calls (only on borderline Government-Warning verdicts) add ~$0.001 each. |
-| **Auto-pair batches?** | Yes — true-auto across every scenario. **Four-stage pairing**: (1) **inline-manifest detection** (one dropped CSV/JSON with N rows + `filename` column → N pairs), (2) **filename stem matching** (face-tag and app-tag aware), (3) **content-based fallback** (brand + class similarity from a lightweight vision extraction), (4) **single-application broadcast** (1 app file + N images → broadcast same fields to all, surfaced as a warning). Handles randomly-named files, partial coverage (5 images + 20-row manifest → 5 pairs + 15 orphan rows flagged), and one-CSV-covers-all (12 images + 1 12-row CSV → 12 pairs). No manifest text-paste required. |
+| **Latency** | **~3 s P50 end-to-end** (warm function, single image). Vision call is the dominant cost. Live verifies on the deployed instance complete in 3.2–4.5 s depending on image size and provider tail. |
+| **Field-level accuracy** | On the 170-image bench corpus (90 SVG-rendered synthetic + 80 photo-realistic AI-generated labels): the cross-pair benchmark (`npm run bench:cross-pair`) measures **76 % strict pass-rate on correct ground truth and 100 % fail-or-review on perturbed wrong ground truth**, with the residual mismatches dominated by deliberate orchestrator deferrals (REVIEW) rather than wrong PASS verdicts. Bare-extractor field-level accuracy on the bake-off is ~96 % on synthetic and ~99 % on photo-realistic. The Government-Warning false-negative rate is **~5 %** (Wilson 95 % CI upper 10.2 %, n = 137 non-compliant labels). See [Headline measurement](#headline-measurement) and [Scope and limitations](#scope-and-limitations). |
+| **Cost** | **≈ $0.25 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite). Cross-provider second-opinion calls (~5–10 % of verifications, only when the Government-Warning subscore is borderline) add ~$0.001 each. |
+| **Auto-pair batches?** | Yes. **Four-stage pairing**: (1) inline-manifest detection (one dropped CSV/JSON with N rows + a `filename` column → N pairs; filename-keyed JSON object maps are also auto-detected), (2) filename stem matching (face-tag and app-tag aware), (3) content-based fallback (brand + class similarity from a lightweight vision extraction), (4) single-application broadcast (1 app file + N images → broadcast same fields to all, surfaced as a warning). Handles randomly-named files, partial coverage (5 images + 20-row manifest → 5 pairs + 15 orphan rows flagged), and one-CSV-covers-all (12 images + 1 12-row CSV → 12 pairs). The batch UI shows a determinate progress bar with the four stages labelled as it advances. |
+| **Single image + roster manifest?** | Yes. Drop one image + a multi-row manifest together (or upload the manifest after the image); the parser picks the row matching the image's filename. Multi-row CSV / JSON with a `filename` column and filename-keyed JSON object maps both work. |
+| **Simple or detailed view?** | A header toggle (next to dark mode) flips the result panel between **Simple** (verdict + Government-Warning status + only the failing/review fields with their reasons) and **Detailed** (full per-subscore breakdown, extractor confidences, second-opinion panel, per-call timing). Default = Simple. Choice persists per browser. |
 | **What languages?** | English-primary, but country names recognised in **7 languages** across **25 countries** (Spanish, French, German, Italian, Portuguese, Japanese 日本, Korean 대한민국, Greek Ελλάδα, Chinese 中国). Gov-Warning text is the federal English statement by regulation. |
 | **What if Gemini is down?** | Auto-fallback to GPT-5.4-nano (OpenAI) on provider failure, with a yellow "verified via backup" banner on the verdict. |
 | **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent cross-provider model re-reads the label. Agreement / disagreement is surfaced inline. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
-| **Code review** | 474 / 474 vitest tests passing, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke). |
+| **Code review** | 506 / 506 vitest tests passing, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit). |
 
 **How to read this report**
 
@@ -75,7 +77,9 @@ Each image has a JSON ground-truth file describing its expected fields and Gover
 
 ### Bench numbers
 
-T6 = Gemini 3.1 Flash Lite, 3 trials per image, deterministic seed where the provider exposes one. Stratification:
+Two complementary measurements:
+
+**Per-field bake-off** (`npm run bench:bakeoff`). T6 = Gemini 3.1 Flash Lite, 3 trials per image, deterministic seed where the provider exposes one.
 
 | Subset | n images | Field-level accuracy | Wilson 95 % CI |
 |---|---:|---:|---|
@@ -85,6 +89,18 @@ T6 = Gemini 3.1 Flash Lite, 3 trials per image, deterministic seed where the pro
 | Government-Warning false-negative rate (point) | n = 137 non-compliant warnings | **~5 %** | upper 10.2 % |
 
 The Government-Warning false-negative rate is the rate at which a non-compliant warning is reported as PASS rather than FAIL or REVIEW. The point estimate clears the pre-registered ≤ 10 % criterion; the Wilson upper bound does not, given the n = 137 sample size for that specific stratum.
+
+**End-to-end cross-pair benchmark** (`npm run bench:cross-pair`). Each image runs twice — once with its correct ground truth, once with a deterministically-perturbed wrong-declared payload — through the full production orchestrator (vision extract, four-stage matching, four-subscore Government-Warning validation, second-opinion on borderline GW). The strict scorer counts only an exact verdict match as correct (REVIEW counts as not-correct).
+
+| Metric | Latest |
+|---|---:|
+| Pass-rate on correct ground truth | ~76 % |
+| Fail-or-review-rate on perturbed wrong | **100 %** |
+| End-to-end P50 / P95 latency | ~3.0 s / ~5.9 s |
+| Vision-call P50 / P95 latency | ~2.3 s / ~3.2 s |
+| Residual false-positives (non-compliant marked PASS) | 3 (all in the bold/size cluster, both primary and second-opinion models agree on `prefix_appears_bold: true` despite pixel measurement disagreeing) |
+
+The strict pass-rate is bounded below by deliberate orchestrator deferrals (REVIEW): when the bold subscore lacks a pixel-tight measurement, the orchestrator fires a cross-provider second-opinion and only restores PASS if the two models agree. The bench's `--no-track`-aware best-known record at `benchmarks/.best-known.json` tracks per-metric champions so future runs flag regressions immediately.
 
 ### Generalizability caveats
 
@@ -198,7 +214,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | Surface | State |
 |---|---|
 | **Live production** | <https://label-verify-six.vercel.app> · `/api/health` returns `{ ok: true, ready: true, notes: [] }` · all routes 200 · live manual browser walkthrough completed (PASS / FAIL / REVIEW samples all returned correct verdicts in 4.5–5.2 s with 0 console errors) |
-| **Tests** | **474 / 474** passing (`vitest`) · 56 test files (~10 s) |
+| **Tests** | **506 / 506** passing (`vitest`) · 58 test files (~10 s) |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
 | **Lint** | `next lint` clean (zero warnings) |
 | **Production build** | green |
@@ -290,7 +306,7 @@ Reviewers reproducing the project locally can lean on any of these:
 ```bash
 npm run typecheck         # tsc --noEmit, zero output expected
 npm run lint              # next lint, zero warnings on a clean tree
-npm test                  # vitest, ~470 tests across 56 files (~10 s)
+npm test                  # vitest, ~500 tests across 58 files (~10 s)
 npm run build             # production Next.js build
 npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results/<iso>.md
 npm run bench:bakeoff     # full 13-variant tournament (~30 min, ~$0.30 in API calls)
@@ -392,6 +408,11 @@ The brief asks for a working prototype with sound model justification. The submi
 - **Live elapsed timer + progress bar** during verify, with a "still working" message past 10 s. `document.title` toggles to `(Verifying…) Label Verify` so reviewers who tab away can see from the tab strip when the call completes.
 - **API status banner.** On page load, `/api/health` is hit and any provider-configuration warning is surfaced before the reviewer spends time filling the form.
 - **Provider auto-fallback.** Gemini failure routes to GPT-5.4-nano with a fresh `AbortController` and a remaining-budget timer. A yellow "verified via backup" banner appears on the result so the reviewer sees the path was non-primary.
+- **Simple / Detailed view-mode toggle.** Header pill (next to the dark-mode toggle) flips the result panel between Simple (verdict + Government-Warning status + only the failing/review fields with their reasons, plain-English copy) and Detailed (full per-subscore breakdown, extractor confidences, second-opinion panel, per-call timing and cost). Default = Simple, on the rationale that a first-time non-technical reviewer should land on the simpler surface; the choice persists per browser via `localStorage["labelverify:mode"]` and is set by an inline pre-paint script to avoid FOUC.
+- **Determinate batch progress bar.** XHR upload progress feeds the first 30 % of the bar; the remaining phases (pairing through the four-stage pipeline, per-image verification with concurrency 2) are estimated against the per-image P50 latency budget. The bar caps at 98 % until the response actually lands.
+- **Single-image + roster manifest auto-detect.** Upload a multi-row CSV/JSON or filename-keyed JSON object alongside one image and the parser picks the matching row automatically (match by exact basename, then by filename stem). No need to split the manifest into one file per image.
+- **Best-known-record tracking.** `benchmarks/.best-known.json` records per-metric champions (pass-rate, fail-or-review-on-wrong, latency P50/P95, errors) with the git SHA and timestamp at which each was achieved. The cross-pair bench reads/writes this file and emits "NEW RECORD" / "REGRESSION" lines so a change that silently makes things worse is loud immediately.
+- **Image-zoom viewer.** Click the result-panel thumbnail to open a full-viewport modal with +/-/reset zoom, X / Esc to close, focus trap, backdrop-click-to-close.
 - **Dark mode.** Pre-paint inline script prevents FOUC; toggle persists in `localStorage`; AA contrast tuned on both white and slate-900 panels.
 - **Mobile-responsive.** 44 px touch targets per Apple HIG / WCAG 2.5.5, layout collapse under 480 px, `env(safe-area-inset-bottom)` on iOS, font-size policy in `globals.css` to prevent tap-zoom on form inputs.
 - **PWA manifest.** "Add to home screen" works on iOS Safari and Chrome.
