@@ -1,9 +1,10 @@
 # Deployment Checklist
 
-A step-by-step runbook to get LabelVerify live on Vercel at
-`labelverify.zendren.net`. Written for someone who has never deployed a
-Next.js app before — every click is spelled out. Allow 60–90 minutes for
-the first run, mostly DNS propagation time.
+A step-by-step runbook to get LabelVerify live on Vercel. The deployed
+URL is whatever Vercel hands you on first deploy (the production demo
+is at `https://label-verify-six.vercel.app`). Written for someone who
+has never deployed a Next.js app before — every click is spelled out.
+Allow 15–20 minutes end-to-end.
 
 The authoritative production knobs (region, per-function memory, per-route
 timeouts) live in [`../vercel.json`](../vercel.json). Do not edit them in
@@ -101,9 +102,8 @@ function.)
    - "Deployment Ready"
 3. When it finishes, Vercel shows a confetti screen with a URL like:
    `label-verify-xyz123.vercel.app`
-4. **Copy this URL.** This is your fallback link if the custom domain
-   misbehaves. Paste it into the submission notes immediately so you
-   don't lose it.
+4. **Copy this URL.** This is the production URL for the prototype.
+   Paste it into the submission notes immediately so you don't lose it.
 
 If the build fails, jump to **Troubleshooting** at the bottom.
 
@@ -128,59 +128,40 @@ If smoke passes, continue to Step 5. If not, see Troubleshooting.
 
 ---
 
-## Step 5: DNS for `labelverify.zendren.net`
+## Step 5: Custom domain (optional, skip for the prototype)
 
-The `zendren.net` zone lives on Cloudflare.
+The prototype ships on the `*.vercel.app` URL. If you (on a fork or
+your own deploy) want a custom domain:
 
-1. Log in to Cloudflare → select the `zendren.net` zone → **DNS** in the
-   left sidebar.
-2. Click **Add record**:
-   - **Type**: `CNAME`
-   - **Name**: `labelverify`
-   - **Target**: `cname.vercel-dns.com`
-   - **Proxy status**: **DNS only** (gray cloud, **not** orange).
-     Vercel handles SSL itself; routing through Cloudflare's proxy
-     causes a cert mismatch.
-   - **TTL**: Auto.
-3. Save the record.
-4. Back in Vercel → your project → **Settings → Domains**.
-5. Type `labelverify.zendren.net` into the input box and click **Add**.
-6. Vercel will show "Configuration: Valid" within a minute or two once
-   the CNAME has propagated. If it sticks on "Invalid Configuration",
-   wait 5 minutes and refresh — global DNS can take a while.
+1. Vercel → Project Settings → Domains → Add → `whatever.yourdomain.com`.
+2. Vercel hands you a `CNAME` target (`cname.vercel-dns.com`).
+3. Add the `CNAME` at your DNS provider. **DNS-only, not proxied** —
+   Cloudflare's orange-cloud caches SSE responses and breaks the
+   batch-verify stream. Vercel issues + renews the Let's Encrypt cert.
+4. Wait ~30 s for propagation. Vercel marks the domain "Configuration:
+   Valid" once the CNAME resolves.
+
+For the take-home submission this step is skipped. The reasoning: a
+half-wired custom domain (Vercel-side alias set but DNS unresolved)
+is worse than no custom domain — anyone copying the URL hits NXDOMAIN
+and thinks the site is broken. `*.vercel.app` is professional, stable,
+and unambiguous to TTB reviewers.
 
 ---
 
-## Step 6: SSL verification
+## Step 6: Post-deploy smoke
 
-1. Once Vercel marks the domain as "Valid", it automatically requests a
-   Let's Encrypt certificate.
-2. Cert issuance is normally ~1 minute but can take up to 24 hours on
-   first attempt for a new zone.
-3. Open `https://labelverify.zendren.net` in a fresh incognito window.
-   Confirm:
-   - The padlock icon is closed (no "Not secure" warning).
-   - Clicking the padlock → "Connection is secure" → certificate is
-     issued by Let's Encrypt / R3 and the subject matches the domain.
-4. If the cert is still pending after 30 minutes, go to Vercel →
-   Domains → click the warning icon next to the domain → **Refresh**.
+Run [`PRODUCTION-SMOKE.md`](./PRODUCTION-SMOKE.md) against the
+`*.vercel.app` URL. Five minutes, six checks. Every one of them must
+pass.
 
 ---
 
-## Step 7: Post-deploy smoke
+## Step 7: Submission package
 
-Run [`PRODUCTION-SMOKE.md`](./PRODUCTION-SMOKE.md) against
-`https://labelverify.zendren.net` (or the `*.vercel.app` URL if DNS is
-still pending). Five minutes, six checks. Every one of them must pass.
+Once smoke passes, fill in the submission notes with the URLs:
 
----
-
-## Step 8: Submission package
-
-Once smoke passes, fill in the submission notes with all three URLs:
-
-- **Live demo (custom domain):** https://labelverify.zendren.net
-- **Live demo (fallback):** https://label-verify-xyz123.vercel.app
+- **Live demo:** https://label-verify-six.vercel.app
 - **GitHub repo:** https://github.com/XanderXML-Bit/label-verify
 - **Walkthrough video:** (record a 2–3 min Loom showing the smoke
   script in real time)
@@ -219,11 +200,13 @@ If a future Next upgrade breaks this contract, the error message will
 mention "Cannot find module './build/Release/sharp-linuxmusl-x64.node'"
 or similar. Pin Next or set `outputFileTracingIncludes`.
 
-**Custom domain SSL takes more than 24 hours**
+**Custom domain SSL takes more than 24 hours** (only relevant if
+you opted into Step 5)
 Almost always a DNS misconfiguration. Verify the CNAME with
-`dig labelverify.zendren.net CNAME +short` — it should return
+`dig <your-subdomain> CNAME +short` — it should return
 `cname.vercel-dns.com.` (note the trailing dot). If you see Cloudflare's
-proxy IPs instead, the orange cloud is still on — go back to Step 5.3.
+proxy IPs instead, the orange cloud is still on — flip the DNS record
+to "DNS only" (gray cloud).
 
 ---
 
@@ -234,6 +217,6 @@ Every deploy is preserved. To revert:
 1. Vercel Project → **Deployments** tab.
 2. Find the last known-good deployment (each shows a commit SHA + time).
 3. Click the `⋯` menu → **Promote to Production**.
-4. The custom domain is rerouted within ~10 seconds.
+4. The `*.vercel.app` URL is rerouted within ~10 seconds.
 
 No build, no waiting. This is the safety net for the reviewer demo.

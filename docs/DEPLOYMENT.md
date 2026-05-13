@@ -14,23 +14,24 @@
 ## 1. Target
 
 - **Host:** Vercel (free tier, Hobby plan is sufficient).
-- **Domain:** `labelverify.zendren.net` (preferred). Fallback: the default
-  `*.vercel.app` URL if DNS propagation slips before the deadline.
+- **URL:** the default `*.vercel.app` URL (production deploy is
+  `https://label-verify-six.vercel.app`). No custom domain is wired —
+  the prototype ships on the Vercel hostname and that's the URL in
+  the README + GitHub repo. A custom domain would add no reviewer
+  value and would add maintenance burden post-submission.
 - **Region:** `iad1` (us-east-1, same coast as Treasury / DC reviewers — minimizes RTT).
 
 ### 1.1 Provision-Today Checklist
 
-DNS + SSL can eat half a day. The provisioning happens *before* the first
-extractor is written, so the URL is live and warm by the time the demo
-exists. From the archived `docs/archive/TODO.md` Phase 1:
+The provisioning happens *before* the first extractor is written, so
+the URL is live and warm by the time the demo exists. From the
+archived `docs/archive/TODO.md` Phase 1:
 
-- [ ] Create Vercel project linked to the GitHub repo
-- [ ] First push triggers a deploy; the placeholder home page should
+- [x] Create Vercel project linked to the GitHub repo
+- [x] First push triggers a deploy; the placeholder home page should
       respond within minutes
-- [ ] Add the `labelverify.zendren.net` CNAME in Cloudflare
-- [ ] Add the domain in Vercel → Domains; wait for SSL
-- [ ] Smoke-test from a clean browser
-- [ ] Record both URLs (custom + `*.vercel.app`) in the submission
+- [x] Smoke-test from a clean browser
+- [x] Record the `*.vercel.app` URL in the submission
 
 ## 2. Why Vercel
 
@@ -39,7 +40,9 @@ exists. From the archived `docs/archive/TODO.md` Phase 1:
 - Edge functions option available if we want to push the API closer to the
   user (we likely won't — vision API calls dominate latency anyway).
 - Public URL with HTTPS out of the box (R8).
-- Easy to add a custom domain via CNAME on Cloudflare DNS for `zendren.net`.
+- The prototype ships on the default `*.vercel.app` URL. No custom
+  domain is wired; the brief doesn't require one and a half-built
+  one is worse than none.
 
 ## 3. Environment Variables
 

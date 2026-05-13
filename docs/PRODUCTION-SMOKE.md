@@ -4,9 +4,10 @@ A 5-minute manual smoke script to confirm a live LabelVerify deployment
 is healthy. Run this **after every production deploy** and **before
 sharing the URL with a reviewer**.
 
-Replace `BASE_URL` below with whichever URL you are testing:
-- `https://labelverify.zendren.net` (custom domain)
-- `https://label-verify-<hash>.vercel.app` (fallback)
+Replace `BASE_URL` below with the URL you are testing. For the
+prototype that's `https://label-verify-six.vercel.app`; on a fork
+deploy it'll be whatever Vercel handed you (e.g.
+`https://label-verify-<hash>.vercel.app`).
 
 If any step fails, the deployment is **not** ready to ship. See
 [`DEPLOYMENT-CHECKLIST.md`](./DEPLOYMENT-CHECKLIST.md) Troubleshooting.
@@ -170,7 +171,7 @@ verified time in your submission notes:
 
 > **Smoke verified at:** `2026-05-11 14:30 ET`
 > **Verified by:** `<your name>`
-> **URL tested:** `https://labelverify.zendren.net`
+> **URL tested:** `https://label-verify-six.vercel.app`
 
 If any check fails, do not share the URL. Fix the root cause, redeploy,
 and re-run **all six** checks from the top — a fix in one place can
