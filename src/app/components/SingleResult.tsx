@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { VerifyResponse } from "@/lib/types";
 import type { FieldComparison } from "@/lib/matching";
 import { VerdictChip, QualityChip } from "./StatusChip";
+import { ImageZoom } from "./ImageZoom";
 import {
   safeStem,
   singleResultToCsv,
@@ -116,13 +117,9 @@ export function SingleResult({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 md:col-span-1">
           {imagePreviewUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image */
-            <img
+            <ImageZoom
               src={imagePreviewUrl}
               alt="Submitted label preview"
-              loading="lazy"
-              decoding="async"
-              className="h-full max-h-96 w-full rounded-md object-contain"
             />
           ) : (
             <div className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">

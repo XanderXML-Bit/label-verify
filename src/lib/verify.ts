@@ -415,36 +415,34 @@ export async function verifyLabel(
       `Government Warning subscore is REVIEW${gov.reason ? ` — ${gov.reason}` : ""}.`,
     );
   }
-  // Confidence-floor gate on Government-Warning PASS.
+  // Bold-subscore-only confidence-floor signal.
   //
-  // The validator's per-subscore confidence drops to the no-OCR /
-  // model-self-report fallback band (≤ 0.6, with size capped at 0.4)
-  // whenever the pixel-tight classical-CV measurement is unavailable
-  // — either because OCR failed entirely or because OCR ran but did
-  // not locate the prefix bbox needed for the stroke-width transform.
-  // Both branches degrade the bold and size subscores to the model's
-  // self-reported flags, which the bench has shown can be over-
-  // permissive on B1/B2/B3 (model says "bold" on a not-bold prefix)
-  // and S1/S3 (model says "meets minimum" on a too-small prefix).
+  // The bold subscore can take a fallback path where the only evidence
+  // is the vision model's self-reported `prefix_appears_bold` flag —
+  // OCR couldn't locate the prefix bbox, no font-bold signal — and the
+  // validator returns `{ status: "pass", confidence: 0.6 }` (the
+  // line-321 fallback in government-warning-validator.ts). On the
+  // cross-pair bench this exact branch produced 4 of 5 Type I false-
+  // positives (the model self-reports "bold" on a not-bold prefix
+  // and the validator has no pixel measurement to disagree).
   //
-  // The gate routes any PASS verdict whose GW aggregate confidence is
-  // below REVIEW_CONFIDENCE_THRESHOLD to REVIEW so a human confirms.
-  // The earlier ocrFinal-only gate missed the OCR-ran-but-found-no-
-  // prefix case; this version catches both. A high-confidence PASS
-  // (the pixel measurement actually agreed) is unaffected because
-  // gov.confidence stays well above 0.55 in that path.
-  if (
+  // Action is NOT to blanket-REVIEW (that over-routes ~15 compliant
+  // labels per ~33 PASS results, which is operator-prohibitive at
+  // 150 k apps/yr). Instead, treat this exact branch as the second-
+  // opinion trigger: temporarily mark GW as REVIEW so the existing
+  // cross-provider call fires; afterwards, if the second model agrees
+  // with the primary's bold-pass, restore PASS. The agreement of two
+  // independent vision models without pixel corroboration is a much
+  // stronger signal than one model's self-report alone.
+  //
+  // See REMAINING-IMPROVEMENTS.md for the corresponding size-subscore
+  // borderline-measurement case (~1 of the 5 Type I errors), which
+  // has a different mechanism (OCR found the prefix but it's just
+  // over the 0.8×min threshold) and is handled separately.
+  const boldFallbackOnlyPass =
     gov.status === "pass" &&
-    gov.confidence < REVIEW_CONFIDENCE_THRESHOLD
-  ) {
-    const reason =
-      ocrFinal === null
-        ? "OCR failed or timed out, so the pixel-level bold/size measurement was unavailable."
-        : "OCR ran but did not locate the Government-Warning prefix; the bold/size subscores fell back to the vision model's self-reported flags.";
-    reviewReasons.push(
-      `Government Warning PASS at aggregate confidence ${gov.confidence.toFixed(2)} — ${reason} A human reviewer should confirm the warning's appearance.`,
-    );
-  }
+    gov.subscores.bold.status === "pass" &&
+    gov.subscores.bold.confidence === 0.6;
   // Per-field comparators that already returned REVIEW (e.g. ABV with low
   // extractor confidence, brand near-miss) also contribute a reason so the
   // reviewer sees the full picture in one place.
@@ -556,7 +554,11 @@ export async function verifyLabel(
     gov.status === "review" ||
     (gov.status === "pass" &&
       ocrFinal === null &&
-      gov.confidence < REVIEW_CONFIDENCE_THRESHOLD);
+      gov.confidence < REVIEW_CONFIDENCE_THRESHOLD) ||
+    // Bold-fallback-only PASS: model self-reported bold with no pixel
+    // corroboration. Fire a second-opinion call to corroborate or
+    // refute. Post-process below restores PASS on agreement.
+    boldFallbackOnlyPass;
   if (
     govReviewBorderline &&
     !fallbackUsed &&
@@ -620,6 +622,35 @@ export async function verifyLabel(
       if (externalAbort) {
         externalAbort.removeEventListener("abort", onExternalAbortSo);
       }
+    }
+  }
+
+  // Post-second-opinion: resolve the bold-fallback-only PASS case.
+  //
+  // If the trigger was the narrow bold-fallback-only predicate
+  // (primary GW = PASS, but bold subscore only carried the model's
+  // self-report), the second-opinion call's bold verdict is the
+  // tie-breaker:
+  //   - second-opinion bold = "pass" → both vision models agree
+  //     the prefix is bold; restore the primary's PASS. Independent
+  //     cross-provider agreement without pixel measurement is a
+  //     stronger signal than one model's self-report.
+  //   - second-opinion bold = "fail" or "review" → models disagree;
+  //     keep verdict = REVIEW with a disagreement reason. UI's ⚖
+  //     panel renders this.
+  //   - second-opinion call failed entirely (network, timeout) →
+  //     stay PASS (no signal to override). Documented as best-effort.
+  if (boldFallbackOnlyPass && secondOpinion) {
+    const soBold = secondOpinion.governmentWarning.subscores.bold.status;
+    if (soBold === "pass") {
+      // Two-model agreement on bold-pass. Restore PASS verdict.
+      // No review reason added — the orchestrator's safety net cleared.
+    } else {
+      // Disagreement. Stay REVIEW.
+      verdict = "review";
+      reviewReasons.push(
+        `Government Warning bold subscore: primary model self-reported bold (no OCR pixel measurement), but second-opinion ${secondOpinion.modelId} ${soBold === "fail" ? "disagrees and reports the prefix is not bold" : "is also uncertain"}. A human reviewer should confirm.`,
+      );
     }
   }
 

@@ -133,17 +133,67 @@ describe("verifyLabel — second-opinion vision call on borderline GW", () => {
     delete process.env.MODEL_FALLBACK;
   });
 
-  it("does NOT fire on a confident-PASS Gov-Warning", async () => {
-    // Primary returns a clean compliant warning at high confidence.
-    // No second opinion should fire — would be wasted spend.
+  it("fires on a model-self-report-only bold-PASS and restores PASS on agreement", async () => {
+    // Wave-7 change: on a fully-compliant primary extraction with the
+    // bold subscore taking the model-self-report-only fallback (no OCR
+    // pixel measurement disagreed), the orchestrator fires the second-
+    // opinion call to corroborate. If the second model also reports
+    // bold = pass, the verdict stays PASS and no review reason is
+    // surfaced — independent cross-provider agreement substitutes for
+    // pixel measurement. The mock OCR + tiny white JPEG in this suite
+    // exercise exactly that fallback branch.
+    const compliant = compliantFields();
+    mockSecondOpinionExtract.mockResolvedValueOnce({
+      fields: compliant,
+      rawOutput: compliant,
+      latencyMs: 1100,
+      modelId: "openai:gpt-5.4-nano",
+      modelVersion: "gpt-5.4-nano",
+      promptHash: "secondopinionbold01",
+      cost: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+    });
+
     const img = await tinyJpeg();
     const result = await verifyLabel(img, declared, {
       extractor: buildExtractor(compliantFields()),
     });
 
     expect(result.governmentWarning.status).toBe("pass");
-    expect(result.secondOpinion).toBeUndefined();
-    expect(mockSecondOpinionExtract).not.toHaveBeenCalled();
+    expect(result.verdict).toBe("pass");
+    // Second opinion fired (mock returns the same compliant warning,
+    // so it agrees with the primary).
+    expect(mockSecondOpinionExtract).toHaveBeenCalledTimes(1);
+    expect(result.secondOpinion?.agreesWithPrimary).toBe(true);
+  });
+
+  it("restores PASS only when second-opinion bold also passes (disagreement → REVIEW)", async () => {
+    // Same fully-compliant primary as above, but the second opinion
+    // disagrees about bold. Per the wave-7 design, the verdict
+    // downgrades from PASS → REVIEW with a disagreement reason.
+    const compliant = compliantFields();
+    const secondOpinionBoldFail = compliantFields();
+    secondOpinionBoldFail.government_warning.value!.prefix_appears_bold = false;
+    mockSecondOpinionExtract.mockResolvedValueOnce({
+      fields: secondOpinionBoldFail,
+      rawOutput: secondOpinionBoldFail,
+      latencyMs: 1100,
+      modelId: "openai:gpt-5.4-nano",
+      modelVersion: "gpt-5.4-nano",
+      promptHash: "secondopiniondisagree",
+      cost: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+    });
+
+    const img = await tinyJpeg();
+    const result = await verifyLabel(img, declared, {
+      extractor: buildExtractor(compliant),
+    });
+
+    expect(result.governmentWarning.status).toBe("pass");
+    expect(mockSecondOpinionExtract).toHaveBeenCalledTimes(1);
+    // Verdict downgrades because second opinion disagrees on bold.
+    expect(result.verdict).toBe("review");
+    expect(result.reviewReasons.some((r) => /bold subscore/i.test(r))).toBe(true);
+    expect(result.secondOpinion?.agreesWithPrimary).toBe(false);
   });
 
   it("fires on a REVIEW Gov-Warning and surfaces an agreeing second opinion", async () => {
