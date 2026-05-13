@@ -1,55 +1,36 @@
 #!/usr/bin/env tsx
 // bin/labelverify-bench.ts
 //
-// A third CLI surface dedicated to the cross-pairing benchmark. Where
-// `bin/labelverify.ts batch` runs the production pipeline over a folder
-// of (image, application) pairs, this binary runs every corpus image
-// TWICE — once against its correct ground-truth and once against the
-// programmatically-perturbed "wrong" declared-fields file produced by
-// `scripts/perturb-declared.ts`. The two passes catch opposite errors:
+// Cross-pairing benchmark CLI. Runs every corpus image TWICE:
+//   • against its correct ground-truth          → expected pass (or fail
+//     if GT.government_warning is non-compliant). FAIL here = false-NEG.
+//   • against the perturbed wrong GT            → expected fail/review.
+//     PASS here = false-POSITIVE (matcher too lenient).
 //
-//   • correct GT  → expected verdict = pass (or whatever GT says)
-//                   FAIL/REVIEW here = false-negative.
-//   • wrong GT    → expected verdict = fail or review
-//                   PASS here = false-positive (matcher is too lenient).
-//
-// Output: a structured JSON report (per-call rows + summary metrics).
-// Defaults to --limit 10 because a full 170×2 run is expensive (~$0.10
-// in vision USD + ~15 min wall-clock at concurrency 2).
-//
-// Usage:
-//   tsx bin/labelverify-bench.ts cross-pair --corpus test-data-combined
-//   tsx bin/labelverify-bench.ts cross-pair --corpus test-data-combined --limit 5 --json
-//   npm run bench:cross-pair -- --limit 10
+// Reports pass-rate-on-correct, fail-or-review-rate-on-wrong, P50/P95
+// latency, and a per-`gov_warning_case` breakdown. Defaults --limit 10
+// for safety; full 170×2 run is ~$0.10 + ~15 min at concurrency 2.
 
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
-// ─── .env.local loader ──────────────────────────────────────────────────────
-
 function loadDotenv(path: string): void {
   if (!existsSync(path)) return;
-  const text = readFileSync(path, "utf8");
-  for (const raw of text.split(/\r?\n/)) {
+  for (const raw of readFileSync(path, "utf8").split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line.startsWith("#")) continue;
     const eq = line.indexOf("=");
     if (eq < 0) continue;
     const k = line.slice(0, eq).trim();
     let v = line.slice(eq + 1).trim();
-    if (
-      (v.startsWith('"') && v.endsWith('"')) ||
-      (v.startsWith("'") && v.endsWith("'"))
-    ) {
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
       v = v.slice(1, -1);
     }
     if (process.env[k] === undefined) process.env[k] = v;
   }
 }
 loadDotenv(resolve(process.cwd(), ".env.local"));
-
-// ─── Args ───────────────────────────────────────────────────────────────────
 
 interface Args {
   command: string;
@@ -62,67 +43,47 @@ interface Args {
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = {
-    command: "",
-    corpus: "test-data-combined",
-    limit: 10,
-    concurrency: 2,
-    json: false,
-    help: false,
-  };
+  const a: Args = { command: "", corpus: "test-data-combined", limit: 10, concurrency: 2, json: false, help: false };
   for (let i = 2; i < argv.length; i++) {
-    const a = argv[i]!;
-    if (a === "--json") args.json = true;
-    else if (a === "--help" || a === "-h") args.help = true;
-    else if (a === "--corpus") args.corpus = argv[++i] ?? args.corpus;
-    else if (a === "--limit") args.limit = Number(argv[++i] ?? args.limit) || args.limit;
-    else if (a === "--concurrency")
-      args.concurrency = Number(argv[++i] ?? args.concurrency) || args.concurrency;
-    else if (a === "--out") args.out = argv[++i];
-    else if (!args.command) args.command = a;
+    const t = argv[i]!;
+    if (t === "--json") a.json = true;
+    else if (t === "--help" || t === "-h") a.help = true;
+    else if (t === "--corpus") a.corpus = argv[++i] ?? a.corpus;
+    else if (t === "--limit") a.limit = Number(argv[++i] ?? a.limit) || a.limit;
+    else if (t === "--concurrency") a.concurrency = Number(argv[++i] ?? a.concurrency) || a.concurrency;
+    else if (t === "--out") a.out = argv[++i];
+    else if (!a.command) a.command = t;
   }
-  return args;
+  return a;
 }
 
 function printHelp(): void {
   // eslint-disable-next-line no-console
-  console.log(
-    `LabelVerify cross-pair benchmark CLI
+  console.log(`LabelVerify cross-pair benchmark CLI
 
 Commands:
-  cross-pair                       Run every label image against BOTH its
-                                   correct GT and its perturbed "wrong" GT.
-                                   Reports pass-rate-on-correct and
-                                   fail-or-review-rate-on-wrong, plus
-                                   latency percentiles.
+  cross-pair                       Run every label against BOTH correct GT
+                                   and perturbed wrong GT. Reports pass-rate-
+                                   on-correct, fail/review-rate-on-wrong, and
+                                   P50/P95 latency.
 
 Flags:
-  --corpus <dir>                   Corpus root containing ./labels,
-                                   ./ground-truth, and ./declared-wrong
-                                   (default: test-data-combined).
-  --limit <N>                      Max images to run (default: 10).
-                                   Set to 0 for the full corpus.
+  --corpus <dir>                   Corpus root (default: test-data-combined).
+  --limit <N>                      Max images (default: 10; 0 = all).
   --concurrency <K>                Parallel verifies (default: 2).
-  --out <path>                     Write the JSON report to a file in
-                                   addition to stdout summary.
-  --json                           Emit JSON report to stdout (otherwise
-                                   prints a human-readable summary table).
+  --out <path>                     Write JSON report to file.
+  --json                           Emit JSON to stdout.
   --help, -h                       Print this help.
 
-Examples:
-  npm run bench:cross-pair -- --limit 5
-  tsx bin/labelverify-bench.ts cross-pair --limit 0 --out reports/cross-pair.json
-`,
-  );
+Example: npm run bench:cross-pair -- --limit 5
+`);
 }
-
-// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface GtFile {
   id: string;
   image: string;
   gov_warning_case: string | null;
-  fields: Record<string, unknown> & {
+  fields: {
     brand_name: string;
     class_type: string;
     class_category: string;
@@ -149,55 +110,31 @@ interface CallRecord {
   expected: Verdict;
   actual: Verdict;
   imageQuality: string;
-  timings: {
-    preprocess: number;
-    ocr: number | null;
-    vision: number;
-    matching: number;
-    total: number;
-  } | null;
+  timings: import("../src/lib/types").VerifyTimings | null;
   elapsedMs: number;
   error?: string;
   govWarningCase?: string | null;
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
 function isGtCompliant(gt: GtFile): boolean {
-  // Truth-side compliance is derived from the four GW booleans, NOT from
-  // gov_warning_case (which is overloaded with image-quality tags — see
-  // CHANGELOG 2026-05-13 mid). All booleans true ⇒ pass; else fail.
+  // Truth-side compliance comes from the four GW booleans, not from
+  // `gov_warning_case` (overloaded with image-quality tags — see
+  // CHANGELOG 2026-05-13 mid).
   const w = gt.fields.government_warning;
   if (!w) return true;
-  return (
-    w.present &&
-    w.text_matches_regulation &&
-    w.prefix_all_caps &&
-    w.prefix_bold &&
-    w.meets_size_minimum
-  );
+  return w.present && w.text_matches_regulation && w.prefix_all_caps && w.prefix_bold && w.meets_size_minimum;
 }
 
-function toDeclared(
-  gt: GtFile,
-): import("../src/lib/types").DeclaredFields | null {
-  // Coerce GT fields into the strict DeclaredFieldsSchema shape. Returns
-  // null when GT is missing data the schema requires (country_of_origin
-  // is non-null on syn/deg; some `ai-label-*` have it set to null because
-  // Codex couldn't visually confirm — those rows are skipped on the
-  // "correct" pass because there's no honest expected verdict).
+function toDeclared(gt: GtFile): import("../src/lib/types").DeclaredFields | null {
   const f = gt.fields;
-  if (typeof f.country_of_origin !== "string" || f.country_of_origin.length < 2) {
-    return null;
-  }
+  // GT.country_of_origin is null on some `ai-label-*` rows because Codex
+  // couldn't visually confirm it. Skip those on the correct pass — there's
+  // no honest expected verdict when the application has a null required field.
+  if (typeof f.country_of_origin !== "string" || f.country_of_origin.length < 2) return null;
   return {
     brand_name: f.brand_name,
     class_type: f.class_type,
-    class_category: f.class_category as
-      | "beer"
-      | "wine"
-      | "distilled_spirits"
-      | "fortified_wine",
+    class_category: f.class_category as "beer" | "wine" | "distilled_spirits" | "fortified_wine",
     abv_percent: f.abv_percent,
     net_contents: f.net_contents as { value: number; unit: "fl_oz" | "ml" | "L" | "cl" },
     producer: f.producer as string | import("../src/lib/types").DeclaredFields["producer"],
@@ -208,37 +145,28 @@ function toDeclared(
 function percentile(values: number[], q: number): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
-  const idx = Math.min(sorted.length - 1, Math.floor(q * (sorted.length - 1)));
-  return sorted[idx] ?? 0;
+  return sorted[Math.min(sorted.length - 1, Math.floor(q * (sorted.length - 1)))] ?? 0;
 }
-
-// ─── Cross-pair runner ──────────────────────────────────────────────────────
 
 async function cmdCrossPair(args: Args): Promise<void> {
   const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) {
-    throw new Error("GOOGLE_API_KEY not set — cross-pair runs real verifies.");
-  }
+  if (!apiKey) throw new Error("GOOGLE_API_KEY not set — cross-pair runs real verifies.");
   const root = process.cwd();
   const corpusRoot = join(root, args.corpus);
   const labelsDir = join(corpusRoot, "labels");
   const truthsDir = join(corpusRoot, "ground-truth");
   const wrongDir = join(corpusRoot, "declared-wrong");
-
   if (!existsSync(wrongDir)) {
     throw new Error(
       `${wrongDir} missing — run \`tsx scripts/perturb-declared.ts --corpus ${args.corpus}\` first.`,
     );
   }
 
-  // Load GTs (skip dotfiles like .country-corrections-*.json).
   const truthFiles = (await readdir(truthsDir))
     .filter((f) => f.endsWith(".json") && !f.startsWith("."))
     .sort();
-  const limit = args.limit > 0 ? args.limit : truthFiles.length;
-  const slice = truthFiles.slice(0, limit);
+  const slice = truthFiles.slice(0, args.limit > 0 ? args.limit : truthFiles.length);
 
-  // Build the task list — two per image (correct + wrong).
   interface Task {
     id: string;
     imagePath: string;
@@ -251,38 +179,20 @@ async function cmdCrossPair(args: Args): Promise<void> {
   for (const name of slice) {
     const gt = JSON.parse(await readFile(join(truthsDir, name), "utf8")) as GtFile;
     const stem = name.replace(/\.json$/, "");
-    // Image extension can be .png (synthetic / degraded) or .jpg (ai).
-    const candidatePngOrJpg = [`${stem}.png`, `${stem}.jpg`, `${stem}.jpeg`]
+    const imagePath = [`${stem}.png`, `${stem}.jpg`, `${stem}.jpeg`]
       .map((f) => join(labelsDir, f))
       .find((p) => existsSync(p));
-    if (!candidatePngOrJpg) continue;
-    const compliant = isGtCompliant(gt);
-    tasks.push({
-      id: stem,
-      imagePath: candidatePngOrJpg,
-      condition: "correct",
-      gtPath: join(truthsDir, name),
-      expectedVerdict: compliant ? "pass" : "fail",
-      govWarningCase: gt.gov_warning_case ?? null,
-    });
+    if (!imagePath) continue;
+    const expectedCorrect: Verdict = isGtCompliant(gt) ? "pass" : "fail";
+    tasks.push({ id: stem, imagePath, condition: "correct", gtPath: join(truthsDir, name), expectedVerdict: expectedCorrect, govWarningCase: gt.gov_warning_case });
     if (existsSync(join(wrongDir, name))) {
-      tasks.push({
-        id: stem,
-        imagePath: candidatePngOrJpg,
-        condition: "wrong",
-        gtPath: join(wrongDir, name),
-        // 5 fields mutated; matcher should fail or at minimum route to review.
-        expectedVerdict: "fail",
-        govWarningCase: gt.gov_warning_case ?? null,
-      });
+      tasks.push({ id: stem, imagePath, condition: "wrong", gtPath: join(wrongDir, name), expectedVerdict: "fail", govWarningCase: gt.gov_warning_case });
     }
   }
 
   if (!args.json) {
     // eslint-disable-next-line no-console
-    console.log(
-      `cross-pair: corpus=${args.corpus} images=${slice.length} tasks=${tasks.length} concurrency=${args.concurrency}`,
-    );
+    console.log(`cross-pair: corpus=${args.corpus} images=${slice.length} tasks=${tasks.length} concurrency=${args.concurrency}`);
   }
 
   const { verifyLabel } = await import("../src/lib/verify");
@@ -296,86 +206,51 @@ async function cmdCrossPair(args: Args): Promise<void> {
       if (i >= tasks.length) return;
       const task = tasks[i]!;
       const t0 = Date.now();
+      const push = (partial: Partial<CallRecord> & Pick<CallRecord, "actual" | "imageQuality">): void => {
+        records.push({
+          image: basename(task.imagePath),
+          condition: task.condition,
+          expected: task.expectedVerdict,
+          timings: null,
+          elapsedMs: Date.now() - t0,
+          govWarningCase: task.govWarningCase,
+          ...partial,
+        });
+      };
       try {
-        const gtText = await readFile(task.gtPath, "utf8");
-        const gt = JSON.parse(gtText) as GtFile;
+        const gt = JSON.parse(await readFile(task.gtPath, "utf8")) as GtFile;
         const declared = toDeclared(gt);
         if (!declared) {
-          records.push({
-            image: basename(task.imagePath),
-            condition: task.condition,
-            expected: task.expectedVerdict,
-            actual: "error",
-            imageQuality: "skipped",
-            timings: null,
-            elapsedMs: 0,
-            error: "GT missing required country_of_origin",
-            govWarningCase: task.govWarningCase,
-          });
+          push({ actual: "error", imageQuality: "skipped", error: "GT missing required country_of_origin" });
           continue;
         }
         const validated = DeclaredFieldsSchema.safeParse(declared);
         if (!validated.success) {
-          records.push({
-            image: basename(task.imagePath),
-            condition: task.condition,
-            expected: task.expectedVerdict,
-            actual: "error",
-            imageQuality: "schema",
-            timings: null,
-            elapsedMs: 0,
-            error: validated.error.issues[0]?.message ?? "schema error",
-            govWarningCase: task.govWarningCase,
-          });
+          push({ actual: "error", imageQuality: "schema", error: validated.error.issues[0]?.message ?? "schema error" });
           continue;
         }
-        const image = await readFile(task.imagePath);
-        const r = await verifyLabel(image, validated.data);
-        records.push({
-          image: basename(task.imagePath),
-          condition: task.condition,
-          expected: task.expectedVerdict,
-          actual: r.verdict,
-          imageQuality: r.imageQuality,
-          timings: r.timings,
-          elapsedMs: Date.now() - t0,
-          govWarningCase: task.govWarningCase,
-        });
+        const r = await verifyLabel(await readFile(task.imagePath), validated.data);
+        push({ actual: r.verdict, imageQuality: r.imageQuality, timings: r.timings });
       } catch (err) {
-        records.push({
-          image: basename(task.imagePath),
-          condition: task.condition,
-          expected: task.expectedVerdict,
-          actual: "error",
-          imageQuality: "error",
-          timings: null,
-          elapsedMs: Date.now() - t0,
-          error: (err as Error).message,
-          govWarningCase: task.govWarningCase,
-        });
+        push({ actual: "error", imageQuality: "error", error: (err as Error).message });
       }
       if (!args.json) {
         const r = records[records.length - 1]!;
         // eslint-disable-next-line no-console
-        console.log(
-          `  [${records.length}/${tasks.length}] ${r.image} (${r.condition}): expected=${r.expected} actual=${r.actual} ${r.elapsedMs}ms`,
-        );
+        console.log(`  [${records.length}/${tasks.length}] ${r.image} (${r.condition}): expected=${r.expected} actual=${r.actual} ${r.elapsedMs}ms`);
       }
     }
   }
   await Promise.all(Array.from({ length: Math.max(1, args.concurrency) }, () => pump()));
 
-  // ─── Summarize ──────────────────────────────────────────────────────────
+  // Summarize.
   const correct = records.filter((r) => r.condition === "correct" && r.actual !== "error");
   const wrong = records.filter((r) => r.condition === "wrong" && r.actual !== "error");
   const passOnCorrect = correct.filter((r) => r.actual === r.expected).length;
-  const failOrReviewOnWrong = wrong.filter(
-    (r) => r.actual === "fail" || r.actual === "review",
-  ).length;
-  const totals = records.filter((r) => r.timings !== null).map((r) => r.timings!.total);
-  const visions = records.filter((r) => r.timings !== null).map((r) => r.timings!.vision);
+  const failOrReviewOnWrong = wrong.filter((r) => r.actual === "fail" || r.actual === "review").length;
+  const totals = records.filter((r) => r.timings).map((r) => r.timings!.total);
+  const visions = records.filter((r) => r.timings).map((r) => r.timings!.vision);
 
-  // by-category breakdown using gov_warning_case (groups null / unknown).
   const byCase = new Map<string, { correctPass: number; correctN: number; wrongFail: number; wrongN: number }>();
   for (const r of records) {
     if (r.actual === "error") continue;
@@ -418,7 +293,6 @@ async function cmdCrossPair(args: Args): Promise<void> {
       ]),
     ),
   };
-
   const report = { summary, records };
 
   if (args.out) {
@@ -429,35 +303,23 @@ async function cmdCrossPair(args: Args): Promise<void> {
     process.stdout.write(JSON.stringify(report, null, 2) + "\n");
     return;
   }
-  // eslint-disable-next-line no-console
+  /* eslint-disable no-console */
   console.log(`\nCross-pair summary:`);
-  // eslint-disable-next-line no-console
   console.log(`  pass-rate on CORRECT GT:        ${(summary.passRateOnCorrect * 100).toFixed(1)}% (${passOnCorrect}/${correct.length})`);
-  // eslint-disable-next-line no-console
   console.log(`  fail/review-rate on WRONG GT:   ${(summary.failOrReviewRateOnWrong * 100).toFixed(1)}% (${failOrReviewOnWrong}/${wrong.length})`);
-  // eslint-disable-next-line no-console
   console.log(`  errors:                         ${summary.errors}`);
-  // eslint-disable-next-line no-console
   console.log(`  latency P50/P95 (total):        ${summary.latencyMs.p50_total} / ${summary.latencyMs.p95_total} ms`);
-  // eslint-disable-next-line no-console
   console.log(`  latency P50/P95 (vision):       ${summary.latencyMs.p50_vision} / ${summary.latencyMs.p95_vision} ms`);
   if (Object.keys(summary.byCase).length > 1) {
-    // eslint-disable-next-line no-console
     console.log(`\n  By gov_warning_case:`);
     for (const [k, v] of Object.entries(summary.byCase)) {
-      const pcCorrect = v.passRateOnCorrect === null ? "—" : `${(v.passRateOnCorrect * 100).toFixed(0)}%`;
-      const pcWrong = v.failOrReviewRateOnWrong === null ? "—" : `${(v.failOrReviewRateOnWrong * 100).toFixed(0)}%`;
-      // eslint-disable-next-line no-console
-      console.log(`    ${k.padEnd(14)} correct→pass ${pcCorrect.padStart(5)} (n=${v.n_correct})   wrong→fail/review ${pcWrong.padStart(5)} (n=${v.n_wrong})`);
+      const pc = (x: number | null): string => (x === null ? "—" : `${(x * 100).toFixed(0)}%`);
+      console.log(`    ${k.padEnd(14)} correct→pass ${pc(v.passRateOnCorrect).padStart(5)} (n=${v.n_correct})   wrong→fail/review ${pc(v.failOrReviewRateOnWrong).padStart(5)} (n=${v.n_wrong})`);
     }
   }
-  if (args.out) {
-    // eslint-disable-next-line no-console
-    console.log(`\n  Wrote ${args.out}`);
-  }
+  if (args.out) console.log(`\n  Wrote ${args.out}`);
+  /* eslint-enable no-console */
 }
-
-// ─── Entry ──────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv);
@@ -466,15 +328,13 @@ async function main(): Promise<void> {
     return;
   }
   try {
-    switch (args.command) {
-      case "cross-pair":
-        await cmdCrossPair(args);
-        break;
-      default:
-        // eslint-disable-next-line no-console
-        console.error(`Unknown command: ${args.command}\n`);
-        printHelp();
-        process.exit(2);
+    if (args.command === "cross-pair") {
+      await cmdCrossPair(args);
+    } else {
+      // eslint-disable-next-line no-console
+      console.error(`Unknown command: ${args.command}\n`);
+      printHelp();
+      process.exit(2);
     }
   } catch (err) {
     // eslint-disable-next-line no-console

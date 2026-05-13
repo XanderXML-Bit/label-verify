@@ -106,18 +106,28 @@ mode automatically.
 1. On the home page, drag three label images (e.g. three from
    `test-data-combined/labels/`) into the upload area. The state
    transitions to "Batch upload — 3 images".
-2. Either:
-   - **Auto-pair path:** drop three application files (PDF / JSON /
-     CSV / MD / TXT) with matching filename stems. The pairing
-     summary in the response will show 3 pairs matched.
-   - **Manifest path:** click **Generate manifest template** to seed
-     the CSV manifest with one row per image, then fill in the
-     declared fields by hand.
+2. Pick a pairing path:
+   - **Auto-pair (per-image apps):** drop application files (PDF /
+     JSON / CSV / MD / TXT / DOCX) with filename stems matching the
+     images. The pairing summary in the response shows the matched
+     pairs.
+   - **Inline-manifest:** drop one CSV or JSON file with a `filename`
+     column / key plus the N images. The server auto-detects the
+     multi-row manifest and pairs each row to its matching image —
+     no separate per-image app files needed.
+   - **Broadcast:** drop one single-product application file + N
+     images of the same product. The server broadcasts the declared
+     payload to every image and surfaces a warning so the operator
+     can reject post-hoc.
+   - **Paste manifest:** if no application files are dropped, the UI
+     surfaces a textarea you can paste a CSV manifest into.
 3. Click **Verify batch**.
 4. **Expected:** Within ~15 seconds:
    - A virtualized table renders three rows.
-   - Each row populates with a verdict, one after the other, as the
-     SSE stream emits per-item events.
+   - On Vercel the POST returns inline terminal results (no SSE) and
+     all rows paint at once with their verdicts; on local dev the
+     SSE path may stream per-item events instead. Either rendering
+     is correct.
    - **Download JSON** and **Download CSV** buttons appear once all
      three finish.
 5. **Failure looks like:**

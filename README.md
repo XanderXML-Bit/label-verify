@@ -24,7 +24,7 @@
 | **What if Gemini is down?** | Auto-fallback to GPT-5.4-nano (OpenAI) on provider failure, with a yellow "verified via backup" banner on the verdict. |
 | **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent cross-provider model re-reads the label. Agreement / disagreement is surfaced inline. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
-| **Is the code reviewed?** | 418 / 418 tests green, zero ESLint warnings, multiple independent audit passes (Hermes / Codex / 3 sub-agent corpus audits + 2 sub-agent code/UX audits), branch protection on `main`, 0 production vulnerabilities. |
+| **Is the code reviewed?** | 472 / 472 tests green, zero ESLint warnings, multiple independent audit passes (Hermes / Codex / 4 sub-agent comprehensive-hardening audits: E2E gaps, fixtures, docs, perf/accuracy + 3 sub-agent corpus audits + 2 sub-agent code/UX audits), branch protection on `main`, 0 production vulnerabilities. |
 
 **Pick your depth:**
 
@@ -277,13 +277,40 @@ Reviewers reproducing the project locally can lean on any of these:
 ```bash
 npm run typecheck         # tsc --noEmit, zero output expected
 npm run lint              # next lint, zero warnings on a clean tree
-npm test                  # vitest, 410 tests across 51 files (~7 s)
+npm test                  # vitest, ~470 tests across 56 files (~10 s)
 npm run build             # production Next.js build
 npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results/<iso>.md
 npm run bench:bakeoff     # full 13-variant tournament (~30 min, ~$0.30 in API calls)
+npm run bench:cross-pair  # NEW: 170 images × {correct, wrong} declared, accuracy+timing (--limit N)
 npm run test:e2e:install  # one-time Playwright browser install
-npm run test:e2e          # Playwright headless E2E
+npm run test:e2e          # Playwright headless E2E (8 spec files: idle, samples,
+                          #   application-input, batch-autopair, form-validation,
+                          #   error-mapping, upload-rejection, sample-retry, api-status-banner)
 ```
+
+### Option D — Use the CLI
+
+Three command-line entrypoints ship with the repo, mirroring the GUI:
+
+```bash
+# Operator CLI — drives the backend in-process (no browser, no server).
+npm run cli -- verify public/samples/pass.jpg path/to/application.json
+npm run cli:health           # readiness + API-key probe
+npm run cli:samples          # list bundled samples
+
+# Web-app driver CLI — hits the deployed HTTP API the same way a browser does.
+npm run cli:web -- health                                # against prod
+npm run cli:web -- verify image.jpg app.json --local     # against npm run dev
+npm run cli:web -- batch ./labels/ --base-url https://your-deploy.vercel.app
+
+# Benchmark CLI — accuracy + latency across the canonical corpus.
+npm run bench:perturb        # (re)generate the wrong-declared set
+npm run bench:cross-pair -- --limit 10
+```
+
+Full CLI reference: [`docs/CLI.md`](docs/CLI.md). Why three CLIs (each
+exercises a different failure surface) is explained at the top of that
+doc.
 
 A live-API smoke checklist for production-deploy validation lives at [`docs/PRODUCTION-SMOKE.md`](docs/PRODUCTION-SMOKE.md) — five checks, all curl-pasteable.
 
@@ -427,10 +454,12 @@ Things that are deliberate (with the reasoning), and the residual unknowns we ca
 7. [`docs/REMAINING-IMPROVEMENTS.md`](docs/REMAINING-IMPROVEMENTS.md) — what we'd do next.
 8. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) + [`docs/DEPLOYMENT-CHECKLIST.md`](docs/DEPLOYMENT-CHECKLIST.md) + [`docs/PRODUCTION-SMOKE.md`](docs/PRODUCTION-SMOKE.md) — production runbook.
 9. [`docs/openapi.yaml`](docs/openapi.yaml) — public API surface.
-10. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — what's tested where and why.
-11. [`SECURITY.md`](SECURITY.md) — threat model + mitigations.
-12. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points.
-13. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline + audit findings closed.
+10. [`docs/CLI.md`](docs/CLI.md) — three CLI surfaces (operator / web-driver / benchmark).
+11. [`docs/CORPORA.md`](docs/CORPORA.md) — map of `test-data*/` and `public/samples/` directories.
+12. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — what's tested where and why.
+13. [`SECURITY.md`](SECURITY.md) — threat model + mitigations.
+14. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points.
+15. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline + audit findings closed.
 
 **Pre-implementation planning docs** (kept for the audit trail; the current state of the code is the authority):
 - [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) — pre-registered hypotheses.

@@ -79,14 +79,19 @@ each key.
 
 ## 5. Domain Setup
 
-1. Add `labelverify` CNAME → `cname.vercel-dns.com` on the `zendren.net`
-   Cloudflare zone.
+The prototype ships on its auto-generated Vercel hostname
+(`https://label-verify-six.vercel.app`) — **no custom domain is wired**.
+The planned `labelverify.zendren.net` CNAME was dropped on 2026-05-12
+because a custom domain adds no reviewer value and would add
+maintenance burden post-submission (see CHANGELOG).
+
+If you fork the project and want a custom hostname, the standard
+Vercel flow is:
+
+1. Add `<your-subdomain>` CNAME → `cname.vercel-dns.com` on your DNS
+   provider.
 2. Add the domain in Vercel project → Domains.
 3. Wait for SSL cert issuance (~minutes).
-
-Backup plan if DNS misbehaves: use the auto-generated
-`label-verify-<hash>.vercel.app` URL. The submission docs should include
-both.
 
 ## 6. Cold-Start & Latency Considerations
 

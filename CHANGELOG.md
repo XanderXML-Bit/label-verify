@@ -4,6 +4,126 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Comprehensive hardening pass — four audits + two waves of fixes] — 2026-05-13
+
+### Why this exists
+
+User asked for infrastructure that catches regressions WITHOUT manual
+bug-filing — i.e. comprehensive automated coverage across backend,
+CLI, AND GUI. Four parallel sub-agent audits (E2E gaps / fixtures /
+docs / perf+accuracy+code-quality) produced findings; two implementation
+waves landed them.
+
+### Wave 1: second CLI + perf + accuracy
+
+- **Web-app driver CLI (`bin/labelverify-web.ts`)** — the second of two
+  CLIs. The first (`bin/labelverify.ts`) drives the backend in-process;
+  this one hits the HTTP API exactly like a browser does. Shipping both
+  means GUI-only route-layer bugs (multipart parsing, MIME handling,
+  serverless cold-start) get caught by a non-browser surface. 8 new
+  vitest specs cover help / arg parsing / samples offline.
+- **`extractOnly` perf** — removed dead-weight 1.5 s pre-vision OCR
+  wait in `src/lib/verify.ts`. Saves ~1500 ms P50 on `/api/extract`.
+  The wait was a leftover from an earlier prompt design; no current
+  extractor adapter reads `ctx.ocrWords`.
+- **GW NBSP / zero-width accuracy fix** — `normalizeForTextMatch` now
+  folds NBSP (U+00A0), narrow NBSP (U+202F), en-quad → hair-space
+  (U+2000..U+200A), medium math space (U+205F), ideographic space
+  (U+3000), zero-width space (U+200B), BOM (U+FEFF), and `…` →
+  `...`. A verbatim federal warning exported from a Canadian /
+  European DTP pipeline (often emits NBSP between "GOVERNMENT" and
+  "WARNING") was previously reporting text-mismatch; now it doesn't.
+  5 new regression tests.
+- **`imageQuality` extractor-vs-comparator confidence fix** — already
+  shipped earlier in the day, now called out by name in the changelog.
+  The image-quality column now derives from the *extractor's* per-field
+  confidence on fields the model actually read (value !== null), NOT
+  from the comparator's confidence (which drops when declared values
+  are wrong even on a clean photo). Stops the false "Re-photograph"
+  flag when the manifest disagrees with a cleanly-read label.
+
+### Wave 2: comprehensive E2E + cross-pair benchmark + code-quality
+
+- **Six new E2E specs** covering Agent A's top gaps — batch flows had
+  ZERO E2E coverage; friendlyError mapping had ZERO; form validation
+  had ZERO; sample-retry had ZERO; ApiStatusBanner had ZERO; upload
+  rejection had ZERO. All use `route.fulfill` mocks so they don't hit
+  real vision API. Files: `e2e/{batch-autopair, form-validation,
+  error-mapping, upload-rejection, sample-retry, api-status-banner}.spec.ts`.
+- **Broken E2E test fixed** — `e2e/idle-and-sample.spec.ts` was
+  asserting the Human review queue region IS visible on idle, but
+  page.tsx removed `ReviewQueuePanel` from idle on 2026-05-13. Test
+  now asserts NOT visible.
+- **Cross-pair benchmark** — `scripts/perturb-declared.ts` +
+  `bin/labelverify-bench.ts` + 170 perturbed manifests. Details in
+  next CHANGELOG section.
+- **WeakMap-based batch-route cache** — replaced 4 `@ts-expect-error`
+  File-mutation cache sites in `src/app/api/verify/batch/route.ts`
+  with a typed `WeakMap<File, ParsedApplication>`. Same behavior, no
+  type suppressions, no runtime hazard.
+- **Stale "Smart-tier" error copy removed** from
+  `src/app/api/verify/route.ts:307`. Mode selection was retired
+  earlier; the user-facing error was still suggesting it.
+- **SSE batch endpoint documented** as local-dev-only — production
+  uses the inline POST path. Header comment in
+  `src/app/api/verify/batch/[id]/stream/route.ts`.
+- **Corpus default switched** to `test-data-combined/` (the 170-image
+  canonical superset) in `benchmarks/run.ts` and
+  `scripts/validate-corpus.ts`. The v1 `test-data/` directory
+  remains in place for historical reference but is no longer the
+  default.
+- **Orphan `public/samples/review.jpg` deleted.** The REVIEW
+  affordance intentionally reuses `pass.jpg` (Pilsner-vs-Lager
+  mismatch); the standalone file was never served.
+
+### Docs
+
+- **`docs/CLI.md` (new)** — full reference for the three CLIs
+  (operator / web-driver / benchmark) with command tables, examples,
+  exit codes, and explanation of why three.
+- **`docs/CORPORA.md` (new)** — canonical map of `test-data*/` and
+  `public/samples/` directories.
+- **README updated** — added an "Option D — Use the CLI" section
+  with examples; fixed stale test count (was 418, now 472); added
+  CLI doc links to the documentation map.
+- **`docs/openapi.yaml`** — `pairing.mode` enum updated to include
+  `auto-inline-manifest`, `auto-stem+content`, `auto-broadcast`
+  (was only `[manifest, auto-stem]`). Reflects the actual server
+  modes shipped 2026-05-12 / 13.
+- **`docs/DEPLOYMENT.md`** — stripped the `labelverify.zendren.net`
+  CNAME instructions (the custom domain was dropped on 2026-05-12).
+  Section now describes "if you fork" flow generically.
+- **`docs/PRODUCTION-SMOKE.md`** — Check 4 no longer references the
+  removed "Generate manifest template" button; now documents all
+  four batch pairing paths (auto-pair / inline-manifest / broadcast /
+  paste).
+- **CONTRIBUTING.md** — test count updated (was ~370, now ~470).
+
+### Validation
+
+- **472 / 472 tests** passing (was 450 at start of session; +22:
+  +8 web-CLI, +5 NBSP regression, +9 cross-pair-perturb).
+- Typecheck clean.
+- Branch: `hardening/comprehensive-pass` (this PR).
+
+### Files
+
+Wave 1: `bin/labelverify-web.ts`, `src/tests/cli-web.test.ts`,
+`src/lib/verify.ts`, `src/lib/validation/government-warning.ts`,
+`src/tests/government-warning.test.ts`,
+`e2e/idle-and-sample.spec.ts`, `package.json`.
+
+Wave 2: 6 new `e2e/*.spec.ts`, `bin/labelverify-bench.ts`,
+`scripts/perturb-declared.ts`, `src/tests/bench-cross-pair.test.ts`,
+170 files at `test-data-combined/declared-wrong/`,
+`src/app/api/verify/batch/route.ts`, `src/app/api/verify/route.ts`,
+`src/app/api/verify/batch/[id]/stream/route.ts`,
+`benchmarks/run.ts`, `scripts/validate-corpus.ts`,
+`public/samples/review.jpg` (deleted), `bin/labelverify-web.ts`,
+`package.json`, `docs/CLI.md` (new), `docs/CORPORA.md` (new),
+`README.md`, `CONTRIBUTING.md`, `docs/openapi.yaml`,
+`docs/DEPLOYMENT.md`, `docs/PRODUCTION-SMOKE.md`.
+
 ## [Cross-pair benchmark — programmatic GT perturbation catches both FN and FP] — 2026-05-13
 
 ### What's new
