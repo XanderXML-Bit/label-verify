@@ -11,7 +11,11 @@ import { VerifyProgress } from "./components/VerifyProgress";
 import { ApiStatusBanner } from "./components/ApiStatusBanner";
 import { BatchView, type BatchRow } from "./components/BatchView";
 import { SampleAffordance } from "./components/SampleAffordance";
-import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
+// ReviewQueuePanel intentionally not imported on the idle screen — it
+// surfaces a DEBUG_TOKEN access-code prompt to public visitors, which
+// is confusing UX for the prototype. Operators with the token can use
+// /api/queue directly. User feedback 2026-05-13.
+// import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
 import {
   ApplicationUpload,
   type ApplicationParsePayload,
@@ -416,10 +420,28 @@ export default function Home() {
     }
   }
 
-  async function submitBatch() {
+  // Tracks whether a batch submission is currently in flight. Bound to
+  // the Verify button's disabled state + a "Uploading + pairing..."
+  // banner so the reviewer gets immediate visual feedback after click
+  // (previously the auto-pair path had no submission indicator until
+  // the SSE stream opened, which felt unresponsive on slow networks).
+  // Per user feedback 2026-05-13.
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
+
+  // The `manifestOverride` parameter exists to dodge a real React state
+  // race: `setManifestText("")` schedules an update, but `submitBatch`
+  // runs synchronously and closes over the OLD `manifestText`. The
+  // auto-pair button passed `setManifestText(""); submitBatch();` and
+  // the server received the old (often non-empty) value → hit the
+  // explicit-manifest path → returned the user's reported "No valid
+  // (image, declared-fields) pairs after manifest parse" error.
+  // Pass `""` explicitly to force the auto-pair path.
+  async function submitBatch(manifestOverride?: string) {
     if (stage.kind !== "batch-pending") return;
+    const manifest = manifestOverride ?? manifestText;
+    setBatchSubmitting(true);
     const fd = new FormData();
-    fd.append("manifest", manifestText);
+    fd.append("manifest", manifest);
     for (const f of stage.files) fd.append(f.name, f);
     try {
       const res = await fetch("/api/verify/batch", { method: "POST", body: fd });
@@ -434,6 +456,7 @@ export default function Home() {
             res.status,
           ),
         });
+        setBatchSubmitting(false);
         return;
       }
       const body = (await res.json()) as {
@@ -447,6 +470,7 @@ export default function Home() {
         status: "pending" as const,
       }));
       setStage({ kind: "batch-running", batchId: body.batchId, rows });
+      setBatchSubmitting(false);
     } catch (e) {
       setStage({
         kind: "batch-pending",
@@ -454,6 +478,7 @@ export default function Home() {
         autoPair: stage.autoPair,
         submitError: friendlyError((e as Error).message),
       });
+      setBatchSubmitting(false);
     }
   }
 
@@ -536,8 +561,10 @@ export default function Home() {
         <>
           <UploadZone onFiles={handleFiles} />
           <SampleAffordance onPick={handleSample} />
-          {/* Single production path only: no reviewer/API-selectable model modes. */}
-          <ReviewQueuePanel />
+          {/* Review queue panel intentionally removed from the public
+              idle screen — it required a DEBUG_TOKEN access code that
+              confused non-operator visitors. Operators with the token
+              hit /api/queue directly. User feedback 2026-05-13. */}
           <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
               About this prototype
@@ -751,24 +778,47 @@ export default function Home() {
                   </ul>
                 </div>
               </div>
+              {batchSubmitting && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="mt-3 flex items-center gap-3 rounded-md border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-200"
+                >
+                  <span aria-hidden className="inline-block animate-spin">⏳</span>
+                  <span>
+                    Uploading {imageFiles.length} image
+                    {imageFiles.length === 1 ? "" : "s"} + {appFiles.length}{" "}
+                    application file{appFiles.length === 1 ? "" : "s"} and
+                    pairing them on the server… verification will start as
+                    soon as pairing completes.
+                  </span>
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap gap-3">
                 <button
                   type="button"
+                  disabled={batchSubmitting}
+                  aria-busy={batchSubmitting || undefined}
                   onClick={() => {
-                    // Auto-pair path: don't send a manifest. Empty
-                    // string short-circuits the server's manifest
-                    // parser, which routes to the auto-pair branch.
-                    setManifestText("");
-                    void submitBatch();
+                    // Auto-pair path. Pass empty manifest EXPLICITLY
+                    // (don't rely on setManifestText("") since React
+                    // state updates are async — submitBatch() would
+                    // otherwise close over the OLD manifestText and
+                    // route to the wrong server path. User-reported
+                    // bug 2026-05-13.
+                    void submitBatch("");
                   }}
-                  className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                  className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
                 >
-                  Verify batch ({imageFiles.length} pair{imageFiles.length === 1 ? "" : "s"})
+                  {batchSubmitting
+                    ? "Verifying…"
+                    : `Verify batch (${imageFiles.length} pair${imageFiles.length === 1 ? "" : "s"})`}
                 </button>
                 <button
                   type="button"
+                  disabled={batchSubmitting}
                   onClick={reset}
-                  className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Cancel
                 </button>
@@ -796,10 +846,11 @@ export default function Home() {
                 {manifestText.trim() && (
                   <button
                     type="button"
-                    onClick={submitBatch}
-                    className="mt-2 min-h-[44px] rounded-md border border-blue-500 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
+                    disabled={batchSubmitting}
+                    onClick={() => void submitBatch()}
+                    className="mt-2 min-h-[44px] rounded-md border border-blue-500 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
                   >
-                    Submit with manifest override
+                    {batchSubmitting ? "Submitting…" : "Submit with manifest override"}
                   </button>
                 )}
               </details>
@@ -871,10 +922,11 @@ export default function Home() {
               {manifestText.trim() && (
                 <button
                   type="button"
-                  onClick={submitBatch}
-                  className="mt-2 min-h-[44px] rounded-md border border-blue-500 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
+                  disabled={batchSubmitting}
+                  onClick={() => void submitBatch()}
+                  className="mt-2 min-h-[44px] rounded-md border border-blue-500 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
                 >
-                  Submit with pasted manifest
+                  {batchSubmitting ? "Submitting…" : "Submit with pasted manifest"}
                 </button>
               )}
             </details>
