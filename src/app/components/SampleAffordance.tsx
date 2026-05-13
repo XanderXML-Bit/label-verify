@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { SAMPLES, type Sample } from "@/lib/samples";
 
 interface SampleAffordanceProps {
@@ -16,12 +17,36 @@ interface SampleAffordanceProps {
  * an end-to-end result without filling a form. UI-SPEC.md §4.
  */
 export function SampleAffordance({ onPick, disabled }: SampleAffordanceProps) {
+  // Per-sample loading flag so the button shows a visible spinner during
+  // the fetch — UX audit P-11. Without this, slow networks or a 404
+  // on the static asset left the button visually unchanged after the
+  // click, which read as "broken" to the reviewer.
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   async function activate(sample: Sample) {
-    if (disabled) return;
-    const resp = await fetch(sample.imageUrl);
-    const blob = await resp.blob();
-    const file = new File([blob], `${sample.id}.png`, { type: "image/png" });
-    onPick(sample, file);
+    if (disabled || pending) return;
+    setPending(sample.id);
+    setError(null);
+    try {
+      const resp = await fetch(sample.imageUrl);
+      if (!resp.ok) {
+        throw new Error(
+          `Sample image returned HTTP ${resp.status} — try again in a moment.`,
+        );
+      }
+      const blob = await resp.blob();
+      const file = new File([blob], `${sample.id}.png`, { type: "image/png" });
+      onPick(sample, file);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Couldn't load that sample. Try again, or upload your own.",
+      );
+    } finally {
+      setPending(null);
+    }
   }
 
   return (
@@ -36,24 +61,38 @@ export function SampleAffordance({ onPick, disabled }: SampleAffordanceProps) {
         Pre-populated examples so you can see end-to-end results without
         filling the form. One of each verdict type.
       </p>
+      {error ? (
+        <div
+          role="alert"
+          className="mt-3 rounded-md border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:border-red-400 dark:bg-red-950/60 dark:text-red-200"
+        >
+          {error}
+        </div>
+      ) : null}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {SAMPLES.map((s) => (
+        {SAMPLES.map((s) => {
+          const isPending = pending === s.id;
+          return (
           <button
             key={s.id}
             type="button"
             onClick={() => activate(s)}
-            disabled={disabled}
+            disabled={disabled || pending !== null}
+            aria-busy={isPending || undefined}
             // Full expectedNote in the tooltip + on screen below the
             // short description — REMAINING-IMPROVEMENTS U2: the FAIL
             // sample's defect ("title-case warning prefix") should be
             // readable from the thumbnail without clicking.
             title={s.expectedNote}
             className={`group flex min-h-[88px] flex-col items-start gap-2 rounded-md border bg-slate-50 p-3 text-left transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 ${verdictRing(s.expectedVerdict)}`}
-            aria-label={`Try the ${s.id} sample`}
+            aria-label={`Try the ${s.id} sample${isPending ? " (loading)" : ""}`}
             aria-describedby={`sample-note-${s.id}`}
           >
             <span className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Expected: <span className={verdictText(s.expectedVerdict)}>{s.expectedVerdict.toUpperCase()}</span>
+              {isPending ? (
+                <span aria-hidden className="ml-2 inline-block animate-pulse">⏳</span>
+              ) : null}
             </span>
             <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{s.label}</span>
             <span className="text-xs text-slate-600 dark:text-slate-400">{s.shortDescription}</span>
@@ -71,7 +110,8 @@ export function SampleAffordance({ onPick, disabled }: SampleAffordanceProps) {
               </span>
             )}
           </button>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

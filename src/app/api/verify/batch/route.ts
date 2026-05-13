@@ -139,6 +139,12 @@ export async function POST(req: Request) {
 
   const items: Omit<BatchItem, "status">[] = [];
   const pairingErrors: string[] = [];
+  // Non-fatal pairing notes — surfaces things like "scanned PDF was
+  // parsed via vision OCR fallback at low confidence; verify the
+  // declared values for this row." Distinguished from pairingErrors
+  // (which gate the pair out) so the reviewer sees the verify proceed
+  // but with the caveat attached. Codex audit finding.
+  const pairingWarnings: string[] = [];
   let pairing: PairingSummary;
 
   if (hasManifest) {
@@ -321,6 +327,19 @@ export async function POST(req: Request) {
         );
         continue;
       }
+      // Codex audit fix: when the application was parsed via the
+      // scanned-PDF vision fallback, `parsed.confidence === "low"` and
+      // the warnings list explains why. Surface that as a non-fatal
+      // note so the operator sees in the response payload that this
+      // row's declared values came from OCR-on-a-scan and should be
+      // sanity-checked. Previously the batch route just consumed
+      // `parsed.fields` and dropped the confidence + warnings on the
+      // floor.
+      if (parsed.confidence === "low" || parsed.warnings.length > 0) {
+        pairingWarnings.push(
+          `${imageFile.name} ↔ ${applicationFile.name}: application parsed at ${parsed.confidence} confidence (source: ${parsed.source}) — ${parsed.warnings.join(" / ") || "verify the declared values manually."}`,
+        );
+      }
       const buf = Buffer.from(await imageFile.arrayBuffer());
       items.push({
         index: items.length,
@@ -358,6 +377,7 @@ export async function POST(req: Request) {
     batchId: job.id,
     count: items.length,
     pairingErrors,
+    pairingWarnings,
     pairing,
   });
 }

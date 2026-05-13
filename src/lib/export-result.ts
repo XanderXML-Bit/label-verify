@@ -53,9 +53,24 @@ const CSV_HEADER = [
   "ocr_ms",
 ] as const;
 
+// OWASP CSV-injection mitigation. Excel, LibreOffice, and Google Sheets
+// auto-execute any cell whose first character is `=`, `+`, `-`, `@`, tab,
+// or CR — turning a malicious filename like `=SUM(1+1).jpg` or a
+// vision-model-derived review reason that happens to start with `-` into
+// a working formula on open. Reviewer-facing CSV outputs flow user- and
+// model-controlled strings through here (filename, reviewReasons, error,
+// fallbackUsed, modelId). We neutralize the leading character with a
+// single leading apostrophe — Excel hides it on render but the cell is
+// no longer parsed as a formula. The apostrophe is added BEFORE the
+// CSV quote/escape pass so the escape logic still sees a string literal.
+const FORMULA_LEAD = /^[=+\-@\t\r]/;
+function neutralizeFormula(s: string): string {
+  return FORMULA_LEAD.test(s) ? `'${s}` : s;
+}
 function csvCell(v: unknown): string {
   if (v === null || v === undefined) return "";
-  return `"${String(v).replace(/"/g, '""')}"`;
+  const s = neutralizeFormula(String(v));
+  return `"${s.replace(/"/g, '""')}"`;
 }
 
 function rowForResult(index: number, filename: string, result: VerifyResponse): string[] {

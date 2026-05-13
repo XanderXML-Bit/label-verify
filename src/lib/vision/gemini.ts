@@ -153,9 +153,13 @@ async function callGemini(
     },
   });
 
-  // OCR-conditionally-off-path: if OCR returned in time, we append its
-  // text to the prompt so the vision model can cross-reference. If not,
-  // the prompt goes without and the C1 combined path degenerates to T6.
+  // Vision-only in production: src/lib/verify.ts intentionally does not
+  // pass `ctx.ocrText` here, so `buildOcrHintSection(undefined)` returns
+  // an empty string. The C1 "OCR-as-hint" hypothesis was falsified in
+  // the bake-off (docs/MODEL-SELECTION.md §4.3); the OCR text now feeds
+  // only the classical-CV bold + size validators downstream. The helper
+  // remains wired here so benchmark mode (which can re-enable C1) and
+  // any future re-test can plug back in without an extractor rewrite.
   const ocrSection = buildOcrHintSection(ctx?.ocrText);
 
   const promptText = EXTRACTION_PROMPT + ocrSection;

@@ -110,11 +110,39 @@ export default function Home() {
     | { kind: "parsing"; filename: string }
     | { kind: "failed"; filename: string }
   >({ kind: "idle" });
+  // Names of extra application files the user dropped that we ignored
+  // (1 image + N apps where N > 1 — we keep the stem-matched one and
+  // drop the rest). UI audit blocker #2: previously this only went to
+  // console.warn; now we surface it visibly next to the form so the
+  // reviewer knows their second file wasn't silently lost.
+  const [ignoredApps, setIgnoredApps] = useState<readonly string[]>([]);
 
   // Warm the function + Tesseract worker on page load (DEPLOYMENT.md §6).
+  // The AbortController prevents stacked warmups across the
+  // mount→unmount→remount lifecycle (e.g. fast tab close/reopen, React
+  // StrictMode double-invoke in dev) — without it each remount fires a
+  // fresh warmup that the previous mount can no longer act on. UX audit P-7.
   useEffect(() => {
-    fetch("/api/warmup").catch(() => undefined);
+    const ac = new AbortController();
+    fetch("/api/warmup", { signal: ac.signal }).catch(() => undefined);
+    return () => ac.abort();
   }, []);
+
+  // While async work is in flight, mutate document.title so a reviewer
+  // who tabs away to email can see "(Verifying…) Label Verify" in the
+  // tab strip and know when to switch back. UX audit P-8. Restored on
+  // unmount and on any state transition that lands on idle/done/error.
+  useEffect(() => {
+    const baseTitle = "Label Verify";
+    const isBusy =
+      stage.kind === "single-verifying" ||
+      stage.kind === "single-extracting" ||
+      stage.kind === "batch-running";
+    document.title = isBusy ? `(Verifying…) ${baseTitle}` : baseTitle;
+    return () => {
+      document.title = baseTitle;
+    };
+  }, [stage.kind]);
 
   function revokeIfPreview(s: Stage): void {
     if (
@@ -188,16 +216,22 @@ export default function Home() {
           apps.find((a) => stemMatches(a.name, img.name)) ?? apps[0]!;
         void parseAppInBackground(matched);
         if (apps.length > 1) {
-          // Surface the discarded apps as a console warning so a
-          // developer can see what was ignored; the reviewer just
-          // sees the form pre-filled.
+          // Surface the discarded apps to BOTH the developer console
+          // (full provenance) AND the form UI (so the reviewer sees
+          // that their second file wasn't silently dropped). UI audit
+          // blocker #2.
+          const ignoredNames = apps
+            .filter((a) => a !== matched)
+            .map((a) => a.name);
+          setIgnoredApps(ignoredNames);
           console.warn(
-            `[upload] ${apps.length} application files dropped with 1 image; using "${matched.name}". Ignored: ${apps
-              .filter((a) => a !== matched)
-              .map((a) => a.name)
-              .join(", ")}`,
+            `[upload] ${apps.length} application files dropped with 1 image; using "${matched.name}". Ignored: ${ignoredNames.join(", ")}`,
           );
+        } else {
+          setIgnoredApps([]);
         }
+      } else {
+        setIgnoredApps([]);
       }
       if (ignored.length > 0) {
         console.warn(
@@ -470,6 +504,14 @@ export default function Home() {
           the fields in manually. Returns a pass / fail / review verdict
           in seconds.
         </p>
+        {/* UX audit P-5: the "extract-only" path is discoverable from
+            the form's secondary button, but the idle-screen header
+            doesn't hint that an application file is optional. One-line
+            subhead surfaces that. */}
+        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+          Or skip the application data — extract just the fields the
+          label declares on its own.
+        </p>
       </header>
 
       {stage.kind === "idle" && (
@@ -518,6 +560,20 @@ export default function Home() {
             >
               <span aria-hidden className="mr-1">⚠</span>
               Couldn&apos;t auto-parse <span className="font-mono">{bgAppParse.filename}</span>. Try a different format, upload via the field below, or fill the form manually.
+            </div>
+          )}
+          {ignoredApps.length > 0 && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-200"
+            >
+              <span aria-hidden className="mr-1">ℹ</span>
+              You dropped {ignoredApps.length + 1} application files with one
+              image. Only one application can verify a single label, so we
+              kept the best filename-stem match and ignored{" "}
+              <span className="font-mono">{ignoredApps.join('", "')}</span>.
+              Drop multiple images to verify them in a batch.
             </div>
           )}
           <ApplicationUpload onParsed={handleApplicationParsed} />

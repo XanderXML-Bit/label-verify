@@ -42,21 +42,39 @@ export type FileKind = "image" | "application" | "other";
 
 /**
  * Lowercase basename with the extension stripped. `"ACME-Vodka.JPG"` →
- * `"acme-vodka"`. Strips a trailing `-front` / `-back` / `-label`
- * suffix optionally — TTB reviewers often name multi-face uploads
- * with these tags and there's only one application per COLA number.
- * Callers who want strict matching can pass `{ stripFaceTag: false }`.
+ * `"acme-vodka"`. Two optional normalizations are available:
+ *
+ *   • `stripFaceTag` — strips an image-side `-front` / `-back` /
+ *     `-label` / `-side` / `-neck` / `-primary` suffix. TTB reviewers
+ *     often name multi-face uploads with these tags and there's only
+ *     one application per COLA number, so the relaxed pass treats
+ *     `123-front.jpg` and `123-back.jpg` as both pairing with `123.pdf`.
+ *
+ *   • `stripAppTag` — strips an application-side `-app` /
+ *     `-application` / `-cola` suffix. Reviewers also commonly tag
+ *     the application document itself ("123456-app.pdf") so the
+ *     relaxed pass needs to strip from both sides. Without this the
+ *     documented `123-front.jpg ↔ 123-app.pdf` pairing wouldn't
+ *     fire — the image's relaxed stem is `123`, the app's strict
+ *     stem is `123-app`, they never match. (Hermes audit finding.)
+ *
+ * Callers in the strict pass leave both flags off to lock to exact
+ * matches; the relaxed pass enables the right flag per file kind.
  */
 export function stem(
   filename: string,
-  opts: { stripFaceTag?: boolean } = {},
+  opts: { stripFaceTag?: boolean; stripAppTag?: boolean } = {},
 ): string {
   const stripFaceTag = opts.stripFaceTag ?? false;
+  const stripAppTag = opts.stripAppTag ?? false;
   const base = filename.split(/[\\/]/).pop() ?? filename;
   const dot = base.lastIndexOf(".");
   let s = (dot > 0 ? base.slice(0, dot) : base).toLowerCase();
   if (stripFaceTag) {
     s = s.replace(/[-_](front|back|label|side|neck|primary)$/, "");
+  }
+  if (stripAppTag) {
+    s = s.replace(/[-_](app|application|cola|form|manifest)$/, "");
   }
   return s;
 }
@@ -138,7 +156,15 @@ export function pairByFilenameStem(files: File[]): PairingResult {
   const appsByRelaxed = new Map<string, File>();
   for (const app of applications) {
     appsByStrict.set(stem(app.name), app);
-    appsByRelaxed.set(stem(app.name, { stripFaceTag: true }), app);
+    // The relaxed map strips BOTH face tags AND app-side tags so an
+    // application named `123-app.pdf` (image side `123-front.jpg`)
+    // pairs cleanly. (Hermes audit fix.) appsByStrict still keys on
+    // the unstripped stem so an explicit `123-app.pdf` next to
+    // `123-app-back.jpg` won't lose its strict match.
+    appsByRelaxed.set(
+      stem(app.name, { stripFaceTag: true, stripAppTag: true }),
+      app,
+    );
   }
   const usedApps = new Set<File>();
 

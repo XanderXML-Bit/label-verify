@@ -64,4 +64,53 @@ describe("UploadZone", () => {
     const button = screen.getByRole("button", { name: TRIGGER_LABEL });
     expect(button).toBeDisabled();
   });
+
+  it("accepts files when browser reports empty MIME but the extension is allowed", async () => {
+    // UI audit blocker #3: Windows Explorer + Edge often return
+    // `f.type === ""` for .csv, .md, .docx, .heic. The previous strict
+    // `accept.includes(f.type)` filter rejected those, surfacing a
+    // misleading "unsupported type" error for files the OS picker
+    // had just shown. Now we fall back to extension → MIME.
+    //
+    // We exercise the drop path here, not the hidden-input `change`
+    // path: testing-library's `user.upload()` enforces the input's
+    // `accept` attribute against `File.type` before dispatching the
+    // change event, so an empty-type file never reaches the component
+    // in a test. Real browsers don't pre-filter — `accept` is only
+    // an OS-picker hint — so the production-relevant path is the
+    // drop handler, which forwards `e.dataTransfer.files` to our
+    // filterAccepted unconditionally.
+    const onFiles = vi.fn();
+    const { container } = render(<UploadZone onFiles={onFiles} />);
+    const dropTarget = container.querySelector('[aria-disabled="false"]');
+    if (!dropTarget) throw new Error("drop target not found");
+
+    const csv = new File(["a,b,c\n1,2,3"], "app-data.csv", { type: "" });
+    const dataTransfer = {
+      files: [csv],
+      types: ["Files"],
+    } as unknown as DataTransfer;
+    const { fireEvent } = await import("@testing-library/react");
+    fireEvent.drop(dropTarget, { dataTransfer });
+
+    expect(onFiles).toHaveBeenCalledTimes(1);
+    const arg = onFiles.mock.calls[0]?.[0] as File[];
+    expect(arg).toHaveLength(1);
+    expect(arg[0]?.name).toBe("app-data.csv");
+  });
+
+  it("still rejects unknown extensions with empty MIME", async () => {
+    const onFiles = vi.fn();
+    const { container } = render(<UploadZone onFiles={onFiles} />);
+    const dropTarget = container.querySelector('[aria-disabled="false"]');
+    if (!dropTarget) throw new Error("drop target not found");
+
+    const exe = new File(["MZ"], "evil.exe", { type: "" });
+    const dataTransfer = { files: [exe], types: ["Files"] } as unknown as DataTransfer;
+    const { fireEvent } = await import("@testing-library/react");
+    fireEvent.drop(dropTarget, { dataTransfer });
+
+    expect(onFiles).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(/Rejected 1 file/);
+  });
 });

@@ -14,19 +14,27 @@ const config: Config = {
         // High-contrast palette tuned for the 55+ reviewer audience.
         // Pass / Fail / Review never communicate by color alone — icon + word
         // are always present (see docs/UI-SPEC.md §1.5).
+        //
+        // Verdict-review uses yellow-800 (#854d0e) not yellow-700 (#a16207):
+        // the chip rendered at `text-xs` (12px) on `bg-yellow-100` (#fef3c7)
+        // needed 4.5:1 for WCAG AA small-text. #a16207 gave 4.33:1 (fail
+        // by 0.17) per the audit; #854d0e gives ~6.04:1 (passes both AA
+        // and AAA-large). Same darker shade applied to quality-low for
+        // visual consistency, even though quality-low's lighter amber-50
+        // background was technically at threshold.
         pass: "#15803d",
         fail: "#b91c1c",
-        review: "#a16207",
+        review: "#854d0e",
         // Verdict and Image-Quality use distinct hue families so the
         // reviewer learns to read the two columns separately.
         verdict: {
           pass: "#15803d",
           fail: "#b91c1c",
-          review: "#a16207",
+          review: "#854d0e",
         },
         quality: {
           good: "#1e40af",
-          low: "#a16207",
+          low: "#854d0e",
           bad: "#7c2d12",
         },
       },
