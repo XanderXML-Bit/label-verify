@@ -3,6 +3,7 @@
 import type { ExtractedFields, NetContents, ProducerAddress } from "@/lib/vision/types";
 import type { GovernmentWarningCheck } from "@/lib/validation/government-warning";
 import { QualityChip, VerdictChip } from "./StatusChip";
+import { ImageZoom } from "./ImageZoom";
 
 // ─── ExtractionOnlyResult ──────────────────────────────────────────────────
 //
@@ -111,14 +112,7 @@ export function ExtractionOnlyResult({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 md:col-span-1">
           {imagePreviewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload, not a remote image
-            <img
-              src={imagePreviewUrl}
-              alt="Submitted label preview"
-              loading="lazy"
-              decoding="async"
-              className="h-full max-h-96 w-full rounded-md object-contain"
-            />
+            <ImageZoom src={imagePreviewUrl} alt="Submitted label preview" />
           ) : (
             <div className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
               No preview

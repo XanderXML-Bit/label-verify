@@ -4,6 +4,64 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 7: surgical false-positive fix + image-zoom UI + user-batch fix] — 2026-05-13 late
+
+### What changed
+
+- **Wave 6's confidence-floor GW gate replaced by a narrow predicate.**
+  The wave-6 gate (`gov.confidence < 0.55` → REVIEW) was too aggressive
+  on the cross-pair bench: eliminated 5 Type I errors but added ~15
+  Type II over-reviews per ~33 PASS results — operator-prohibitive at
+  the 150 k applications/yr deployment scale. Wave-7 narrows the
+  trigger to the exact `boldFallbackOnlyPass` case: `gov.status === "pass"
+  && bold.status === "pass" && bold.confidence === 0.6` (the model-self-
+  report-only fallback in the validator). On trigger, the existing
+  second-opinion infrastructure fires — if the second cross-provider
+  model also reports bold = pass, the PASS verdict is restored
+  (independent two-model agreement substitutes for pixel measurement).
+  Disagreement keeps the verdict at REVIEW with a disagreement reason
+  surfaced in the UI's ⚖ panel. Test count: 489/489 passing.
+
+- **Image-zoom viewer on the result panel.** New `ImageZoom` component
+  (`src/app/components/ImageZoom.tsx`) wraps the submitted-label
+  thumbnail in a click-to-open modal with +/-/reset zoom controls, an
+  X close button, Escape-to-close, backdrop-click-to-close, and focus
+  trap. Used by both `SingleResult` and `ExtractionOnlyResult`. 7 unit
+  specs in `src/tests/ui/image-zoom.test.tsx`.
+
+- **User-reported batch failure.** A filename-keyed JSON manifest
+  (`{"image-001.jpg": {row}, "image-002.jpg": {row}, ...}` — a natural
+  reviewer-authored shape) was previously flattened into garbage column
+  names. Detector now expands the filename-keyed shape into a multi-row
+  manifest with an implicit `filename` column; a top-level `fields`
+  wrapper hoists directly to the row. Reproduced + fixed end-to-end
+  against production; 4 regression tests in `detect-manifest.test.ts`.
+
+- **`country_of_origin` is now nullish (string | null | undefined).**
+  TTB only requires country marking on imports (27 CFR §4.39 / §5.36);
+  US-domestic applications may legitimately omit it. The comparator's
+  null-declared branch handles both (null + label-also-empty → PASS;
+  null + label-shows-a-country → REVIEW). Resolves the 72 GT errors on
+  the cross-pair bench and the user's `ai-label-0016` batch failure.
+
+### Validation
+
+- 489 / 489 tests passing (was 478 → 489 across the wave: +7 image-
+  zoom + +2 wave-7 second-opinion + +4 detect-manifest + +3 country-
+  nullable + −1 retired confident-PASS-doesn't-fire-second-opinion).
+- Typecheck clean. Production build green via CI on every PR.
+- User's exact 12-image batch (`C:\Users\xande\Downloads\LabelVerify
+  Test Samples\`) now returns all 12 verdicts end-to-end against
+  production after deploy.
+
+### Scope and limitations refresh
+
+- README "Methods considered" rewritten in scientific prose (no take-
+  home framing). Models-benchmarked count corrected from 13 to 16.
+- ARCHITECTURE.md, TEST-STRATEGY.md, CORPORA.md rewritten to current-
+  state-only (no pre-correction narrative).
+- UI-SPEC.md archived (pre-implementation doc).
+
 ## [Comprehensive hardening pass — four audits + two waves of fixes] — 2026-05-13
 
 ### Why this exists
