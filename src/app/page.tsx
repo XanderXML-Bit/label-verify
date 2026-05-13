@@ -670,7 +670,7 @@ export default function Home() {
             two paragraphs to a screen the reviewer is trying to act on
             for the first time. Only surface it in detailed mode. */}
         <p className="detailed-only mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-          No application data? You can still extract what's on the label.
+          No application data? You can still extract what&apos;s on the label.
         </p>
       </header>
 

@@ -1,4 +1,3 @@
-import { parse as parseCsv } from "csv-parse/sync";
 import type { DeclaredFields } from "@/lib/types";
 import { rowToDeclared } from "./row-to-declared";
 import {
