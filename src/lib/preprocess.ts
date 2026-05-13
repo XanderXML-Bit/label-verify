@@ -40,24 +40,24 @@ export async function preprocessImage(
 
   const bytesIn = input.byteLength;
 
+  // Single sharp pipeline (no separate `.metadata()` pre-pass — the
+  // earlier double-pass cost ~20–50 ms per call for no extra signal).
+  // `withoutEnlargement: true` short-circuits when the input is already
+  // smaller than the target edge, so we can request resize unconditionally
+  // and the only paid cost is on images that actually need shrinking.
+  // The final `info.width` / `info.height` is read off the
+  // `toBuffer({ resolveWithObject: true })` result — sharp emits it
+  // post-resize without an extra decode.
   let pipeline = sharp(input, { failOn: "none" }).rotate(); // EXIF auto-orient
-
-  // Resize only if the longest edge exceeds the target.
-  const meta = await sharp(input).metadata();
-  const w = meta.width ?? 0;
-  const h = meta.height ?? 0;
-  if (Math.max(w, h) > maxEdge) {
-    pipeline = pipeline.resize({
-      width: w >= h ? maxEdge : undefined,
-      height: h > w ? maxEdge : undefined,
-      withoutEnlargement: true,
-    });
-  }
-
+  pipeline = pipeline.resize({
+    width: maxEdge,
+    height: maxEdge,
+    fit: "inside",
+    withoutEnlargement: true,
+  });
   if (autoContrast) {
     pipeline = pipeline.normalize();
   }
-
   const { data, info } = await pipeline
     .jpeg({ quality: 82, mozjpeg: true })
     .toBuffer({ resolveWithObject: true });

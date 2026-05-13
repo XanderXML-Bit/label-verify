@@ -464,6 +464,14 @@ export default function Home() {
   // the SSE stream opened, which felt unresponsive on slow networks).
   // Per user feedback 2026-05-13.
   const [batchSubmitting, setBatchSubmitting] = useState(false);
+  // filename → blob: URL map built at submit time so the BatchView
+  // can show a thumbnail per row and the drilldown panel can render
+  // the actual image the operator uploaded. State is cleared (and
+  // each URL revoked) when the user leaves the batch-running stage
+  // via reset() — see revokeIfPreview-equivalent below.
+  const [batchPreviewByFilename, setBatchPreviewByFilename] = useState<
+    Record<string, string>
+  >({});
   // Determinate-progress state for the batch flow. The bar accounts
   // for the three observable phases (upload, server-side pairing
   // through the four-stage pipeline, per-row verification) and uses
@@ -499,6 +507,25 @@ export default function Home() {
     setBatchPhase("uploading");
     setBatchUploadFraction(undefined);
     setBatchStartedAt(Date.now());
+    // Build a filename → blob: URL map for the batch view to show
+    // per-row thumbnails and per-drilldown image previews. Only IMAGE
+    // files (jpg/png/webp/heic) get a preview URL; application files
+    // (json/csv/pdf/etc.) are skipped. Each URL is revoked when the
+    // user leaves the batch-running stage via reset().
+    const previewMap: Record<string, string> = {};
+    const imageRe = /\.(jpe?g|png|webp|heic|heif)$/i;
+    for (const f of stage.files) {
+      if (imageRe.test(f.name)) {
+        try {
+          previewMap[f.name] = URL.createObjectURL(f);
+        } catch {
+          // Defensive: createObjectURL on a freshly-uploaded File
+          // shouldn't throw in any supported browser, but if it does
+          // we just fall back to the placeholder thumbnail.
+        }
+      }
+    }
+    setBatchPreviewByFilename(previewMap);
     const fd = new FormData();
     fd.append("manifest", manifest);
     for (const f of stage.files) fd.append(f.name, f);
@@ -638,6 +665,17 @@ export default function Home() {
 
   function reset() {
     revokeIfPreview(stage);
+    // Revoke batch preview blob: URLs so the browser can free the
+    // underlying image memory. Each was created in submitBatch and
+    // held only while the batch view was on screen.
+    for (const url of Object.values(batchPreviewByFilename)) {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        // ignore
+      }
+    }
+    setBatchPreviewByFilename({});
     setStage({ kind: "idle" });
     setAppPrefill(null);
     setBgAppParse({ kind: "idle" });
@@ -677,7 +715,14 @@ export default function Home() {
       {stage.kind === "idle" && (
         <>
           <UploadZone onFiles={handleFiles} />
-          <SampleAffordance onPick={handleSample} />
+          {/* Sample affordance is detailed-only. A non-technical
+              reviewer landing on the idle screen should see one
+              primary action (drop your label) — three "try a sample"
+              buttons compete for attention. Power users in detailed
+              mode still get the one-click demo path. */}
+          <div className="detailed-only">
+            <SampleAffordance onPick={handleSample} />
+          </div>
           {/* Review queue panel intentionally removed from the public
               idle screen — it required a DEBUG_TOKEN access code that
               confused non-operator visitors. Operators with the token
@@ -1061,6 +1106,7 @@ export default function Home() {
           batchId={stage.batchId}
           rows={stage.rows}
           onDone={() => undefined}
+          imagePreviewByFilename={batchPreviewByFilename}
         />
       )}
     </div>

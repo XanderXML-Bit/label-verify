@@ -768,7 +768,18 @@ export async function POST(req: Request) {
   // The SSE endpoint stays in the codebase (`/stream/[id]`) for any
   // local-dev / single-process consumer that wants it, but the
   // production UI now consumes the inline results.
-  const CONCURRENCY = 2;
+  // Concurrency scales with batch size up to a per-function ceiling.
+  // Small batches (≤ 4 items) get fully-parallel verification (one
+  // worker per item) which finishes a 5-image batch in ~3 s instead
+  // of ~9 s on the prior fixed-2 setting. Larger batches cap at 4
+  // so a 100-item batch still fits the 60-s POST window (100 × 3 s ÷
+  // 4 ≈ 75 s, with the 80 % provider-utilization safety margin
+  // absorbing the few slow tails). The Gemini RPM rate-limit budget
+  // bounds the floor — at 30 RPM and 3 s per call, 4 concurrent is
+  // ~12 calls in 36 s = 720 calls/hour, well under any quota the
+  // configured tier carries.
+  const MAX_INLINE_CONCURRENCY = 4;
+  const CONCURRENCY = Math.min(MAX_INLINE_CONCURRENCY, job.items.length);
   const startedAt = Date.now();
   let cursor = 0;
   async function pumpInline(): Promise<void> {
