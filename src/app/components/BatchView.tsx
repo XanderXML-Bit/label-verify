@@ -25,6 +25,15 @@ interface BatchViewProps {
   readonly batchId: string;
   readonly rows: BatchRow[];
   readonly onDone: (summary: BatchSummary) => void;
+  /**
+   * filename → blob: URL, built by the parent at submit time from
+   * the uploaded File objects. Used to render per-row thumbnails so
+   * the operator can visually associate each verdict with the image
+   * they sent, without re-fetching anything from the server. The
+   * drilldown panel also reads from this map. Omitted (or empty)
+   * disables thumbnails — falls back to a small placeholder.
+   */
+  readonly imagePreviewByFilename?: Readonly<Record<string, string>>;
 }
 
 export interface BatchSummary {
@@ -36,7 +45,12 @@ export interface BatchSummary {
 
 type Filter = "all" | "failed" | "review" | "pass" | "error";
 
-export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps) {
+export function BatchView({
+  batchId,
+  rows: initialRows,
+  onDone,
+  imagePreviewByFilename,
+}: BatchViewProps) {
   // Inline-batch detection (2026-05-13): if every row arrives already
   // in a terminal state (`done` or `error`), the POST returned inline
   // results — no SSE needed. Vercel serverless can't share the in-memory
@@ -237,6 +251,9 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
           <thead className="sticky top-0 bg-slate-50 text-left text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th scope="col" className="px-4 py-2 font-semibold">#</th>
+              <th scope="col" className="px-4 py-2 font-semibold">
+                <span className="sr-only">Thumbnail</span>
+              </th>
               <th scope="col" className="px-4 py-2 font-semibold">File</th>
               <th scope="col" className="px-4 py-2 font-semibold">Verdict</th>
               <th scope="col" className="px-4 py-2 font-semibold">Image quality</th>
@@ -248,14 +265,23 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {visibleRows.map((r) => (
-              <Row key={r.index} row={r} onOpen={() => setDrilled(r)} />
+              <Row
+                key={r.index}
+                row={r}
+                onOpen={() => setDrilled(r)}
+                previewUrl={imagePreviewByFilename?.[r.filename]}
+              />
             ))}
           </tbody>
         </table>
       </div>
 
       {drilled && drilled.status === "done" && (
-        <DrilldownPanel row={drilled} onClose={() => setDrilled(null)} />
+        <DrilldownPanel
+          row={drilled}
+          onClose={() => setDrilled(null)}
+          previewUrl={imagePreviewByFilename?.[drilled.filename] ?? ""}
+        />
       )}
 
       {done && (
@@ -301,9 +327,15 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
 function DrilldownPanel({
   row,
   onClose,
+  previewUrl,
 }: {
   readonly row: BatchRow & { status: "done" };
   readonly onClose: () => void;
+  /** blob: URL built by the parent at submit time. Empty string when
+   *  the batch was re-opened from a URL or some other path without
+   *  access to the original File objects — SingleResult renders the
+   *  "No preview" stub in that case. */
+  readonly previewUrl: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -368,12 +400,12 @@ function DrilldownPanel({
         </button>
       </div>
       <div className="mt-4">
-        {/* Batch view doesn't have an image preview to show — pass an
-            empty URL so SingleResult renders the "No preview" stub. We
-            also no-op onAnother since the parent owns reset. */}
+        {/* Parent passes a blob: URL keyed by filename so the drilldown
+            renders the exact image the operator uploaded. Empty string
+            falls through to SingleResult's "No preview" stub. */}
         <SingleResult
           result={row.result}
-          imagePreviewUrl=""
+          imagePreviewUrl={previewUrl}
           onAnother={onClose}
         />
       </div>
@@ -381,10 +413,47 @@ function DrilldownPanel({
   );
 }
 
-function Row({ row, onOpen }: { readonly row: BatchRow; readonly onOpen: () => void }) {
+function Row({
+  row,
+  onOpen,
+  previewUrl,
+}: {
+  readonly row: BatchRow;
+  readonly onOpen: () => void;
+  /** blob: URL built by the parent at submit time. The thumbnail
+   *  cell falls back to a placeholder when undefined (e.g. a batch
+   *  view re-opened from a URL without access to the original
+   *  File objects). */
+  readonly previewUrl?: string;
+}) {
   return (
     <tr className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <td className="px-4 py-2 text-slate-500 dark:text-slate-400">{row.index + 1}</td>
+      <td className="px-4 py-2">
+        {previewUrl ? (
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`Open details for ${row.filename}`}
+            className="block h-12 w-12 overflow-hidden rounded border border-slate-200 bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-700 dark:bg-slate-800"
+            title={`Open details for ${row.filename}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL from the user's upload */}
+            <img
+              src={previewUrl}
+              alt={`Thumbnail of ${row.filename}`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+          </button>
+        ) : (
+          <div
+            aria-hidden
+            className="h-12 w-12 rounded border border-dashed border-slate-300 bg-slate-100 dark:border-slate-600 dark:bg-slate-800"
+          />
+        )}
+      </td>
       <td className="px-4 py-2 font-mono text-xs text-slate-800 dark:text-slate-200">{row.filename}</td>
       <td className="px-4 py-2">
         {row.status === "done" ? (
