@@ -147,6 +147,29 @@ describe("compareCountry", () => {
     expect(compareCountry("Germany", "Frankreich", 0.9).status).toBe("fail");
     expect(compareCountry("Japan", "中国", 0.9).status).toBe("fail");
   });
+
+  // Null-declared branch: TTB only requires country marking on imports
+  // (27 CFR §4.39 / §5.36). Applications for US-domestic labels may
+  // legitimately omit `country_of_origin`, and the schema accepts
+  // `null` to reflect that. The comparator must agree:
+  //   - null declared + null extracted → PASS (both agree no marking)
+  //   - null declared + extracted shows a country → REVIEW (might be
+  //     an undeclared import; route to human)
+  it("null declared + null extracted → PASS (both agree no marking)", () => {
+    const r = compareCountry(null, null, 0.9);
+    expect(r.status).toBe("pass");
+    expect(r.expected).toBeNull();
+    expect(r.actual).toBeNull();
+  });
+  it("null declared + extracted shows a country → REVIEW (possible undeclared import)", () => {
+    const r = compareCountry(null, "Italy", 0.9);
+    expect(r.status).toBe("review");
+    expect(r.reason).toMatch(/Italy/);
+  });
+  it("empty-string declared treated as null (defensive: some parsers emit '' for missing)", () => {
+    const r = compareCountry("", null, 0.9);
+    expect(r.status).toBe("pass");
+  });
 });
 
 describe("compareClass", () => {

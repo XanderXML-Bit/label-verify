@@ -171,10 +171,34 @@ function isUsaCanonical(c: string): boolean {
 }
 
 export function compareCountry(
-  declared: string,
+  declared: string | null,
   extracted: string | null,
   extractedConfidence: number,
 ): FieldComparison {
+  // Declared = null means the applicant did not list a country, which
+  // is legitimate for US-domestic labels (TTB only mandates country
+  // marking on imports per 27 CFR §4.39 / §5.36). PASS if the label
+  // also has no country marking; REVIEW if the label DOES mark one
+  // (the applicant should confirm whether they meant to declare it).
+  if (declared === null || declared === "") {
+    if (!extracted) {
+      return {
+        field: "country_of_origin",
+        status: "pass",
+        expected: null,
+        actual: null,
+        confidence: 0.7,
+      };
+    }
+    return {
+      field: "country_of_origin",
+      status: "review",
+      expected: null,
+      actual: extracted,
+      confidence: 0.5,
+      reason: `Application did not declare a country of origin, but the label prints "${extracted}". Verify whether the applicant intended to declare it.`,
+    };
+  }
   const a = canonicalize(declared);
   if (!extracted) {
     if (isUsaCanonical(a.canon)) {
