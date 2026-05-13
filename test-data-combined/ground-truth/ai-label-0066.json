@@ -12,7 +12,7 @@
     "brand_name": "Flicker Road",
     "class_type": "Vodka Soda",
     "class_category": "distilled_spirits",
-    "abv_percent": 7.0,
+    "abv_percent": 7,
     "net_contents": {
       "value": 12,
       "unit": "fl_oz"
@@ -25,15 +25,22 @@
       "postal_code": "78701",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
-      "text_matches_regulation": true,
-      "prefix_all_caps": true,
-      "prefix_bold": true,
-      "meets_size_minimum": true
+      "text_matches_regulation": null,
+      "prefix_all_caps": null,
+      "prefix_bold": null,
+      "meets_size_minimum": null
     }
   },
   "gov_warning_case": "compliant",
-  "notes": "Handheld can photo has horizontal motion blur."
+  "notes": "Handheld can photo has horizontal motion blur.",
+  "audit_notes": [
+    {
+      "date": "2026-05-12",
+      "reviewer": "sub-agent + manual confirm",
+      "note": "Motion-blur degradation makes per-flag GW verification impossible. Set the four verifiable bool flags to null so the bench scorer cannot claim verified-compliant on this image."
+    }
+  ]
 }

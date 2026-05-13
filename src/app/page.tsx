@@ -83,7 +83,16 @@ type Stage =
        *  generic "Try again" that just dumps the user back to idle. */
       retrySample?: Sample;
     }
-  | { kind: "batch-pending"; files: File[]; submitError?: string }
+  | {
+      kind: "batch-pending";
+      files: File[];
+      /** True when the drop included at least one application file
+       *  (PDF/JSON/CSV/MD/TXT/DOCX) — the server's auto-pair path
+       *  handles these directly, so the UI skips the manifest-paste
+       *  screen and shows a "ready to verify" summary instead. */
+      autoPair: boolean;
+      submitError?: string;
+    }
   | { kind: "batch-running"; batchId: string; rows: BatchRow[] };
 
 export default function Home() {
@@ -241,9 +250,16 @@ export default function Home() {
       return;
     }
 
-    // Multiple images: batch mode. Apps tag along — the batch route
-    // auto-pairs by filename stem if no manifest is provided.
-    setStage({ kind: "batch-pending", files: [...images, ...apps] });
+    // Multiple images: batch mode. If application files came along,
+    // the server's auto-pair path handles them — the user never sees
+    // the manifest paste screen. If only images were dropped, fall
+    // back to the manifest paste screen so the user can supply
+    // declared fields for each.
+    setStage({
+      kind: "batch-pending",
+      files: [...images, ...apps],
+      autoPair: apps.length > 0,
+    });
   }
 
   /** Parse an application file via /api/application/parse and feed the
@@ -412,6 +428,7 @@ export default function Home() {
         setStage({
           kind: "batch-pending",
           files: stage.files,
+          autoPair: stage.autoPair,
           submitError: friendlyError(
             err.error ?? `HTTP ${res.status}`,
             res.status,
@@ -434,6 +451,7 @@ export default function Home() {
       setStage({
         kind: "batch-pending",
         files: stage.files,
+        autoPair: stage.autoPair,
         submitError: friendlyError((e as Error).message),
       });
     }
@@ -668,14 +686,140 @@ export default function Home() {
         </div>
       )}
 
-      {stage.kind === "batch-pending" && (
+      {stage.kind === "batch-pending" && stage.autoPair && (() => {
+        // Auto-pair path: the drop contained at least one application
+        // file alongside the images. The server's auto-pair handler
+        // figures out which app goes with which image by filename
+        // stem (case-insensitive, face-tag-stripped, app-tag-stripped)
+        // and parses each app file — no manifest paste required. We
+        // show the reviewer a "Detected" summary so they see what
+        // will pair before they click Verify.
+        const imageFiles = stage.files.filter((f) => f.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+        const appFiles = stage.files.filter((f) => !imageFiles.includes(f));
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                Batch upload — {imageFiles.length} image{imageFiles.length === 1 ? "" : "s"} + {appFiles.length} application file{appFiles.length === 1 ? "" : "s"}
+              </h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                We&apos;ll pair each image with its matching application
+                file by filename stem (case-insensitive, face-tag and
+                app-tag aware). PDFs without extractable text auto-fall-
+                back to vision OCR. Hit <strong>Verify batch</strong> to
+                start.
+              </p>
+              {stage.submitError && (
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950/60 dark:text-red-200"
+                >
+                  <p className="font-semibold">Batch upload failed</p>
+                  <p className="mt-0.5">{stage.submitError}</p>
+                </div>
+              )}
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                  <div className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Images ({imageFiles.length})
+                  </div>
+                  <ul className="mt-1 list-inside list-disc font-mono text-xs text-slate-700 dark:text-slate-200">
+                    {imageFiles.slice(0, 8).map((f) => (
+                      <li key={f.name}>{f.name}</li>
+                    ))}
+                    {imageFiles.length > 8 && (
+                      <li className="list-none text-slate-500 dark:text-slate-400">
+                        …and {imageFiles.length - 8} more
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                <div className="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                  <div className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Application files ({appFiles.length})
+                  </div>
+                  <ul className="mt-1 list-inside list-disc font-mono text-xs text-slate-700 dark:text-slate-200">
+                    {appFiles.slice(0, 8).map((f) => (
+                      <li key={f.name}>{f.name}</li>
+                    ))}
+                    {appFiles.length > 8 && (
+                      <li className="list-none text-slate-500 dark:text-slate-400">
+                        …and {appFiles.length - 8} more
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Auto-pair path: don't send a manifest. Empty
+                    // string short-circuits the server's manifest
+                    // parser, which routes to the auto-pair branch.
+                    setManifestText("");
+                    void submitBatch();
+                  }}
+                  className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                >
+                  Verify batch ({imageFiles.length} pair{imageFiles.length === 1 ? "" : "s"})
+                </button>
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+              </div>
+              <details className="mt-3">
+                <summary className="cursor-pointer text-sm text-slate-500 dark:text-slate-400">
+                  Need to override pairing or edit fields per image?
+                </summary>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  Paste a CSV / JSON manifest below to override auto-pairing.
+                  Required column: <code>filename</code>. Optional:{" "}
+                  <code>brand_name</code>, <code>class_type</code>,{" "}
+                  <code>class_category</code>, <code>abv_percent</code>,{" "}
+                  <code>net_contents</code>, <code>producer</code>,{" "}
+                  <code>country_of_origin</code>.
+                </p>
+                <textarea
+                  rows={6}
+                  value={manifestText}
+                  onChange={(e) => setManifestText(e.target.value)}
+                  aria-label="Batch manifest override (CSV or JSON)"
+                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                  placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Stone's Throw IPA,India Pale Ale,beer,6.4,12 fl_oz,USA`}
+                />
+                {manifestText.trim() && (
+                  <button
+                    type="button"
+                    onClick={submitBatch}
+                    className="mt-2 min-h-[44px] rounded-md border border-blue-500 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
+                  >
+                    Submit with manifest override
+                  </button>
+                )}
+              </details>
+            </div>
+          </div>
+        );
+      })()}
+
+      {stage.kind === "batch-pending" && !stage.autoPair && (
         <div className="space-y-4">
           <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               Batch upload — {stage.files.length} images
             </h3>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Paste a manifest (CSV or JSON) below. Required column:{" "}
+              No application files were dropped, so we need declared fields
+              per image. <strong>The easiest path is to redo the drop including
+              your application files</strong> (PDF / JSON / CSV / MD / TXT / DOCX);
+              we&apos;ll pair them automatically by filename stem.
+              Otherwise paste a manifest below — required column:{" "}
               <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">filename</code>.
               Other supported columns:{" "}
               <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">brand_name</code>,{" "}
@@ -722,9 +866,7 @@ export default function Home() {
                   // per uploaded image (filename pre-filled, other
                   // columns blank). Lets the reviewer fill declared
                   // fields per image without having to memorise the
-                  // header. Per REMAINING-IMPROVEMENTS F7 — a
-                  // lightweight take on the "fill each image's
-                  // declared fields manually" affordance.
+                  // header.
                   const header =
                     "filename,brand_name,class_type,class_category,abv_percent,net_contents,producer,country_of_origin";
                   const rows = stage.files

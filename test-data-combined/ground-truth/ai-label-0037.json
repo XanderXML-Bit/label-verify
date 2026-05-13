@@ -9,7 +9,7 @@
   "label_face": "front",
   "container_size_ml": 473,
   "fields": {
-    "brand_name": "Mountain Lark Cider",
+    "brand_name": "Mountain Lark",
     "class_type": "Dry Hard Cider",
     "class_category": "beer",
     "abv_percent": 6.2,
@@ -18,7 +18,7 @@
       "unit": "fl_oz"
     },
     "producer": "Mountain Lark Cidery, Burlington, VT",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

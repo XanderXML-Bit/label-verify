@@ -12,7 +12,7 @@
     "brand_name": "Glassfire Cellars",
     "class_type": "Chardonnay",
     "class_category": "wine",
-    "abv_percent": 13.0,
+    "abv_percent": 13,
     "net_contents": {
       "value": 750,
       "unit": "ml"
@@ -25,7 +25,7 @@
       "postal_code": "94558",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

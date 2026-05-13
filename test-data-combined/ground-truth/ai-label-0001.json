@@ -18,7 +18,7 @@
       "unit": "fl_oz"
     },
     "producer": "Mill Creek Beverage Co., Asheville, NC",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

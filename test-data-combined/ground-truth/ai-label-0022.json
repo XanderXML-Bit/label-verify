@@ -11,14 +11,14 @@
   "fields": {
     "brand_name": "Half-Note",
     "class_type": "Porter",
-    "class_category": "fortified_wine",
+    "class_category": "beer",
     "abv_percent": 6.3,
     "net_contents": {
       "value": 12,
       "unit": "fl_oz"
     },
     "producer": "Half Note Beverage Co., Asheville, NC",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": false,
       "text_matches_regulation": false,

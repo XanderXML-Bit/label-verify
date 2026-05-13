@@ -10,7 +10,7 @@
     "brand_name": "Honey Compass",
     "class_type": "Semi-Sweet Mead",
     "class_category": "wine",
-    "abv_percent": 12.0,
+    "abv_percent": 12,
     "net_contents": {
       "value": 750,
       "unit": "ml"
@@ -23,7 +23,7 @@
       "postal_code": "53703",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

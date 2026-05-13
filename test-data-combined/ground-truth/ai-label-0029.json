@@ -18,7 +18,7 @@
       "unit": "ml"
     },
     "producer": "Vagrant Tide Beverage Co., New Orleans, LA",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

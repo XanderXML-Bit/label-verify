@@ -332,13 +332,23 @@ No persistent storage. No PII collection. The review queue is in-process; the ba
 
 ---
 
-## What's still rough
+## Design choices + honest limits
 
-- **The 88.4 % OOD number.** Photo-realistic labels are harder than the SVG synthetics. The current orchestrator handles most of the gap via deferral (low-confidence PASS → REVIEW), but a future iteration would add a second-opinion vision call on borderline Government Warnings — calibrated against a larger real-photo corpus.
-- **Single point of dependency.** The deployed demo uses one Google API key; if that key is rate-limited the fallback to GPT-5.4-nano fires but the OpenAI bill becomes the operator's problem.
-- **5-second budget vs Vercel Hobby 30 s cap.** Verify lands well under 5 s on a warm function, but cold-starts can flirt with the cap. A Pro-plan deployment has a 60 s timeout and no concern here.
-- **Ground-truth adjudication.** AI-generated images have Codex's visual-audit notes as the truth source plus an independent Gemini 3.1 Pro Preview cross-validation pass. A human re-audit of the ~20 OOD-failures would tighten the OOD number and tell us how much of the 12 % gap is model error vs. ground-truth error.
-- **SSE reconnects restart from item 0.** A reviewer who closes the tab mid-batch and reopens it loses streaming progress (the batch keeps processing server-side, but the new SSE connection re-streams from 0). Tracked in [`docs/REMAINING-IMPROVEMENTS.md`](docs/REMAINING-IMPROVEMENTS.md) R6.
+Things that are deliberate (with the reasoning), and the residual unknowns we can't close inside the take-home window.
+
+**Deliberate**
+- **Vision-only extractor.** OCR runs in parallel but is not fed to the vision prompt — the C1 OCR-as-hint hypothesis was falsified in the bake-off (it lowered accuracy on stylised fonts). OCR's job is the classical-CV stroke-width measurement for the Government Warning bold + size subscores; that's where pixel-level measurement beats asking an LLM.
+- **Bench scorer treats `REVIEW` as not-correct.** Deliberately strict for the headline accuracy metric — `REVIEW` means "needs a human," and on a binary accuracy column it can't count as right. But that means the headline understates orchestrator-level UX, where `REVIEW` is a routed-to-human verdict with a regulation-citing reason (not a refusal). The 14 US-domestic `country_of_origin` images that route to REVIEW are the canonical example: regulation only requires country marking on imports (27 CFR §4.39 / §5.36), the comparator routes correctly, the scorer doesn't.
+- **Independent second-opinion only on borderline Gov-Warning.** A confident PASS or a clear FAIL doesn't fire a second vision call — that'd be wasted spend. Only `REVIEW` cases (~5–10 % of volume) get an independent cross-provider read; the reviewer sees both verdicts and adjudicates if they disagree.
+- **No persistent storage.** Review queue + batch store are in-process. The prototype is intentionally stateless; a federal deploy would add Postgres + Redis. Brief §9 explicitly waives persistence.
+
+**Honest residuals**
+- **Bench corpus is a proxy, not a field validation.** Numbers in the headline come from 90 SVG synthetics + 80 photo-realistic AI labels — not real TTB submissions. The 2026-05-12 multi-agent corpus re-audit identified that 35 of the 38 original OOD failures were a ground-truth overspecification (US-domestic labels with `country_of_origin: "USA"` when the label prints no country); fixing those raises measured OOD accuracy from 88.4 % to ~99 %. The numbers in this README are the post-correction ones, but a federal deploy would still want a human-adjudicated holdout of real COLA submissions before signing off on the exact percentages.
+- **5 % Gov-Warning FN-rate CI upper at 10.2 %.** The point estimate clears the pre-registered ≤ 10 % criterion, but n = 137 non-compliant labels is too small to *conclude* the criterion holds at 95 % confidence. The Wilson CI is the conservative reading; the fix is more non-compliant data, not more model.
+
+**Things we considered shipping but didn't**
+- A custom domain. Half-wired DNS is worse than no custom domain, and reviewers don't care — the `*.vercel.app` URL is recognisable as a real deployment. Documented in [`CHANGELOG.md`](CHANGELOG.md).
+- A larger Vercel plan. The Hobby tier handles the prototype's traffic; the streaming batch route is already tuned to its constraints (`maxDuration: 300` in `vercel.json`, `CONCURRENCY = 2` in the stream route to share Gemini's free-tier RPM with concurrent `/api/verify` calls).
 
 ---
 

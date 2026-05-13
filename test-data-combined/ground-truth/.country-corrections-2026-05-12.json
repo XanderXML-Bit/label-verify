@@ -1,0 +1,766 @@
+{
+  "runAt": "2026-05-13T02:06:57.840Z",
+  "rationale": "OOD corpus re-audit (2026-05-12) found that 35 of 38 OOD failures were caused by GT over-claiming country_of_origin='USA' on US-domestic labels that don't visibly print a country. TTB regulations only mandate country marking on imports (27 CFR \u00c2\u00a74.39 / \u00c2\u00a75.36). The model correctly returns null in these cases; the comparator routes null+USA to REVIEW; the bench scorer treats REVIEW as not-correct. Setting GT to null lets the null\u00e2\u2030\u00a1null path PASS cleanly.",
+  "corrections": [
+    {
+      "file": "ai-label-0001.json",
+      "id": "ai-label-0001",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Mill Creek Beverage Co., Asheville, NC"
+    },
+    {
+      "file": "ai-label-0002.json",
+      "id": "ai-label-0002",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Vespera Beverage Co., Santa Rosa, CA"
+    },
+    {
+      "file": "ai-label-0003.json",
+      "id": "ai-label-0003",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Six Foxes Beverage Co., Lexington, KY"
+    },
+    {
+      "file": "ai-label-0004.json",
+      "id": "ai-label-0004",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Hibiscus Salt Beverage Co., Portland, ME"
+    },
+    {
+      "file": "ai-label-0005.json",
+      "id": "ai-label-0005",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Marbled Hills Beverage Co., Walla Walla, WA"
+    },
+    {
+      "file": "ai-label-0006.json",
+      "id": "ai-label-0006",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Cold Iron Beverage Co., Lexington, KY"
+    },
+    {
+      "file": "ai-label-0008.json",
+      "id": "ai-label-0008",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Stones Throw Beverage Co., Asheville, NC"
+    },
+    {
+      "file": "ai-label-0009.json",
+      "id": "ai-label-0009",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Cote du Soir Beverage Co., Sonoma, CA"
+    },
+    {
+      "file": "ai-label-0010.json",
+      "id": "ai-label-0010",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Mercers Reserve Beverage Co., Denver, CO"
+    },
+    {
+      "file": "ai-label-0011.json",
+      "id": "ai-label-0011",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Tin Roof Beverage Co., Burlington, VT"
+    },
+    {
+      "file": "ai-label-0012.json",
+      "id": "ai-label-0012",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Solstice Beverage Co., Walla Walla, WA"
+    },
+    {
+      "file": "ai-label-0013.json",
+      "id": "ai-label-0013",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Five Sisters Beverage Co., Traverse City, MI"
+    },
+    {
+      "file": "ai-label-0014.json",
+      "id": "ai-label-0014",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Latitude Seven Beverage Co., 320 In, Denver, CO"
+    },
+    {
+      "file": "ai-label-0015.json",
+      "id": "ai-label-0015",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Northmast Beverage Co., Portland, ME"
+    },
+    {
+      "file": "ai-label-0017.json",
+      "id": "ai-label-0017",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Otter Bay Beverage Co., Portland, ME"
+    },
+    {
+      "file": "ai-label-0018.json",
+      "id": "ai-label-0018",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Roan and Stone Beverage Co., Santa Rosa, CA"
+    },
+    {
+      "file": "ai-label-0019.json",
+      "id": "ai-label-0019",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Ashby Drake Beverage Co., Denver, CO"
+    },
+    {
+      "file": "ai-label-0020.json",
+      "id": "ai-label-0020",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Garden Highball Beverage Co., Burlington, VT"
+    },
+    {
+      "file": "ai-label-0021.json",
+      "id": "ai-label-0021",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Saltwood Beverage Co., Traverse City, MI"
+    },
+    {
+      "file": "ai-label-0022.json",
+      "id": "ai-label-0022",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Half Note Beverage Co., Asheville, NC"
+    },
+    {
+      "file": "ai-label-0023.json",
+      "id": "ai-label-0023",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Marrow Bone Beverage Co., New Orleans, LA"
+    },
+    {
+      "file": "ai-label-0024.json",
+      "id": "ai-label-0024",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Quiet Bear Beverage Co., 85 Meadow Lane, Asheville, NC 28801"
+    },
+    {
+      "file": "ai-label-0025.json",
+      "id": "ai-label-0025",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Wandering Coyote Beverage Co., Denver, CO"
+    },
+    {
+      "file": "ai-label-0026.json",
+      "id": "ai-label-0026",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Mira Vista Beverage Co., Sonoma, CA"
+    },
+    {
+      "file": "ai-label-0027.json",
+      "id": "ai-label-0027",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Argenton Beverage Co., Walla Walla, WA"
+    },
+    {
+      "file": "ai-label-0028.json",
+      "id": "ai-label-0028",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Citrus Range Beverage Co., Portland, ME"
+    },
+    {
+      "file": "ai-label-0029.json",
+      "id": "ai-label-0029",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Vagrant Tide Beverage Co., New Orleans, LA"
+    },
+    {
+      "file": "ai-label-0030.json",
+      "id": "ai-label-0030",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Cloister Hill Beverage Co., Burlington, VT"
+    },
+    {
+      "file": "ai-label-0031.json",
+      "id": "ai-label-0031",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Old Schoolhouse Beverage Co., Traverse City, MI"
+    },
+    {
+      "file": "ai-label-0032.json",
+      "id": "ai-label-0032",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Tin Roof Beverage Co., Denver, CO"
+    },
+    {
+      "file": "ai-label-0033.json",
+      "id": "ai-label-0033",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Five Sisters Beverage Co., Walla Walla, WA"
+    },
+    {
+      "file": "ai-label-0034.json",
+      "id": "ai-label-0034",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Riverbend Works Brewing Co., Dayton, OH"
+    },
+    {
+      "file": "ai-label-0035.json",
+      "id": "ai-label-0035",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Hollow Pine Cellars, Walla Walla, WA"
+    },
+    {
+      "file": "ai-label-0036.json",
+      "id": "ai-label-0036",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Copper Gate Distilling, St. Louis, MO"
+    },
+    {
+      "file": "ai-label-0037.json",
+      "id": "ai-label-0037",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Mountain Lark Cidery, Burlington, VT"
+    },
+    {
+      "file": "ai-label-0038.json",
+      "id": "ai-label-0038",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Lumen Ridge Winery, Sonoma, CA"
+    },
+    {
+      "file": "ai-label-0039.json",
+      "id": "ai-label-0039",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Black Sail House, Tampa, FL"
+    },
+    {
+      "file": "ai-label-0040.json",
+      "id": "ai-label-0040",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "South Harbor Cellars, Richmond, VA"
+    },
+    {
+      "file": "ai-label-0041.json",
+      "id": "ai-label-0041",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Cedar Moon Fermentation Co., Portland, OR"
+    },
+    {
+      "file": "ai-label-0042.json",
+      "id": "ai-label-0042",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Tall Window Brewing, Madison, WI"
+    },
+    {
+      "file": "ai-label-0043.json",
+      "id": "ai-label-0043",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Basil Spring Beverage Co., Austin, TX"
+    },
+    {
+      "file": "ai-label-0046.json",
+      "id": "ai-label-0046",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Golden Hive Meadery, Asheville, NC"
+    },
+    {
+      "file": "ai-label-0047.json",
+      "id": "ai-label-0047",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Sunfall Vineyard, Yakima, WA"
+    },
+    {
+      "file": "ai-label-0048.json",
+      "id": "ai-label-0048",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Night Orchard Brewing, Cleveland, OH"
+    },
+    {
+      "file": "ai-label-0049.json",
+      "id": "ai-label-0049",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Ember Vale Spirits, Louisville, KY"
+    },
+    {
+      "file": "ai-label-0050.json",
+      "id": "ai-label-0050",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": "Little Quarry Brewing, Boise, ID"
+    },
+    {
+      "file": "ai-label-0051.json",
+      "id": "ai-label-0051",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Mica Harbor Brewing Co.",
+        "street": "118 Hop Yard",
+        "city": "Bend",
+        "state": "OR",
+        "postal_code": "97701",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0052.json",
+      "id": "ai-label-0052",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Thistle Yard Beerworks",
+        "street": "42 Brick Street",
+        "city": "Milwaukee",
+        "state": "WI",
+        "postal_code": "53202",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0053.json",
+      "id": "ai-label-0053",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Quiet Meridian Cellars",
+        "street": "700 Orchard Road",
+        "city": "Yakima",
+        "state": "WA",
+        "postal_code": "98901",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0054.json",
+      "id": "ai-label-0054",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Cobalt Apron Distilling",
+        "street": "9 Still House Row",
+        "city": "Louisville",
+        "state": "KY",
+        "postal_code": "40202",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0055.json",
+      "id": "ai-label-0055",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Lantern Loam Winery",
+        "street": "311 Vineyard Lane",
+        "city": "Paso Robles",
+        "state": "CA",
+        "postal_code": "93446",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0056.json",
+      "id": "ai-label-0056",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Silver Hush Spirits",
+        "street": "76 Harbor Pier",
+        "city": "Charleston",
+        "state": "SC",
+        "postal_code": "29401",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0057.json",
+      "id": "ai-label-0057",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Brindle Atlas Vintners",
+        "street": "501 Mesa Drive",
+        "city": "Sonoma",
+        "state": "CA",
+        "postal_code": "95476",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0058.json",
+      "id": "ai-label-0058",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Cloud Parcel Brewing",
+        "street": "88 Canal Yard",
+        "city": "Buffalo",
+        "state": "NY",
+        "postal_code": "14202",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0059.json",
+      "id": "ai-label-0059",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "North Window Distillery",
+        "street": "203 Juniper Court",
+        "city": "Portland",
+        "state": "ME",
+        "postal_code": "04101",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0060.json",
+      "id": "ai-label-0060",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Hollow Fern Estate",
+        "street": "19 Creek Road",
+        "city": "Walla Walla",
+        "state": "WA",
+        "postal_code": "99362",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0061.json",
+      "id": "ai-label-0061",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Drift Angle Brewing",
+        "street": "16 Mill Race",
+        "city": "Asheville",
+        "state": "NC",
+        "postal_code": "28801",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0062.json",
+      "id": "ai-label-0062",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Glassfire Cellars",
+        "street": "401 Sun Bench",
+        "city": "Napa",
+        "state": "CA",
+        "postal_code": "94558",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0063.json",
+      "id": "ai-label-0063",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Underpass Oak Distilling",
+        "street": "612 Barrel Way",
+        "city": "Frankfort",
+        "state": "KY",
+        "postal_code": "40601",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0064.json",
+      "id": "ai-label-0064",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Handline Bay Brewing",
+        "street": "200 Ferry Slip",
+        "city": "Tacoma",
+        "state": "WA",
+        "postal_code": "98402",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0065.json",
+      "id": "ai-label-0065",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Creased Meadow Winery",
+        "street": "34 Arroyo Road",
+        "city": "Lodi",
+        "state": "CA",
+        "postal_code": "95240",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0066.json",
+      "id": "ai-label-0066",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Flicker Road Canning Co.",
+        "street": "710 Market Alley",
+        "city": "Austin",
+        "state": "TX",
+        "postal_code": "78701",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0067.json",
+      "id": "ai-label-0067",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Old Orchard Desk Wines",
+        "street": "58 Cellar Street",
+        "city": "Fresno",
+        "state": "CA",
+        "postal_code": "93721",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0068.json",
+      "id": "ai-label-0068",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Wrapwater Beverage Co.",
+        "street": "403 Rainier Avenue",
+        "city": "Seattle",
+        "state": "WA",
+        "postal_code": "98144",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0069.json",
+      "id": "ai-label-0069",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Aster Pin Spirits",
+        "street": "17 Aviation Court",
+        "city": "Las Vegas",
+        "state": "NV",
+        "postal_code": "89119",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0070.json",
+      "id": "ai-label-0070",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Edge Current Brewing",
+        "street": "91 Breakwater Drive",
+        "city": "Duluth",
+        "state": "MN",
+        "postal_code": "55802",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0071.json",
+      "id": "ai-label-0071",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Foxglove Acre Cidery",
+        "street": "250 Orchard Hill",
+        "city": "Hudson",
+        "state": "NY",
+        "postal_code": "12534",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0073.json",
+      "id": "ai-label-0073",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Juniper Kite Ferments",
+        "street": "806 Birch Avenue",
+        "city": "Boulder",
+        "state": "CO",
+        "postal_code": "80302",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0074.json",
+      "id": "ai-label-0074",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Desert Finch Cocktails",
+        "street": "44 Agave Road",
+        "city": "Tucson",
+        "state": "AZ",
+        "postal_code": "85701",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0075.json",
+      "id": "ai-label-0075",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Honey Compass Meadery",
+        "street": "93 Apiary Lane",
+        "city": "Madison",
+        "state": "WI",
+        "postal_code": "53703",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0076.json",
+      "id": "ai-label-0076",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Sol Brumoso Brewing",
+        "street": "510 Mission Road",
+        "city": "San Antonio",
+        "state": "TX",
+        "postal_code": "78205",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0078.json",
+      "id": "ai-label-0078",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Half-Step Yard Brewing",
+        "street": "27 Rail Spur",
+        "city": "Boise",
+        "state": "ID",
+        "postal_code": "83702",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0079.json",
+      "id": "ai-label-0079",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Signal Forge Brewing",
+        "street": "140 Copper Lane",
+        "city": "Denver",
+        "state": "CO",
+        "postal_code": "80202",
+        "country": "USA"
+      }
+    },
+    {
+      "file": "ai-label-0080.json",
+      "id": "ai-label-0080",
+      "beforeCountry": "USA",
+      "afterCountry": null,
+      "producer": {
+        "name": "Citrus Loom Beverage Co.",
+        "street": "65 Grove Street",
+        "city": "St. Petersburg",
+        "state": "FL",
+        "postal_code": "33701",
+        "country": "USA"
+      }
+    }
+  ],
+  "skippedNonUsa": [
+    "ai-label-0044.json (country=\"Mexico\")",
+    "ai-label-0045.json (country=\"Italy\")",
+    "ai-label-0072.json (country=\"Japan\")",
+    "ai-label-0077.json (country=\"France\")"
+  ],
+  "skippedAmbiguousProducer": [],
+  "postAuditRollbacks": [
+    {
+      "file": "ai-label-0012",
+      "field": "country_of_origin",
+      "before": null,
+      "after": "USA"
+    },
+    {
+      "file": "ai-label-0024",
+      "field": "country_of_origin",
+      "before": null,
+      "after": "USA"
+    },
+    {
+      "file": "ai-label-0039",
+      "field": "country_of_origin",
+      "before": null,
+      "after": "USA"
+    },
+    {
+      "file": "ai-label-0041",
+      "field": "country_of_origin",
+      "before": null,
+      "after": "USA"
+    },
+    {
+      "file": "ai-label-0008",
+      "field": "class_category",
+      "before": "fortified_wine",
+      "after": "beer"
+    },
+    {
+      "file": "ai-label-0022",
+      "field": "class_category",
+      "before": "fortified_wine",
+      "after": "beer"
+    }
+  ],
+  "postAuditRollbacksRationale": "Sub-agent audit of ai-label-0001..0050 (2026-05-12 evening) caught that 4 labels were nulled in the original country sweep but DO visibly print country-of-origin text on the label (0012 Spanish, 0024/0039/0041 English Product-of-USA). Restored those 4. Plus 2 class_category typos (0008, 0022 were marked fortified_wine but are Porter beer)."
+}

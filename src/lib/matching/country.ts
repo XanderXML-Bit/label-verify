@@ -21,16 +21,107 @@ import { normalizeBrand } from "./brand";
  */
 
 // True synonyms — bidirectional, interchangeable in any direction.
+//
+// TTB COLA applications come in from every alcohol-importing country
+// on Earth, so the comparator has to recognise country names in their
+// LOCAL languages as well as English. Examples that hit production:
+//   • "PRODUCTO DE EE. UU." (Spanish for "Product of USA")
+//     — caught by the OOD corpus re-audit (ai-label-0012).
+//   • "DEUTSCHLAND" (German for "Germany") — a German wine import.
+//   • "日本" (Japanese for "Japan") — sake imports.
+//   • "FRANÇAISE" / "FRANCE" on Bordeaux labels.
+//   • Country abbreviations on EU CN-codes (FR-XX-YYY format).
+//
+// The table covers the ~25 countries that account for the majority of
+// US alcohol imports (TTB COLA Public Registry by source country, 2024).
+// Anything missing falls back to a strict normalized-string compare,
+// which still works for English-named countries with US-spelled
+// declarations.
 const SYNONYMS: Record<string, string[]> = {
-  "united states": ["usa", "us", "u.s.", "u.s.a.", "united states of america"],
-  "united kingdom": ["uk", "u.k.", "great britain"],
-  france: ["fr"],
-  italy: ["it"],
-  spain: ["es"],
-  germany: ["de"],
-  ireland: ["ie"],
-  mexico: ["mx"],
-  canada: ["ca"],
+  "united states": [
+    "usa",
+    "us",
+    "u.s.",
+    "u.s.a.",
+    "united states of america",
+    // Spanish.
+    "estados unidos",
+    "estados unidos de america",
+    "ee.uu.",
+    "ee. uu.",
+    "eeuu",
+    "producto de ee.uu.",
+    "producto de ee. uu.",
+    "producto de estados unidos",
+    // French (used on Quebec bilingual labels imported from Canada).
+    "etats-unis",
+    "états-unis",
+    "produit des états-unis",
+    "produit des etats-unis",
+    // German.
+    "vereinigte staaten",
+    // Portuguese.
+    "estados unidos da america",
+    "produto dos eua",
+    // Italian.
+    "stati uniti",
+    "prodotto degli stati uniti",
+  ],
+  "united kingdom": [
+    "uk",
+    "u.k.",
+    "great britain",
+    "britain",
+    "england",
+    "scotland",
+    "wales",
+    "northern ireland",
+    "royaume-uni",
+    "vereinigtes königreich",
+  ],
+  france: [
+    "fr",
+    "république française",
+    "republique francaise",
+    "francia",
+    "frankreich",
+  ],
+  italy: ["it", "italia", "italie", "italien", "repubblica italiana"],
+  spain: ["es", "españa", "espana", "espagne", "spanien", "reino de españa"],
+  germany: [
+    "de",
+    "deutschland",
+    "bundesrepublik deutschland",
+    "allemagne",
+    "alemania",
+  ],
+  ireland: ["ie", "éire", "eire", "republic of ireland", "irlanda", "irlande"],
+  mexico: ["mx", "méxico", "mexique", "estados unidos mexicanos"],
+  canada: ["ca", "canadá"],
+  netherlands: ["nl", "holland", "the netherlands", "nederland", "pays-bas"],
+  belgium: ["be", "belgique", "belgië", "belgien"],
+  portugal: ["pt", "república portuguesa"],
+  switzerland: [
+    "ch",
+    "suisse",
+    "schweiz",
+    "svizzera",
+    "confederazione svizzera",
+  ],
+  austria: ["at", "österreich", "oesterreich", "autriche"],
+  poland: ["pl", "polska", "polen", "pologne"],
+  japan: ["jp", "japón", "japon", "日本", "nihon", "nippon"],
+  china: ["cn", "中国", "zhōngguó", "people's republic of china"],
+  "south korea": ["kr", "korea", "republic of korea", "대한민국", "한국"],
+  australia: ["au", "australie", "australien"],
+  "new zealand": ["nz", "nouvelle-zélande", "neuseeland", "aotearoa"],
+  argentina: ["ar", "república argentina"],
+  chile: ["cl", "república de chile"],
+  brazil: ["br", "brasil", "brésil", "brasilien"],
+  "south africa": ["za", "afrique du sud", "südafrika", "rsa"],
+  greece: ["gr", "ελλάδα", "ellada", "hellas", "grèce", "griechenland"],
+  russia: ["ru", "russian federation", "россия", "rossiya"],
+  // Common wine-region declarations (constituent regions roll up below).
 };
 
 // Constituent / sub-regions — they roll up TO the canon, but the

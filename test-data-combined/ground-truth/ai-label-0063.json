@@ -12,7 +12,7 @@
     "brand_name": "Underpass Oak",
     "class_type": "Bourbon Whiskey",
     "class_category": "distilled_spirits",
-    "abv_percent": 46.0,
+    "abv_percent": 46,
     "net_contents": {
       "value": 750,
       "unit": "ml"
@@ -25,7 +25,7 @@
       "postal_code": "40601",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

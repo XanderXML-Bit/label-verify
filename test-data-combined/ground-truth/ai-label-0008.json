@@ -11,14 +11,14 @@
   "fields": {
     "brand_name": "Stone's Throw",
     "class_type": "Porter",
-    "class_category": "fortified_wine",
+    "class_category": "beer",
     "abv_percent": 5.8,
     "net_contents": {
       "value": 355,
       "unit": "ml"
     },
     "producer": "Stones Throw Beverage Co., Asheville, NC",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

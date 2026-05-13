@@ -13,6 +13,7 @@ import { validateGovernmentWarning } from "./validation/government-warning-valid
 import type {
   DeclaredFields,
   ImageQuality,
+  SecondOpinion,
   Verdict,
   VerifyResponse,
   VerifyTrace,
@@ -465,6 +466,116 @@ export async function verifyLabel(
       ? undefined
       : `Mean extractor confidence ${meanConf.toFixed(2)} (min ${minConf.toFixed(2)}).`;
 
+  // ─── 5b. Unreadable-image safety net ─────────────────────────────────────
+  //
+  // If the image is too degraded for the extractor to confidently read
+  // anything (image_quality === "bad"), the verdict should not be FAIL —
+  // a corrupt/blurred/dark photo of a perfectly-compliant label would
+  // otherwise be marked non-compliant. The product-correct routing for
+  // these is REVIEW with a clear "re-photograph" reason: the reviewer
+  // needs a usable image before any compliance determination can be
+  // made. FAIL stays reserved for "label is visibly non-compliant on a
+  // photo we can actually read."
+  //
+  // This deliberately UPGRADES FAIL → REVIEW when image quality is bad.
+  // It does NOT downgrade PASS → REVIEW (a high-quality image that
+  // passes is still a PASS — `imageQuality === "bad"` requires
+  // minConf < 0.3, which implies the comparators did NOT pass at high
+  // confidence anyway).
+  if (imageQuality === "bad" && verdict === "fail") {
+    verdict = "review";
+    reviewReasons.unshift(
+      `Image quality is too poor for a compliance determination (mean extractor confidence ${meanConf.toFixed(2)}, min ${minConf.toFixed(2)}). The label may be perfectly compliant — re-photograph in better light, at a sharper angle, and resubmit before treating this as non-compliance.`,
+    );
+  }
+
+  // ─── 6. Independent second-opinion on borderline Gov-Warning ──────────────
+  //
+  // When the primary call lands on REVIEW for the Gov-Warning (either an
+  // explicit `status: "review"` from the validator, or a low-confidence
+  // PASS without OCR corroboration which §5a above downgraded to REVIEW),
+  // fire a single second-opinion vision call against the cross-provider
+  // fallback model (typically GPT-5.4-nano via OpenAI). The reviewer is
+  // going to look at this label anyway — an independent second read gives
+  // them more signal than just the primary's REVIEW verdict alone.
+  //
+  // Cost: ~$0.001 per fired call (5–10% of total volume, since most
+  // verifications resolve cleanly). Latency: capped at 15 s. Safety:
+  // wrapped in try/catch so a second-opinion failure never breaks the
+  // primary response. Skipped when the primary already used the fallback
+  // (no provider diversity gained from re-running the same backup).
+  let secondOpinion: SecondOpinion | null = null;
+  const govReviewBorderline =
+    gov.status === "review" ||
+    (gov.status === "pass" &&
+      ocrFinal === null &&
+      gov.confidence < REVIEW_CONFIDENCE_THRESHOLD);
+  if (
+    govReviewBorderline &&
+    !fallbackUsed &&
+    process.env.OPENAI_API_KEY &&
+    !externalAbort?.aborted
+  ) {
+    const soStart = performance.now();
+    const soReason =
+      gov.status === "review"
+        ? `Primary Gov-Warning subscore returned REVIEW${gov.reason ? ` — ${gov.reason}` : ""}`
+        : `Primary Gov-Warning returned PASS at confidence ${gov.confidence.toFixed(2)} without OCR corroboration`;
+    const soCtrl = new AbortController();
+    const soTimer = setTimeout(() => soCtrl.abort(), 15_000);
+    const onExternalAbortSo = () => soCtrl.abort();
+    if (externalAbort) {
+      externalAbort.addEventListener("abort", onExternalAbortSo, { once: true });
+    }
+    try {
+      const soMod = await import("./vision/openai");
+      const soExtractor = new soMod.GPT4oMiniExtractor({
+        apiKey: process.env.OPENAI_API_KEY,
+        modelVersion: process.env.MODEL_FALLBACK ?? "gpt-5.4-nano",
+      });
+      const soResult = await soExtractor.extract(pre.buffer, {
+        ocrWords,
+        signal: soCtrl.signal,
+      });
+      // Re-validate the GW from the second extractor's read of the
+      // label, using the same OCR context the primary had so the two
+      // verdicts are comparable.
+      const soGw = soResult.fields.government_warning.value ?? {
+        raw_text: null,
+        prefix_text: null,
+        prefix_bbox: null,
+        prefix_appears_bold: null,
+        prefix_appears_caps: null,
+      };
+      const soGov = await validateGovernmentWarning({
+        extracted: soGw,
+        declaredNetContents: declared.net_contents,
+        imageDimsPx: { width: pre.width, height: pre.height },
+        ocrContext:
+          ocrFinal && ocrFinal.words.length > 0
+            ? { words: ocrFinal.words, imageBuffer: pre.buffer }
+            : undefined,
+      });
+      secondOpinion = {
+        modelId: soResult.modelId,
+        governmentWarning: soGov,
+        agreesWithPrimary: soGov.status === gov.status,
+        reason: soReason,
+        latencyMs: round(performance.now() - soStart),
+      };
+    } catch {
+      // Best-effort: a failed second-opinion call does NOT degrade
+      // the primary verdict. Silent (no console noise on user-driven
+      // aborts). The primary REVIEW + reviewReasons already signal
+      // human-review needed.
+    } finally {
+      clearTimeout(soTimer);
+      if (externalAbort) {
+        externalAbort.removeEventListener("abort", onExternalAbortSo);
+      }
+    }
+  }
+
   const totalMs = performance.now() - startTotal;
 
   const response: VerifyResponse = {
@@ -494,6 +605,7 @@ export async function verifyLabel(
     reviewReasons: verdict === "review" ? reviewReasons : [],
     ...(imageQualityReason ? { imageQualityReason } : {}),
     ...(fallbackUsed ? { fallbackUsed } : {}),
+    ...(secondOpinion ? { secondOpinion } : {}),
   };
 
   // Hand the trace to the optional sink (used by /api/debug/last). Wrapped

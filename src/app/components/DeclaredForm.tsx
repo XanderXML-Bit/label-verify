@@ -354,34 +354,43 @@ export function DeclaredForm({
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={disabled}
-          className="min-h-[44px] w-full rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400 sm:w-auto"
+          className="min-h-[44px] rounded-md bg-blue-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
         >
           Verify
         </button>
         {onExtractOnly && (
-          // Demoted to a text-link below the primary button so a senior
-          // reviewer can't fat-finger past Verify into the extract-only
-          // path. The leading helper sentence makes the affordance
-          // explicit: this is only for the case where no application
-          // data exists.
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            No application data on hand?{" "}
-            <button
-              type="button"
-              onClick={onExtractOnly}
-              disabled={disabled}
-              className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 disabled:cursor-not-allowed disabled:opacity-60 dark:text-blue-300 dark:hover:text-blue-200"
-            >
-              Skip — show extracted fields without a verdict
-            </button>
-            .
-          </p>
+          // Secondary button — same control affordance as Verify, lower
+          // visual weight (outlined, not filled) so a senior reviewer
+          // can't fat-finger past Verify into the extract-only path,
+          // but obvious enough that someone without application data
+          // sees it as a button rather than as an inline text link.
+          // Per user feedback 2026-05-12.
+          <button
+            type="button"
+            onClick={onExtractOnly}
+            disabled={disabled}
+            title="Run the extractor without a verdict — useful when you don't have the COLA application data."
+            className="min-h-[44px] rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Skip — extract fields without a verdict
+          </button>
         )}
       </div>
+      {onExtractOnly && (
+        // Helper text under the row of buttons. Explicit that
+        // "Skip" is only for the case where no application data
+        // exists — defends against an accidental click.
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          The skip button is for cases where you don&apos;t have COLA
+          application data on hand. It returns extracted label fields
+          and a Government-Warning subscore but no pass / fail /
+          review verdict.
+        </p>
+      )}
     </form>
   );
 }

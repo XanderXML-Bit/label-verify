@@ -103,6 +103,34 @@ export interface VerifyResponse {
    * this is present. Omitted on normal primary-path verifications.
    */
   fallbackUsed?: string;
+  /**
+   * Set when the orchestrator fired an independent second-opinion
+   * vision call on a borderline Government Warning (primary returned
+   * REVIEW, or primary returned PASS at low confidence without OCR
+   * corroboration). The second-opinion model is cross-provider
+   * (typically GPT-5.4-nano) so the reviewer sees what an independent
+   * read of the same label says. Surfaced in the UI under the GW
+   * subscore panel. Omitted on confident-PASS / clear-FAIL verifications.
+   */
+  secondOpinion?: SecondOpinion;
+}
+
+export interface SecondOpinion {
+  /** Model id that produced the second-opinion extraction. */
+  modelId: string;
+  /** The second extractor's independent Gov-Warning verdict. */
+  governmentWarning: GovernmentWarningCheck;
+  /**
+   * True iff the second-opinion Gov-Warning STATUS matches the primary's.
+   * (Confidence may differ; we only compare the verdict bucket.)
+   * `false` means the two extractors disagree — surface the disagreement
+   * to the reviewer so they adjudicate.
+   */
+  agreesWithPrimary: boolean;
+  /** Human-readable trigger reason (why the second opinion fired). */
+  reason: string;
+  /** Wall-clock latency of the second-opinion call (ms). */
+  latencyMs: number;
 }
 
 // ─── Review queue types ─────────────────────────────────────────────────────

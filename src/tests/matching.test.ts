@@ -111,6 +111,42 @@ describe("compareCountry", () => {
   it("USA vs France → FAIL", () => {
     expect(compareCountry("USA", "France", 0.9).status).toBe("fail");
   });
+  it("Spanish synonyms for USA → PASS (OOD audit fix, ai-label-0012)", () => {
+    // The OOD corpus re-audit (2026-05-12) caught that ai-label-0012
+    // prints "PRODUCTO DE EE. UU." — the model correctly reads it,
+    // but the comparator's SYNONYMS table didn't include the Spanish
+    // form, so it was scored as a model error.
+    expect(compareCountry("USA", "EE. UU.", 0.9).status).toBe("pass");
+    expect(compareCountry("USA", "EE.UU.", 0.9).status).toBe("pass");
+    expect(compareCountry("USA", "PRODUCTO DE EE. UU.", 0.9).status).toBe(
+      "pass",
+    );
+    expect(compareCountry("USA", "Estados Unidos", 0.9).status).toBe("pass");
+    expect(
+      compareCountry("USA", "Estados Unidos de America", 0.9).status,
+    ).toBe("pass");
+  });
+  it("multilingual country synonyms across the top alcohol-importing markets", () => {
+    // TTB COLA applications come in from every alcohol-importing
+    // country. The comparator has to recognise country names in local
+    // languages too. Spot-checks across the table:
+    expect(compareCountry("France", "République Française", 0.9).status).toBe("pass");
+    expect(compareCountry("France", "FR", 0.9).status).toBe("pass");
+    expect(compareCountry("Italy", "Italia", 0.9).status).toBe("pass");
+    expect(compareCountry("Germany", "Deutschland", 0.9).status).toBe("pass");
+    expect(compareCountry("Spain", "España", 0.9).status).toBe("pass");
+    expect(compareCountry("Japan", "日本", 0.9).status).toBe("pass");
+    expect(compareCountry("Japan", "Nippon", 0.9).status).toBe("pass");
+    expect(compareCountry("Mexico", "México", 0.9).status).toBe("pass");
+    expect(compareCountry("Mexico", "Estados Unidos Mexicanos", 0.9).status).toBe("pass");
+    expect(compareCountry("Netherlands", "Nederland", 0.9).status).toBe("pass");
+    expect(compareCountry("Switzerland", "Suisse", 0.9).status).toBe("pass");
+    expect(compareCountry("South Korea", "대한민국", 0.9).status).toBe("pass");
+    expect(compareCountry("Greece", "Ελλάδα", 0.9).status).toBe("pass");
+    // Cross-language mismatches still FAIL.
+    expect(compareCountry("Germany", "Frankreich", 0.9).status).toBe("fail");
+    expect(compareCountry("Japan", "中国", 0.9).status).toBe("fail");
+  });
 });
 
 describe("compareClass", () => {

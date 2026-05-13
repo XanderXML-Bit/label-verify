@@ -161,4 +161,45 @@ describe("verifyLabel (happy path)", () => {
     // surfaces the confidence concern separately.
     expect(result.imageQuality).not.toBe("good");
   });
+
+  it("Unreadable image routes to REVIEW (not FAIL) with a re-photograph reason", async () => {
+    // A corrupt or motion-blurred photo of a compliant label would
+    // otherwise be marked FAIL (the comparators can't match because
+    // the extractor read garbage). The product-correct routing is
+    // REVIEW: the label might be perfectly compliant; we just don't
+    // have a usable image of it. User-explicit ask 2026-05-12.
+    const img = await tinyJpeg();
+    const garbage: ExtractedFields = {
+      brand_name: { value: "WrongBrand", confidence: 0.1 },
+      class_type: { value: "WrongClass", confidence: 0.1 },
+      abv_percent: { value: 0, confidence: 0.1 },
+      net_contents: {
+        value: { value: 0, unit: "fl_oz" },
+        confidence: 0.1,
+      },
+      government_warning: {
+        value: null,
+        confidence: 0.1,
+      },
+      producer: { value: null, confidence: 0.1 },
+      country_of_origin: { value: null, confidence: 0.1 },
+    };
+    const result = await verifyLabel(
+      img,
+      {
+        brand_name: "Stone's Throw Brewing",
+        class_type: "India Pale Ale",
+        class_category: "beer",
+        abv_percent: 6.4,
+        net_contents: { value: 12, unit: "fl_oz" },
+        producer: "Stone's Throw Brewing Co.",
+        country_of_origin: "USA",
+      },
+      { extractor: buildExtractor(garbage) },
+    );
+    expect(result.imageQuality).toBe("bad");
+    expect(result.verdict).toBe("review");
+    // The first review reason should explain re-photograph rationale.
+    expect(result.reviewReasons[0]).toMatch(/re-photograph|image quality/i);
+  });
 });
