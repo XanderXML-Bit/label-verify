@@ -57,6 +57,28 @@ describe("normalizeForTextMatch", () => {
   it("does not change case", () => {
     expect(normalizeForTextMatch("GOVERNMENT WARNING")).toBe("GOVERNMENT WARNING");
   });
+  it("folds ellipsis to three dots", () => {
+    expect(normalizeForTextMatch("birth defects…")).toBe("birth defects...");
+  });
+  it("folds NBSP (U+00A0) to a regular space — Canadian/European DTP labels", () => {
+    // The visible text "GOVERNMENT WARNING" is identical, but the
+    // exporter emitted U+00A0 between the two words. Without folding,
+    // strict text comparison would flag this as a non-compliant body.
+    expect(normalizeForTextMatch("GOVERNMENT WARNING")).toBe(
+      "GOVERNMENT WARNING",
+    );
+  });
+  it("folds narrow NBSP (U+202F) to a regular space", () => {
+    expect(normalizeForTextMatch("birth defects")).toBe("birth defects");
+  });
+  it("folds en-quad U+2000 through hair-space U+200A to regular space", () => {
+    expect(normalizeForTextMatch("a b c d")).toBe("a b c d");
+  });
+  it("folds zero-width space (U+200B) and BOM (U+FEFF) so they don't break match", () => {
+    expect(normalizeForTextMatch("birth​defects﻿")).toBe(
+      "birth defects",
+    );
+  });
 });
 
 describe("isPrefixAllCaps", () => {

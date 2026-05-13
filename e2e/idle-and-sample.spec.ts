@@ -33,13 +33,18 @@ test.describe("Idle screen", () => {
     expect(persisted).toBe(after);
   });
 
-  test("Human review queue surfaces on the idle screen", async ({ page }) => {
-    // The Settings panel was retired (single production path now).
-    // The review queue lives directly on the idle screen.
+  test("Human review queue is NOT auto-mounted on the idle screen", async ({
+    page,
+  }) => {
+    // ReviewQueuePanel was removed from idle on 2026-05-13 because it
+    // requires a DEBUG_TOKEN and was 401-ing for the demo reviewer
+    // every page load. The queue is now only reachable when explicitly
+    // wired (e.g. for an internal operator session). If you re-add it
+    // to the idle layout, also update this expectation.
     await page.goto("/");
     await expect(
       page.getByRole("region", { name: /Human review queue/i }),
-    ).toBeVisible();
+    ).toHaveCount(0);
   });
 });
 

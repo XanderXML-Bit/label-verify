@@ -709,7 +709,16 @@ export async function extractOnly(
   // (Hermes audit, BLOCKER #4 — README said "vision-only" but this
   // path was still passing ocrText into the vision prompt). OCR's
   // text is captured for debug-trace below; only ocrWords (bboxes)
-  // feed the Gov-Warning validator.
+  // feed the Gov-Warning validator AFTER vision returns.
+  //
+  // Concurrency: vision and OCR fire in parallel here, matching the
+  // verifyLabel path. The legacy 1.5 s pre-vision wait was a remnant
+  // of an earlier design where ocrWords were forwarded into the
+  // extractor's prompt context — none of the current adapters consume
+  // `ctx.ocrWords`, so blocking on it served no purpose and cost
+  // ~1500 ms of wall-clock on every extract-only request. Removed
+  // per Agent D perf audit 2026-05-13. The downstream Gov-Warning
+  // validator awaits ocrPromise's final result (bounded 8 s).
   let ocrWords: OcrWord[] | undefined;
   let ocrElapsed: number | null = null;
   const ocrPromise: Promise<OcrResult | null> = tesseractEngine
@@ -720,12 +729,11 @@ export async function extractOnly(
       return r;
     })
     .catch(() => null);
-  await Promise.race([
-    ocrPromise,
-    new Promise((resolve) => setTimeout(resolve, 1500)),
-  ]);
   const visionCtx: ExtractorContext = {
     // ocrText deliberately omitted — see comment above.
+    // ocrWords is undefined here (vision fires in parallel with OCR);
+    // adapters don't read it anyway. The GW validator below uses the
+    // ocrWords captured into the closure once OCR settles.
     ocrWords,
     signal: ctrl.signal,
   };
