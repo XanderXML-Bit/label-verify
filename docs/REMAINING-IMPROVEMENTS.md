@@ -5,6 +5,60 @@
 > for the take-home" call. Ordered roughly by accuracy impact, then by
 > effort. Items already done are NOT here — see `CHANGELOG.md`.
 
+## Wave-15 outcome (size-band relaxation, reverted)
+
+Pre-registered Hypothesis D from `docs/WAVE-13-FINDINGS.md`: relax the
+size-subscore band from `< 0.8×minMm → REVIEW` to a two-tier
+`< 0.5×minMm → REVIEW`, `0.5–0.8× → PASS at degraded confidence`.
+Target: pass-rate +10 pp (61% → 71%), review-on-correct −20.
+
+**Empirical result (N=2 of N=3 experiment):**
+- pass-rate **+8 to +9 pp** (61.3% → 69.2-70.4%) — significant but
+  below the +10 target.
+- review-on-correct **−14 to −18** (48 → 30-34) — close to but below
+  the −20 target.
+- **false-pass-on-correct +1.25 to +3.25** — violated the pre-
+  registered "must not increase by > 2" criterion on run 2.
+- failOrReviewRateOnWrong stayed at 100%.
+
+**Four new deterministic false-passes** on synthetic defect labels:
+- `ai-label-0049` (S2_MINI_TINY_TEXT)
+- `syn-beer-0014` (B1 — bold defect; previously inconsistent)
+- `syn-beer-0017` (S2 — size defect)
+- `syn-spirits-0013` (S1 — size defect)
+
+Three of the four are size-defects the band relaxation enabled to
+slip through. The S1 case (0.45×minMm) was expected to stay REVIEW
+under the new 0.5× floor; in practice the px-to-mm conversion drift
+on syn-spirits-0013 put it just above 0.5× → PASS at degraded
+confidence → gov.aggregate=PASS(0.3) → verdict=PASS.
+
+**Decision: REVERT.** Per `docs/BENCH-PROTOCOL.md` the experiment
+did not meet its pre-registered criteria.
+
+**Wave-16 candidate (queued)**: tighter floor at 0.65× or 0.7×.
+This would catch the 0.45-0.6× cases that wave-15 wrongly enabled,
+while still relaxing the 0.7-0.8× borderline that drives most of
+the review-on-correct cluster. Plausible effect-size: pass-rate
++5-7 pp without the fp-on-correct regression. Needs its own
+pre-registered N≥3 experiment.
+
+## Wave-15b shipped (batch concurrency + preview lookup)
+
+Independent of the size-band experiment, two batch-UX wins shipped:
+
+- **MAX_INLINE_CONCURRENCY: 4 → 12** (configurable via
+  `INLINE_BATCH_CONCURRENCY` env var, clamped to [1, 200]). A
+  100-image batch now finishes in ~25 s instead of ~75 s.
+  Operators on Tier 1+ Gemini quota can dial up to 50 without
+  redeploying; free-tier operators dial down.
+- **Forgiving BatchView preview lookup**: the original exact-match
+  `imagePreviewByFilename[r.filename]` was fragile against
+  production data drift (URI encoding, folder-pick path-prefix
+  drift, basename normalization). The new `resolvePreviewUrl`
+  tries exact match → decodeURIComponent → basename → reverse-
+  basename match, with the dashed-placeholder fallback.
+
 ## Accuracy & verifier behaviour
 
 ### A1. Document the country-of-origin scoring asymmetry — **DONE in code, document in README**

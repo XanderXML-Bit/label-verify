@@ -407,9 +407,18 @@ function scoreSize(
  * estimate causes too many false-FAILs on the photo-realistic OOD
  * corpus. Documented as advisory in README + SECURITY.
  */
-// Exported for unit testing — the wave-15 borderline-band split is a
-// high-stakes change; the bench-level test gives the empirical signal,
-// this pins the per-branch contract.
+// Exported for unit testing.
+//
+// Wave-15 history: attempted to relax the `< 0.8×minMm → REVIEW` cliff
+// into a two-tier `pass at degraded confidence` band starting at 0.5×.
+// Empirical N=2 bench result violated the pre-registered "false-pass-
+// on-correct must not increase by > 2" criterion — 4 new deterministic
+// false-passes on synthetic S1/S2/B1 defect cases (the px-to-mm
+// conversion over-estimated some labels above the 0.5× floor, AND
+// the degraded-confidence PASS aggregated against high-confidence
+// other subscores produced an overall PASS that bypassed the safety
+// net). Reverted; tighter-floor variant queued as wave-16 in
+// docs/REMAINING-IMPROVEMENTS.md.
 export function sizeFromMm(
   prefixMm: number,
   minMm: number,
@@ -417,23 +426,6 @@ export function sizeFromMm(
 ): SubscoreResult {
   if (prefixMm >= minMm * 0.8) {
     return { status: "pass", confidence };
-  }
-  // Wave-15: two-tier band. The pixel-to-mm conversion has known
-  // accuracy issues on non-full-bottle photos (no aspect-ratio
-  // correction — see the doc comment above). The previous flat
-  // `< 0.8×minMm → REVIEW` cliff over-triggered REVIEW on labels
-  // that were visibly compliant — wave-13 bench analysis traced
-  // ~75% of `review-on-correct` cases (≈ 32 of 42) to this exact
-  // size=REVIEW(c0.5) path. By passing at degraded confidence in
-  // the 0.5–0.8× borderline band, the gov-aggregate confidence
-  // reflects the weakened size signal but the verifier no longer
-  // routes visibly-compliant labels to REVIEW purely on a known-
-  // unreliable size estimate. A truly tiny prefix (< 0.5× minMm)
-  // still REVIEWs — that floor is tighter than the synthetic
-  // S1 case (0.45× minMm in scripts/generate-corpus-v2.ts), so
-  // genuine size defects still get caught.
-  if (prefixMm >= minMm * 0.5) {
-    return { status: "pass", confidence: Math.min(confidence, 0.3) };
   }
   return { status: "review", confidence: Math.min(confidence, 0.5) };
 }
