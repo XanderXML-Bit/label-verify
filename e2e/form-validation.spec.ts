@@ -49,7 +49,7 @@ test.describe("Form validation reaches the user via the page flow", () => {
     });
     await uploadLabel(page);
     await page.getByRole("textbox", { name: /Brand name/i }).fill("Test");
-    await page.getByRole("textbox", { name: /Class type/i }).fill("IPA");
+    await page.getByRole("textbox", { name: /Class \/ type/i }).fill("IPA");
     // Try an absurd ABV. The form should refuse to submit.
     await page.getByRole("spinbutton", { name: /ABV/i }).fill("250");
     await page.getByRole("button", { name: /^Verify$/ }).click();
@@ -67,7 +67,7 @@ test.describe("Form validation reaches the user via the page flow", () => {
     });
     await uploadLabel(page);
     await page.getByRole("textbox", { name: /Brand name/i }).fill("Test");
-    await page.getByRole("textbox", { name: /Class type/i }).fill("IPA");
+    await page.getByRole("textbox", { name: /Class \/ type/i }).fill("IPA");
     await page.getByRole("spinbutton", { name: /ABV/i }).fill("5");
     // Zero net contents — must reject.
     await page

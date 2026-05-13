@@ -23,6 +23,11 @@ test("PASS sample 500 → 'Retry this sample' → succeeds on second attempt", a
       });
     } else {
       // Second call returns a synthetic PASS verdict.
+      // SingleResult unconditionally reads gov.subscores.{text,caps,bold,size}.status
+      // (see src/app/components/SingleResult.tsx:169-188). The mock must
+      // populate all four subscores or the component throws on render and
+      // the assertion below times out instead of failing-fast with a clear
+      // message. Caught by production-readiness audit 2026-05-13.
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -30,7 +35,16 @@ test("PASS sample 500 → 'Retry this sample' → succeeds on second attempt", a
           verdict: "pass",
           imageQuality: "good",
           fields: {},
-          governmentWarning: { status: "pass", confidence: 0.9, subscores: {} },
+          governmentWarning: {
+            status: "pass",
+            confidence: 0.9,
+            subscores: {
+              text: { status: "pass", confidence: 0.9 },
+              caps: { status: "pass", confidence: 0.9 },
+              bold: { status: "pass", confidence: 0.9 },
+              size: { status: "pass", confidence: 0.9 },
+            },
+          },
           extracted: {},
           timings: { preprocess: 1, ocr: 1, vision: 1, matching: 1, total: 4 },
           modelId: "mock",

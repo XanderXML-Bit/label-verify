@@ -91,11 +91,11 @@ interface CliArgs {
 
 function parseArgs(argv: string[]): CliArgs {
   // Default corpus is the canonical superset (170 images = SVG syn/deg
-  // ∪ AI-generated photo-realistic). The v1 `test-data/` directory is
-  // archived as `legacy/test-data-v1/` and the v2 SVG-only slice lives
-  // at `test-data-v2/`; both are subsets of `test-data-combined/` for
-  // historical / routine-bench purposes. Per Agent B corpus audit
-  // 2026-05-13.
+  // ∪ AI-generated photo-realistic). See docs/CORPORA.md for the full
+  // map: the v1 `test-data/` directory remains in place for historical
+  // provenance (do NOT use for benchmarks — the corrected-corpus wave
+  // was applied to v2/combined only), and `test-data-v2/` is a strict
+  // syn/deg subset kept for routine-manifest path-stability.
   const out: CliArgs = {
     smoke: false,
     routine: false,

@@ -4,10 +4,10 @@ import sharp from "sharp";
 import { z } from "zod";
 
 const ROOT = process.cwd();
-// Default to the canonical superset corpus. v1 `test-data/` was
-// archived to `legacy/test-data-v1/` on 2026-05-13 (Agent B audit:
-// same filenames as v2 with different image bytes = a footgun
-// vector for path-substitution mistakes).
+// Default to the canonical 170-image superset corpus. See docs/CORPORA.md.
+// `test-data/` (v1) remains in place for historical provenance only —
+// its ground-truth was not back-ported with the 2026-05-12 corpus
+// correction wave.
 const DEFAULT_OUTPUT = "test-data-combined";
 
 const SourceSchema = z.enum(["synthetic", "degraded", "real"]);

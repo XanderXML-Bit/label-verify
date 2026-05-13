@@ -87,10 +87,17 @@ test("Drop 2 images + 2 stem-matched apps → batch-pending autopair → inline 
               verdict: "pass",
               imageQuality: "good",
               fields: {},
+              // Full subscores: SingleResult (reachable via row drilldown)
+              // unconditionally dereferences each .status. Belt + braces.
               governmentWarning: {
                 status: "pass",
                 confidence: 0.9,
-                subscores: {},
+                subscores: {
+                  text: { status: "pass", confidence: 0.9 },
+                  caps: { status: "pass", confidence: 0.9 },
+                  bold: { status: "pass", confidence: 0.9 },
+                  size: { status: "pass", confidence: 0.9 },
+                },
               },
               extracted: {},
               timings: { preprocess: 1, ocr: 1, vision: 1, matching: 1, total: 4 },
@@ -109,10 +116,17 @@ test("Drop 2 images + 2 stem-matched apps → batch-pending autopair → inline 
               verdict: "pass",
               imageQuality: "good",
               fields: {},
+              // Full subscores: SingleResult (reachable via row drilldown)
+              // unconditionally dereferences each .status. Belt + braces.
               governmentWarning: {
                 status: "pass",
                 confidence: 0.9,
-                subscores: {},
+                subscores: {
+                  text: { status: "pass", confidence: 0.9 },
+                  caps: { status: "pass", confidence: 0.9 },
+                  bold: { status: "pass", confidence: 0.9 },
+                  size: { status: "pass", confidence: 0.9 },
+                },
               },
               extracted: {},
               timings: { preprocess: 1, ocr: 1, vision: 1, matching: 1, total: 4 },

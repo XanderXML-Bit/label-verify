@@ -28,7 +28,7 @@ async function uploadAndSubmit(
   ).toBeVisible({ timeout: 10_000 });
   // Fill the minimum required fields so the form actually POSTs.
   await page.getByRole("textbox", { name: /Brand name/i }).fill("TestBrand");
-  await page.getByRole("textbox", { name: /Class type/i }).fill("IPA");
+  await page.getByRole("textbox", { name: /Class \/ type/i }).fill("IPA");
   await page.getByRole("spinbutton", { name: /ABV/i }).fill("5");
   await page
     .getByRole("spinbutton", { name: /Net contents value/i })

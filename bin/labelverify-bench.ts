@@ -44,15 +44,33 @@ interface Args {
 
 function parseArgs(argv: string[]): Args {
   const a: Args = { command: "", corpus: "test-data-combined", limit: 10, concurrency: 2, json: false, help: false };
+  // Parse numeric flag with explicit Number.isFinite + non-negative check.
+  // Earlier shape `Number(x) || default` silently swallowed `0` (falsy) —
+  // breaking the advertised `--limit 0 = all` convention. Caught by
+  // code-review audit 2026-05-13.
+  function takeNumberArg(name: string, raw: string | undefined, current: number): number {
+    if (raw === undefined) throw new Error(`${name} requires a value`);
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error(`${name} must be a non-negative number (got "${raw}")`);
+    }
+    return n;
+  }
   for (let i = 2; i < argv.length; i++) {
     const t = argv[i]!;
     if (t === "--json") a.json = true;
     else if (t === "--help" || t === "-h") a.help = true;
-    else if (t === "--corpus") a.corpus = argv[++i] ?? a.corpus;
-    else if (t === "--limit") a.limit = Number(argv[++i] ?? a.limit) || a.limit;
-    else if (t === "--concurrency") a.concurrency = Number(argv[++i] ?? a.concurrency) || a.concurrency;
-    else if (t === "--out") a.out = argv[++i];
-    else if (!a.command) a.command = t;
+    else if (t === "--corpus") {
+      const v = argv[++i];
+      if (v === undefined) throw new Error("--corpus requires a directory path");
+      a.corpus = v;
+    } else if (t === "--limit") a.limit = takeNumberArg("--limit", argv[++i], a.limit);
+    else if (t === "--concurrency") a.concurrency = takeNumberArg("--concurrency", argv[++i], a.concurrency);
+    else if (t === "--out") {
+      const v = argv[++i];
+      if (v === undefined) throw new Error("--out requires a file path");
+      a.out = v;
+    } else if (!a.command) a.command = t;
   }
   return a;
 }

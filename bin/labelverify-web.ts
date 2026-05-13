@@ -304,7 +304,11 @@ async function cmdVerify(args: Args): Promise<void> {
       `verify ${baseUrl}: verdict=${verdict}  imageQuality=${iq}\n`,
     );
   }
-  if (res.body.verdict && res.body.verdict !== "pass") process.exit(1);
+  // A 200 response missing a verdict is a server defect, not a pass.
+  // Earlier shape `if (res.body.verdict && res.body.verdict !== "pass")`
+  // short-circuited on undefined and exited 0 silently. Caught by
+  // code-review audit 2026-05-13.
+  if (!res.body.verdict || res.body.verdict !== "pass") process.exit(1);
 }
 
 // ─── extract ───────────────────────────────────────────────────────────────
