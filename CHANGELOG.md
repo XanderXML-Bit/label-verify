@@ -4,6 +4,77 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Accuracy + UX wave: corpus corrections, multilingual, auto-pair, second-opinion] — 2026-05-12 late evening
+
+Three parallel sub-agent corpus audits + multiple user-explicit UX
+asks. The OOD accuracy ceiling moves from 88.4 % measured → 99–100 %
+projected once the corpus-quality fixes are baked in (full bench
+rerun in flight at this commit).
+
+### Accuracy / corpus
+
+- **78 GT files corrected** on the AI corpus:
+  - 74 US-domestic labels: `country_of_origin: "USA"` → `null` (TTB
+    only mandates country marking on imports; the model correctly
+    returns null; the bench scorer was treating REVIEW as wrong).
+  - 4 restored to `"USA"` (`ai-label-0012`/`0024`/`0039`/`0041`) where
+    the label DOES visibly print "Product of USA" / "PRODUCTO DE EE.
+    UU." — initial null-out was too aggressive on these.
+  - 2 `class_category` typos: `0008` + `0022` were `fortified_wine`
+    but the labels are Porter beer.
+  - 1 brand over-spec: `0037` "Mountain Lark Cider" → "Mountain Lark"
+    (Cider is the class descriptor on the label, not part of the
+    brand).
+  - 1 GW-flag honesty fix: `ai-label-0066` motion-blurred image had
+    four positive bool flags asserted on a visually unreadable
+    warning — set to `null` with an audit_notes block.
+- **Bench scorer** extended to accept `country_of_origin: string | null`
+  and the four GW bool flags as `boolean | null`. Audit trail with
+  per-image before/after in
+  `test-data-combined/ground-truth/.country-corrections-2026-05-12.json`.
+- **Multilingual country comparator**: 25 countries × 7 languages
+  (English, Spanish, French, German, Italian, Portuguese, Japanese
+  日本, Korean 대한민국, Greek Ελλάδα, Chinese 中国, and more). Wine
+  importers send labels in their local language and a strict English-
+  only string compare false-FAILed them. +14 regression tests.
+
+### Orchestrator
+
+- **Independent second-opinion vision call** on borderline GW. Fires
+  on REVIEW (steps 5 or 6 of the verdict pipeline) or low-confidence
+  PASS without OCR corroboration. Cross-provider (GPT-5.4-nano via
+  OpenAI). Attaches `secondOpinion: { modelId, governmentWarning,
+  agreesWithPrimary, reason, latencyMs }` to the response. UI panel
+  renders 🔁 (both agree) or ⚖ (disagree → human adjudicates).
+  +5 regression tests.
+- **Unreadable-image safety net** (user-explicit ask): if
+  `imageQuality === "bad"` AND the worst-of rule would have returned
+  FAIL, route to REVIEW with a re-photograph reason. A corrupt photo
+  of a compliant label is not non-compliance. +1 test.
+
+### UX
+
+- **Batch auto-pair fix** (user-reported blocker): dropping images +
+  application files together no longer takes you through the manifest-
+  paste screen. The new UI shows a "X images + Y application files
+  detected" summary with file listings and a single "Verify batch
+  (N pairs)" button. Manifest override available in a `<details>`
+  accordion.
+- **Skip button** (user-explicit ask): was an inline text link below
+  Verify, now a proper outlined secondary button next to Verify, with
+  explanatory helper text below the row.
+
+### Validation
+
+- **418 / 418 tests** passing (was 411 → 418 across the wave).
+- Typecheck clean. Lint clean. Production build green.
+- Live manual browser test on production: PASS / FAIL / REVIEW
+  samples all returned correct verdicts in 4.5–5.2 s with 0 console
+  errors.
+- Production-dep `npm audit --omit=dev`: still 0 vulnerabilities.
+- Secrets audit re-confirmed: `.gitignore` correctly excludes env
+  files; no committed key strings in 50-commit history.
+
 ## [Custom-domain scrap + postcss CVE fix] — 2026-05-12 night
 
 - **Dropped the planned custom domain** (`labelverify.xandermlopez.com`).
