@@ -32,7 +32,19 @@ function findLatestSummary(): BenchSummary | null {
   const dir = join(process.cwd(), "benchmarks", "results");
   if (!existsSync(dir)) return null;
   const files = readdirSync(dir)
-    .filter((f) => f.endsWith(".json") && !f.endsWith("-per-image.json"))
+    .filter(
+      (f) =>
+        f.endsWith(".json") &&
+        !f.endsWith("-per-image.json") &&
+        // The cross-pair bench (wave-13) writes a different schema
+        // (summary + records[]) than the technique-bench this test
+        // was written for (techniques[].stratified[]). Skip those
+        // files explicitly rather than fail parsing on the wrong
+        // shape — the cross-pair bench has its own per-image trace
+        // (`cross-pair-<iso>.md`) and aggregate (`aggregate-<iso>.md`).
+        !f.startsWith("cross-pair-") &&
+        !f.startsWith("aggregate-"),
+    )
     .sort();
   if (files.length === 0) return null;
   const latest = files[files.length - 1]!;

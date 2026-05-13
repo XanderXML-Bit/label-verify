@@ -38,3 +38,18 @@ audit-report.html
 .inv*.json
 bench-wave*.json
 bench-investigation*.json
+
+# Wave-13 cross-pair per-image artifacts + replicate aggregates.
+# These are large (~350 KB each) and regenerate cleanly by re-running
+# the bench, so they're treated as scratch — the canonical artifact
+# for a claim is the `aggregate-<iso>.md` you produce from a full
+# replicate set (see docs/BENCH-PROTOCOL.md), and the historical
+# best-known champions live in `benchmarks/.best-known.json`.
+benchmarks/results/cross-pair-*.json
+benchmarks/results/cross-pair-*.md
+benchmarks/results/aggregate-*.md
+
+# Wave plan scratchpads (e.g. `.wave-13-plan.md`) — temporary working
+# notes that are deleted before merge. Anything that survives lands
+# in `docs/REMAINING-IMPROVEMENTS.md` or a permanent docs file.
+.wave-*-plan.md
