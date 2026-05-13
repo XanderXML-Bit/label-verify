@@ -812,25 +812,16 @@ export default function Home() {
         <div className="space-y-4">
           <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-              Batch upload — {stage.files.length} images
+              Batch upload — {stage.files.length} image
+              {stage.files.length === 1 ? "" : "s"}
             </h3>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              No application files were dropped, so we need declared fields
-              per image. <strong>The easiest path is to redo the drop including
-              your application files</strong> (PDF / JSON / CSV / MD / TXT / DOCX);
-              we&apos;ll pair them automatically by filename stem.
-              Otherwise paste a manifest below — required column:{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">filename</code>.
-              Other supported columns:{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">brand_name</code>,{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">class_type</code>,{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">class_category</code>,{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">abv_percent</code>,{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">net_contents</code>{" "}
-              (e.g. <code className="dark:text-slate-200">12 fl_oz</code>),{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">producer</code>,{" "}
-              <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">country_of_origin</code>.
-              Filenames are paired by stem (case-insensitive).
+              <strong>Drop your application data below</strong> — a single CSV
+              or JSON with one row per image (a <code className="rounded bg-slate-100 px-1 dark:bg-slate-800 dark:text-slate-200">filename</code> column tells us
+              which row goes with which image), a single PDF / DOCX that
+              describes the same product across all your images, or N
+              individual PDFs / JSONs with filenames matching your images.
+              We&apos;ll figure out the pairing automatically.
             </p>
             {stage.submitError && (
               <div
@@ -842,44 +833,52 @@ export default function Home() {
                 <p className="mt-0.5">{stage.submitError}</p>
               </div>
             )}
-            <textarea
-              rows={8}
-              value={manifestText}
-              onChange={(e) => setManifestText(e.target.value)}
-              aria-label="Batch manifest (CSV or JSON)"
-              className="mt-3 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
-              placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Stone's Throw IPA,India Pale Ale,beer,6.4,12 fl_oz,USA`}
-            />
-            <div className="mt-3 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={submitBatch}
-                disabled={!manifestText.trim()}
-                className="min-h-[44px] rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
-              >
-                Verify batch
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  // Generate a manifest template seeded with one row
-                  // per uploaded image (filename pre-filled, other
-                  // columns blank). Lets the reviewer fill declared
-                  // fields per image without having to memorise the
-                  // header.
-                  const header =
-                    "filename,brand_name,class_type,class_category,abv_percent,net_contents,producer,country_of_origin";
-                  const rows = stage.files
-                    .filter((f) => f.type.startsWith("image/"))
-                    .map((f) => `${f.name},,,,,,,`)
-                    .join("\n");
-                  setManifestText(`${header}\n${rows}`);
+            {/* Primary path: file-upload dropzone for the application
+                file(s). Accepts the same MIMEs as the main UploadZone
+                but the onFiles handler routes them back through
+                handleFiles so they merge with the current stage's
+                images (the autoPair branch takes over once apps land). */}
+            <div className="mt-4">
+              <UploadZone
+                onFiles={(files) => {
+                  // Merge new application files with current images
+                  // and re-route through handleFiles. The router
+                  // detects apps and flips autoPair=true, which moves
+                  // the user into the "Detected" summary screen.
+                  handleFiles([...stage.files, ...files]);
                 }}
-                className="min-h-[44px] rounded-md border border-blue-500 px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
-                title="Generate a CSV manifest with one row per uploaded image"
-              >
-                Generate manifest template
-              </button>
+              />
+            </div>
+            <details className="mt-4">
+              <summary className="cursor-pointer text-sm text-slate-500 dark:text-slate-400">
+                Advanced: paste a CSV/JSON manifest manually
+              </summary>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                Required column: <code>filename</code>. Other supported
+                columns: <code>brand_name</code>, <code>class_type</code>,{" "}
+                <code>class_category</code>, <code>abv_percent</code>,{" "}
+                <code>net_contents</code> (e.g. <code>12 fl_oz</code>),{" "}
+                <code>producer</code>, <code>country_of_origin</code>.
+              </p>
+              <textarea
+                rows={6}
+                value={manifestText}
+                onChange={(e) => setManifestText(e.target.value)}
+                aria-label="Batch manifest (CSV or JSON)"
+                className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Stone's Throw IPA,India Pale Ale,beer,6.4,12 fl_oz,USA`}
+              />
+              {manifestText.trim() && (
+                <button
+                  type="button"
+                  onClick={submitBatch}
+                  className="mt-2 min-h-[44px] rounded-md border border-blue-500 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/40"
+                >
+                  Submit with pasted manifest
+                </button>
+              )}
+            </details>
+            <div className="mt-3 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={reset}
