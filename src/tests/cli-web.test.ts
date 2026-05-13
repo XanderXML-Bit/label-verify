@@ -89,6 +89,31 @@ describe("labelverify-web CLI — argument parsing + help", () => {
   });
 });
 
+describe("labelverify-web CLI — response-shape regression guards", () => {
+  // Caught post-merge of PR #21: the verify command's parseApplicationViaHttp
+  // helper was looking for `body.declared` but /api/application/parse
+  // returns `{fields, source, warnings, confidence}` (not `{declared}`).
+  // This test keeps the shape contract explicit so a future refactor of
+  // either side can't drift silently.
+  it("CLI source declares the correct application/parse response shape", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(resolve("bin/labelverify-web.ts"), "utf8");
+    // Must read `fields` from the parse response (not `declared` — the
+    // /api/application/parse route never returns a `declared` field).
+    expect(src).toMatch(/res\.body\.fields/);
+    expect(src).not.toMatch(/res\.body\.declared/);
+  });
+
+  it("CLI source declares the correct verify response shape", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(resolve("bin/labelverify-web.ts"), "utf8");
+    // /api/verify returns top-level `verdict` and `imageQuality` (not
+    // nested under `result` or `body.result`). Lock the shape contract.
+    expect(src).toMatch(/res\.body\.verdict/);
+    expect(src).toMatch(/res\.body\.imageQuality/);
+  });
+});
+
 describe("labelverify-web CLI — samples command", () => {
   // `samples` is the only command that doesn't actually hit the network
   // — it prints a hardcoded list that mirrors what the GUI offers — so
