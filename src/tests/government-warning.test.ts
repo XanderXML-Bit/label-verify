@@ -11,6 +11,7 @@ import {
 import {
   validateGovernmentWarning,
   scoreBold,
+  sizeFromMm,
 } from "@/lib/validation/government-warning-validator";
 
 const COMPLIANT_TEXT = canonicalStatement();
@@ -311,6 +312,51 @@ describe("validateGovernmentWarning", () => {
       fontBoldFractionBody: 0.1, // mostly NOT bold
     });
     expect(result.status).toBe("review");
+  });
+
+  // ─── Wave-15: size-subscore borderline-band split ─────────────────────────
+
+  it("WAVE-15: prefixMm >= 0.8 * minMm → PASS at full confidence (unchanged)", () => {
+    // Above the high band: emit PASS at the full caller-provided
+    // confidence. This is the existing wave-14 behaviour preserved
+    // exactly.
+    const r = sizeFromMm(/* prefixMm */ 1.6, /* minMm */ 2.0, /* confidence */ 0.6);
+    expect(r.status).toBe("pass");
+    expect(r.confidence).toBe(0.6);
+  });
+
+  it("WAVE-15: 0.5 * minMm <= prefixMm < 0.8 * minMm → PASS at degraded confidence (NEW)", () => {
+    // The borderline band: the px-to-mm conversion is uncertain.
+    // PASS so the verifier doesn't route a visibly-compliant label
+    // to REVIEW on a known-unreliable size estimate. Degraded
+    // confidence (max 0.3) lets the gov-aggregate reflect the
+    // weakened size signal.
+    const r = sizeFromMm(/* prefixMm */ 1.2, /* minMm */ 2.0, /* confidence */ 0.6);
+    expect(r.status).toBe("pass");
+    expect(r.confidence).toBe(0.3); // min(0.6, 0.3) = 0.3
+  });
+
+  it("WAVE-15: prefixMm < 0.5 * minMm → REVIEW (S-case floor preserved)", () => {
+    // The synthetic S1 case (prefixSizeMul = 0.45) sits below this
+    // floor — synthetic defects still REVIEW under wave-15.
+    const r = sizeFromMm(/* prefixMm */ 0.85, /* minMm */ 2.0, /* confidence */ 0.6);
+    expect(r.status).toBe("review");
+    expect(r.confidence).toBeLessThanOrEqual(0.5);
+  });
+
+  it("WAVE-15: S1 synthetic case (0.45 * minMm) stays REVIEW", () => {
+    // Pin the explicit S1 case from generate-corpus-v2.ts. The
+    // wave-15 floor of 0.5× was chosen precisely so S1 (0.45×)
+    // continues to REVIEW.
+    const r = sizeFromMm(/* prefixMm */ 0.9, /* minMm */ 2.0, /* confidence */ 0.6);
+    expect(r.status).toBe("review");
+  });
+
+  it("WAVE-15: exact 0.5 * minMm threshold → PASS at degraded confidence", () => {
+    // Boundary test — exactly at the new floor. >= behavior.
+    const r = sizeFromMm(/* prefixMm */ 1.0, /* minMm */ 2.0, /* confidence */ 0.4);
+    expect(r.status).toBe("pass");
+    expect(r.confidence).toBe(0.3); // min(0.4, 0.3) = 0.3
   });
 
   it("FAIL when raw_text is null entirely (X1 — missing)", async () => {
