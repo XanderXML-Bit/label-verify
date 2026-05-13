@@ -1,0 +1,190 @@
+{
+  "elapsedMs": 5984,
+  "verdict": "pass",
+  "imageQuality": "good",
+  "fields": {
+    "brand_name": {
+      "field": "brand_name",
+      "status": "pass",
+      "expected": "Tin Roof",
+      "actual": "Tin Roof",
+      "confidence": 1
+    },
+    "class_type": {
+      "field": "class_type",
+      "status": "pass",
+      "expected": "Pale Ale",
+      "actual": "Pale Ale",
+      "confidence": 1
+    },
+    "abv_percent": {
+      "field": "abv_percent",
+      "status": "pass",
+      "expected": 6.1,
+      "actual": 6.1,
+      "confidence": 1
+    },
+    "net_contents": {
+      "field": "net_contents",
+      "status": "pass",
+      "expected": {
+        "value": 17,
+        "unit": "fl_oz"
+      },
+      "actual": {
+        "value": 17,
+        "unit": "fl_oz"
+      },
+      "confidence": 1
+    },
+    "producer": {
+      "field": "producer",
+      "status": "pass",
+      "expected": {
+        "name": "Tin Roof Beverage Co.",
+        "street": "310 River Rd",
+        "city": "Lexington",
+        "state": "KY",
+        "postal_code": null,
+        "country": "USA"
+      },
+      "actual": {
+        "name": "Tin Roof Beverage Co.",
+        "street": "310 River Rd",
+        "city": "Lexington",
+        "state": "KY",
+        "postal_code": "40508",
+        "country": null
+      },
+      "confidence": 1,
+      "components": {
+        "name": "pass",
+        "street": "pass",
+        "city": "pass",
+        "state": "pass",
+        "postal_code": "pass",
+        "country": "pass"
+      }
+    },
+    "country_of_origin": {
+      "field": "country_of_origin",
+      "status": "pass",
+      "expected": "USA",
+      "actual": "USA",
+      "confidence": 1
+    }
+  },
+  "governmentWarning": {
+    "status": "pass",
+    "confidence": 0.4,
+    "subscores": {
+      "text": {
+        "status": "pass",
+        "confidence": 1
+      },
+      "caps": {
+        "status": "pass",
+        "confidence": 1
+      },
+      "bold": {
+        "status": "pass",
+        "confidence": 0.6
+      },
+      "size": {
+        "status": "pass",
+        "confidence": 0.4
+      }
+    }
+  },
+  "extracted": {
+    "brand_name": {
+      "value": "Tin Roof",
+      "confidence": 1
+    },
+    "class_type": {
+      "value": "Pale Ale",
+      "confidence": 1
+    },
+    "abv_percent": {
+      "value": 6.1,
+      "confidence": 1
+    },
+    "net_contents": {
+      "value": {
+        "value": 17,
+        "unit": "fl_oz"
+      },
+      "confidence": 1
+    },
+    "government_warning": {
+      "value": {
+        "raw_text": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+        "prefix_text": "GOVERNMENT WARNING:",
+        "prefix_bbox": {
+          "x": 128,
+          "y": 734,
+          "width": 256,
+          "height": 20
+        },
+        "prefix_appears_bold": true,
+        "prefix_appears_caps": true
+      },
+      "confidence": 1
+    },
+    "producer": {
+      "value": {
+        "name": "Tin Roof Beverage Co.",
+        "street": "310 River Rd",
+        "city": "Lexington",
+        "state": "KY",
+        "postal_code": "40508",
+        "country": null
+      },
+      "confidence": 1
+    },
+    "country_of_origin": {
+      "value": "USA",
+      "confidence": 1
+    }
+  },
+  "timings": {
+    "preprocess": 87,
+    "ocr": 596,
+    "vision": 2318,
+    "matching": 3,
+    "total": 5983
+  },
+  "modelId": "gemini:gemini-3.1-flash-lite",
+  "modelVersion": "gemini-3.1-flash-lite",
+  "modeUsed": "default",
+  "requiresHumanReview": false,
+  "reviewReasons": [],
+  "secondOpinion": {
+    "modelId": "openai:gpt-5.4-nano",
+    "governmentWarning": {
+      "status": "pass",
+      "confidence": 0.4,
+      "subscores": {
+        "text": {
+          "status": "pass",
+          "confidence": 1
+        },
+        "caps": {
+          "status": "pass",
+          "confidence": 1
+        },
+        "bold": {
+          "status": "pass",
+          "confidence": 0.6
+        },
+        "size": {
+          "status": "pass",
+          "confidence": 0.4
+        }
+      }
+    },
+    "agreesWithPrimary": true,
+    "reason": "Primary Gov-Warning returned PASS at confidence 0.40 without OCR corroboration",
+    "latencyMs": 3574
+  }
+}

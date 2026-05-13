@@ -161,10 +161,16 @@ function isGtCompliant(gt: GtFile): boolean {
 
 function toDeclared(gt: GtFile): import("../src/lib/types").DeclaredFields | null {
   const f = gt.fields;
-  // GT.country_of_origin is null on some `ai-label-*` rows because Codex
-  // couldn't visually confirm it. Skip those on the correct pass — there's
-  // no honest expected verdict when the application has a null required field.
-  if (typeof f.country_of_origin !== "string" || f.country_of_origin.length < 2) return null;
+  // GT.country_of_origin is null on the `ai-label-*` rows where Codex
+  // couldn't visually confirm a country marking. That's a legitimate
+  // declared value — TTB only requires country marking on imports
+  // (27 CFR §4.39 / §5.36) so a US-domestic application that didn't
+  // declare a country should still verify. Pass null through to the
+  // nullish schema branch in DeclaredFieldsSchema (wave-8 hotfix).
+  const country =
+    typeof f.country_of_origin === "string" && f.country_of_origin.length >= 2
+      ? f.country_of_origin
+      : null;
   return {
     brand_name: f.brand_name,
     class_type: f.class_type,
@@ -172,7 +178,7 @@ function toDeclared(gt: GtFile): import("../src/lib/types").DeclaredFields | nul
     abv_percent: f.abv_percent,
     net_contents: f.net_contents as { value: number; unit: "fl_oz" | "ml" | "L" | "cl" },
     producer: f.producer as string | import("../src/lib/types").DeclaredFields["producer"],
-    country_of_origin: f.country_of_origin,
+    country_of_origin: country,
   };
 }
 
