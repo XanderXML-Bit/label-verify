@@ -4,6 +4,7 @@ import { DeclaredFieldsSchema } from "@/lib/types";
 import {
   BatchStoreFullError,
   createBatch,
+  deleteBatch,
   type BatchItem,
 } from "@/lib/batch-store";
 import {
@@ -13,6 +14,7 @@ import {
 import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { rowToDeclared } from "@/lib/application/row-to-declared";
 import { parseApplication } from "@/lib/application/parse";
+import type { DeclaredFields, VerifyResponse } from "@/lib/types";
 import {
   detectCsvManifestShape,
   detectJsonManifestShape,
@@ -732,7 +734,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let job;
+  let job: ReturnType<typeof createBatch>;
   try {
     job = createBatch(items);
   } catch (err) {
@@ -741,13 +743,94 @@ export async function POST(req: Request) {
     }
     throw err;
   }
+
+  // ─── Inline batch processing (NEW 2026-05-13) ──────────────────────────
+  //
+  // The original design used a two-step flow: POST creates an in-memory
+  // batch, GET /stream/[id] opens an SSE pipe to drain it. That works
+  // beautifully on a single Node process but FAILS on Vercel serverless
+  // — the POST and the SSE GET land on different function instances
+  // (different cold/warm pools), and the in-memory Map isn't shared.
+  // The SSE GET would 404 because `getBatch(id)` looks in the wrong
+  // instance's store. The user hit this exact failure on production
+  // 2026-05-13.
+  //
+  // Fix: process the whole batch inline in the POST handler and
+  // return all results in one response. We lose the streaming-progress
+  // UX, but the batch is bounded (≤ MAX_BATCH_ITEMS = ~100) and runs
+  // with CONCURRENCY=2 (≤ ~50s for 100 items at ~3s each / 2 parallel)
+  // — fits comfortably inside the 60s POST timeout configured in
+  // vercel.json. The client renders the loading banner during the
+  // wait; results pop in atomically when the response lands.
+  //
+  // The SSE endpoint stays in the codebase (`/stream/[id]`) for any
+  // local-dev / single-process consumer that wants it, but the
+  // production UI now consumes the inline results.
+  const CONCURRENCY = 2;
+  const startedAt = Date.now();
+  let cursor = 0;
+  async function pumpInline(): Promise<void> {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= job.items.length) return;
+      const item = job.items[idx]!;
+      item.status = "running";
+      try {
+        const result = await verifyLabelInline(item.imageBytes, item.declared);
+        item.status = "done";
+        item.result = result;
+      } catch (err) {
+        item.status = "error";
+        item.error = (err as Error).message;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: CONCURRENCY }, () => pumpInline()));
+  // Build the result rows in image-order.
+  const results = job.items.map((item) => {
+    if (item.status === "done" && item.result) {
+      return {
+        index: item.index,
+        filename: item.filename,
+        status: "done" as const,
+        result: item.result,
+      };
+    }
+    return {
+      index: item.index,
+      filename: item.filename,
+      status: "error" as const,
+      error: item.error ?? "Verification failed",
+    };
+  });
+  const passed = results.filter((r) => r.status === "done" && r.result?.verdict === "pass").length;
+  const failed = results.filter((r) => r.status === "done" && r.result?.verdict === "fail").length;
+  const review = results.filter((r) => r.status === "done" && r.result?.verdict === "review").length;
+  const errored = results.filter((r) => r.status === "error").length;
+  // Release the in-memory job — it served its purpose for the inline
+  // processing concurrency primitives; we don't keep it for SSE pickup.
+  try { deleteBatch(job.id); } catch { /* already gone */ }
+
   return NextResponse.json({
     batchId: job.id,
     count: items.length,
     pairingErrors,
     pairingWarnings,
     pairing,
+    inline: true,
+    results,
+    summary: { passed, failed, review, errored },
+    elapsedMs: Date.now() - startedAt,
   });
+}
+
+// Lazy import to keep the module graph shallow on cold-start.
+async function verifyLabelInline(
+  imageBytes: Buffer,
+  declared: DeclaredFields,
+): Promise<VerifyResponse> {
+  const { verifyLabel } = await import("@/lib/verify");
+  return verifyLabel(imageBytes, declared);
 }
 
 function stem(filename: string): string {
