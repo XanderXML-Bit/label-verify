@@ -15,7 +15,7 @@
     "abv_percent": 6.7,
     "net_contents": null,
     "producer": "Night Orchard Brewing, Cleveland, OH",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": false,

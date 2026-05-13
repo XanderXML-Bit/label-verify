@@ -82,7 +82,12 @@ async function main() {
       abv_percent: gt.fields.abv_percent,
       net_contents: gt.fields.net_contents,
       producer: gt.fields.producer,
-      country_of_origin: gt.fields.country_of_origin,
+      // GT may have country_of_origin === null on US-domestic labels
+      // (TTB only requires marking on imports). The DeclaredFields
+      // schema requires a string, so coerce null → "USA" for these:
+      // the verifier's country comparator handles the null-extracted
+      // case via implicit-USA inference from the producer address.
+      country_of_origin: gt.fields.country_of_origin ?? "USA",
     };
     const verifyRes = await verifyLabel(buf, declared);
     const latencyMs = Date.now() - t0;

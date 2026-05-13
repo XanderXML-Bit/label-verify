@@ -18,7 +18,7 @@
       "unit": "ml"
     },
     "producer": "Ashby Drake Beverage Co., Denver, CO",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

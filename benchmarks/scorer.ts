@@ -27,10 +27,16 @@ import type { PerItemOutcome, PerItemWarningOutcome } from "./score";
 
 export interface GroundTruthGovWarning {
   present: boolean;
-  text_matches_regulation: boolean;
-  prefix_all_caps: boolean;
-  prefix_bold: boolean;
-  meets_size_minimum: boolean;
+  // The verifiable bool flags accept `null` for the "image so degraded
+  // that this flag cannot be honestly asserted" case (e.g.
+  // ai-label-0066, a motion-blurred image where the warning text is
+  // unreadable). The bench scorer ignores these inner flags directly
+  // and uses `gov_warning_case` + the validator instead, so `null`
+  // here is non-breaking, but the type honestly reflects the data.
+  text_matches_regulation: boolean | null;
+  prefix_all_caps: boolean | null;
+  prefix_bold: boolean | null;
+  meets_size_minimum: boolean | null;
 }
 
 export interface GroundTruthFields {
@@ -40,7 +46,11 @@ export interface GroundTruthFields {
   abv_percent: number;
   net_contents: NetContents;
   producer: ProducerAddress | string;
-  country_of_origin: string;
+  /** Country of origin. `null` is a valid value — US-domestic labels
+   *  routinely don't print a country (TTB requires marking only for
+   *  imports per 27 CFR §4.39 / §5.36). The scorer treats `null` GT
+   *  + `null` extracted as correct; any other combination as not. */
+  country_of_origin: string | null;
   government_warning: GroundTruthGovWarning;
 }
 
@@ -128,12 +138,25 @@ export async function scoreImage(
   );
   push("net_contents", nc.status === "pass");
 
-  const country = compareCountry(
-    gt.fields.country_of_origin,
-    extracted.country_of_origin.value,
-    extracted.country_of_origin.confidence,
-  );
-  push("country_of_origin", country.status === "pass");
+  // Country of origin can be null on US-domestic labels (TTB only
+  // mandates marking on imports). Two valid GT shapes:
+  //   • `null` → correct iff extractor also returned null
+  //   • a string country name → use the standard comparator
+  // Without this short-circuit, compareCountry(null, ...) tries to
+  // normalize a null string and throws.
+  const truthCountry = gt.fields.country_of_origin;
+  let countryCorrect: boolean;
+  if (truthCountry === null) {
+    countryCorrect = extracted.country_of_origin.value === null;
+  } else {
+    const country = compareCountry(
+      truthCountry,
+      extracted.country_of_origin.value,
+      extracted.country_of_origin.confidence,
+    );
+    countryCorrect = country.status === "pass";
+  }
+  push("country_of_origin", countryCorrect);
 
   const producer = compareProducer(
     gt.fields.producer,

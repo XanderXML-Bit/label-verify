@@ -10,7 +10,7 @@
     "brand_name": "Juniper Kite",
     "class_type": "Hard Kombucha",
     "class_category": "malt_beverage",
-    "abv_percent": 6.0,
+    "abv_percent": 6,
     "net_contents": {
       "value": 16,
       "unit": "fl_oz"
@@ -23,7 +23,7 @@
       "postal_code": "80302",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

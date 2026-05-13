@@ -12,7 +12,7 @@
     "brand_name": "Aster Pin",
     "class_type": "Vodka",
     "class_category": "distilled_spirits",
-    "abv_percent": 40.0,
+    "abv_percent": 40,
     "net_contents": {
       "value": 50,
       "unit": "ml"
@@ -25,7 +25,7 @@
       "postal_code": "89119",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

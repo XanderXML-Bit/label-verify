@@ -229,6 +229,65 @@ export function SingleResult({
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{gov.reason}</p>
               )}
             </div>
+            {/* Second-opinion panel — fires only on borderline Gov-Warning
+                cases (REVIEW or no-OCR low-confidence PASS). An independent
+                cross-provider vision call (GPT-5.4-nano) re-reads the
+                label so the human reviewer sees what a different model
+                says. Agreement = strong signal; disagreement = explicit
+                "two models disagree, you decide" framing. */}
+            {result.secondOpinion && (
+              <div
+                role="region"
+                aria-label="Independent second opinion on Government Warning"
+                className={`rounded-lg border-l-4 p-3 text-sm ${
+                  result.secondOpinion.agreesWithPrimary
+                    ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-200"
+                    : "border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-200"
+                }`}
+              >
+                <p className="font-semibold">
+                  <span aria-hidden className="mr-1">
+                    {result.secondOpinion.agreesWithPrimary ? "🔁" : "⚖"}
+                  </span>
+                  Independent second opinion on Government Warning
+                </p>
+                <p className="mt-1">
+                  Because the primary read was borderline, we ran the same
+                  label through a different model{" "}
+                  <span className="font-mono text-xs">
+                    ({result.secondOpinion.modelId})
+                  </span>{" "}
+                  for an independent verdict.
+                </p>
+                <p className="mt-1">
+                  Second opinion:{" "}
+                  <strong className="uppercase">
+                    {result.secondOpinion.governmentWarning.status}
+                  </strong>{" "}
+                  (confidence{" "}
+                  {result.secondOpinion.governmentWarning.confidence.toFixed(
+                    2,
+                  )}
+                  ).{" "}
+                  {result.secondOpinion.agreesWithPrimary ? (
+                    <span>
+                      <strong>Both models agree</strong> — corroborating
+                      the primary verdict.
+                    </span>
+                  ) : (
+                    <span>
+                      <strong>Models disagree</strong> — a human reviewer
+                      should adjudicate.
+                    </span>
+                  )}
+                </p>
+                {result.secondOpinion.governmentWarning.reason && (
+                  <p className="mt-1 text-xs italic">
+                    {result.secondOpinion.governmentWarning.reason}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -18,7 +18,7 @@
       "unit": "fl_oz"
     },
     "producer": "Riverbend Works Brewing Co., Dayton, OH",
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

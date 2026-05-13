@@ -10,7 +10,7 @@
     "brand_name": "Signal Forge",
     "class_type": "Triple IPA",
     "class_category": "beer",
-    "abv_percent": 12.0,
+    "abv_percent": 12,
     "net_contents": {
       "value": 16,
       "unit": "fl_oz"
@@ -23,7 +23,7 @@
       "postal_code": "80202",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

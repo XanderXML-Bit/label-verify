@@ -10,7 +10,7 @@
     "brand_name": "North Window",
     "class_type": "Botanical Gin",
     "class_category": "distilled_spirits",
-    "abv_percent": 42.0,
+    "abv_percent": 42,
     "net_contents": {
       "value": 750,
       "unit": "ml"
@@ -23,7 +23,7 @@
       "postal_code": "04101",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,

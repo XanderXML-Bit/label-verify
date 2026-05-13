@@ -12,7 +12,7 @@
     "brand_name": "Wrapwater",
     "class_type": "Hard Seltzer Malt Beverage",
     "class_category": "malt_beverage",
-    "abv_percent": 5.0,
+    "abv_percent": 5,
     "net_contents": {
       "value": 12,
       "unit": "fl_oz"
@@ -25,7 +25,7 @@
       "postal_code": "98144",
       "country": "USA"
     },
-    "country_of_origin": "USA",
+    "country_of_origin": null,
     "government_warning": {
       "present": true,
       "text_matches_regulation": true,
