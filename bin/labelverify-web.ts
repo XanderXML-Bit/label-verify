@@ -239,17 +239,26 @@ async function parseApplicationViaHttp(
   const { blob, name } = await fileBlob(appPath);
   const form = new FormData();
   form.append("file", blob, name);
-  const res = await httpJson<{ declared?: unknown; error?: string }>(
+  // The /api/application/parse route returns
+  //   { fields: Partial<DeclaredFields>, source, warnings, confidence }
+  // (NOT { declared: ... } — earlier draft of this CLI got the shape
+  // wrong; caught by post-merge smoke test 2026-05-13). The browser UI
+  // reads `fields` directly into its prefill state — we mirror that.
+  const res = await httpJson<{
+    fields?: unknown;
+    error?: string;
+    warnings?: string[];
+  }>(
     `${baseUrl}/api/application/parse`,
     { method: "POST", body: form },
     timeoutMs,
   );
-  if (res.status !== 200 || !res.body || !res.body.declared) {
+  if (res.status !== 200 || !res.body || !res.body.fields) {
     throw new Error(
       `parse-app failed (HTTP ${res.status}): ${res.body?.error ?? res.text.slice(0, 200)}`,
     );
   }
-  return res.body.declared;
+  return res.body.fields;
 }
 
 // ─── verify ────────────────────────────────────────────────────────────────
