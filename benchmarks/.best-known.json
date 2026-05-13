@@ -37,9 +37,9 @@
       "corpus": "test-data-combined"
     },
     "errors": {
-      "value": 76,
-      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
-      "benchAt": "2026-05-13T09:23:12.849Z",
+      "value": 5,
+      "commit": "66f093cc2805687626b2f12598c516039dab1000",
+      "benchAt": "2026-05-13T16:16:44.764Z",
       "corpus": "test-data-combined"
     }
   }

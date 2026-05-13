@@ -363,6 +363,89 @@ because the smart-pairing path (F2) covers the realistic TTB case
 (operator has both labels and applications) and the manifest path
 covers the structured-export case.
 
+## Wave-11 (iOS upload tolerance) — DONE 2026-05-13
+
+User reported: tried to verify 5 photos on iPhone but only 1 made it
+through. Server-side investigation confirmed the request only contained
+1 image — root cause was the iOS Safari file picker, which often
+returns a single Photo per `<input multiple>` invocation when the
+accept list contains application MIMEs (because iOS then routes the
+user through the Files-app picker instead of the Photos multi-select
+sheet).
+
+Three changes, all additive / desktop-neutral:
+
+1. **`mergeFilesForRestage` helper + unit tests** (`src/lib/upload-merge.ts`).
+   Order-preserving merge with dedupe by (name, size, lastModified) —
+   the tuple is unique enough in practice for the dedupe and the
+   browser doesn't surface a content hash.
+2. **`UploadZone` append mode** (`src/app/components/UploadZone.tsx`).
+   Same component, an `mode="append"` flag swaps the copy to "Add
+   more files," shrinks the chrome, and surfaces an iOS-only blue
+   hint line. The hidden `<input>` element is unchanged in this
+   mode, so behaviour is identical on every platform.
+3. **iOS-only secondary picker** with `accept="image/*"` (no app
+   MIMEs in the same input — that's the only configuration where
+   iOS opens the Photos multi-select sheet). Renders next to the
+   primary button **only when `isLikelyIos()` returns true**, so
+   desktop users see no extra button. Both inputs forward to the
+   same `onFiles` handler.
+
+Wired into `src/app/page.tsx` via a new `handleAdditionalFiles(files)`
+helper that merges the new picker output with the current stage's
+files via `mergeFilesForRestage` and re-routes through `handleFiles`.
+Used by:
+
+- `single-pending`: an "Add more files" dropzone underneath the
+  uploaded-image preview. Adding more images flips the page into
+  batch mode automatically via intent inference; adding an
+  application file triggers the background app-parse.
+- `batch-pending` (autoPair): an "Add more files" dropzone
+  underneath the "Detected" summary, so the user can keep
+  appending photos to the batch one tap at a time on iOS.
+- `batch-pending` (non-autoPair): the existing "drop your
+  application data below" UploadZone — switched from a
+  re-implemented merge to call `handleAdditionalFiles` so
+  ordering / dedupe / iOS hint behaviour matches the rest of the
+  flow.
+
+`isLikelyIos()` is conservative: it detects iPhone/iPad/iPod UAs and
+iPadOS 13+ devices that masquerade as macOS Safari but expose
+multi-touch. A false-positive surfaces one extra line of copy + one
+extra button — both harmless on desktop.
+
+No iOS-specific compromise was needed on the desktop drag-and-drop-
+five-files-at-once path: the idle screen's UploadZone is unchanged.
+This is purely additive iOS support.
+
+### Wave-10 revert (prefix-bbox stroke-width fallback) — 2026-05-13
+
+Investigated as an OCR enhancement on `experiment/wave-10-ocr-prefix-
+bbox-fallback`. The fallback synthesised a Tesseract-shaped word
+record from the model's self-reported `prefix_bbox` and ran the
+existing `measureRelativeBold` on it whenever Tesseract missed the GW
+prefix. Bench result vs. best-known on `test-data-combined`:
+
+| metric                       | best-known | wave-10 |  Δ      |
+|------------------------------|-----------:|--------:|--------:|
+| passRateOnCorrect            |      76.5% |   60.4% | **−16.1 pp** |
+| failOrReviewRateOnWrong      |     100.0% |  100.0% |  +0.0 pp |
+| false-positives              |          3 |       0 |  −3      |
+| latency P50 / P95 (ms total) | 3213 / 7317 | 3342 / 7360 | +129 / +43 |
+
+The fallback successfully caught two of three false-positives (gov:B2,
+gov:B3) but routed ~16 pp of compliant labels away from PASS into
+REVIEW/FAIL. Per the user directive "only swap if strictly better,"
+this is **not a direct improvement** and was reverted on the
+experiment branch. The branch is deleted; the deltas are recorded
+here in case a future tuning pass wants to revisit the body-word
+filter heuristic (the synthesised prefix occupies a wider y-range
+than a real Tesseract bbox, which makes the body-word matcher pick
+up too many neighbouring words).
+
+Best-known auto-flagged the regression — see
+`benchmarks/.best-known.json` for the live champion records.
+
 ## Out of scope (acknowledge but won't do)
 
 - Custom CNN training (no labelled data).
