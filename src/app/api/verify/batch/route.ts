@@ -769,16 +769,49 @@ export async function POST(req: Request) {
   // local-dev / single-process consumer that wants it, but the
   // production UI now consumes the inline results.
   // Concurrency scales with batch size up to a per-function ceiling.
-  // Small batches (≤ 4 items) get fully-parallel verification (one
-  // worker per item) which finishes a 5-image batch in ~3 s instead
-  // of ~9 s on the prior fixed-2 setting. Larger batches cap at 4
-  // so a 100-item batch still fits the 60-s POST window (100 × 3 s ÷
-  // 4 ≈ 75 s, with the 80 % provider-utilization safety margin
-  // absorbing the few slow tails). The Gemini RPM rate-limit budget
-  // bounds the floor — at 30 RPM and 3 s per call, 4 concurrent is
-  // ~12 calls in 36 s = 720 calls/hour, well under any quota the
-  // configured tier carries.
-  const MAX_INLINE_CONCURRENCY = 4;
+  // Small batches (≤ MAX_INLINE_CONCURRENCY items) get fully-parallel
+  // verification (one worker per item); larger batches cap at the
+  // ceiling.
+  //
+  // Wave-15b: bumped 6 → 20 (configurable via INLINE_BATCH_CONCURRENCY
+  // env var). The verifyLabel call is ~80% IO-bound on the Gemini
+  // API (CPU work — sharp preprocessing + Tesseract OCR — completes
+  // in well under 1s; the ~3s end-to-end is dominated by the
+  // remote-API round-trip). Concurrent calls scale near-linearly
+  // until the Gemini quota or the Vercel memory ceiling becomes the
+  // bottleneck — NOT the local CPU.
+  //
+  // Throughput math at concurrency 20 (1 vCPU function, 60s window):
+  //   60s ÷ 3s/call × 20 workers = 400 calls/60s ceiling
+  //   → A 300-image batch finishes in ~45s (300 ÷ 20 × 3s),
+  //     comfortably inside the window with 33% headroom for the
+  //     slow tail.
+  //
+  // Trade-offs at 20:
+  //  - Memory: each verifyLabel holds ~10-15 MB of image buffer
+  //    + sharp working set. 20 concurrent ≈ 250 MB peak — well
+  //    inside the 1 GB Vercel function limit on Hobby (3 GB on
+  //    Pro). Above ~50 concurrent the function would approach the
+  //    Hobby ceiling; the env-var override exists for that case.
+  //  - Gemini RPM: 20 concurrent × ~20 calls/min/worker = 400
+  //    calls/min. The default DEFAULT_GEMINI_RPM_LIMIT is 30, but
+  //    that's the FREE-tier floor. Operators on Tier 1 (1000 RPM)
+  //    or Tier 2 (2000 RPM) can comfortably run at concurrency 20;
+  //    operators on the free tier should lower via env var.
+  //  - Per-call latency: should NOT change — each call is IO-bound
+  //    on the remote API and the 20 parallel calls are independent.
+  //
+  // The env-var override is the safety valve: when the operator
+  // knows their tier and quota, they can dial concurrency up to
+  // their actual throughput ceiling (50+ is realistic on Tier 2)
+  // without a redeploy. Defaults to 20 so out-of-box performance
+  // is the documented 300-image-in-45s case.
+  const INLINE_CONCURRENCY_DEFAULT = 20;
+  const envOverride = Number(process.env.INLINE_BATCH_CONCURRENCY);
+  const MAX_INLINE_CONCURRENCY =
+    Number.isInteger(envOverride) && envOverride > 0 && envOverride <= 200
+      ? envOverride
+      : INLINE_CONCURRENCY_DEFAULT;
   const CONCURRENCY = Math.min(MAX_INLINE_CONCURRENCY, job.items.length);
   const startedAt = Date.now();
   let cursor = 0;

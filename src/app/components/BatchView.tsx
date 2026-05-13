@@ -45,6 +45,58 @@ export interface BatchSummary {
 
 type Filter = "all" | "failed" | "review" | "pass" | "error";
 
+/**
+ * Look up a preview URL for the row's filename, with defensive
+ * fallbacks. The exact-match key is the primary path; the fallbacks
+ * handle production data drift between client (where the previewMap
+ * is built from `f.name`) and server (which echoes back `imageFile.name`
+ * — should match but in practice we've observed encoding drift,
+ * basename normalization, and folder-pick path-prefix differences).
+ *
+ * The cost of an extra lookup vs. an extra dashed-placeholder is
+ * obvious — surfacing the thumbnail is the operator-facing win.
+ */
+function resolvePreviewUrl(
+  rowFilename: string,
+  preview: Readonly<Record<string, string>> | undefined,
+): string | undefined {
+  if (!preview) return undefined;
+  // 1) Exact match — the happy path.
+  const direct = preview[rowFilename];
+  if (direct) return direct;
+  // 2) Decode URI-component (rare but possible if the server URL-
+  // encoded the filename — e.g. a file with spaces).
+  try {
+    const decoded = decodeURIComponent(rowFilename);
+    if (decoded !== rowFilename && preview[decoded]) return preview[decoded];
+  } catch {
+    /* malformed escape sequence — ignore */
+  }
+  // 3) Basename of the row's filename — strips any forward-or-back-slash
+  // path prefix the server might have surfaced.
+  const lastSlash = Math.max(
+    rowFilename.lastIndexOf("/"),
+    rowFilename.lastIndexOf("\\"),
+  );
+  if (lastSlash >= 0) {
+    const base = rowFilename.slice(lastSlash + 1);
+    if (preview[base]) return preview[base];
+  }
+  // 4) Reverse lookup — find a preview key whose basename matches the
+  // row's basename. Handles the folder-pick case where one side stored
+  // the full webkitRelativePath and the other stored just the leaf.
+  const rowBase = lastSlash >= 0 ? rowFilename.slice(lastSlash + 1) : rowFilename;
+  for (const key of Object.keys(preview)) {
+    const keyLastSlash = Math.max(
+      key.lastIndexOf("/"),
+      key.lastIndexOf("\\"),
+    );
+    const keyBase = keyLastSlash >= 0 ? key.slice(keyLastSlash + 1) : key;
+    if (keyBase === rowBase) return preview[key];
+  }
+  return undefined;
+}
+
 export function BatchView({
   batchId,
   rows: initialRows,
@@ -269,7 +321,7 @@ export function BatchView({
                 key={r.index}
                 row={r}
                 onOpen={() => setDrilled(r)}
-                previewUrl={imagePreviewByFilename?.[r.filename]}
+                previewUrl={resolvePreviewUrl(r.filename, imagePreviewByFilename)}
               />
             ))}
           </tbody>
@@ -280,7 +332,9 @@ export function BatchView({
         <DrilldownPanel
           row={drilled}
           onClose={() => setDrilled(null)}
-          previewUrl={imagePreviewByFilename?.[drilled.filename] ?? ""}
+          previewUrl={
+            resolvePreviewUrl(drilled.filename, imagePreviewByFilename) ?? ""
+          }
         />
       )}
 
