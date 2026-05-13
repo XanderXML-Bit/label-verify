@@ -629,6 +629,16 @@ export async function extractOnly(
     new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
   ]);
   const f = extracted.fields;
+  // extractOnly has no declared net_contents (the user didn't supply
+  // any). The Gov-Warning size subscore needs SOMETHING to compute
+  // the §16.22 threshold band (≤ 237 ml uses 1 mm minimum, > 237 ml
+  // uses 2 mm). Prefer the extractor's own reading of the label's
+  // net_contents — if the model said "750 ml" we should size against
+  // that, not a generic 12 fl_oz can. Fall back to 12 fl_oz only when
+  // the model didn't read it either; in that case the size subscore
+  // is already advisory-not-FAIL so a wrong threshold band is
+  // bounded-cost (worst case: REVIEW instead of PASS).
+  const extractedNc = f.net_contents.value;
   const gov = await validateGovernmentWarning({
     extracted: f.government_warning.value ?? {
       raw_text: null,
@@ -637,7 +647,7 @@ export async function extractOnly(
       prefix_appears_bold: null,
       prefix_appears_caps: null,
     },
-    declaredNetContents: { value: 12, unit: "fl_oz" }, // placeholder
+    declaredNetContents: extractedNc ?? { value: 12, unit: "fl_oz" },
     imageDimsPx: { width: pre.width, height: pre.height },
     ocrContext:
       ocrFinal && ocrFinal.words.length > 0
