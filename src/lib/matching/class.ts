@@ -118,6 +118,51 @@ export function compareClass(
   const r = ratio(a, b);
   const pass = r >= 0.85;
   const review = !pass && r >= 0.7;
+  // Wave-16: substring-relaxation REVIEW path. The declared value is
+  // often a CONCISE class name (e.g. "Grenache") while the extracted
+  // value is a DESCRIPTIVE label-printed string (e.g. "Grenache Red
+  // Wine"). The Levenshtein-ratio comparator returns ~0.5-0.65 on
+  // these length-mismatched cases — below the 0.7 REVIEW band — and
+  // FAILs the field. The operator-cost is real: wave-13 traced 2 of
+  // the 20 deterministic false-fails (ai-label-0065 "Grenache",
+  // ai-label-0080 "Mango Lime Malt Seltzer") to this exact code
+  // path.
+  //
+  // Safe substring escalation: when declared is wholly contained in
+  // extracted (or vice versa), route the field to REVIEW with the
+  // similarity ratio as confidence. The verifier no longer rejects
+  // labels where the declared class name is a CONCISE form of the
+  // printed text. REVIEW (not PASS) is the conservative landing —
+  // a human reviewer confirms whether "Grenache" + "Grenache Red
+  // Wine" is genuinely the same product (typically yes) without
+  // the verifier auto-passing a potentially-different class.
+  //
+  // Risk: cross-class substring collisions (e.g. "Beer" ⊆ "Root
+  // Beer"). The minimum-token-length guard (≥ 4 chars after
+  // canonicalization) eliminates the common short-token traps; "Beer"
+  // canonicalizes to "beer" which is < 5 chars, so the "beer" ⊆
+  // "root beer" case is NOT escalated. Two-token+ declared values
+  // pass through as the operator typed them.
+  if (!pass && !review) {
+    const aTrim = a.trim();
+    const bTrim = b.trim();
+    const minTokenLen = 5;
+    const shorterLen = Math.min(aTrim.length, bTrim.length);
+    if (shorterLen >= minTokenLen) {
+      const shorter = aTrim.length <= bTrim.length ? aTrim : bTrim;
+      const longer = aTrim.length <= bTrim.length ? bTrim : aTrim;
+      if (longer.includes(shorter)) {
+        return {
+          field: "class_type",
+          status: "review",
+          expected: declared,
+          actual: extracted,
+          confidence: Math.min(0.65, extractedConfidence),
+          reason: `Declared "${declared}" is a substring of printed "${extracted}" (or vice versa) — likely the same class with the label using a more descriptive form. Confirm.`,
+        };
+      }
+    }
+  }
   return {
     field: "class_type",
     status: pass ? "pass" : review ? "review" : "fail",

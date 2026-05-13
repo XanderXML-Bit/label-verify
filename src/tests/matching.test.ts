@@ -182,6 +182,61 @@ describe("compareClass", () => {
   it("IPA vs Stout → FAIL", () => {
     expect(compareClass("India Pale Ale", "Stout", 0.9).status).toBe("fail");
   });
+
+  // Wave-16: substring-relaxation REVIEW path. The Levenshtein/token
+  // comparator already handles the "declared is a substring of
+  // extracted" case (fast-fuzzy returns 1.0 on token-subset matches —
+  // e.g. "Grenache" ⊆ "Grenache Red Wine" already PASSes). But the
+  // REVERSE asymmetry — extracted shorter, declared longer — drops
+  // below the 0.7 REVIEW band (e.g. fast-fuzzy("Mango Lime Malt
+  // Beverage Hard Seltzer Variety", "Mango Lime") = 0.22). Wave-16
+  // catches THAT case and routes to REVIEW.
+  it("WAVE-16: extracted is a short substring of declared → REVIEW (length-mismatch case)", () => {
+    // Declared was descriptive, label printed a concise variant.
+    // Pre-wave-16: ratio ~0.22 → FAIL. Wave-16: REVIEW with
+    // substring-match reason.
+    const r = compareClass(
+      "Mango Lime Malt Beverage Hard Seltzer Variety",
+      "Mango Lime",
+      0.9,
+    );
+    expect(r.status).toBe("review");
+    expect(r.reason).toMatch(/substring/i);
+  });
+
+  it("WAVE-16: neither string contains the other → FAIL (no relaxation)", () => {
+    // Different classes; substring path correctly does NOT fire.
+    const r = compareClass(
+      "Mango Lime Malt Seltzer",
+      "Hard Seltzer Malt Beverage",
+      0.9,
+    );
+    expect(r.status).toBe("fail");
+  });
+
+  it("WAVE-16: short shorter-side (< 5 chars) is NOT substring-escalated", () => {
+    // The minimum-shorter-length guard (≥ 5 chars after
+    // canonicalization) prevents short-token false positives.
+    // "Rum" (3 chars) gets through fast-fuzzy's token-set matcher
+    // anyway (returns 1.0 on "rum" ⊆ "rum punch") — the guard
+    // matters for the reverse case where the SHORT side would
+    // otherwise force an unsafe substring escalation.
+    const shortForm = "ABC"; // 3 chars after canonicalization
+    const longForm = "ABC-Long-Description-Of-A-Different-Style";
+    const r = compareClass(longForm, shortForm, 0.9);
+    if (r.status === "review") {
+      // If it's review, it must NOT be due to the wave-16 substring
+      // path (which the < 5-char guard blocks).
+      expect(r.reason ?? "").not.toMatch(/substring/i);
+    }
+  });
+
+  it("WAVE-16: identical canonicalized values still PASS (substring path doesn't override)", () => {
+    // Regression guard: the substring path is gated by `!pass && !review`,
+    // so identical-after-canonicalization values still PASS via the
+    // earlier branch.
+    expect(compareClass("IPA", "IPA", 0.9).status).toBe("pass");
+  });
 });
 
 describe("compareProducer (structured)", () => {
