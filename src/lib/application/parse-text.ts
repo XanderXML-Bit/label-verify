@@ -102,9 +102,18 @@ export function parseApplicationText(text: string): {
   }
 
   const fields = rowToDeclared(row);
-  const fieldsFound = Object.keys(fields).filter(
-    (k) => (fields as Record<string, unknown>)[k] !== undefined,
-  );
+  // `rowToDeclared` always emits `country_of_origin: null` so the
+  // schema's .nullish() branch accepts US-domestic-omission rows.
+  // For the "how many fields were actually recognised in the input"
+  // count below, treat the auto-null country the same as undefined —
+  // it doesn't represent a value the parser found in the source text.
+  const fieldsFound = Object.keys(fields).filter((k) => {
+    const v = (fields as Record<string, unknown>)[k];
+    if (v === undefined) return false;
+    if (k === "country_of_origin" && v === null && !row.country_of_origin && !row.country && !row.origin)
+      return false;
+    return true;
+  });
   if (fieldsFound.length === 0) {
     warnings.push(
       "No application fields recognised. The file may not follow a 'Field: value' format — fill the form in manually.",

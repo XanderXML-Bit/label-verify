@@ -67,7 +67,11 @@ export function rowToDeclared(
     ),
     net_contents: netContents,
     producer,
-    country_of_origin: get("country", "country_of_origin", "origin"),
+    // Explicit `null` (not undefined) when missing so the schema's
+    // .nullish() branch accepts the row even when the source JSON
+    // shipped `"country_of_origin": null` (US-domestic apps omit it
+    // legitimately per 27 CFR §4.39 / §5.36 — see types.ts).
+    country_of_origin: get("country", "country_of_origin", "origin") ?? null,
   };
 }
 
