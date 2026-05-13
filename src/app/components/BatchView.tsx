@@ -37,8 +37,16 @@ export interface BatchSummary {
 type Filter = "all" | "failed" | "review" | "pass" | "error";
 
 export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps) {
+  // Inline-batch detection (2026-05-13): if every row arrives already
+  // in a terminal state (`done` or `error`), the POST returned inline
+  // results — no SSE needed. Vercel serverless can't share the in-memory
+  // batch-store between the POST instance and the SSE GET instance, so
+  // opening an EventSource would 404 on the next-instance miss. Skip it.
+  const allRowsTerminal =
+    initialRows.length > 0 &&
+    initialRows.every((r) => r.status === "done" || r.status === "error");
   const [rows, setRows] = useState<BatchRow[]>(initialRows);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(allRowsTerminal);
   const [filter, setFilter] = useState<Filter>("all");
   const [drilled, setDrilled] = useState<BatchRow | null>(null);
   // SSE connection state. Surfaced as a banner so a user whose
@@ -47,8 +55,23 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
   const [connectionLost, setConnectionLost] = useState(false);
   const [reconnectKey, setReconnectKey] = useState(0);
 
-  // Open SSE on mount; refreshed when the user clicks reconnect.
+  // Emit the inline-batch summary up to the parent once on mount.
   useEffect(() => {
+    if (!allRowsTerminal) return;
+    const passed = initialRows.filter((r) => r.status === "done" && r.result?.verdict === "pass").length;
+    const failed = initialRows.filter((r) => r.status === "done" && r.result?.verdict === "fail").length;
+    const review = initialRows.filter((r) => r.status === "done" && r.result?.verdict === "review").length;
+    const errored = initialRows.filter((r) => r.status === "error").length;
+    onDone({ passed, failed, review, errored });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Open SSE on mount; refreshed when the user clicks reconnect. The
+  // inline-batch path returns terminal rows in the initial response —
+  // skip the SSE entirely in that case (no Vercel-instance race).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (allRowsTerminal) return;
     const es = new EventSource(`/api/verify/batch/${batchId}/stream`);
     let closed = false;
     es.addEventListener("item", (ev: MessageEvent<string>) => {
@@ -99,6 +122,7 @@ export function BatchView({ batchId, rows: initialRows, onDone }: BatchViewProps
       closed = true;
       es.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batchId, onDone, reconnectKey]);
 
   const counts = useMemo(() => {

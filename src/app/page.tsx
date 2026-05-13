@@ -463,13 +463,46 @@ export default function Home() {
         batchId: string;
         count: number;
         pairingErrors?: string[];
+        // The inline-batch path (2026-05-13 fix for Vercel serverless
+        // instance isolation) returns the FULL result set in the POST
+        // response. If `inline === true`, skip the SSE handshake and
+        // render directly from `results`.
+        inline?: boolean;
+        results?: Array<{
+          index: number;
+          filename: string;
+          status: "done" | "error";
+          result?: VerifyResponse;
+          error?: string;
+        }>;
       };
-      const rows: BatchRow[] = Array.from({ length: body.count }, (_, i) => ({
-        index: i,
-        filename: stage.files[i]?.name ?? `item-${i}`,
-        status: "pending" as const,
-      }));
-      setStage({ kind: "batch-running", batchId: body.batchId, rows });
+      if (body.inline && body.results) {
+        // Inline batch — render results immediately.
+        const rows: BatchRow[] = body.results.map((r) =>
+          r.status === "done" && r.result
+            ? {
+                index: r.index,
+                filename: r.filename,
+                status: "done" as const,
+                result: r.result,
+              }
+            : {
+                index: r.index,
+                filename: r.filename,
+                status: "error" as const,
+                error: r.error ?? "Verification failed",
+              },
+        );
+        setStage({ kind: "batch-running", batchId: body.batchId, rows });
+      } else {
+        // Legacy SSE path (back-compat for local single-process dev).
+        const rows: BatchRow[] = Array.from({ length: body.count }, (_, i) => ({
+          index: i,
+          filename: stage.files[i]?.name ?? `item-${i}`,
+          status: "pending" as const,
+        }));
+        setStage({ kind: "batch-running", batchId: body.batchId, rows });
+      }
       setBatchSubmitting(false);
     } catch (e) {
       setStage({
