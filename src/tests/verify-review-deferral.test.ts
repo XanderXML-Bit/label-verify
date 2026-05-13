@@ -16,7 +16,12 @@ vi.mock("@/lib/ocr/tesseract", () => {
       async run() {
         return {
           text: "Mock OCR Output",
-          words: [],
+          words: [
+            { text: "GOVERNMENT", confidence: 90, bbox: { x: 10, y: 30, width: 60, height: 16 } },
+            { text: "WARNING:", confidence: 90, bbox: { x: 72, y: 30, width: 48, height: 16 } },
+            { text: "(1)", confidence: 88, bbox: { x: 10, y: 50, width: 12, height: 8 } },
+            { text: "According", confidence: 88, bbox: { x: 24, y: 50, width: 40, height: 8 } },
+          ],
           confidence: 0.7,
           latencyMs: 5,
           engine: "tesseract",

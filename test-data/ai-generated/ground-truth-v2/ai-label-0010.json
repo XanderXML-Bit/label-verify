@@ -21,14 +21,14 @@
     "country_of_origin": "USA",
     "government_warning": {
       "present": true,
-      "text_matches_regulation": false,
+      "text_matches_regulation": true,
       "prefix_all_caps": false,
       "prefix_bold": true,
       "meets_size_minimum": true
     }
   },
-  "gov_warning_case": "T1_PREFIX_TITLE_CASE",
-  "notes": "Title-case warning prefix defect confirmed.",
+  "gov_warning_case": "C1_PREFIX_TITLE_CASE",
+  "notes": "Title-case warning prefix defect confirmed. Body text reads verbatim per the federal statement; only the prefix capitalization is wrong. C1 (caps) per docs/government-warning-cases.md, NOT T1 (text-substitution). Was over-flagging both axes; corrected per Agent B fixture audit 2026-05-13.",
   "_converted_from_ai": true,
   "_usage_tier": "strictBenchmarkReady"
 }

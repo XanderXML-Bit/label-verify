@@ -8,15 +8,27 @@ import type {
 } from "@/lib/vision/types";
 
 // Mock the OCR adapter so we never need a real Tesseract worker in tests.
+// The mock returns realistic GOVERNMENT/WARNING prefix words at large
+// bboxes (~40 px tall on a 100x100 mock image, which is comfortably
+// above the §16.22 size threshold relative to the declared 750 ml
+// container). Without these words the validator's bold/size subscores
+// would have to fall back to the model's self-reported flags, and the
+// orchestrator's confidence-floor gate would route otherwise-compliant
+// happy-path tests to REVIEW.
 vi.mock("@/lib/ocr/tesseract", () => {
   return {
     tesseractEngine: {
       id: "tesseract",
       async run() {
         return {
-          text: "Mock OCR Output",
-          words: [],
-          confidence: 0.7,
+          text: "GOVERNMENT WARNING According to the Surgeon General",
+          words: [
+            { text: "GOVERNMENT", confidence: 90, bbox: { x: 10, y: 30, width: 60, height: 16 } },
+            { text: "WARNING:", confidence: 90, bbox: { x: 72, y: 30, width: 48, height: 16 } },
+            { text: "(1)", confidence: 88, bbox: { x: 10, y: 50, width: 12, height: 8 } },
+            { text: "According", confidence: 88, bbox: { x: 24, y: 50, width: 40, height: 8 } },
+          ],
+          confidence: 0.85,
           latencyMs: 5,
           engine: "tesseract",
         };

@@ -9,7 +9,7 @@
   "fields": {
     "brand_name": "Juniper Kite",
     "class_type": "Hard Kombucha",
-    "class_category": "malt_beverage",
+    "class_category": "beer",
     "abv_percent": 6,
     "net_contents": {
       "value": 16,
@@ -33,5 +33,6 @@
     }
   },
   "gov_warning_case": "compliant",
-  "notes": "Hard kombucha tall can with compliant warning."
+  "notes": "Hard kombucha tall can with compliant warning.",
+  "_class_category_note": "TTB Part 16 treats malt beverages (hard seltzer / hard kombucha / flavored malt beverages) as beer for ABV tolerance and Government-Warning purposes; the DeclaredFields enum reflects that. The corpus-stratification beverage_type stays \"malt_beverage\" for the bench analysis."
 }

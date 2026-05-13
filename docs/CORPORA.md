@@ -34,10 +34,10 @@ follow-up — see CHANGELOG 2026-05-13 corpus-consolidation note.
 
 ## Why `test-data/` (v1) is kept
 
-Historical reference for the corpus-correction wave. v1 GT was
-generated against the older v1 image bytes; the corrected GT only
-applies to v2 / combined. Deleting v1 would lose the audit trail.
-Reviewers wondering "what was the original" can diff v1 vs v2.
+Historical reference. The v1 images carry the same filenames as the
+v2 images but with different image bytes (v2 is a re-render). The
+ground-truth files for the two corpora are not interchangeable. For
+benchmarks always use `test-data-combined/`.
 
 ## What to do if you find a wrong ground-truth
 

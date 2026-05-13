@@ -1,5 +1,16 @@
-# UI / UX Specification
+# UI / UX Specification (archived — pre-implementation)
 
+> **Archived 2026-05-13.** This document describes the intended UI before the
+> code was built. The shipped UI is the source of truth — see the live demo
+> and the React components in `src/app/components/`. Several elements
+> described here (a separate "Paste a URL" input on the home form, a
+> "Bulk import from CSV" button, a "Download report (PDF)" affordance) were
+> superseded by other input modes (drag-drop, auto-pair batch, JSON/CSV
+> export). Dark mode shipped despite being marked "out of scope" here.
+> Kept for the design-decision audit trail.
+>
+> Original framing follows.
+>
 > The TTB team skews 50+ and mixes technical comfort levels. The UI must be
 > usable on first sight, without training. (R2.)
 

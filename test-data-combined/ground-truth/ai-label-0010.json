@@ -21,14 +21,14 @@
     "country_of_origin": null,
     "government_warning": {
       "present": true,
-      "text_matches_regulation": false,
+      "text_matches_regulation": true,
       "prefix_all_caps": false,
       "prefix_bold": true,
       "meets_size_minimum": true
     }
   },
-  "gov_warning_case": "T1_PREFIX_TITLE_CASE",
-  "notes": "Title-case warning prefix defect confirmed.",
+  "gov_warning_case": "C1_PREFIX_TITLE_CASE",
+  "notes": "Title-case warning prefix defect confirmed. Body text reads verbatim per the federal statement; only the prefix capitalization is wrong. Per docs/government-warning-cases.md, T1 means word-substitution (text fidelity) and C1 means title-case prefix (caps) — these are separate taxonomy axes. Previously over-flagged as T1 with text_matches_regulation=false, which double-penalized a model that correctly identified only the caps defect. Corrected per Agent B fixture audit 2026-05-13.",
   "_converted_from_ai": true,
   "_usage_tier": "strictBenchmarkReady"
 }

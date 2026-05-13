@@ -1,201 +1,144 @@
 # Architecture
 
-> Companion to [evaluation-brief.md](evaluation-brief.md). Every decision here
-> cites the requirement (Rn) it serves.
+Reference for the verification pipeline that backs [the live demo](https://label-verify-six.vercel.app). Companion documents: [`MODEL-SELECTION.md`](MODEL-SELECTION.md) for the model bake-off, [`FAILURE-MODES.md`](FAILURE-MODES.md) for the failure taxonomy, [`CLI.md`](CLI.md) for the three command-line surfaces.
 
-## 1. System at a Glance
+## 1. System overview
+
+Single Next.js 15 application: React UI (`src/app/`), API routes (`src/app/api/`), and pipeline modules (`src/lib/`) ship in one deployment to Vercel. Justification: minimises cold-start latency, simplifies the deployment surface, and keeps every code path reviewable in one repo.
 
 ```
-┌──────────────┐     ┌────────────────────────────────────────────┐     ┌──────────┐
-│  Browser UI  │ ──▶ │            Verification API                │ ──▶ │ Results  │
-│ (Next.js)    │     │  ┌──────────┐  ┌──────────┐  ┌──────────┐  │     │  Cache   │
-│ Drag/drop +  │     │  │ Pre-proc │─▶│ Extract  │─▶│  Match   │  │     │ (in-mem) │
-│ batch grid   │     │  │ (sharp)  │  │ (vision  │  │  (fuzzy  │  │     └──────────┘
-└──────────────┘     │  └──────────┘  │  + OCR)  │  │ + strict)│  │
-                     │                └──────────┘  └──────────┘  │
+┌──────────────┐     ┌────────────────────────────────────────────┐     ┌────────────────────┐
+│  Browser UI  │ ──▶ │            Verification API                │ ──▶ │ JSON / CSV exports │
+│  (Next.js)   │     │  ┌────────┐  ┌──────────┐  ┌────────────┐  │     │ + review queue     │
+│  Drag/drop, │     │  │ Sharp   │─▶│ Vision    │─▶│ Per-field  │  │     │ (in-memory)        │
+│  batch grid  │     │  │ preproc │  │ extractor │  │ comparators│  │     └────────────────────┘
+└──────────────┘     │  └────────┘  └──────────┘  └────────────┘  │
+                     │                                            │
+                     │  ┌──────────┐  ┌───────────────────────┐   │
+                     │  │ Tesseract │  │ Government-Warning    │   │
+                     │  │ OCR (bbox)│─▶│ validator (4 subscores)│  │
+                     │  └──────────┘  └───────────────────────┘   │
                      └────────────────────────────────────────────┘
 ```
 
-Single Next.js app: React UI + API routes in one deploy. No separate backend
-service. Justification: minimizes cold-start latency (R1), simplifies
-deployment (R8), keeps the prototype legible to reviewers (eval criteria #2).
+The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelverify-web.ts`, `bin/labelverify-bench.ts`) are operator/reviewer tools that exercise the same pipeline in different ways — see [`CLI.md`](CLI.md).
 
-## 2. Tech Stack
+## 2. Stack
 
-| Layer | Choice | Why |
-|-------|--------|-----|
-| Framework | **Next.js 15 (App Router)** | One artifact for UI + API, first-class Vercel deploy, streaming responses help perceived latency (R1, R8). |
-| Language | **TypeScript (strict)** | Catch contract drift between extractor outputs and validators. Same stack as Splitful — proven reuse. |
-| UI primitives | **Tailwind + shadcn/ui** | Accessible defaults out of the box (R2). No bespoke design system needed for a prototype. |
-| Image preprocessing | **sharp** | Native, fast resize/normalize/orient before any model call. Trims payload sent to vision API. |
-| OCR (local) | **tesseract.js** (browser) and **tesseract** binary (server) | Zero-network fallback (R4 robustness, network-blocked TTB risk). |
-| Hosted vision | **OpenAI Vision** via direct API or **OpenRouter** | Same access pattern Splitful uses; OpenRouter lets us A/B GPT-4o, Claude Sonnet, Gemini Flash without rewriting. |
-| Network-free degradation | **OCR + rule-based validators only** | Per `APPROACH.md` §2.2, local VLMs (Florence-2, moondream2) won't fit a Vercel serverless function and are deferred to P2 with a hosted GPU endpoint as the realistic delivery vehicle. The honest contingency is: Tesseract + Gov-Warning text validator + brand fuzzy match keep working when the hosted vision API is unreachable; the rest of the fields return `REVIEW`. |
-| Fuzzy matching | **fast-fuzzy** or hand-rolled normalized Levenshtein | Tiny dep; brand normalization is straightforward (R6). |
-| Validation | Hand-rolled rules + zod schemas | Government Warning rule is too strict and too specific to outsource (R5). |
-| Tests | **vitest** | Same as Splitful; ESM-friendly, fast. |
-| Benchmarks | Custom harness in `benchmarks/` | See `TEST-STRATEGY.md`. |
-| Deploy | **Vercel** (`label-verify-six.vercel.app`) | Free, fast, edge-friendly, public URL satisfies R8. |
+| Layer | Choice | Rationale |
+|---|---|---|
+| Framework | **Next.js 15** (App Router) | One artifact for UI + API; first-class Vercel deploy; streaming-response semantics for the batch route. |
+| Language | **TypeScript strict** | Catches contract drift between extractor output and downstream validators at compile time. |
+| UI primitives | **Tailwind 3** + lightweight bespoke components | Accessible defaults; no design-system dependency. |
+| Image preprocessing | **sharp** (libvips) | EXIF auto-orient, resize-to-1600 px long edge, JPEG 82 with mozjpeg. Trims vision payload by ~70 %. |
+| Vision extractor (primary) | **Gemini 3.1 Flash Lite** via `@google/generative-ai` | Pareto-dominant on the bake-off (accuracy × latency × cost). See [`MODEL-SELECTION.md`](MODEL-SELECTION.md) §4. |
+| Vision extractor (fallback) | **GPT-5.4-nano** via `openai` | Cross-provider fallback on Gemini provider failure. Different vendor; comparable latency tier. |
+| OCR | **tesseract.js 5** | Server-side only. Used for the Government-Warning prefix bbox + pixel-density measurements; not used for text reading (the vision extractor returns the text directly). |
+| Field matching | Hand-written comparators in `src/lib/matchers/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
+| Government-Warning validation | `src/lib/validation/` | Four subscores: text exact match (string predicate), all-caps prefix (string predicate), bold prefix (classical CV stroke-width transform on OCR-anchored pixels), size threshold (bbox dimensions vs declared net contents). |
+| Schemas | **Zod** | All inbound JSON validated at the route boundary. Same schemas reused by the CLI. |
+| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 474 in-process tests, Playwright for the 9 GUI E2E specs. |
+| Benchmarks | Custom harness in `benchmarks/` and `bin/labelverify-bench.ts` | The bake-off (`bench:bakeoff`) and the cross-pair benchmark (`bench:cross-pair`). |
+| Deploy | **Vercel** (Hobby plan) | Free, public URL, post-deploy smoke workflow validates `/api/health` on every push to `main`. |
 
-## 3. Verification Pipeline
+## 3. Single-image verification pipeline
 
-For one label image:
+For one POST to `/api/verify`:
 
-1. **Receive** — multipart upload, URL fetch, or PDF page extraction.
-2. **Pre-process** — `sharp` normalizes orientation (EXIF), resizes to a long
-   edge ≤ 1600 px, enhances contrast if histogram suggests low light.
-3. **Extract (parallel)** — two extractors run in parallel:
-   - **OCR pass**: tesseract for raw text + bounding boxes.
-   - **Vision pass**: one structured-output call to the chosen vision model,
-     **with the OCR text included in the prompt**. This is the key
-     performance unlock: the model doesn't have to re-read every character;
-     it cross-references OCR output and the image, which is faster and more
-     accurate than either alone. (See `APPROACH.md` for the experimental
-     justification.)
-4. **Match** — field-by-field comparison against the declared application:
-   - Strict equality for Government Warning, country of origin, class/type.
-   - Tolerant numeric comparison for ABV / net contents (with unit
-     conversion).
-   - Fuzzy normalized comparison for brand name and address.
-5. **Bold/caps detection for Gov Warning** — the strict rule (R5) requires
-   not just textual match but visual properties. Strategy:
-   - Crop the bounding box that contains "GOVERNMENT WARNING:" from the OCR
-     pass.
-   - Run a small classifier (stroke-width / pixel-density heuristic) to
-     confirm the prefix is bold.
-   - Confirm all-caps via the OCR text itself.
-6. **Aggregate** — per-field `{ pass, expected, actual, confidence,
-   evidence }` objects → final verdict + reasons.
-7. **Stream** — results are streamed back so the UI can render fields
-   one-by-one rather than waiting for the full envelope.
+1. **Receive**. Multipart upload (`image` + `declared` JSON) or JSON body (`{ url, declared }`). The route validates MIME (image: JPEG / PNG / WebP / HEIC / HEIF / PDF), size (≤ 10 MB image, ≤ 25 MB PDF), and the `declared` payload against `DeclaredFieldsSchema`. Per-IP rate limit applies.
+2. **Preprocess** (`src/lib/preprocess.ts`). `sharp` performs EXIF auto-orient, resizes the long edge to 1600 px (no enlargement), re-encodes JPEG at quality 82 with mozjpeg. PDFs render the first page via `pdfjs-dist` + `@napi-rs/canvas` before entering this step.
+3. **Extract and OCR in parallel** (`src/lib/verify.ts:verifyLabel`).
+   - The vision extractor (`src/lib/vision/gemini.ts`) issues a single structured-output JSON-schema call to Gemini 3.1 Flash Lite. The prompt requests all seven declared fields plus the Government-Warning block (`raw_text`, `prefix_text`, `prefix_bbox`, `prefix_appears_bold`, `prefix_appears_caps`).
+   - Concurrently, `tesseract.js` produces word-level bounding boxes and confidences. The OCR text is not passed into the vision prompt; OCR exists for the Government-Warning bold/size measurements only.
+   - Both calls share an `AbortController` bounded by the per-mode vision timeout. The Government-Warning validator awaits OCR up to an 8-second cap before falling back to model-self-reported bold/caps flags.
+4. **Match fields** (`src/lib/matchers/`). Seven independent comparators run in parallel (`Promise.all`). Each returns `{ status: pass | fail | review, expected, actual, confidence, reason? }`. Notable semantics:
+   - `brand`: Levenshtein + token-set similarity. Thresholds in `brand.ts`.
+   - `abv`: percentage-point tolerance differentiated by `class_category` (TTB rules differ for beer / wine / spirits). See `abv.ts`.
+   - `net_contents`: value + unit comparison with `max(1.5 ml, 0.5 %)` tolerance after unit conversion.
+   - `producer`: address-component comparison; US state inference is gated on a strict 2-letter state code **and** at least one corroborating component (so a hallucinated state cannot single-handedly pass an obviously non-domestic claim).
+   - `country_of_origin`: synonym map across 7 languages and 25 countries.
+   - `class_type`: alias table with separate `SAFE_ALIASES` (auto-PASS) and `REVIEW_ALIASES` (route to REVIEW) tiers.
+   - `government_warning`: see step 5.
+5. **Validate Government Warning** (`src/lib/validation/government-warning-validator.ts`). Four subscores aggregate via worst-of:
+   - **Text** — `normalizeForTextMatch(extracted.raw_text)` strictly equals the canonical §16.21 statement. The normalizer folds NBSP, narrow NBSP, en-quad through hair-space, medium math space, ideographic space, zero-width space, BOM, smart quotes, em-dashes, and ellipsis to ASCII equivalents before comparison.
+   - **Caps** — `isPrefixAllCaps(prefix_text)` after small-caps Unicode folding.
+   - **Bold** — `measureRelativeBold` runs a classical-CV stroke-width transform on the OCR-bbox-anchored pixels (greyscale → threshold-binarise at 128 → per-column mean dark-run-length, normalised by bbox height) and compares prefix stroke to body stroke. Falls back to the model's `prefix_appears_bold` flag at advisory 0.6 confidence when OCR cannot locate the prefix.
+   - **Size** — bbox height converted to mm via declared net contents, compared to §16.22 minima (1 mm small containers / 2 mm large).
+6. **Aggregate verdict** (`src/lib/score.ts`). Worst-of across all field statuses plus the Government-Warning status. A single FAIL on any regulated field produces a FAIL verdict.
+7. **Image quality** (`src/lib/verify.ts`). Independent of the verdict. Derived from per-field extractor confidence on fields the model actually read (`value !== null`). `bad` = mean < 0.6 and min < 0.3; `low` = mean < 0.6; otherwise `good`. When image quality is `bad` and the worst-of rule would have returned FAIL, the orchestrator routes to REVIEW with a re-photograph reason — a corrupt photo of a compliant label is not non-compliance.
+8. **Confidence-based deferral**. If every field PASSED but any field's extractor confidence is below `REVIEW_CONFIDENCE_THRESHOLD = 0.55`, downgrade PASS → REVIEW with a citation-grade reason identifying the borderline field.
+9. **No-OCR Government-Warning gate**. If OCR failed or timed out AND the Government-Warning status is PASS at confidence below 0.55, route to REVIEW. The bold and size subscores fell back to model-self-reported flags without a pixel-tight measurement; a human is the right adjudicator.
+10. **Independent second opinion**. When the verdict lands on REVIEW because of the Government-Warning (steps 8 or 9), the orchestrator fires a single cross-provider vision call against `MODEL_FALLBACK` (default `gpt-5.4-nano` via OpenAI), re-validates the warning from the second extractor's read, and attaches `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, reason, latencyMs }` to the response. The UI surfaces agreement (🔁) or disagreement (⚖) inline. Approximate cost: ~$0.001 per fired call; fires on ~5–10 % of verifications.
+11. **Return**. JSON response includes the verdict, per-field statuses, the Government-Warning block, the extracted-fields block, timings (`preprocess`, `ocr`, `vision`, `matching`, `total`), `imageQuality`, `modelId`, `modelVersion`, `modeUsed`, `requiresHumanReview`, and `reviewReasons[]`. `X-Request-Id` header echoes the client's request id when provided.
 
-## 4. Latency Budget (R1: ≤ 5s end-to-end)
+## 4. Latency budget
 
-Per-image, target latency. **OCR runs in parallel with the vision call**, so
-it is off the critical path; the budget below is the *critical-path sum*,
-not the work-sum.
+End-to-end target: ≤ 5 s. Warm-function, single-image measurements:
 
-### 4.1 P50 critical path
+| Stage | P50 | P95 | Notes |
+|---|---:|---:|---|
+| Preprocess (`sharp`) | ~120 ms | ~180 ms | EXIF orient, resize, JPEG re-encode. |
+| Vision call (Gemini 3.1 Flash Lite) | ~2 000 ms | ~3 500 ms | Provider-bound; dominant cost. |
+| OCR (`tesseract.js`, parallel with vision) | ~800 ms | up to 8 000 ms cap | Off the critical path unless OCR is bound to the GW validator's 8-s race. |
+| Field matchers + GW validator | < 50 ms | < 100 ms | Pure CPU. |
+| Independent second opinion (~5–10 % of calls) | + ~2 500 ms | + ~3 000 ms | Fires only on borderline GW outcomes. |
+| **Total (happy path)** | **~3.0 s** | **~4.1 s** | Critical path; second-opinion path adds ~2.5 s on the ~5–10 % of calls that fire it. |
 
-| Stage | Budget | Off critical path? | Notes |
-|-------|--------|--------------------|-------|
-| Client compress + upload (~2 MB image, ~400 KB after browser compress) | 350 ms | — | Client-side JPEG re-encode at quality 0.7 keeps payload small. |
-| Server pre-process (`sharp`) | 150 ms | — | EXIF orient, resize to ≤ 1600 px long edge, optional auto-contrast. Hot worker. |
-| Vision call (hosted, fast tier) | 2,400 ms | — | Gemini Flash / GPT-4o-mini, structured-output JSON-schema mode. |
-| OCR (`tesseract`) | 1,200 ms | **yes** — parallel with vision | Tesseract on Vercel Node is 1.0–1.8 s realistic; honest number, not the prior 600 ms. Result is fed into the vision prompt only if it lands before the vision call returns. |
-| Matching + validation | 100 ms | — | Pure CPU. |
-| Stream first byte + UI paint | 250 ms | — | SSE; UI starts rendering as fields arrive. |
-| **Critical-path P50** | **~3.25 s** | | Comfortable under 5 s. |
+Cold start adds ~500–1 500 ms on the first request after idle. The `/api/warmup` route pre-warms `sharp`, the Tesseract worker, and the Gemini SDK; it is fired on page load.
 
-### 4.2 P95 critical path (honest)
+Mitigations the orchestrator applies:
+- Vision and OCR race in parallel.
+- The vision call has an `AbortSignal` bounded by the per-mode timeout; OCR has a separate 8-s race cap inside the GW validator.
+- The `OpenAI` module is dynamically imported and memoized at module scope so the fallback path does not pay an import cost per call.
+- The `parseApplication` cache in the batch route is keyed by `File` reference via `WeakMap`, so per-batch parses are reused across the broadcast / per-pair loops without leaking `@ts-expect-error` mutations.
 
-| Stage | P95 | Driver |
-|-------|-----|--------|
-| Cold-start (`sharp` + tesseract.js bundle on a cold serverless function) | +1,500 ms | Vercel cold-starts after idle. Mitigated by a warmup pinger on `/` page load (see `DEPLOYMENT.md` §6) but not eliminated. |
-| Vision call tail | 4,500 ms | Structured-output mode serializes token gen; provider tail behavior is the dominant risk. |
-| Upload tail (slow proxy / federal network) | 1,200 ms | TTB office connections behind a proxy. Outside our control. |
-| **Critical-path P95** | **~6.5–7.5 s** | Will exceed 5 s on cold + slow-network + provider-tail. |
+## 5. Batch processing
 
-**We are honest about this:** P50 under 5 s is achievable and is what the
-demo shows. P95 above 5 s is real. The mitigations are below.
+`/api/verify/batch` handles ≥ 2 images plus optional application files. The route's pairing pipeline runs four stages in cost order before any per-pair vision call fires (full details in `src/app/api/verify/batch/route.ts`):
 
-### 4.3 Mitigations and budget defense
+1. **Inline-manifest detection** — when a single CSV or JSON with multiple rows is dropped alongside images and the file has a `filename` / `file` / `image` / `label` / `cola_number` / `id` column, every row expands into a per-image pair.
+2. **Filename stem matching** — case-insensitive, face-tag-aware (`123-front.jpg` ↔ `123-back.jpg` ↔ `123.pdf`), app-tag-aware (`123-front.jpg` ↔ `123-app.pdf`).
+3. **Content-based fallback** — for anything still unpaired, the route parses each unpaired application file's brand + class + ABV and runs a lightweight vision extraction on each unpaired image; greedy-matches by weighted similarity (brand 0.65, class 0.25, ABV 0.10) with a 0.55 threshold.
+4. **Single-application broadcast** — when ≥ 2 unpaired images remain alongside exactly 1 unpaired single-product application file, the parsed fields broadcast to every image with a warning surfaced for operator review.
 
-- **Streaming results.** The UI renders fields one-by-one as the SSE pipe
-  delivers them. The user sees brand-name PASS at ~2 s even if the full
-  envelope takes 5 s. *Perceived* latency stays under budget.
-- **Hard timeout.** The vision call has a 5 s `AbortSignal`; if it fires, we
-  return a clear timeout error rather than switching to an OCR-only path (
-  brand fuzzy match) and mark the rest `REVIEW`. The user is never left
-  staring at a spinner past 5 s.
-- **Warmup pinger.** `/api/health` is hit on page load to warm the function
-  before the user clicks Verify.
-- **Tiered escalation runs *off-path*.** If field confidence is low after
-  the primary call, the configured backup provider retries once automatically — only when
-  has already seen the primary result. The reviewer is not blocked.
-- **Skip OCR for batches when benchmark shows it doesn't help.** Decision
-  made by data in `benchmarks/results/`, not by guess.
-- **Parallelize OCR and vision.** They do not depend on each other; OCR is
-  *only* useful if it returns *before* the vision call. If OCR is slower
-  than the vision call, we drop its output rather than wait.
+Per-pair verification runs inline in the POST handler with `CONCURRENCY = 2`. The response includes pairing metadata (`pairing.mode`, `pairing.pairs[]`, `pairing.unpairedImages[]`, `pairing.unpairedApplications[]`), per-row results, and an aggregate summary. The Vercel Hobby plan caps function duration at 60 s, which sets the practical interactive batch ceiling (~30 images per submit at the measured per-call latency).
 
-### 4.4 What we measure live
+An SSE batch endpoint (`/api/verify/batch/[id]/stream`) exists for local-dev use where the in-process batch-store is shared across the POST and GET function invocations. In production (Vercel serverless), the POST handler returns terminal results inline and the UI's `BatchView` skips the SSE entirely — this avoids the instance-isolation race that would otherwise 404 the GET hop.
 
-Every `/api/verify` response includes a `timings` object: `{ upload,
-preprocess, ocr, vision, match, total }`. The deployed UI surfaces
-`"Verified in N.N s"` from this. If a reviewer reports slowness, we have
-the trace; if the deployed P95 starts drifting, the regression is visible.
+## 6. Configuration
 
-## 5. Batch Processing (R3: 200–300 labels; current interactive cap is quota-derived)
+Runtime environment variables (see `.env.example`):
 
-Vercel Hobby serverless functions cap execution at 10–60 s. A single
-long-running orchestrator function can time out before large batches finish.
-The batch design is **per-item function invocations, not a worker pool**.
+| Variable | Required | Purpose |
+|---|---|---|
+| `GOOGLE_API_KEY` | yes | Primary vision (Gemini 3.1 Flash Lite). |
+| `OPENAI_API_KEY` | recommended | Auto-fallback (GPT-5.4-nano) on Gemini provider failure. Without it, Gemini failures surface as 5xx responses. |
+| `OPENROUTER_API_KEY` | optional | Bake-off harness only; not used at runtime. |
+| `ANTHROPIC_API_KEY` | optional | Bake-off harness for the Claude tier. |
+| `MODEL_FALLBACK` | optional | Defaults to `gpt-5.4-nano`. |
+| `RATE_LIMIT_PER_MIN` | optional | Per-IP rate limit on `/api/verify`, `/api/extract`, `/api/application/parse`. Defaults to 60. |
+| `RATE_LIMIT_BATCH_PER_MIN` | optional | Per-IP rate limit on `/api/verify/batch`. Defaults to 3. |
+| `GEMINI_RPM_LIMIT` | optional | Project-level Gemini RPM. The interactive batch capacity derives from this. Defaults to 30. |
+| `DEBUG_TOKEN` | optional | Bearer-gated access to `/api/debug/last` and the review-queue resolve endpoint. Timing-safe compare via `crypto.timingSafeEqual`. |
 
-### 5.1 Flow
+## 7. Security
 
-1. **Upload.** Client posts a folder of images + one CSV/XLSX of declared
-   field values. Server stores them transiently in `/tmp` and returns a
-   `batchId` immediately (one short function call, well under the timeout).
-2. **Worker fan-out.** A second client request opens an SSE connection to
-   `GET /api/verify/batch/:batchId/stream`. That endpoint reads the manifest
-   and *fires one `fetch` to `/api/verify` per item*, with bounded
-   concurrency (default 8). Each `/api/verify` call is its own function
-   invocation, so each item gets its own timeout budget.
-3. **Stream-back.** As each per-item function returns, the orchestrator
-   forwards the result over SSE to the client. The UI renders a virtualized
-   table whose rows fill in as results stream.
-4. **Resume.** If the SSE connection drops, the client re-opens with
-   `?cursor=<lastIdx>` and the server picks up from there. Job state is
-   in-memory but indexed by `batchId` so reconnects within the session
-   work.
+Full threat model: [`../SECURITY.md`](../SECURITY.md). High-level posture:
 
-### 5.2 Math
+- Strict MIME allow-list at every upload endpoint.
+- 256 MiB aggregate cap on batch requests; 10 MB per image; 25 MB per PDF.
+- Per-IP rate limits on the single-image, batch, and application-parse endpoints.
+- SSRF guard on URL fetch (rejects RFC1918 + loopback + link-local + CGNAT + non-canonical IPv4 literals; manual redirect-following with re-validation).
+- CSV formula-injection mitigation on every export endpoint (cells beginning with `=`/`+`/`-`/`@`/tab/CR are prefixed with `'` per OWASP).
+- Security headers in `vercel.json`: HSTS preload, X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy deny-all, Content-Security-Policy.
+- No persistent storage. Review queue and batch store are in-process.
+- The `/api/debug/last` ring buffer is gated by `DEBUG_TOKEN` (Bearer header, timing-safe compare).
 
-Default cap: 100 labels from 30 RPM × 80% utilization × 255 usable seconds. Minutes, not
-hours, and no single function call exceeds the per-item budget.
+## 8. Out of scope
 
-### 5.3 What we do not implement
+The following are deliberate non-features for the prototype:
 
-- A real queue (Redis, SQS, etc.). The in-memory `batchId → state` map is
-  sufficient for a prototype that does not survive process restart. The
-  brief says no persistent storage; we abide by that.
-- Cross-session resumability. Refresh-and-resume after browser close is
-  out of scope.
-- CSV export and PDF report are P1, not P0. The vertical slice ships
-  without them.
-
-## 6. Imperfect-Image Tolerance (R4)
-
-Layered defense:
-
-1. **Pre-processing** (sharp): EXIF auto-orient, auto-contrast, optional
-   deskew.
-2. **Vision model** is inherently tolerant — that's its whole job.
-3. **OCR + vision cross-check**: when OCR confidence is low, we trust the
-   vision model more, and vice-versa. Documented as the "consensus" path in
-   `APPROACH.md`.
-4. **Confidence floor**: any field below threshold is flagged for human
-   review rather than auto-passed/failed. The UI surfaces this as a yellow
-   state, not red or green. This is honest about model uncertainty — which
-   is itself a quality signal to the evaluator.
-
-## 7. Security / Safety (Prototype-Appropriate)
-
-- No user data persisted to disk; in-memory only, cleared on session end.
-- Rate limit on the upload endpoint to keep the public demo from being
-  abused.
-- API keys server-side only; never exposed to the browser.
-- No PII processed — labels are public artwork.
-
-## 8. Things We Are Deliberately Not Building
-
-- User accounts / SSO.
-- A database. Sessions live in memory; the prototype is stateless.
-- Webhooks / external queue infrastructure (Redis / SQS). The batch design
-  in §5 uses per-item function invocations orchestrated by an in-memory
-  job index — sufficient for quota-derived interactive batches without persistence.
-- A custom-trained model. We benchmark, we pick, we ship.
-- A local VLM fallback. The honest network-restricted contingency is the
-  single-path timeout/error behavior described in §2
-  §2.2.
+- User accounts, SSO, persistent storage. Brief §9 waives persistence.
+- A custom-trained model. The bake-off picks a hosted vision model.
+- A local VLM fallback for offline operation. The configured fallback is a different hosted provider; a local-VLM contingency is documented in [`REMAINING-IMPROVEMENTS.md`](REMAINING-IMPROVEMENTS.md).
+- Cross-session batch resume. The in-memory batch store is sufficient for the prototype's interactive use; a production deployment would add Postgres + Redis.

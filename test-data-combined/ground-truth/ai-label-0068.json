@@ -11,7 +11,7 @@
   "fields": {
     "brand_name": "Wrapwater",
     "class_type": "Hard Seltzer Malt Beverage",
-    "class_category": "malt_beverage",
+    "class_category": "beer",
     "abv_percent": 5,
     "net_contents": {
       "value": 12,
@@ -35,5 +35,6 @@
     }
   },
   "gov_warning_case": "compliant",
-  "notes": "Can is photographed through glossy plastic shrink-wrap."
+  "notes": "Can is photographed through glossy plastic shrink-wrap.",
+  "_class_category_note": "TTB Part 16 treats malt beverages (hard seltzer / hard kombucha / flavored malt beverages) as beer for ABV tolerance and Government-Warning purposes; the DeclaredFields enum reflects that. The corpus-stratification beverage_type stays \"malt_beverage\" for the bench analysis."
 }

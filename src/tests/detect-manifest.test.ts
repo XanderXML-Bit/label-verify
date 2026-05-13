@@ -129,4 +129,89 @@ describe("detectJsonManifestShape", () => {
       expect(shape.rows[0]!.net_contents).toBe("12 fl_oz");
     }
   });
+
+  // Regression: a reviewer-authored manifest shaped as a top-level
+  // object keyed by image filename used to fall into the single-row
+  // branch and flatten every nested key into garbage column names
+  // (`deg-beer-0005.png_brand_name`, etc.), causing the whole batch
+  // to fail downstream pairing. Detect the filename-keyed shape and
+  // expand it into a multi-row manifest with an implicit `filename`
+  // column so the route's inline-manifest pairer can resolve each
+  // row to its image.
+  it("filename-keyed object map → multi-row with implicit filename column", () => {
+    const shape = detectJsonManifestShape(
+      JSON.stringify({
+        "label-001.jpg": { brand_name: "Stone's Throw IPA", class_type: "IPA" },
+        "label-002.png": { brand_name: "Mill Creek", class_type: "Pilsner" },
+      }),
+    );
+    expect(shape.kind).toBe("multi-row");
+    if (shape.kind === "multi-row") {
+      expect(shape.rows).toHaveLength(2);
+      expect(shape.hasFilenameColumn).toBe(true);
+      expect(shape.filenameColumn).toBe("filename");
+      expect(shape.rows[0]!.filename).toBe("label-001.jpg");
+      expect(shape.rows[0]!.brand_name).toBe("Stone's Throw IPA");
+      expect(shape.rows[1]!.filename).toBe("label-002.png");
+      expect(shape.rows[1]!.brand_name).toBe("Mill Creek");
+    }
+  });
+
+  it("filename-keyed object map with one entry → single-row", () => {
+    const shape = detectJsonManifestShape(
+      JSON.stringify({
+        "only.jpg": { brand_name: "X", class_type: "IPA" },
+      }),
+    );
+    expect(shape.kind).toBe("single-row");
+  });
+
+  it("filename-keyed object map with deeply-nested fields (the user's bug) flattens correctly", () => {
+    // Reproduces the exact shape from the failing batch upload:
+    // top-level keys are image filenames, each value has a nested
+    // `fields` object with brand_name / class_type / net_contents
+    // (object) / producer (object) etc. The `fields` wrapper hoists
+    // directly to the top level so the row is usable by rowToDeclared.
+    const shape = detectJsonManifestShape(
+      JSON.stringify({
+        "deg-beer-0005.png": {
+          id: "deg-beer-0005",
+          fields: {
+            brand_name: "Cold Iron",
+            class_type: "Saison",
+            class_category: "beer",
+            abv_percent: 7.5,
+            net_contents: { value: 50, unit: "ml" },
+            country_of_origin: "USA",
+          },
+        },
+      }),
+    );
+    expect(shape.kind).toBe("single-row");
+    if (shape.kind === "single-row") {
+      const r = shape.rows[0]!;
+      expect(r.filename).toBe("deg-beer-0005.png");
+      // `fields` wrapper hoisted to top level — these are the exact
+      // keys rowToDeclared looks up.
+      expect(r.brand_name).toBe("Cold Iron");
+      expect(r.class_type).toBe("Saison");
+      expect(r.class_category).toBe("beer");
+      expect(r.abv_percent).toBe("7.5");
+      expect(r.net_contents).toBe("50 ml");
+      expect(r.country_of_origin).toBe("USA");
+    }
+  });
+
+  it("object whose keys are NOT image filenames stays single-row", () => {
+    // Same shape as a legitimate single-product application —
+    // should not be misread as a 3-row filename map.
+    const shape = detectJsonManifestShape(
+      JSON.stringify({
+        brand_name: "X",
+        class_type: "Y",
+        abv_percent: 6,
+      }),
+    );
+    expect(shape.kind).toBe("single-row");
+  });
 });

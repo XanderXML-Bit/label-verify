@@ -181,9 +181,9 @@ exists (fresh clone).
 ## Documentation
 
 ### D1. Update README with the 170-image headline — **DONE 2026-05-12**
-README now shows 93.8 % on 170 images (1,169 fields), with 95.8 % ID
-/ 88.4 % OOD split and 5.1 % GW FN-rate. Source result file pointer
-updated. T6f comparison cross-ref added.
+README headline numbers refresh + source result file pointer + T6f
+comparison cross-reference. Per-stratum splits, Wilson CIs, and the
+non-compliant-stratum sample size are surfaced.
 
 ### D2. Add a "Failure mode catalog" doc — **DONE 2026-05-12**
 `docs/FAILURE-MODES.md` enumerates 7 failure clusters (F1-F7) plus
@@ -328,7 +328,7 @@ verify time when the pre-warm finishes before they click. The user
 sees the form pre-fill (already done in F1) as evidence the system
 is working.
 
-Honest cost analysis:
+Cost analysis:
 - The image extraction the verify orchestrator runs is the SAME
   Gemini call as `/api/extract`. Speculating means firing it
   pre-emptively — doubling per-session vision spend ($0.25 → $0.50
