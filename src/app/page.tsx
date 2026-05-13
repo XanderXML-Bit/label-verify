@@ -147,15 +147,30 @@ export default function Home() {
   // unmount and on any state transition that lands on idle/done/error.
   useEffect(() => {
     const baseTitle = "Label Verify";
+    // batch-running stays as the stage even after the inline-batch
+    // POST returns terminal rows (all done/error). In that case we're
+    // not actually verifying anymore — the title should revert to
+    // baseTitle so the tab strip doesn't lie. Detect "all rows
+    // terminal" inside the batch-running stage.
+    const batchActive =
+      stage.kind === "batch-running" &&
+      stage.rows.some(
+        (r) => r.status === "pending" || r.status === "running",
+      );
     const isBusy =
       stage.kind === "single-verifying" ||
       stage.kind === "single-extracting" ||
-      stage.kind === "batch-running";
+      batchActive;
     document.title = isBusy ? `(Verifying…) ${baseTitle}` : baseTitle;
     return () => {
       document.title = baseTitle;
     };
-  }, [stage.kind]);
+    // Depend on the entire stage so the title re-evaluates when
+    // stage.rows transitions terminal — for the inline-batch path
+    // both the kind AND the rows land in one setStage call but the
+    // batchActive predicate above keys on rows, so we need rows in
+    // the dep array.
+  }, [stage]);
 
   function revokeIfPreview(s: Stage): void {
     if (
