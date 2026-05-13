@@ -190,6 +190,32 @@ export function compareCountry(
         confidence: 0.7,
       };
     }
+    // Wave-17: when the label prints USA, treat the missing declared
+    // value as an implicit US-domestic declaration and PASS.
+    //
+    // Rationale: TTB only mandates country marking on imports
+    // (27 CFR §4.39 / §5.36). US-domestic operators routinely leave
+    // `country_of_origin` blank on the COLA form because the label's
+    // own producer address — and any printed country marking — is
+    // the implicit "USA". Routing this case to REVIEW (the
+    // pre-wave-17 behaviour) was operator-cost: wave-13 bench
+    // analysis traced ~25% of the deterministic `review-on-correct`
+    // cluster (≈10-12 of 42 cases) to this exact code path.
+    //
+    // The escalation is gated to USA specifically — extracted as a
+    // FOREIGN country with no declared value stays REVIEW (legitimate
+    // signal: operator may have forgotten to declare an import).
+    const extractedCanon = canonicalize(extracted);
+    if (isUsaCanonical(extractedCanon.canon)) {
+      return {
+        field: "country_of_origin",
+        status: "pass",
+        expected: null,
+        actual: extracted,
+        confidence: 0.7,
+        reason: undefined,
+      };
+    }
     return {
       field: "country_of_origin",
       status: "review",

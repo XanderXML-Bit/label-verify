@@ -161,14 +161,40 @@ describe("compareCountry", () => {
     expect(r.expected).toBeNull();
     expect(r.actual).toBeNull();
   });
-  it("null declared + extracted shows a country → REVIEW (possible undeclared import)", () => {
+  it("WAVE-17: null declared + extracted=USA → PASS (US-domestic implicit declaration)", () => {
+    // TTB only mandates country marking on imports. US-domestic
+    // operators routinely leave country_of_origin blank on the
+    // COLA form; the label's printed "USA" (or "Product of USA",
+    // etc.) is the implicit declaration. Wave-17 escalates this
+    // case from REVIEW to PASS at confidence 0.7.
+    const r = compareCountry(null, "USA", 0.9);
+    expect(r.status).toBe("pass");
+    expect(r.actual).toBe("USA");
+  });
+  it("WAVE-17: null declared + extracted=United States → PASS (canonicalized USA)", () => {
+    // Any USA synonym/canonicalization should match the wave-17 path.
+    expect(compareCountry(null, "United States", 0.9).status).toBe("pass");
+    expect(compareCountry(null, "U.S.A.", 0.9).status).toBe("pass");
+    expect(compareCountry(null, "Estados Unidos", 0.9).status).toBe("pass");
+  });
+  it("WAVE-17: null declared + extracted=FOREIGN country still → REVIEW", () => {
+    // The wave-17 PASS is gated to USA specifically. A foreign
+    // country with no declared value remains REVIEW — legitimate
+    // signal that the operator may have forgotten to declare an
+    // import.
     const r = compareCountry(null, "Italy", 0.9);
     expect(r.status).toBe("review");
     expect(r.reason).toMatch(/Italy/);
   });
+  it("WAVE-17: null declared + extracted=France still → REVIEW", () => {
+    expect(compareCountry(null, "France", 0.9).status).toBe("review");
+  });
   it("empty-string declared treated as null (defensive: some parsers emit '' for missing)", () => {
     const r = compareCountry("", null, 0.9);
     expect(r.status).toBe("pass");
+  });
+  it("WAVE-17: empty-string declared + USA-extracted → PASS (same as null path)", () => {
+    expect(compareCountry("", "USA", 0.9).status).toBe("pass");
   });
 });
 
