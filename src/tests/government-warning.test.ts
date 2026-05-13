@@ -8,7 +8,10 @@ import {
   normalizeForTextMatch,
   aggregateStatus,
 } from "@/lib/validation/government-warning";
-import { validateGovernmentWarning } from "@/lib/validation/government-warning-validator";
+import {
+  validateGovernmentWarning,
+  scoreBold,
+} from "@/lib/validation/government-warning-validator";
 
 const COMPLIANT_TEXT = canonicalStatement();
 const LARGE_CONTAINER = { value: 750, unit: "ml" as const };
@@ -244,6 +247,70 @@ describe("validateGovernmentWarning", () => {
     });
     // The bold review subscore has confidence 0.5; aggregate must be ≤ 0.5.
     expect(r.confidence).toBeLessThanOrEqual(0.5);
+  });
+
+  // ─── Wave-14: bold-subscore OCR-fail / model-pass safety net ───────────────
+
+  it("WAVE-14: OCR-fail + model-pass + fontBold-null → REVIEW (was FAIL pre-wave-14)", () => {
+    // The wave-14 bench finding: 20 deterministic false-fails on
+    // visibly-compliant labels traced to this exact code path. OCR
+    // returned a fail ratio (< BOLD_RATIO_FAIL), the vision model
+    // self-reported bold=true, and fontBoldStatus was null (Tesseract's
+    // LSTM engine doesn't populate is_bold reliably). The pre-wave-14
+    // safety-net required BOTH model-pass AND fontBold-pass, so the
+    // null fontBoldStatus left FAIL standing. Wave-14 relaxed that
+    // to "model-pass AND fontBold-not-contradicting".
+    const result = scoreBold(/* appearsBold */ true, {
+      ratio: 0.5, // < BOLD_RATIO_FAIL (1.15) → ocrStatus = fail
+      confidence: 0.9,
+      // fontBold fractions null on both sides → fontBoldStatus = null
+      fontBoldFractionPrefix: null,
+      fontBoldFractionBody: null,
+    });
+    expect(result.status).toBe("review");
+    expect(result.confidence).toBe(0.4);
+  });
+
+  it("WAVE-14: OCR-fail + model-fail (corroborated) → FAIL (unchanged)", () => {
+    // The model and OCR agree the prefix is not bold — strong signal,
+    // verdict stays FAIL. This is the protective case: wave-14 must
+    // not soften FAILs when the model also says "not bold."
+    const result = scoreBold(/* appearsBold */ false, {
+      ratio: 0.5, // ocrStatus = fail
+      confidence: 0.9,
+      fontBoldFractionPrefix: null,
+      fontBoldFractionBody: null,
+    });
+    expect(result.status).toBe("fail");
+  });
+
+  it("WAVE-14: OCR-fail + model-pass + fontBold-FAIL (contradicting) → FAIL", () => {
+    // Tesseract's is_bold WAS populated and it agrees with the OCR
+    // ratio: prefix is not bold. Even though the vision model
+    // self-reports bold, the fontBold contradiction keeps the verdict
+    // at FAIL. This guards against the regulator-dangerous scenario
+    // where the model is wrong AND only OCR signal disagrees.
+    const result = scoreBold(/* appearsBold */ true, {
+      ratio: 0.5,
+      confidence: 0.9,
+      fontBoldFractionPrefix: 0.1, // mostly NOT bold
+      fontBoldFractionBody: 0.9, // mostly bold (B2-style inversion)
+    });
+    // fontBoldStatus = "fail" because bodyBold (0.9) > prefixBold (0.1) + 0.3
+    // → wave-14 does NOT drop to REVIEW (fontBold actively contradicts the model)
+    expect(result.status).toBe("fail");
+  });
+
+  it("WAVE-14: OCR-fail + model-pass + fontBold-PASS (corroborates model) → REVIEW", () => {
+    // The pre-wave-14 path: explicit two-signal disagreement
+    // routes to REVIEW. Wave-14 preserves this case unchanged.
+    const result = scoreBold(/* appearsBold */ true, {
+      ratio: 0.5,
+      confidence: 0.9,
+      fontBoldFractionPrefix: 0.9, // mostly bold
+      fontBoldFractionBody: 0.1, // mostly NOT bold
+    });
+    expect(result.status).toBe("review");
   });
 
   it("FAIL when raw_text is null entirely (X1 — missing)", async () => {

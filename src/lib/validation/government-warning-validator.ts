@@ -223,7 +223,11 @@ function scoreCaps(prefixText: string | null): SubscoreResult {
  * to the model's report. When both OCR and model agree on FAIL, we
  * return FAIL with high confidence (corroborated finding).
  */
-function scoreBold(
+// Exported for unit testing — the wave-14 OCR-fail/model-pass safety
+// net is a small but high-stakes code path (bad change here could allow
+// non-bold prefixes to skip FAIL). The integration test via the bench
+// gives the empirical signal; this pins the unit-level contract.
+export function scoreBold(
   appearsBold: boolean | null,
   ocr: BoldMeasurement | null,
 ): SubscoreResult {
@@ -286,12 +290,35 @@ function scoreBold(
       };
     }
 
-    // OCR fail: if BOTH model and font-bold disagree (both say pass),
-    // this is suspicious — drop to REVIEW so a human looks.
+    // OCR fail: drop to REVIEW when the vision model strongly
+    // disagrees — even without explicit font-bold corroboration.
+    //
+    // Wave-14 / Hypothesis A: the original AND-of-three requirement
+    // (model-pass AND fontBold-pass) effectively never fired in
+    // production because `fontBoldStatus` is `null` (not "pass") on
+    // every Tesseract build we ship — the LSTM engine doesn't
+    // populate `is_bold` reliably. As a result, a high-confidence
+    // OCR FAIL on a label the vision model called bold went straight
+    // through to verdict=FAIL, even though the safety-net comment
+    // explicitly says "suspicious — drop to REVIEW so a human
+    // looks." Per wave-13 bench analysis, 20 deterministic
+    // false-fails on visibly-compliant labels (oracle-confirmed)
+    // were stuck in this exact code path.
+    //
+    // Pre-registered hypothesis (docs/WAVE-13-FINDINGS.md):
+    //  - false-fail count drops by >= 5 (operator-cost win).
+    //  - false-pass-on-correct count must NOT increase (regulator-
+    //    dangerous regression check).
+    //  - failOrReviewRateOnWrong stays >= 99.4% (within 2 sigma of
+    //    100% baseline).
     if (ocrStatus === "fail") {
       const modelDisagrees = modelStatus === "pass";
-      const fontBoldDisagrees = fontBoldStatus === "pass";
-      if (modelDisagrees && fontBoldDisagrees) {
+      const fontBoldContradicts = fontBoldStatus === "fail";
+      // Route to REVIEW when the vision model says "pass" AND the
+      // font-bold signal does NOT actively contradict (i.e. it's
+      // either null/unknown or also "pass"). We keep the FAIL only
+      // when fontBold positively corroborates the OCR fail.
+      if (modelDisagrees && !fontBoldContradicts) {
         return { status: "review", confidence: 0.4 };
       }
       // Corroborated fail = high-confidence FAIL.
