@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0051",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0051.jpg",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "IPA",
+    "class_category": "beer",
+    "abv_percent": 8.4,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Mica Harbor Brewing Co.",
+      "street": "118 Hop Yard",
+      "city": "Bend",
+      "state": "OR",
+      "postal_code": "97701",
+      "country": "USA"
+    },
+    "country_of_origin": "Ireland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "non-compliant-text",
+  "notes": "Pregnancy sentence is paraphrased on a clean label-card."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0020",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0020.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Porter",
+    "class_category": "beer",
+    "abv_percent": 8.6,
+    "net_contents": {
+      "value": 100,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Wandering Coyote Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "Ireland",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "front label, multi brand pattern, 50 ml container. Archetype: vintage-classical. Government Warning case: X1."
+}

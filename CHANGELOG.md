@@ -4,6 +4,57 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Cross-pair benchmark — programmatic GT perturbation catches both FN and FP] — 2026-05-13
+
+### What's new
+
+- **`scripts/perturb-declared.ts`** — deterministic, idempotent mutator
+  that reads each ground-truth JSON in `test-data-combined/ground-truth/`
+  and emits a parallel `test-data-combined/declared-wrong/<basename>.json`
+  with five targeted mutations per file:
+  brand_name → unrelated brand, class_type → non-alias sibling within
+  the same `class_category`, abv_percent + 2.0 pp (beyond every class's
+  tolerance), net_contents.value × 2, country_of_origin → different
+  non-USA country. Brand / class / country are picked via FNV-1a hash
+  of the GT id, so the picks vary across labels (different "wrong"
+  brand per image) but are stable across reruns (safe to commit). 170
+  perturbed files generated.
+- **`bin/labelverify-bench.ts cross-pair`** — third CLI surface dedicated
+  to the cross-pairing benchmark. Iterates every label in
+  `test-data-combined/labels/` against BOTH its correct GT and the
+  perturbed wrong GT, then reports:
+  - **pass-rate on CORRECT GT** — catches false-NEGATIVES (matcher too
+    strict; correct application → unjustified fail/review).
+  - **fail/review-rate on WRONG GT** — catches false-POSITIVES (matcher
+    too lenient; intentionally bogus application slipped through as pass).
+  - P50 / P95 latency for total + vision stages, errors counted
+    separately, and a per-`gov_warning_case` breakdown so the reviewer
+    can see whether the FP/FN rates concentrate in any one case.
+  - Defaults `--limit 10` for safety (full 170×2 run is ~$0.10 +
+    ~15 min); `--concurrency 2` matches the existing batch CLI;
+    `--out <path>` writes the JSON report; `--json` streams to stdout.
+- **`src/tests/bench-cross-pair.test.ts`** — 5 unit tests for the
+  perturb helper (determinism, in-place safety, null-country handling,
+  cross-label variance) plus 4 smoke tests for the bench CLI
+  (help / arg parsing / GOOGLE_API_KEY guard). No real verify calls
+  in the test suite — those are exercised by the bench CLI itself
+  when run with a live API key.
+- **`npm run bench:cross-pair`** and **`npm run bench:perturb`** scripts
+  wired in `package.json` for convenience.
+
+### Why this matters
+
+The existing bake-off (`benchmarks/run.ts`) measures vision-extractor
+accuracy against the ground-truth — it answers "how well does the
+extractor see the label?" but not "does the matcher correctly **reject**
+wrong applications?" A 100 %-accurate extractor paired with an
+overly-lenient matcher would still pass a fraudulent application that
+declares Cabernet against a Pilsner photo. The cross-pair bench is the
+matcher's symmetric eval: by construction every "wrong" condition has
+five field disagreements vs. the label, so a healthy matcher must FAIL
+or at minimum REVIEW. Anything that comes back PASS is a regulatory
+escape — far more damaging than a spurious REVIEW.
+
 ## [GW false-negative deep dive — strokeProxy fix + scorer Q-case fix + README scientific honesty pass] — 2026-05-13 mid
 
 User-explicit ask: "if we could get that government warning false

@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0012",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-spirits-0012.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "back",
+  "container_size_ml": 100,
+  "fields": {
+    "brand_name": "Copperline",
+    "class_type": "Rum",
+    "class_category": "distilled_spirits",
+    "abv_percent": 52.3,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "SALTGRASS Beverage Co.",
+      "street": "7 Forge Alley",
+      "city": "Charleston",
+      "state": "SC",
+      "postal_code": "29401",
+      "country": "USA"
+    },
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C3",
+  "notes": "back label, stylized brand pattern, 100 ml container. Archetype: vintage-classical. Government Warning case: C3."
+}

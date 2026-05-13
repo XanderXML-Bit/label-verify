@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0041",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0041.jpg",
+  "degradations": [
+    "frosted bottle angled"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 720,
+  "fields": {
+    "brand_name": "Copperline",
+    "class_type": "Pinot Noir",
+    "class_category": "wine",
+    "abv_percent": 17.5,
+    "net_contents": {
+      "value": 1440,
+      "unit": "ml"
+    },
+    "producer": "Cedar Moon Fermentation Co., Portland, OR",
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C0",
+  "notes": "Angled/frosted bottle; exact warning and fields confirmed.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

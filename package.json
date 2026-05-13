@@ -18,6 +18,8 @@
     "bench:routine:bakeoff": "tsx benchmarks/run.ts --routine --bake-off",
     "bench:bakeoff": "tsx benchmarks/run.ts --bake-off",
     "bench:bakeoff:smoke": "tsx benchmarks/run.ts --bake-off --smoke",
+    "bench:perturb": "tsx scripts/perturb-declared.ts",
+    "bench:cross-pair": "tsx bin/labelverify-bench.ts cross-pair",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "gen:corpus": "tsx scripts/generate-corpus.ts",

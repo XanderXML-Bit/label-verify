@@ -90,10 +90,16 @@ interface CliArgs {
 }
 
 function parseArgs(argv: string[]): CliArgs {
+  // Default corpus is the canonical superset (170 images = SVG syn/deg
+  // ∪ AI-generated photo-realistic). The v1 `test-data/` directory is
+  // archived as `legacy/test-data-v1/` and the v2 SVG-only slice lives
+  // at `test-data-v2/`; both are subsets of `test-data-combined/` for
+  // historical / routine-bench purposes. Per Agent B corpus audit
+  // 2026-05-13.
   const out: CliArgs = {
     smoke: false,
     routine: false,
-    corpus: "test-data",
+    corpus: "test-data-combined",
     techniques: [],
     bakeoff: false,
   };

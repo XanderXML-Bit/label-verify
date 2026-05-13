@@ -4,7 +4,11 @@ import sharp from "sharp";
 import { z } from "zod";
 
 const ROOT = process.cwd();
-const DEFAULT_OUTPUT = "test-data";
+// Default to the canonical superset corpus. v1 `test-data/` was
+// archived to `legacy/test-data-v1/` on 2026-05-13 (Agent B audit:
+// same filenames as v2 with different image bytes = a footgun
+// vector for path-substitution mistakes).
+const DEFAULT_OUTPUT = "test-data-combined";
 
 const SourceSchema = z.enum(["synthetic", "degraded", "real"]);
 const BeverageTypeSchema = z.enum([

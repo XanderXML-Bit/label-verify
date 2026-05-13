@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0068",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0068.jpg",
+  "degradations": [
+    "shrinkwrap-distortion"
+  ],
+  "beverage_type": "malt_beverage",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Bramble & Vine",
+    "class_type": "Hard Seltzer Malt Beverage",
+    "class_category": "malt_beverage",
+    "abv_percent": 7,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Wrapwater Beverage Co.",
+      "street": "403 Rainier Avenue",
+      "city": "Seattle",
+      "state": "WA",
+      "postal_code": "98144",
+      "country": "USA"
+    },
+    "country_of_origin": "France",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Can is photographed through glossy plastic shrink-wrap."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0012",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0012.png",
+  "degradations": [
+    "perspective:-19deg"
+  ],
+  "beverage_type": "beer",
+  "label_face": "neck",
+  "container_size_ml": 200,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Pilsner",
+    "class_category": "beer",
+    "abv_percent": 8.4,
+    "net_contents": {
+      "value": 400,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Half-Note Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": false,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "B1",
+  "notes": "Derived from syn-beer-0014. perspective:-19deg."
+}

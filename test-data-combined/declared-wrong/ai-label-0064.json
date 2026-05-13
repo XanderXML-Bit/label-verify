@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0064",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0064.jpg",
+  "degradations": [
+    "occlusion-finger"
+  ],
+  "beverage_type": "beer",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Hefeweizen",
+    "class_category": "beer",
+    "abv_percent": 6.9,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Handline Bay Brewing",
+      "street": "200 Ferry Slip",
+      "city": "Tacoma",
+      "state": "WA",
+      "postal_code": "98402",
+      "country": "USA"
+    },
+    "country_of_origin": "Mexico",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "A finger partially occludes the warning edge."
+}

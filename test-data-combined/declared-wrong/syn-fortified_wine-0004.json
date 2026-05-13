@@ -1,0 +1,37 @@
+{
+  "id": "syn-fortified_wine-0004",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-fortified_wine-0004.png",
+  "degradations": [],
+  "beverage_type": "fortified_wine",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Saltwood Mill",
+    "class_type": "Sherry",
+    "class_category": "fortified_wine",
+    "abv_percent": 22,
+    "net_contents": {
+      "value": 1500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "CAVE MARIN Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T1",
+  "notes": "front label, stylized brand pattern, 750 ml container. Archetype: craft-artisanal. Government Warning case: T1."
+}

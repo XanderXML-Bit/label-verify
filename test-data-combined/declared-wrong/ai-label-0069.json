@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0069",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0069.jpg",
+  "degradations": [
+    "small-container"
+  ],
+  "beverage_type": "distilled_spirits",
+  "label_face": "back",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Copperline",
+    "class_type": "Whisky",
+    "class_category": "distilled_spirits",
+    "abv_percent": 42,
+    "net_contents": {
+      "value": 100,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Aster Pin Spirits",
+      "street": "17 Aviation Court",
+      "city": "Las Vegas",
+      "state": "NV",
+      "postal_code": "89119",
+      "country": "USA"
+    },
+    "country_of_origin": "Japan",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "non-compliant-size",
+  "notes": "Miniature 50 mL bottle carries an undersized warning."
+}

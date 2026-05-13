@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0003",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-wine-0003.png",
+  "degradations": [
+    "glare:0.78"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 100,
+  "fields": {
+    "brand_name": "Bramble & Vine",
+    "class_type": "Chardonnay",
+    "class_category": "wine",
+    "abv_percent": 14,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Mt Frieda Cellars Beverage Co.",
+      "street": "14 Mill St",
+      "city": "Asheville",
+      "state": "NC",
+      "postal_code": "28801",
+      "country": "USA"
+    },
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "Derived from syn-wine-0013. glare:0.78."
+}

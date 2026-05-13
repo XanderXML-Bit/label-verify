@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0004",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-spirits-0004.png",
+  "degradations": [
+    "curved:0.35"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 187,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Gin",
+    "class_category": "distilled_spirits",
+    "abv_percent": 40.3,
+    "net_contents": {
+      "value": 374,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "IRON MAGNOLIA Beverage Co.",
+      "street": "2210 West 6th Ave",
+      "city": "Denver",
+      "state": "CO",
+      "postal_code": "80204",
+      "country": "USA"
+    },
+    "country_of_origin": "Mexico",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C2",
+  "notes": "Derived from syn-spirits-0011. curved:0.35."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "syn-spirits-0015",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-spirits-0015.png",
+  "degradations": [],
+  "beverage_type": "spirits",
+  "label_face": "neck",
+  "container_size_ml": 187,
+  "fields": {
+    "brand_name": "Bramble & Vine",
+    "class_type": "Tequila",
+    "class_category": "distilled_spirits",
+    "abv_percent": 45.7,
+    "net_contents": {
+      "value": 374,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Longwhistle Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "France",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X2",
+  "notes": "neck label, single brand pattern, 187 ml container. Archetype: modern-minimal. Government Warning case: X2."
+}

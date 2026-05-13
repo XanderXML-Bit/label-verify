@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0011",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-wine-0011.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 100,
+  "fields": {
+    "brand_name": "Copperline",
+    "class_type": "Cabernet Sauvignon",
+    "class_category": "wine",
+    "abv_percent": 15.5,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Bertelli Beverage Co.",
+      "street": "7 Forge Alley",
+      "city": "Charleston",
+      "state": "SC",
+      "postal_code": "29401",
+      "country": "USA"
+    },
+    "country_of_origin": "France",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "B4",
+  "notes": "front label, single brand pattern, 100 ml container. Archetype: premium-dark. Government Warning case: B4."
+}

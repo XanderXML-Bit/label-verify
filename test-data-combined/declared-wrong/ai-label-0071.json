@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0071",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0071.jpg",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Bramble & Vine",
+    "class_type": "Chardonnay",
+    "class_category": "wine",
+    "abv_percent": 7.8,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Foxglove Acre Cidery",
+      "street": "250 Orchard Hill",
+      "city": "Hudson",
+      "state": "NY",
+      "postal_code": "12534",
+      "country": "USA"
+    },
+    "country_of_origin": "France",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Hard cider can with a compliant English warning."
+}

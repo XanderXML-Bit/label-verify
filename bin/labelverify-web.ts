@@ -469,10 +469,16 @@ async function cmdHealth(args: Args): Promise<void> {
 // — it's a frontend-only list. Mirror it here so this CLI is feature-
 // complete with the GUI surface.
 
+// The REVIEW sample intentionally reuses the PASS image. The deferral
+// is engineered by a class_type mismatch (label prints "Pilsner",
+// declared says "Lager") — both are real labels in production, and
+// TTB treats them as distinct class designations. See
+// src/lib/samples.ts:97-121 for the canonical metadata. We mirror it
+// here so this CLI lists the same three affordances the GUI offers.
 const SAMPLES = [
   { id: "pass", expectedVerdict: "pass", path: "/samples/pass.jpg" },
   { id: "fail", expectedVerdict: "fail", path: "/samples/fail.jpg" },
-  { id: "review", expectedVerdict: "review", path: "/samples/review.jpg" },
+  { id: "review", expectedVerdict: "review", path: "/samples/pass.jpg" },
 ] as const;
 
 function cmdSamples(args: Args): void {

@@ -1,0 +1,31 @@
+{
+  "id": "ai-label-0048",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0048.jpg",
+  "degradations": [
+    "dark background light text"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": null,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Porter",
+    "class_category": "beer",
+    "abv_percent": 8.7,
+    "net_contents": null,
+    "producer": "Night Orchard Brewing, Cleveland, OH",
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "N1_NET_CONTENTS_LETTER_O",
+  "notes": "Dark label remains legible. Net contents appears as letter O instead of zero; recorded as subtle non-warning defect.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0003",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-spirits-0003.png",
+  "degradations": [
+    "occlusion:0.11"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Rum",
+    "class_category": "distilled_spirits",
+    "abv_percent": 37.5,
+    "net_contents": {
+      "value": 710,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Vidalia Beverage Co.",
+      "street": "32 Orchard Ln",
+      "city": "Traverse City",
+      "state": "MI",
+      "postal_code": "49684",
+      "country": "USA"
+    },
+    "country_of_origin": "Japan",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-spirits-0002. occlusion:0.11."
+}

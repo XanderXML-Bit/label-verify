@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0022",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0022.jpg",
+  "degradations": [
+    "flat missing warning"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Saltwood Mill",
+    "class_type": "Hefeweizen",
+    "class_category": "beer",
+    "abv_percent": 8.3,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": "Half Note Beverage Co., Asheville, NC",
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1_MISSING_WARNING",
+  "notes": "Missing government warning defect clearly confirmed.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0004",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-wine-0004.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 100,
+  "fields": {
+    "brand_name": "Northstar Trading",
+    "class_type": "Pinot Noir",
+    "class_category": "wine",
+    "abv_percent": 15.7,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Castelo do Vento Beverage Co.",
+      "street": "32 Orchard Ln",
+      "city": "Traverse City",
+      "state": "MI",
+      "postal_code": "49684",
+      "country": "USA"
+    },
+    "country_of_origin": "Japan",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T1",
+  "notes": "front label, punctuation brand pattern, 100 ml container. Archetype: craft-artisanal. Government Warning case: T1."
+}

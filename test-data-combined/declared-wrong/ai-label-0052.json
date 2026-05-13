@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0052",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0052.jpg",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Pilsner",
+    "class_category": "beer",
+    "abv_percent": 7.1,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Thistle Yard Beerworks",
+      "street": "42 Brick Street",
+      "city": "Milwaukee",
+      "state": "WI",
+      "postal_code": "53202",
+      "country": "USA"
+    },
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "non-compliant-text",
+  "notes": "Second warning sentence starts with Drinking instead of Consumption."
+}

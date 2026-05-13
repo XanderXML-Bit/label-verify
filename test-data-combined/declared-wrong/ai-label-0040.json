@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0040",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0040.jpg",
+  "degradations": [
+    "missing colon after GOVERNMENT WARNING"
+  ],
+  "beverage_type": "fortified_wine",
+  "label_face": "front",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Bramble & Vine",
+    "class_type": "Sherry",
+    "class_category": "fortified_wine",
+    "abv_percent": 21,
+    "net_contents": {
+      "value": 1000,
+      "unit": "ml"
+    },
+    "producer": "South Harbor Cellars, Richmond, VA",
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "X5_MISSING_PREFIX_COLON",
+  "notes": "Missing colon after GOVERNMENT WARNING confirmed.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

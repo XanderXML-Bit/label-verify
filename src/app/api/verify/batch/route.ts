@@ -80,7 +80,18 @@ const ACCEPTED_MIME = new Set([
  */
 export const MAX_BATCH_BYTES = MAX_BATCH_BODY_BYTES;
 
+// Per-request cache for already-parsed application files. Previously
+// stashed via File mutation (`(file as any).__cachedParsed = ...`),
+// which leaked `@ts-expect-error` suppressions throughout this route
+// AND was a runtime hazard (File is structured-cloneable; mutations
+// don't survive any clone). WeakMap is the proper shape: typed,
+// garbage-collected with the File reference, and unambiguous about
+// the cache being request-local. Per Agent D code-quality audit
+// 2026-05-13.
+type ParsedApplication = Awaited<ReturnType<typeof parseApplication>>;
+
 export async function POST(req: Request) {
+  const parsedAppCache = new WeakMap<File, ParsedApplication>();
   const key = callerKey(req.headers);
   const rl = rateLimit(`batch-create:${key}`, {
     perMinute: RATE_LIMIT_BATCH_PER_MIN,
@@ -498,17 +509,15 @@ export async function POST(req: Request) {
           pairResult.unpairedImages = contentPaired.remainingImages;
           pairResult.unpairedApplications = contentPaired.remainingApplications;
           // For each content-paired item, stash the already-parsed
-          // app payload on the route's contextual map so the loop
-          // below doesn't re-parse the file. We attach it as a
-          // hidden property; the loop checks for it before
-          // re-parsing.
+          // app payload in parsedAppCache so the per-pair loop below
+          // doesn't re-parse the file. Keyed by the File reference;
+          // the cache is request-local (declared at the top of POST).
           for (const hit of contentPaired.paired) {
             const stashed = parsedAppFingerprints.find(
               (p) => p.file === hit.applicationFile,
             );
             if (stashed) {
-              // @ts-expect-error — runtime-only annotation
-              hit.applicationFile.__cachedParsed = stashed.parsed;
+              parsedAppCache.set(hit.applicationFile, stashed.parsed);
             }
           }
           // Surface what was content-paired so the reviewer sees it.
@@ -547,10 +556,7 @@ export async function POST(req: Request) {
     ) {
       const broadcastApp = pairResult.unpairedApplications[0]!;
       try {
-        // @ts-expect-error — content-pairer might have cached it
-        const cached = broadcastApp.__cachedParsed as
-          | Awaited<ReturnType<typeof parseApplication>>
-          | undefined;
+        const cached = parsedAppCache.get(broadcastApp);
         const parsed =
           cached ??
           (await parseApplication({
@@ -562,8 +568,7 @@ export async function POST(req: Request) {
               : {}),
           }));
         // Stash for reuse by the per-pair loop.
-        // @ts-expect-error — runtime annotation
-        broadcastApp.__cachedParsed = parsed;
+        parsedAppCache.set(broadcastApp, parsed);
         const n = pairResult.unpairedImages.length;
         for (const img of pairResult.unpairedImages) {
           pairResult.paired.push({
@@ -658,10 +663,7 @@ export async function POST(req: Request) {
           confidence: "medium",
         };
       } else {
-        // @ts-expect-error — runtime annotation set on content-paired pairs
-        const cachedParsed = applicationFile.__cachedParsed as
-          | Awaited<ReturnType<typeof parseApplication>>
-          | undefined;
+        const cachedParsed = parsedAppCache.get(applicationFile);
         if (cachedParsed) {
           parsed = cachedParsed;
         } else {

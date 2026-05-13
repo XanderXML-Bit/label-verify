@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0017",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0017.jpg",
+  "degradations": [
+    "flat label"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "IPA",
+    "class_category": "beer",
+    "abv_percent": 7.6,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": "Otter Bay Beverage Co., Portland, ME",
+    "country_of_origin": "Mexico",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C0",
+  "notes": "Clean flat beer label; exact warning confirmed.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

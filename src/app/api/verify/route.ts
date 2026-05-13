@@ -304,7 +304,7 @@ async function runVerify(
     return NextResponse.json(
       {
         error: aborted
-          ? "Vision call exceeded its per-mode time budget. Try again, or pick a different mode if a Smart-tier call is timing out."
+          ? "Vision call exceeded its time budget. The model may be cold-starting — try again in a few seconds."
           : `Verification failed: ${e.message}`,
         aborted,
         ...(requestId ? { requestId } : {}),

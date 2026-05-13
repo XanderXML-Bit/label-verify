@@ -1,0 +1,46 @@
+{
+  "id": "ai-label-0066",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0066.jpg",
+  "degradations": [
+    "motion-blur"
+  ],
+  "beverage_type": "distilled_spirits",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Vodka",
+    "class_category": "distilled_spirits",
+    "abv_percent": 9,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Flicker Road Canning Co.",
+      "street": "710 Market Alley",
+      "city": "Austin",
+      "state": "TX",
+      "postal_code": "78701",
+      "country": "USA"
+    },
+    "country_of_origin": "Ireland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": null,
+      "prefix_all_caps": null,
+      "prefix_bold": null,
+      "meets_size_minimum": null
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Handheld can photo has horizontal motion blur.",
+  "audit_notes": [
+    {
+      "date": "2026-05-12",
+      "reviewer": "sub-agent + manual confirm",
+      "note": "Motion-blur degradation makes per-flag GW verification impossible. Set the four verifiable bool flags to null so the bench scorer cannot claim verified-compliant on this image."
+    }
+  ]
+}

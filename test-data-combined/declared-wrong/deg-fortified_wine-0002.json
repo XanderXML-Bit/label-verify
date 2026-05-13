@@ -1,0 +1,39 @@
+{
+  "id": "deg-fortified_wine-0002",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-fortified_wine-0002.png",
+  "degradations": [
+    "perspective:-17deg"
+  ],
+  "beverage_type": "fortified_wine",
+  "label_face": "neck",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Bramble & Vine",
+    "class_type": "Sherry",
+    "class_category": "fortified_wine",
+    "abv_percent": 19.4,
+    "net_contents": {
+      "value": 710,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Sunbeam Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-fortified_wine-0001. perspective:-17deg."
+}

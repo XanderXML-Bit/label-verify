@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0017",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0017.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 100,
+  "fields": {
+    "brand_name": "Saltwood Mill",
+    "class_type": "Hefeweizen",
+    "class_category": "beer",
+    "abv_percent": 8,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "STONES THROW Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "Mexico",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "S2",
+  "notes": "front label, stylized brand pattern, 100 ml container. Archetype: bold-display. Government Warning case: S2."
+}

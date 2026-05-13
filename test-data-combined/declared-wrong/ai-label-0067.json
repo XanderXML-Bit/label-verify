@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0067",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0067.jpg",
+  "degradations": [
+    "aged-paper"
+  ],
+  "beverage_type": "fortified_wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Northstar Trading",
+    "class_type": "Madeira",
+    "class_category": "fortified_wine",
+    "abv_percent": 21.5,
+    "net_contents": {
+      "value": 1500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Old Orchard Desk Wines",
+      "street": "58 Cellar Street",
+      "city": "Fresno",
+      "state": "CA",
+      "postal_code": "93721",
+      "country": "USA"
+    },
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Aged yellow paper produces low-contrast warning text."
+}

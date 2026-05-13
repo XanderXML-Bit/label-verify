@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0013",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0013.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Stout",
+    "class_category": "beer",
+    "abv_percent": 9.2,
+    "net_contents": {
+      "value": 50,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "STONES THROW Beverage Co.",
+      "street": "945 Main St",
+      "city": "Walla Walla",
+      "state": "WA",
+      "postal_code": "99362",
+      "country": "USA"
+    },
+    "country_of_origin": "Mexico",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C3",
+  "notes": "front label, stylized brand pattern, 750 ml container. Archetype: bold-display. Government Warning case: C3."
+}

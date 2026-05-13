@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0006",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-wine-0006.png",
+  "degradations": [
+    "lowlight:0.59"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Copperline",
+    "class_type": "Pinot Noir",
+    "class_category": "wine",
+    "abv_percent": 13,
+    "net_contents": {
+      "value": 710,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "MIRA VISTA Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C2",
+  "notes": "Derived from syn-wine-0010. lowlight:0.59."
+}
