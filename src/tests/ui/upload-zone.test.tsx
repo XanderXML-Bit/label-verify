@@ -1,7 +1,53 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi, beforeAll } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UploadZone } from "@/app/components/UploadZone";
+
+// JSDOM does NOT expose three WebKit-prefixed APIs that the wave-12
+// feature-detect uses: the `DataTransferItem` global itself,
+// `webkitGetAsEntry` on its prototype, and `webkitdirectory` on
+// HTMLInputElement.prototype. Polyfill all three for the duration
+// of these tests so `supportsFolderUpload()` returns true and the
+// "Choose folder" button renders — mirroring real Chrome / Edge /
+// Firefox behaviour. The shims are stub-shaped (the folder button
+// tests use the input element's FileList path, not a real drop
+// roundtrip, so the entry callback is never exercised here).
+beforeAll(() => {
+  if (
+    typeof HTMLInputElement !== "undefined" &&
+    !("webkitdirectory" in HTMLInputElement.prototype)
+  ) {
+    Object.defineProperty(HTMLInputElement.prototype, "webkitdirectory", {
+      get() {
+        return this.hasAttribute("webkitdirectory");
+      },
+      set(v: boolean) {
+        if (v) this.setAttribute("webkitdirectory", "");
+        else this.removeAttribute("webkitdirectory");
+      },
+      configurable: true,
+    });
+  }
+  // JSDOM does not define `DataTransferItem` at all — provide a
+  // minimal stand-in whose prototype carries `webkitGetAsEntry`
+  // so the feature-detect succeeds.
+  if (typeof (globalThis as { DataTransferItem?: unknown }).DataTransferItem === "undefined") {
+    class DataTransferItemStub {
+      webkitGetAsEntry(): null {
+        return null;
+      }
+    }
+    Object.defineProperty(globalThis, "DataTransferItem", {
+      value: DataTransferItemStub,
+      configurable: true,
+    });
+  } else if (!("webkitGetAsEntry" in DataTransferItem.prototype)) {
+    Object.defineProperty(DataTransferItem.prototype, "webkitGetAsEntry", {
+      value: () => null,
+      configurable: true,
+    });
+  }
+});
 
 const TRIGGER_LABEL =
   "Upload label images: drag and drop, or press Enter to browse";
@@ -16,9 +62,11 @@ describe("UploadZone", () => {
   it("renders the dropzone copy and the 'Choose files' trigger", () => {
     render(<UploadZone onFiles={() => {}} />);
     expect(screen.getByLabelText(TRIGGER_LABEL)).toBeInTheDocument();
-    // Unified-dropzone copy (image + optional application file).
+    // Unified-dropzone copy (image, folder, or application file).
+    // Wave 12 expanded the heading to mention folder uploads
+    // alongside images and application files.
     expect(
-      screen.getByText(/Drop a label image \(\+ application file, optional\)/i),
+      screen.getByText(/Drop a label image, folder, or application file/i),
     ).toBeInTheDocument();
     // The trigger button carries the descriptive aria-label; its visible
     // text remains "Choose files".
@@ -112,5 +160,120 @@ describe("UploadZone", () => {
 
     expect(onFiles).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(/Rejected 1 file/);
+  });
+
+  // -------- wave-12 tests --------
+
+  it("renders a 'Choose folder' button when the browser supports webkitdirectory + webkitGetAsEntry", async () => {
+    render(<UploadZone onFiles={() => {}} />);
+    // The folder button gates on a `useEffect`-driven feature
+    // detection (supportsFolderUpload), so it appears one tick
+    // after mount. Use `waitFor` so the test doesn't race the
+    // re-render.
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: /Choose a folder of label images and application files/i,
+        }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("surfaces the folder-empty notice when a folder pick yields no valid files", async () => {
+    const onFiles = vi.fn();
+    const { container } = render(<UploadZone onFiles={onFiles} />);
+    // The folder input is the third hidden file input (after the
+    // default input and the iOS photos input). Find it by the
+    // webkitdirectory attribute.
+    const folderInput = container.querySelector<HTMLInputElement>(
+      'input[type="file"][webkitdirectory]',
+    );
+    if (!folderInput) throw new Error("folder input not found");
+
+    // Synthesize a folder pick of ONE unsupported file. Browsers
+    // populate `webkitRelativePath` on each File when the input was
+    // a webkitdirectory pick.
+    const bad = new File(["MZ"], "evil.exe", { type: "" });
+    Object.defineProperty(bad, "webkitRelativePath", {
+      value: "myfolder/evil.exe",
+      configurable: true,
+    });
+    Object.defineProperty(folderInput, "files", {
+      value: { length: 1, item: () => bad, 0: bad },
+      configurable: true,
+    });
+    const { fireEvent } = await import("@testing-library/react");
+    fireEvent.change(folderInput);
+
+    expect(onFiles).not.toHaveBeenCalled();
+    // Two notices fire: the per-file "Rejected" notice AND the
+    // folder-scoped "No valid label images or application files in
+    // 'myfolder'" notice (wave-12 copy distinguishes truly-empty
+    // from files-but-all-rejected — this is the latter).
+    const alerts = screen.getAllByRole("alert");
+    expect(
+      alerts.some((a) =>
+        /No valid label images or application files in/i.test(
+          a.textContent ?? "",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      alerts.some((a) =>
+        /myfolder/i.test(a.textContent ?? ""),
+      ),
+    ).toBe(true);
+  });
+
+  it("passes through valid files from a folder pick", async () => {
+    const onFiles = vi.fn();
+    const { container } = render(<UploadZone onFiles={onFiles} />);
+    const folderInput = container.querySelector<HTMLInputElement>(
+      'input[type="file"][webkitdirectory]',
+    );
+    if (!folderInput) throw new Error("folder input not found");
+
+    const img = new File([new Uint8Array(8)], "label.png", {
+      type: "image/png",
+    });
+    Object.defineProperty(img, "webkitRelativePath", {
+      value: "batch1/label.png",
+      configurable: true,
+    });
+    const pdf = new File([new Uint8Array(8)], "label-app.pdf", {
+      type: "application/pdf",
+    });
+    Object.defineProperty(pdf, "webkitRelativePath", {
+      value: "batch1/label-app.pdf",
+      configurable: true,
+    });
+    const junk = new File([new Uint8Array(8)], "Thumbs.db", { type: "" });
+    Object.defineProperty(junk, "webkitRelativePath", {
+      value: "batch1/Thumbs.db",
+      configurable: true,
+    });
+    Object.defineProperty(folderInput, "files", {
+      value: {
+        length: 3,
+        item: (i: number) => [img, pdf, junk][i],
+        0: img,
+        1: pdf,
+        2: junk,
+      },
+      configurable: true,
+    });
+    const { fireEvent } = await import("@testing-library/react");
+    fireEvent.change(folderInput);
+
+    expect(onFiles).toHaveBeenCalledTimes(1);
+    const passed = onFiles.mock.calls[0]?.[0] as File[];
+    expect(passed.map((f) => f.name).sort()).toEqual([
+      "label-app.pdf",
+      "label.png",
+    ]);
+    // The junk file was rejected and surfaced via the alert.
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /Rejected 1 file.*Thumbs\.db/i,
+    );
   });
 });

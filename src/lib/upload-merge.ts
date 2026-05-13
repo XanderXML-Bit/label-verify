@@ -15,18 +15,29 @@
 
 /**
  * Identity key for a browser File. Two File objects represent the same
- * physical file if their (name, size, lastModified) tuple matches —
- * the browser doesn't surface a content hash, but in practice this
- * tuple is unique enough for our purposes (we just want to dedupe
- * when the user accidentally re-picks the same photo).
+ * physical file if their (path, name, size, lastModified) tuple
+ * matches — the browser doesn't surface a content hash, but in
+ * practice this tuple is unique enough for our purposes (we just
+ * want to dedupe when the user accidentally re-picks the same
+ * photo).
  *
- * Note: we do NOT include `type` because Windows Explorer sometimes
- * reports a different MIME for the same file on a second pick
- * (especially for HEIC / DOCX); using `type` as part of the key would
- * cause false-misses on the dedupe.
+ * Notes:
+ *  - We include `webkitRelativePath` so two photos at
+ *    `batch1/photo.jpg` and `batch2/photo.jpg` (folder-pick flow)
+ *    are kept as distinct files even when their name/size/mtime
+ *    happen to match. Wave-12 hypercritical review flagged that
+ *    camera burst photos with rounded-to-second timestamps could
+ *    legitimately collide on (name, size, lastModified) alone if a
+ *    user organised the same camera roll into two folders.
+ *  - We do NOT include `type` because Windows Explorer sometimes
+ *    reports a different MIME for the same file on a second pick
+ *    (especially for HEIC / DOCX); using `type` as part of the key
+ *    would cause false-misses on the dedupe.
  */
 export function fileIdentityKey(f: File): string {
-  return `${f.name}::${f.size}::${f.lastModified}`;
+  type FileWithRel = File & { webkitRelativePath?: string };
+  const rel = (f as FileWithRel).webkitRelativePath ?? "";
+  return `${rel}::${f.name}::${f.size}::${f.lastModified}`;
 }
 
 /**
@@ -89,4 +100,40 @@ export function isLikelyIos(): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Feature-detect whether the current browser supports `<input
+ * type="file" webkitdirectory>` and the `DataTransferItem.
+ * webkitGetAsEntry()` recursion path. We probe both because a
+ * browser may support one without the other (older iPadOS Safari
+ * shipped getAsEntry first; webkitdirectory landed later). Used to
+ * gate the "Choose folder" button so users on Chromium-on-iPadOS
+ * 16.4+ — which DOES support folder picks — get the affordance
+ * even though `isLikelyIos()` flags the device. Cheaper / more
+ * durable than maintaining a per-OS-version compatibility table.
+ *
+ * Server-side: returns `false` (the button is hidden in the SSR
+ * HTML and `useEffect` re-evaluates after mount). This means the
+ * initial paint matches across all clients and only the
+ * post-hydration repaint shows the folder button — a one-frame
+ * shift on capable browsers, which is acceptable for a discoverability
+ * affordance.
+ */
+export function supportsFolderUpload(): boolean {
+  if (typeof window === "undefined") return false;
+  // Probe `webkitdirectory` on a transient input element.
+  try {
+    const probe = document.createElement("input");
+    probe.type = "file";
+    if (!("webkitdirectory" in probe)) return false;
+  } catch {
+    return false;
+  }
+  // Probe `webkitGetAsEntry` on DataTransferItem prototype. The
+  // protoype-level check is cheaper than instantiating a synthetic
+  // DataTransfer (which Firefox forbids).
+  if (typeof DataTransferItem === "undefined") return false;
+  if (!("webkitGetAsEntry" in DataTransferItem.prototype)) return false;
+  return true;
 }

@@ -363,6 +363,83 @@ because the smart-pairing path (F2) covers the realistic TTB case
 (operator has both labels and applications) and the manifest path
 covers the structured-export case.
 
+## Wave-12 (folder upload + apps-only stage) — DONE 2026-05-13
+
+User asked for three additive capabilities:
+
+1. **Folder upload** — drop or pick an entire folder; recurse into
+   subdirectories; surface a warning naming the files that were
+   ignored.
+2. **Apps-only pending state** — if the user drops only application
+   files (no label image), keep them staged and prompt for the
+   missing image rather than throwing the user back to idle.
+3. **Empty-result feedback** — if a folder scan finds nothing
+   useful, say so explicitly with the folder name.
+
+### Implementation summary
+
+- **`src/lib/folder-traversal.ts`** — new helper.
+  - `flattenEntries(entries, { maxFiles, maxDirChildren })`
+    recursively walks the `FileSystemEntry` tree produced by
+    `DataTransferItem.webkitGetAsEntry()`. Bounded by `maxFiles`
+    (default 500) and per-directory `maxDirChildren` (default
+    `maxFiles * 4`) so a hostile readEntries source can't
+    OOM-build the accumulator before the outer cap cuts in.
+  - `isSystemNoiseFile` skips `.DS_Store`, `Thumbs.db`,
+    `desktop.ini`, macOS resource forks (`._*`), and zero-byte
+    files so they don't consume the `maxFiles` budget or reach
+    the verifier.
+  - `extractEntriesFromDataTransfer` and `partitionFolderResult`
+    isolate the DOM-cast and classifier boundaries respectively.
+- **`src/app/components/UploadZone.tsx`** — folder picker +
+  folder-drop handler.
+  - "Choose folder" tertiary button feature-detected post-mount
+    via `supportsFolderUpload()` (probes both
+    `"webkitdirectory" in HTMLInputElement.prototype` AND
+    `"webkitGetAsEntry" in DataTransferItem.prototype`). Older
+    iOS Safari silently loses the button without UA sniffing.
+  - `handleDrop` is now async to support recursion; the
+    `e.dataTransfer.files` snapshot is captured synchronously
+    before the first `await` to dodge React/browser event-pool
+    teardown.
+  - Empty-folder notice copy branches on whether the folder was
+    truly empty vs. contained-but-all-rejected — paired with the
+    existing per-file rejection list so the user can act on
+    either.
+- **`src/app/page.tsx`** — new `apps-only-pending` Stage variant
+  with the staged apps + ignored-file list rendered to the user.
+  When an image lands via `handleAdditionalFiles`, intent
+  inference promotes the stage to `single-pending` (1 image) or
+  `batch-pending(autoPair)` (≥2 images).
+- **`src/lib/upload-merge.ts`** — `fileIdentityKey` now includes
+  `webkitRelativePath` so two same-named files in different
+  subfolders are kept distinct (camera-burst photos with rounded
+  timestamps no longer collide on (name, size, mtime) alone).
+  `supportsFolderUpload()` exported.
+
+### Apex governance trail
+
+- Plan written in `.wave-12-plan.md` before code (since deleted).
+- TDD: 15 unit tests for `folder-traversal` written before the
+  helper code (red→green).
+- Hypercritical review pass via a cross-provider sub-agent
+  (Apex §12.3) raised 14 findings. All 7 must-fix items + 6 of
+  the advisory items addressed; one (iOS folder-pick on iPadOS
+  16.4+) was solved by the feature-detect rather than UA-sniff.
+- Verify-fixes pass via a second sub-agent confirmed each
+  must-fix item is addressed (file:line cited) with no new
+  regressions.
+
+### What's deliberately deferred to wave-13+
+
+- A bench-iteration OCR experiment (Tesseract PSM-11 fallback
+  when the default pass misses the GW prefix) was scoped during
+  this wave. Plan landed via a sub-agent (engine-level merge in
+  `tesseractEngine.run`, pre-registered metrics, ~25-line diff)
+  but the implementation + cross-pair bench will be a separate
+  PR so it can be reverted cleanly if any axis regresses
+  (mirroring the wave-10 discipline).
+
 ## Wave-11 (iOS upload tolerance) — DONE 2026-05-13
 
 User reported: tried to verify 5 photos on iPhone but only 1 made it

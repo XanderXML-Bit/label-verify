@@ -25,6 +25,7 @@ import type { Sample } from "@/lib/samples";
 import { compressImageInBrowser } from "@/lib/client-compress";
 import { classifyFile } from "@/lib/batch-pairing";
 import { mergeFilesForRestage } from "@/lib/upload-merge";
+import { partitionFolderResult } from "@/lib/folder-traversal";
 
 // Minimal HTTP error carrier so the batch XHR pipeline can surface
 // status codes to friendlyError() the same way the fetch() path
@@ -107,6 +108,22 @@ type Stage =
        *  screen and shows a "ready to verify" summary instead. */
       autoPair: boolean;
       submitError?: string;
+    }
+  | {
+      /** Reached when the user dropped / picked an application file
+       *  (or several) without a label image. We can't verify anything
+       *  without an image, but instead of throwing the user back to
+       *  idle with a generic error, we keep their staged apps and
+       *  surface a focused "drop a label image to continue" UI. As
+       *  soon as an image lands, intent inference flips the page
+       *  into single-pending or batch-pending(autoPair). */
+      kind: "apps-only-pending";
+      apps: File[];
+      /** Names of files that were ignored during the same drop /
+       *  pick (e.g. random `.exe` files inside a dropped folder).
+       *  Surfaced in the apps-only header so the user knows we
+       *  didn't silently throw their other files on the floor. */
+      ignored: readonly string[];
     }
   | { kind: "batch-running"; batchId: string; rows: BatchRow[] };
 
@@ -209,33 +226,48 @@ export default function Home() {
     // Per UX recommendation 2026-05-12: a single dropzone that handles
     // (1 image, 1 image + 1 application, N images, N images + N apps)
     // without making the reviewer hunt for the right input slot.
-    const images: File[] = [];
-    const apps: File[] = [];
-    const ignored: File[] = [];
-    for (const f of files) {
-      const kind = classifyFile(f);
-      if (kind === "image") images.push(f);
-      else if (kind === "application") apps.push(f);
-      else ignored.push(f);
-    }
+    // `partitionFolderResult` is the same three-way split the folder-
+    // traversal helper exposes — using it here keeps page.tsx and
+    // the helper consistent and gives us free dedupe parity with
+    // the folder-pick flow.
+    const { images, apps, ignored } = partitionFolderResult(files, classifyFile);
 
-    // Zero images: can't verify anything.
+    // Zero images: branch on whether we got application files.
+    //   - 0 images + ≥1 apps → apps-only-pending stage so the user
+    //     can append the missing label image without re-uploading the
+    //     application file.
+    //   - 0 images + 0 apps → single-error with a clear "we couldn't
+    //     find anything we recognise" message.
     if (images.length === 0) {
-      // No safe way to enter a meaningful stage. Surface a transient
-      // alert via a single-error stage so the user sees a clear
-      // message, then returns to idle on dismiss.
+      if (apps.length > 0) {
+        setStage({
+          kind: "apps-only-pending",
+          apps,
+          ignored: ignored.map((f) => f.name),
+        });
+        if (ignored.length > 0) {
+          console.warn(
+            `[upload] ignored ${ignored.length} unsupported file(s): ${ignored
+              .map((f) => f.name)
+              .join(", ")}`,
+          );
+        }
+        return;
+      }
       setStage({
         kind: "single-error",
         // Synthesize a placeholder file/preview so the existing error
         // stage shape is satisfied; reset() clears it.
-        file: apps[0] ?? new File([], "missing.txt"),
+        file: new File([], "missing.txt"),
         previewUrl: "",
-        title: "Label image required",
+        title: "No valid files found",
         message:
-          "Please include at least one label image (JPEG, PNG, WebP, HEIC, or PDF). " +
-          (apps.length
-            ? "An application file was detected but a label image is required for verification."
-            : "Unsupported file types were detected — drop a label image instead."),
+          ignored.length > 0
+            ? `We scanned your selection but didn't recognise any of the files as label images or application data. Ignored: ${ignored
+                .map((f) => f.name)
+                .slice(0, 5)
+                .join(", ")}${ignored.length > 5 ? `, …and ${ignored.length - 5} more` : ""}. Please drop at least one JPEG / PNG / WebP / HEIC label image, or a folder containing one.`
+            : "Please drop at least one label image (JPEG, PNG, WebP, or HEIC) — or a folder that contains label images and (optionally) application files.",
       });
       return;
     }
@@ -323,7 +355,9 @@ export default function Home() {
         ? [stage.file]
         : stage.kind === "batch-pending"
           ? stage.files
-          : [];
+          : stage.kind === "apps-only-pending"
+            ? stage.apps
+            : [];
     const merged = mergeFilesForRestage(existing, newFiles);
     handleFiles(merged);
   }
@@ -893,6 +927,77 @@ export default function Home() {
           onAnother={reset}
           onContinueToVerification={continueToVerification}
         />
+      )}
+
+      {stage.kind === "apps-only-pending" && (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/50">
+            <h2 className="text-base font-semibold text-amber-900 dark:text-amber-100">
+              We have your application data — please add a label image to verify
+            </h2>
+            <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">
+              You dropped {stage.apps.length} application file
+              {stage.apps.length === 1 ? "" : "s"} but no label image. We
+              keep <strong>application data</strong> optional (the form lets
+              you fill it manually), but a <strong>label image is required</strong>
+              {" "}— that&apos;s what the verifier looks at. Drop one or more
+              label images below to continue.
+              {stage.ignored.length > 0 ? (
+                <>
+                  {" "}We also ignored {stage.ignored.length} unsupported file
+                  {stage.ignored.length === 1 ? "" : "s"} (see below).
+                </>
+              ) : null}
+            </p>
+            <div className="mt-3 rounded-md border border-amber-200 bg-white p-3 dark:border-amber-700 dark:bg-slate-900">
+              <div className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Staged application file{stage.apps.length === 1 ? "" : "s"} ({stage.apps.length})
+              </div>
+              <ul className="mt-1 list-inside list-disc font-mono text-xs text-slate-700 dark:text-slate-200">
+                {stage.apps.slice(0, 8).map((f) => (
+                  <li key={f.name}>{f.name}</li>
+                ))}
+                {stage.apps.length > 8 && (
+                  <li className="list-none text-slate-500 dark:text-slate-400">
+                    …and {stage.apps.length - 8} more
+                  </li>
+                )}
+              </ul>
+            </div>
+            {stage.ignored.length > 0 ? (
+              <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                <div className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Ignored — unsupported types ({stage.ignored.length})
+                </div>
+                <ul className="mt-1 list-inside list-disc font-mono text-xs text-slate-700 dark:text-slate-300">
+                  {stage.ignored.slice(0, 8).map((name) => (
+                    <li key={name}>{name}</li>
+                  ))}
+                  {stage.ignored.length > 8 && (
+                    <li className="list-none text-slate-500 dark:text-slate-400">
+                      …and {stage.ignored.length - 8} more
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+          {/* Append-mode picker so the user can add the missing label
+              image (or a folder of them). As soon as an image lands,
+              intent inference flips the stage to single-pending (1
+              image) or batch-pending autoPair (≥2 images) — the
+              app(s) come along for the ride and pair automatically. */}
+          <UploadZone mode="append" onFiles={handleAdditionalFiles} />
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={reset}
+              className="min-h-[44px] rounded-md border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Cancel and start over
+            </button>
+          </div>
+        </div>
       )}
 
       {stage.kind === "single-error" && (
