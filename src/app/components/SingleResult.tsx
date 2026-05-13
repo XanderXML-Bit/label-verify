@@ -118,16 +118,10 @@ export function SingleResult({
           role="alert"
           className="rounded-lg border-l-4 border-yellow-500 bg-yellow-50 p-3 text-sm text-yellow-900 dark:border-yellow-400 dark:bg-yellow-950/60 dark:text-yellow-200"
         >
-          <p className="font-semibold">
-            <span aria-hidden className="mr-1">⚠</span>
-            We used a backup verifier for this one
-          </p>
-          <p className="mt-1">
-            Our main AI service was briefly unavailable, so a backup
-            took over. The result below is still trustworthy, but if
-            anything looks off you can verify the label again in a
-            minute or two when the main service is back.
-          </p>
+          <span aria-hidden className="mr-1">⚠</span>
+          <strong>Verified by the backup AI</strong> — primary was
+          briefly unavailable. The result is still valid; re-verify in
+          a moment if anything looks off.
         </div>
       )}
 

@@ -363,33 +363,44 @@ export function DeclaredForm({
           Verify
         </button>
         {onExtractOnly && (
-          // Secondary button — same control affordance as Verify, lower
-          // visual weight (outlined, not filled) so a senior reviewer
-          // can't fat-finger past Verify into the extract-only path,
-          // but obvious enough that someone without application data
-          // sees it as a button rather than as an inline text link.
-          // Per user feedback 2026-05-12.
+          // Detailed mode keeps the full Skip button next to Verify so
+          // power-users can fat-finger-safe fork into the extract-only
+          // path. Simple mode demotes it to an inline text link below
+          // the form so a first-time reviewer can't accidentally route
+          // away from the canonical verify flow.
           <button
             type="button"
             onClick={onExtractOnly}
             disabled={disabled}
             title="Run the extractor without a verdict — useful when you don't have the COLA application data."
-            className="min-h-[44px] rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="detailed-only min-h-[44px] rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Skip — extract fields without a verdict
           </button>
         )}
       </div>
       {onExtractOnly && (
-        // Helper text under the row of buttons. Explicit that
-        // "Skip" is only for the case where no application data
-        // exists — defends against an accidental click.
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          The skip button is for cases where you don&apos;t have COLA
-          application data on hand. It returns extracted label fields
-          and a Government-Warning subscore but no pass / fail /
-          review verdict.
-        </p>
+        <>
+          {/* Detailed-mode helper text. Hidden in simple mode — the
+              inline link below replaces both the button and this copy. */}
+          <p className="detailed-only text-xs text-slate-500 dark:text-slate-400">
+            The skip button is for cases where you don&apos;t have COLA
+            application data on hand. It returns extracted label fields
+            and a Government-Warning subscore but no pass / fail /
+            review verdict.
+          </p>
+          <p className="simple-only text-xs text-slate-500 dark:text-slate-400">
+            No application data?{" "}
+            <button
+              type="button"
+              onClick={onExtractOnly}
+              disabled={disabled}
+              className="text-blue-700 underline hover:text-blue-900 disabled:cursor-not-allowed disabled:opacity-60 dark:text-blue-400 dark:hover:text-blue-200"
+            >
+              Extract fields from the label only →
+            </button>
+          </p>
+        </>
       )}
     </form>
   );

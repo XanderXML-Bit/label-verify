@@ -665,13 +665,12 @@ export default function Home() {
           the fields in manually. Returns a pass / fail / review verdict
           in seconds.
         </p>
-        {/* UX audit P-5: the "extract-only" path is discoverable from
-            the form's secondary button, but the idle-screen header
-            doesn't hint that an application file is optional. One-line
-            subhead surfaces that. */}
-        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-          Or skip the application data — extract just the fields the
-          label declares on its own.
+        {/* The "extract-only" path is discoverable from a link below
+            the form's primary Verify button. Surfacing it on idle adds
+            two paragraphs to a screen the reviewer is trying to act on
+            for the first time. Only surface it in detailed mode. */}
+        <p className="detailed-only mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+          No application data? You can still extract what's on the label.
         </p>
       </header>
 
@@ -851,10 +850,8 @@ export default function Home() {
                 Batch upload — {imageFiles.length} image{imageFiles.length === 1 ? "" : "s"} + {appFiles.length} application file{appFiles.length === 1 ? "" : "s"}
               </h3>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                We&apos;ll pair each image with its matching application
-                file by filename stem (case-insensitive, face-tag and
-                app-tag aware). PDFs without extractable text auto-fall-
-                back to vision OCR. Hit <strong>Verify batch</strong> to
+                We&apos;ll match each image to its application file
+                automatically. Hit <strong>Verify batch</strong> to
                 start.
               </p>
               {stage.submitError && (
