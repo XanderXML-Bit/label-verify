@@ -32,6 +32,15 @@ export interface ApplicationParsePayload {
 interface Props {
   readonly onParsed: (payload: ApplicationParsePayload) => void;
   readonly disabled?: boolean;
+  /**
+   * Optional filename of the image being verified. When set, the
+   * parser uses it to pick the matching row out of a multi-row
+   * manifest (filename-keyed JSON object, `filename`-column CSV) so
+   * a user who uploads a roster manifest alongside one image gets
+   * the correct row's fields rather than the whole manifest flattened
+   * into a single garbage record.
+   */
+  readonly imageFilename?: string;
 }
 
 // HEIC/HEIF intentionally excluded — sharp builds shipped with Vercel
@@ -55,7 +64,7 @@ const SOURCE_LABEL: Record<ApplicationParserSource, string> = {
   "image-vision": "image (AI extraction)",
 };
 
-export function ApplicationUpload({ onParsed, disabled }: Props) {
+export function ApplicationUpload({ onParsed, disabled, imageFilename }: Props) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState<
@@ -87,6 +96,11 @@ export function ApplicationUpload({ onParsed, disabled }: Props) {
     try {
       const fd = new FormData();
       fd.append("file", file);
+      // When the parent knows which image we're verifying, pass it so
+      // the parser can pick the matching row out of a multi-row
+      // manifest. Without this context a roster manifest dropped after
+      // the image would fail to prefill correctly.
+      if (imageFilename) fd.append("imageFilename", imageFilename);
       const resp = await fetch("/api/application/parse", {
         method: "POST",
         body: fd,

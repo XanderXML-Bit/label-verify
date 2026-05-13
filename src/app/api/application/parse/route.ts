@@ -105,6 +105,15 @@ export async function POST(req: Request) {
   const buffer = Buffer.from(await fileEntry.arrayBuffer());
   const mime = (fileEntry.type || "").toLowerCase();
   const filename = fileEntry.name || "application";
+  // Optional: caller can pass the image filename it's verifying so the
+  // parser can pick the matching row out of a multi-row manifest
+  // (filename-keyed JSON object, `filename`-column CSV, etc.). Without
+  // it, the multi-row case falls back to the first row + a warning.
+  const imageFilenameRaw = form.get("imageFilename");
+  const imageFilename =
+    typeof imageFilenameRaw === "string" && imageFilenameRaw.trim()
+      ? imageFilenameRaw.trim()
+      : undefined;
 
   // Image-of-application path is handled separately because it needs the
   // Gemini key + a different prompt. We require an EXACT MIME match
@@ -157,6 +166,7 @@ export async function POST(req: Request) {
       ...(process.env.GOOGLE_API_KEY
         ? { apiKey: process.env.GOOGLE_API_KEY }
         : {}),
+      ...(imageFilename ? { imageFilename } : {}),
     });
     return NextResponse.json(result, {
       headers: { "X-RateLimit-Remaining": String(rl.remaining) },

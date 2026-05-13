@@ -136,6 +136,91 @@ describe("application/parse-structured", () => {
   it("rejects an empty CSV", () => {
     expect(() => parseApplicationCsv("")).toThrow(/empty|parse/i);
   });
+
+  // ─── filename-keyed multi-row JSON manifest (user's batch shape) ────────
+  //
+  // The user-reported failure: when an image + an application-data.json
+  // shaped as `{"label-001.jpg": {row}, "label-002.jpg": {row}, ...}`
+  // are uploaded together, the parser must (a) recognise the filename-
+  // keyed shape and (b) pick the row matching the uploaded image rather
+  // than flattening the whole map into a single garbage record.
+  it("picks the row matching imageFilename in a filename-keyed JSON map", () => {
+    const text = JSON.stringify({
+      "ai-label-0001.jpg": {
+        fields: {
+          brand_name: "Mill Creek",
+          class_type: "Pilsner",
+          class_category: "beer",
+          abv_percent: 5.2,
+          net_contents: { value: 12, unit: "fl_oz" },
+        },
+      },
+      "ai-label-0005.jpg": {
+        fields: {
+          brand_name: "Latitude Seven",
+          class_type: "IPA",
+          class_category: "beer",
+          abv_percent: 6.4,
+          net_contents: { value: 12, unit: "fl_oz" },
+        },
+      },
+    });
+    const r = parseApplicationJson(text, {
+      imageFilename: "ai-label-0005.jpg",
+    });
+    expect(r.fields.brand_name).toBe("Latitude Seven");
+    expect(r.fields.class_type).toBe("IPA");
+    expect(r.warnings).toEqual([]);
+  });
+
+  it("matches by filename stem when extensions differ", () => {
+    const text = JSON.stringify({
+      "deg-beer-0001.png": {
+        fields: { brand_name: "Cold Iron", class_type: "Saison", abv_percent: 7.5 },
+      },
+    });
+    // The actual image might be uploaded as .jpg but the manifest
+    // tracked the original .png — match by stem.
+    const r = parseApplicationJson(text, {
+      imageFilename: "deg-beer-0001.jpg",
+    });
+    expect(r.fields.brand_name).toBe("Cold Iron");
+  });
+
+  it("warns and uses first row when imageFilename has no match in the manifest", () => {
+    const text = JSON.stringify({
+      "label-001.jpg": { brand_name: "A", abv_percent: 5 },
+      "label-002.jpg": { brand_name: "B", abv_percent: 6 },
+    });
+    const r = parseApplicationJson(text, {
+      imageFilename: "totally-different.jpg",
+    });
+    expect(r.fields.brand_name).toBe("A");
+    expect(r.warnings[0]).toMatch(/none matched image/);
+  });
+
+  it("warns when multi-row JSON has no imageFilename context", () => {
+    const text = JSON.stringify({
+      "label-001.jpg": { brand_name: "A", abv_percent: 5 },
+      "label-002.jpg": { brand_name: "B", abv_percent: 6 },
+    });
+    const r = parseApplicationJson(text);
+    expect(r.fields.brand_name).toBe("A");
+    expect(r.warnings[0]).toMatch(/2 rows; using the first/);
+  });
+
+  it("CSV picks the row matching imageFilename when a `filename` column is present", () => {
+    const csv =
+      "filename,brand_name,class_type,abv_percent\n" +
+      "label-001.jpg,A,IPA,5\n" +
+      "label-002.jpg,B,Pilsner,6\n" +
+      "label-003.jpg,C,Stout,7\n";
+    const r = parseApplicationCsv(csv, {
+      imageFilename: "label-002.jpg",
+    });
+    expect(r.fields.brand_name).toBe("B");
+    expect(r.fields.class_type).toBe("Pilsner");
+  });
 });
 
 describe("application/parse (dispatcher)", () => {

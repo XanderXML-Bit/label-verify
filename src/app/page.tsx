@@ -242,7 +242,12 @@ export default function Home() {
         // image; else just take the first.
         const matched =
           apps.find((a) => stemMatches(a.name, img.name)) ?? apps[0]!;
-        void parseAppInBackground(matched);
+        // Pass the image filename so the parser can pick the matching
+        // row out of a multi-row manifest (filename-keyed JSON object,
+        // `filename`-column CSV). Without this context, a 12-row
+        // manifest dropped alongside one image would parse as the
+        // whole manifest flattened into garbage column names.
+        void parseAppInBackground(matched, img.name);
         if (apps.length > 1) {
           // Surface the discarded apps to BOTH the developer console
           // (full provenance) AND the form UI (so the reviewer sees
@@ -285,12 +290,19 @@ export default function Home() {
    *  result into the existing pre-fill state. Surfaces a `bgAppParse`
    *  status the form panel can render as a "Parsing …" pill so the
    *  user knows fields will land in a moment. Failures degrade
-   *  silently — the reviewer can still fill the form manually. */
-  async function parseAppInBackground(file: File) {
+   *  silently — the reviewer can still fill the form manually.
+   *
+   *  When `imageFilename` is supplied (single-image flow with a
+   *  multi-row manifest, batch flow), the route can pick the row
+   *  matching that filename out of a filename-keyed or `filename`-
+   *  column manifest instead of treating the whole file as a single
+   *  record. */
+  async function parseAppInBackground(file: File, imageFilename?: string) {
     setBgAppParse({ kind: "parsing", filename: file.name });
     try {
       const fd = new FormData();
       fd.append("file", file);
+      if (imageFilename) fd.append("imageFilename", imageFilename);
       const res = await fetch("/api/application/parse", { method: "POST", body: fd });
       if (!res.ok) {
         setBgAppParse({ kind: "failed", filename: file.name });
@@ -669,7 +681,10 @@ export default function Home() {
               Drop multiple images to verify them in a batch.
             </div>
           )}
-          <ApplicationUpload onParsed={handleApplicationParsed} />
+          <ApplicationUpload
+            onParsed={handleApplicationParsed}
+            imageFilename={stage.file.name}
+          />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-3">
               <h3 className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
