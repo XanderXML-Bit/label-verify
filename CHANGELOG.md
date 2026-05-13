@@ -4,6 +4,68 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [True auto-batch — multi-row manifest detection + broadcast + batch-screen file upload] — 2026-05-13 early
+
+User-reported correctness bug + UX feedback: dropping 12 images +
+1 CSV containing rows for all 12 returned `400 no-pairs-found`. The
+images-only batch screen required text-paste of a manifest (no file
+upload option). Fixed both.
+
+### Backend — auto-pair pipeline rewrite
+
+A 4-stage pipeline replaces the previous 3-stage one:
+
+1. **Inline-manifest detection** (NEW) — any dropped CSV / JSON
+   detected as a multi-row file with a `filename`-aliased column is
+   expanded into per-image pairs BEFORE filename-stem and content
+   pairing run. So 12 images + 1 12-row CSV → 12 pairs. 5 images +
+   a 20-row CSV → 5 pairs + 15 orphan rows surfaced as warnings.
+2. Filename stem matching (existing).
+3. Content-based fallback (existing).
+4. **Single-application broadcast** (NEW) — when ≥ 2 unpaired images
+   remain with exactly 1 unpaired single-product app file, broadcast
+   the same parsed fields to every image with a warning so the
+   operator can reject.
+
+### Files
+
+- `src/lib/application/detect-manifest.ts` (NEW) — `detectCsvManifestShape` +
+  `detectJsonManifestShape`. Recognises `filename` / `file` / `image` /
+  `label` / `cola_number` / `id` columns (case-insensitive +
+  separator-insensitive). Pure structural — no I/O, no vision.
+- `src/tests/detect-manifest.test.ts` (NEW) — **13 tests** covering
+  single-row, multi-row + filename column, multi-row without, alias
+  variants, malformed input, nested net_contents flattening.
+- `src/lib/batch-pairing.ts` — extended `PairingSummary.mode` enum
+  (`"auto-inline-manifest"`, `"auto-broadcast"`), added optional
+  `orphanedManifestRows` + `broadcast` fields, extended
+  `PairingHit.source` enum (`"manifest-inline"`, `"manifest-broadcast"`).
+- `src/app/api/verify/batch/route.ts` — inserted the inline-manifest
+  detection pass before `pairByFilenameStem`. Inline-manifest pairs
+  cache their row directly; the per-pair loop uses `rowToDeclared`
+  on the row instead of re-parsing the multi-row CSV (which would
+  silently collapse to row 0). Added the broadcast pass after
+  content-pairing.
+- `src/app/page.tsx` — replaced the manifest-only batch screen with an
+  embedded `UploadZone` for application files. Manifest text-paste
+  demoted to a collapsed `<details>` for power users. Removed
+  "Generate manifest template" button (the new flow makes it
+  unnecessary).
+
+### Live production verification
+
+| Scenario | HTTP | Mode | Pairs | Notes |
+|---|---|---|---|---|
+| 12 images + 1 CSV (12 rows) | 200 | `auto-inline-manifest` | 12 | The reported bug — fixed |
+| 5 images + 1 CSV (20 rows) | 200 | `auto-inline-manifest` | 5 | 15 orphan rows surfaced as warnings |
+
+### Validation
+
+- **440 / 440 tests** passing (was 427; +13 detect-manifest tests).
+- Typecheck clean. Lint clean. Production build green.
+- `audit-report.html` (stray local `npm audit` artifact) removed +
+  `.gitignore`d.
+
 ## [Content-based fallback pairing] — 2026-05-12 late night
 
 User-explicit ask: the auto-pair should handle even **randomly-named
