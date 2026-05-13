@@ -175,6 +175,7 @@ export function DeclaredForm({
         <Field id={ids.brand} label="Brand name" required error={fieldErrors.brand}>
           <input
             id={ids.brand}
+            name="brand_name"
             type="text"
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
@@ -193,6 +194,7 @@ export function DeclaredForm({
         >
           <input
             id={ids.classType}
+            name="class_type"
             type="text"
             value={classType}
             onChange={(e) => setClassType(e.target.value)}
@@ -209,6 +211,7 @@ export function DeclaredForm({
         <Field id={ids.classCategory} label="Category" required>
           <select
             id={ids.classCategory}
+            name="class_category"
             value={classCategory}
             onChange={(e) =>
               setClassCategory(e.target.value as DeclaredFields["class_category"])
@@ -225,6 +228,7 @@ export function DeclaredForm({
         <Field id={ids.abv} label="ABV (%)" required error={fieldErrors.abv}>
           <input
             id={ids.abv}
+            name="abv_percent"
             type="number"
             step="0.1"
             min="0"
@@ -246,6 +250,7 @@ export function DeclaredForm({
         >
           <input
             id={ids.ncValue}
+            name="net_contents_value"
             type="number"
             step="0.1"
             min="0"
@@ -263,6 +268,7 @@ export function DeclaredForm({
         <Field id={ids.ncUnit} label="Net contents unit" required>
           <select
             id={ids.ncUnit}
+            name="net_contents_unit"
             value={ncUnit}
             onChange={(e) =>
               setNcUnit(e.target.value as "fl_oz" | "ml" | "L" | "cl")
@@ -279,6 +285,7 @@ export function DeclaredForm({
         <Field id={ids.producer} label="Producer / address">
           <textarea
             id={ids.producer}
+            name="producer"
             value={producer}
             onChange={(e) => setProducer(e.target.value)}
             disabled={disabled}
@@ -294,6 +301,7 @@ export function DeclaredForm({
         >
           <input
             id={ids.country}
+            name="country_of_origin"
             type="text"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
