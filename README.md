@@ -180,12 +180,25 @@ For each label, the verifier computes:
 
 ---
 
+## Scope and limitations (read before drawing conclusions)
+
+A federal reviewer will want to know exactly what this prototype is and isn't claiming. To save you the read-between-the-lines:
+
+- **This is a prototype, not a regulatory decision system.** Output is intended to support a human adjudicator. Every numeric accuracy figure in this README comes from a stress corpus, not a production-validated COLA-acceptance benchmark. The cross-pair benchmark (`npm run bench:cross-pair`) measures *mismatch sensitivity* (does the verdict flip when declared fields are perturbed?) — it does NOT measure regulatory acceptance accuracy on a peer-reviewed dataset of real submitted COLA forms.
+- **Test corpus composition is mixed and self-similar.** 90 SVG-rendered synthetic labels + 80 AI-generated photo-realistic labels = 170 images. There are zero real submitted COLA labels in the corpus (the project couldn't obtain them inside the take-home window). The extractor is a foundation model and the AI-label half was rendered by a foundation model — there's inherent generalization risk to *real* labels with brand-design quirks, foreign-print pipelines, glare, curvature, and the long tail of typographic variation that synthetic templates can't capture. See [`docs/FAILURE-MODES.md`](docs/FAILURE-MODES.md) for the catalog.
+- **Government Warning text-matching is OCR-normalized.** The text-match subscore folds Unicode noise (NBSP, narrow NBSP, smart quotes, em-dashes, zero-width spaces, ellipsis) before strict equality. This handles export-pipeline noise without flagging visually-identical text. Typography subscores (caps / bold / size) are pixel/geometry heuristics, NOT a regulatory acceptance certification. Borderline visual differences route to REVIEW (not PASS), and a "we can't fully measure bold weight" condition explicitly downgrades a model-self-reported PASS to REVIEW. See [`docs/government-warning-cases.md`](docs/government-warning-cases.md) for the §16.21 / §16.22 case taxonomy.
+- **The three CLIs are operator/reviewer tools, NOT public surfaces.** `bin/labelverify.ts`, `bin/labelverify-web.ts`, and `bin/labelverify-bench.ts` are intended for operators, automation, and reviewers reproducing measurements. The public user surface is the web UI (`/`), behind per-IP rate limits and the multipart upload contract enforced by the API routes. There is no public "list batches" / "list verifications" endpoint; the `/api/queue/*` and `/api/debug/last` surfaces require a `DEBUG_TOKEN` bearer credential gated by branch-secret env-var.
+- **Batch ceiling is provider-limited, not application-limited.** The Vercel Hobby plan caps function duration at 60 s. With Gemini 3.1 Flash Lite at ~2.5–4 s P50 per verify and a CONCURRENCY=2 worker pool, the practical interactive batch ceiling is ~30 images per submit before timing out. A production deployment would move to either Vercel Pro (300 s) or an external worker (queue + webhooks) — neither in scope for this prototype.
+- **Generated/AI artifacts are explicitly labeled as such.** The `test-data/ai-generated/` corpus, the AI label half of `test-data-combined/`, and any benchmark output that exercises them are flagged in their provenance docs ([`docs/CORPORA.md`](docs/CORPORA.md)). Do not treat AI-generated label accuracy as evidence of real-label accuracy.
+
+---
+
 ## Verified state (pre-submission)
 
 | Surface | State |
 |---|---|
 | **Live production** | <https://label-verify-six.vercel.app> · `/api/health` returns `{ ok: true, ready: true, notes: [] }` · all routes 200 · live manual browser walkthrough completed (PASS / FAIL / REVIEW samples all returned correct verdicts in 4.5–5.2 s with 0 console errors) |
-| **Tests** | **418 / 418** passing (`vitest`) · 52 test files |
+| **Tests** | **472 / 472** passing (`vitest`) · 56 test files |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
 | **Lint** | `next lint` clean (zero warnings) |
 | **Production build** | green |
