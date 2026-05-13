@@ -436,35 +436,56 @@ export async function verifyLabel(
     verdict = "review";
   }
 
-  // IMAGE QUALITY (independent): driven by the extractor's per-field
-  // confidence aggregate, not by the verdict. This is the critical UX
-  // distinction — see UI-SPEC §2.2.
+  // IMAGE QUALITY (independent of compliance verdict).
   //
-  // We use the COMPARATOR's confidence (post-normalization) rather than
-  // the extractor's raw confidence so that legitimately-absent fields
-  // (e.g. country_of_origin on a US-domestic label, which the
-  // comparator routes to REVIEW @ 0.5) don't drag image quality to
-  // "bad". The extractor would report 0.0 for that field, which would
-  // mis-classify the image as bad even when the label is photographed
-  // perfectly. Per code-review C12.
-  const fieldConfidences = [
-    brand.confidence,
-    cls.confidence,
-    abv.confidence,
-    nc.confidence,
-    producer.confidence,
-    country.confidence,
-    gov.confidence,
-  ];
+  // 2026-05-13 fix: use the EXTRACTOR's per-field confidence on fields
+  // the model actually READ (value !== null) — not the comparator's
+  // confidence. The previous comparator-based formula conflated two
+  // things: (a) "the model couldn't read this clearly off the image"
+  // (real image-quality concern) and (b) "the declared value the user
+  // typed doesn't match what the model read" (manifest mismatch, has
+  // nothing to do with image quality). A reviewer who submits a clean
+  // photo with an intentionally-wrong declared value should see
+  // image-quality = "good" + verdict = "fail/review" — not
+  // "Re-photograph" on a perfectly legible label.
+  //
+  // The earlier worry (legitimately-absent country_of_origin tanking
+  // the mean) is now handled by the `.value !== null` filter: the
+  // extractor returns `{ value: null, confidence: 0 }` for fields not
+  // printed on the label, and those are excluded from the average.
+  // Fields that ARE printed contribute their honest extractor
+  // confidence.
+  const extractorConfidences = [
+    extracted.fields.brand_name,
+    extracted.fields.class_type,
+    extracted.fields.abv_percent,
+    extracted.fields.net_contents,
+    extracted.fields.producer,
+    extracted.fields.country_of_origin,
+    extracted.fields.government_warning,
+  ]
+    .filter((f) => f.value !== null && f.value !== undefined)
+    .map((f) => f.confidence);
   const meanConf =
-    fieldConfidences.reduce((s, x) => s + x, 0) / fieldConfidences.length;
-  const minConf = Math.min(...fieldConfidences);
+    extractorConfidences.length > 0
+      ? extractorConfidences.reduce((s, x) => s + x, 0) / extractorConfidences.length
+      : 0;
+  const minConf =
+    extractorConfidences.length > 0 ? Math.min(...extractorConfidences) : 0;
   const imageQuality: ImageQuality =
-    minConf < 0.3 ? "bad" : meanConf < 0.6 ? "low" : "good";
+    extractorConfidences.length === 0
+      ? "bad"
+      : minConf < 0.3
+        ? "bad"
+        : meanConf < 0.6
+          ? "low"
+          : "good";
   const imageQualityReason =
     imageQuality === "good"
       ? undefined
-      : `Mean extractor confidence ${meanConf.toFixed(2)} (min ${minConf.toFixed(2)}).`;
+      : extractorConfidences.length === 0
+        ? "The extractor could not read any fields from the image — re-photograph in better light at a sharper angle."
+        : `Mean extractor confidence ${meanConf.toFixed(2)} (min ${minConf.toFixed(2)}) across ${extractorConfidences.length} fields the model could read.`;
 
   // ─── 5b. Unreadable-image safety net ─────────────────────────────────────
   //
@@ -791,24 +812,42 @@ export async function extractOnly(
   });
   const matchElapsed = performance.now() - matchStart;
 
-  const fieldConfidences = [
-    f.brand_name.confidence,
-    f.class_type.confidence,
-    f.abv_percent.confidence,
-    f.net_contents.confidence,
-    f.producer.confidence,
-    f.country_of_origin.confidence,
-    f.government_warning.confidence,
-  ];
+  // 2026-05-13 fix: same imageQuality logic as the verify path —
+  // only count extractor confidence on fields the model actually
+  // READ (`value !== null`). Avoids tanking image-quality on
+  // legitimately-absent fields like country_of_origin on US-domestic
+  // labels (extractor correctly returns null with confidence 0).
+  const extractorConfidences = [
+    f.brand_name,
+    f.class_type,
+    f.abv_percent,
+    f.net_contents,
+    f.producer,
+    f.country_of_origin,
+    f.government_warning,
+  ]
+    .filter((x) => x.value !== null && x.value !== undefined)
+    .map((x) => x.confidence);
   const meanConf =
-    fieldConfidences.reduce((s, x) => s + x, 0) / fieldConfidences.length;
-  const minConf = Math.min(...fieldConfidences);
+    extractorConfidences.length > 0
+      ? extractorConfidences.reduce((s, x) => s + x, 0) / extractorConfidences.length
+      : 0;
+  const minConf =
+    extractorConfidences.length > 0 ? Math.min(...extractorConfidences) : 0;
   const imageQuality: ImageQuality =
-    minConf < 0.3 ? "bad" : meanConf < 0.6 ? "low" : "good";
+    extractorConfidences.length === 0
+      ? "bad"
+      : minConf < 0.3
+        ? "bad"
+        : meanConf < 0.6
+          ? "low"
+          : "good";
   const imageQualityReason =
     imageQuality === "good"
       ? undefined
-      : `Mean extractor confidence ${meanConf.toFixed(2)} (min ${minConf.toFixed(2)}).`;
+      : extractorConfidences.length === 0
+        ? "The extractor could not read any fields from the image — re-photograph in better light at a sharper angle."
+        : `Mean extractor confidence ${meanConf.toFixed(2)} (min ${minConf.toFixed(2)}) across ${extractorConfidences.length} fields the model could read.`;
 
   const totalMs = performance.now() - startTotal;
 

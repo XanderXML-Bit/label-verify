@@ -202,4 +202,58 @@ describe("verifyLabel (happy path)", () => {
     // The first review reason should explain re-photograph rationale.
     expect(result.reviewReasons[0]).toMatch(/re-photograph|image quality/i);
   });
+
+  it("Image quality stays GOOD when the model reads cleanly but the declared values don't match", async () => {
+    // 2026-05-13 user-reported regression: a clean photo + an
+    // intentionally-wrong manifest was returning "Re-photograph"
+    // because the OLD imageQuality formula used the COMPARATOR's
+    // confidence — and compareBrand/compareClass/etc. return low
+    // confidence on mismatches even when the model READ the label
+    // perfectly. Image quality must be about the IMAGE, independent
+    // of whether the user typed the right declared value. The new
+    // formula uses the EXTRACTOR's per-field confidence on fields
+    // the model actually read (value !== null).
+    const img = await tinyJpeg();
+    // Extractor reads the label clearly — high confidence everywhere.
+    const cleanExtraction: ExtractedFields = {
+      brand_name: { value: "Mountain Lark", confidence: 0.95 },
+      class_type: { value: "Stout", confidence: 0.95 },
+      abv_percent: { value: 7.2, confidence: 0.95 },
+      net_contents: { value: { value: 12, unit: "fl_oz" }, confidence: 0.9 },
+      government_warning: {
+        value: {
+          raw_text:
+            "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+          prefix_text: "GOVERNMENT WARNING",
+          prefix_bbox: { x: 100, y: 200, width: 400, height: 20 },
+          prefix_appears_bold: true,
+          prefix_appears_caps: true,
+        },
+        confidence: 0.9,
+      },
+      producer: { value: { name: "Mountain Lark Brewery", street: null, city: "Boise", state: "ID", postal_code: null, country: "USA" }, confidence: 0.85 },
+      country_of_origin: { value: "USA", confidence: 0.95 },
+    };
+    // ...but the declared manifest is for a DIFFERENT product entirely.
+    const result = await verifyLabel(
+      img,
+      {
+        brand_name: "Mill Creek",
+        class_type: "Pilsner",
+        class_category: "beer",
+        abv_percent: 5.2,
+        net_contents: { value: 12, unit: "fl_oz" },
+        producer: "Mill Creek Brewing Co., Asheville, NC",
+        country_of_origin: "USA",
+      },
+      { extractor: buildExtractor(cleanExtraction) },
+    );
+    // The image was read cleanly → imageQuality must stay "good"
+    // regardless of how badly the declared values mismatch.
+    expect(result.imageQuality).toBe("good");
+    // Verdict will be FAIL or REVIEW — that's a separate dimension
+    // (the manifest disagrees with the label) — but image-quality
+    // is independent.
+    expect(["fail", "review"]).toContain(result.verdict);
+  });
 });
