@@ -274,9 +274,17 @@ describe("measureRelativeBold", () => {
         }
       }
     }
-    // Prefix region: thin (1 px) strokes, height 60 — large but light.
-    paintHorizontalStripes(50, 30, 200, 60, 1);
-    // Body region: thin (1 px) strokes, height 30 — smaller, SAME thickness.
+    // Real fonts scale stroke thickness WITH glyph height: a Regular
+    // glyph at 2× size has 2× stroke thickness. The 2026-05-13 audit
+    // fix to `strokeProxy` divides mean run length by bbox height so
+    // the proxy measures stroke-density per unit height (true
+    // weight signal), not raw run length (which scales with glyph
+    // size). Tests must mirror this convention — proportional
+    // stroke thickness — or they catch the OPPOSITE of what's real.
+    //
+    // Prefix region: height 60 → stroke thickness 2 (proportional to size).
+    paintHorizontalStripes(50, 30, 200, 60, 2);
+    // Body region: height 30 → stroke thickness 1 (proportional to size).
     paintHorizontalStripes(350, 50, 200, 30, 1);
 
     const buf = await sharp(data, { raw: { width: W, height: H, channels } })
@@ -290,8 +298,9 @@ describe("measureRelativeBold", () => {
       word("According", { x: 350, y: 50, width: 200, height: 30 }),
     ];
     const m = await measureRelativeBold(buf, prefix, body);
-    // Both regions have identical column-mean-run-length (1 px), so
-    // ratio is ≈ 1.0 — well below BOLD_RATIO_PASS=1.5 and below
+    // Both proportional-stroke-thickness regions have identical
+    // stroke-density-per-unit-height after the bbox normalization,
+    // so ratio is ≈ 1.0 — below BOLD_RATIO_PASS=1.5 and below
     // BOLD_RATIO_FAIL=1.15. The new metric correctly classifies B1 as fail.
     expect(m.ratio).toBeGreaterThan(0.85);
     expect(m.ratio).toBeLessThan(1.15);
@@ -324,7 +333,10 @@ describe("measureRelativeBold", () => {
         }
       }
     }
-    paintHorizontalStripes(50, 30, 200, 60, 3); // bold strokes
+    // Prefix is DISPROPORTIONATELY bolder: at 2× height it should have
+    // 2× stroke thickness for "same weight"; we paint 4× → ratio > 1.5
+    // (4/60 ÷ 1/30 = 2.0, clearly above BOLD_RATIO_PASS).
+    paintHorizontalStripes(50, 30, 200, 60, 4); // disproportionately bold
     paintHorizontalStripes(350, 50, 200, 30, 1); // regular strokes
     const buf = await sharp(data, { raw: { width: W, height: H, channels } })
       .png()
