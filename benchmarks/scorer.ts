@@ -179,10 +179,35 @@ export async function scoreImage(
   });
 
   // Field-level "correct" for the gov_warning column is "predicted status
-  // matches ground-truth status": if gov_warning_case is null/absent the
-  // truth status is "pass"; otherwise the truth status is "fail" (the
-  // non-compliance taxonomy means the label should not pass).
-  const truthCompliant = !gt.gov_warning_case;
+  // matches ground-truth status."
+  //
+  // 2026-05-13 audit fix (Q-case scorer bug): the previous rule
+  // `truthCompliant = !gt.gov_warning_case` was wrong for two
+  // overlapping concerns:
+  //   (1) Robustness slots like `Q4_LOW_LIGHT` carry a non-null
+  //       gov_warning_case that names the IMAGE-QUALITY axis being
+  //       tested, not a Government-Warning compliance defect. The
+  //       label IS compliant; the image just renders it under stress.
+  //       Counting those as truth=non-compliant gave the model 2
+  //       free false-negatives on the bench (ai-label-0030 plus a
+  //       latent ~20 Q*/S* slots that survived only because the
+  //       validator coincidentally also failed them for unrelated
+  //       reasons — see the 2026-05-12 audit report).
+  //   (2) Some intentional B*/T* cases have all four GT booleans
+  //       saying "compliant" alongside the gov_warning_case tag,
+  //       producing the same scorer/booleans contradiction.
+  //
+  // Correct rule: derive truthCompliant from the FOUR GW booleans
+  // directly (the same booleans a human inspector would assess);
+  // the gov_warning_case tag stays as a category label for analysis
+  // but no longer drives the truth status.
+  const gw_truth = gt.fields.government_warning;
+  const truthCompliant =
+    gw_truth.present === true &&
+    gw_truth.text_matches_regulation === true &&
+    gw_truth.prefix_all_caps === true &&
+    gw_truth.prefix_bold === true &&
+    gw_truth.meets_size_minimum === true;
   const truthStatus: "pass" | "fail" = truthCompliant ? "pass" : "fail";
   const predictedStatus = gw.status;
   push(

@@ -358,8 +358,25 @@ async function strokeProxy(
       if (columnHadDark) columnsWithDark++;
     }
     if (columnsWithDark < 2 || totalRuns === 0) return null;
-    // Mean dark-run length along columns = stroke thickness proxy.
-    return totalDark / totalRuns;
+    // Mean dark-run length along columns NORMALISED by bbox height.
+    //
+    // 2026-05-13 audit fix: the previous return `totalDark / totalRuns`
+    // (un-normalised mean run length) is confounded with glyph height.
+    // TTB warnings render the prefix at LARGER type than the body, so
+    // vertical-stroke-dominant letters in the prefix produce mean run
+    // lengths proportional to bbox height — not to stroke thickness.
+    // The resulting prefix-vs-body ratio spuriously crossed the 1.5
+    // PASS threshold on B1/B2/B3 test cases even when both prefix and
+    // body were the SAME font weight (4 of the 7 false-negatives on
+    // the 2026-05-12 bench traced to this exact confound).
+    //
+    // Dividing by bbox height removes the glyph-size dependence and
+    // preserves the stroke-weight signal that survives in horizontal-
+    // stroke contributions (where run length scales with stroke
+    // thickness, not glyph height). The ratio threshold (1.5×) and
+    // its caller `measureRelativeBold` are unaffected — we just emit
+    // an honest stroke-density measure now.
+    return totalDark / totalRuns / Math.max(1, h);
   } catch {
     return null;
   }

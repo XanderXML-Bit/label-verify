@@ -106,7 +106,22 @@ describe("scoreImage", () => {
   });
 
   it("non-compliant GT + predicted-pass → warning outcome flags FN risk", async () => {
-    const failGt: GroundTruth = { ...GT, gov_warning_case: "T1" };
+    // 2026-05-13 audit fix: truthCompliant is now derived from the 4
+    // GW booleans, not from the gov_warning_case tag (which the audit
+    // showed was sometimes overloaded with image-quality tags like
+    // `Q4_LOW_LIGHT` that aren't actual compliance defects). To make
+    // a label non-compliant, flip one of the four booleans.
+    const failGt: GroundTruth = {
+      ...GT,
+      gov_warning_case: "T1",
+      fields: {
+        ...GT.fields,
+        government_warning: {
+          ...GT.fields.government_warning,
+          text_matches_regulation: false,
+        },
+      },
+    };
     const result = await scoreImage(failGt, perfectExtracted(), {
       width: 1600,
       height: 1200,

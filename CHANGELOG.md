@@ -4,6 +4,81 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [GW false-negative deep dive — strokeProxy fix + scorer Q-case fix + README scientific honesty pass] — 2026-05-13 mid
+
+User-explicit ask: "if we could get that government warning false
+negative rate down to zero, if possible, ... and only have the most
+up-to-date percentages in benchmarks." Both addressed.
+
+### What changed
+
+- **`src/lib/validation/bold-size.ts` — `strokeProxy` size-invariance fix.**
+  A sub-agent deep-dive on the 7 measured GW false-negatives traced
+  4 of them (`deg-beer-0012`, `syn-beer-0014/0015/0016`) to one root
+  cause: the per-column mean-dark-run-length was returned un-normalised
+  by bbox height. TTB warnings render the prefix at LARGER font than
+  the body, so vertical-stroke-dominant glyphs in the prefix produced
+  mean run lengths proportional to bbox height — NOT stroke thickness.
+  The resulting prefix/body ratio spuriously crossed BOLD_RATIO_PASS
+  (1.5×) even when both regions were the same font weight. Fix: one
+  line, divide by `Math.max(1, h)`. Existing tests updated to use
+  proportional stroke thicknesses (which is how real fonts work).
+- **`benchmarks/scorer.ts` — `truthCompliant` from booleans, not from
+  `gov_warning_case` tag.** The same sub-agent caught that 2 of 7
+  GW false-negatives (`ai-label-0030`, `syn-wine-0011`) were
+  encoding bugs: `gov_warning_case` is overloaded with image-quality
+  tags like `Q4_LOW_LIGHT` that name a degradation axis, not a
+  compliance defect. The label IS compliant; the image just renders
+  it under stress. Counting those as truth=non-compliant gave the
+  model 2 free false-negatives. Fix: derive `truthCompliant` from
+  the 4 GW booleans (`present` + `text_matches_regulation` +
+  `prefix_all_caps` + `prefix_bold` + `meets_size_minimum`); the
+  `gov_warning_case` tag stays as a category label for analysis
+  but no longer drives the truth status.
+- **Combined effect** (predicted by audit math): GW FN-rate from
+  ~5 % (7/137) to **~0.7 %** (1/137). Bench rerun on the corrected
+  corpus + corrected scorer + corrected validator is in flight at
+  commit time.
+
+### Legibility audit findings (also from the deep-dive)
+
+Two SVG synthetic labels have **rendering issues**, not model
+errors: `syn-beer-0011` (barrel icon overlays the "Wheat Beer" class
+subtitle, making it borderline illegible) and `syn-beer-0018` (the
+"Stout" class subtitle is rendered as empty/invisible — corpus
+generation bug). Both surfaced as `class_type` failures and contribute
+~1.5 pp of "model error" that's actually corpus quality. Flagged in
+the README's generalizability caveat, not silently fixed (changing
+the corpus mid-submission would invalidate the bench).
+
+### README — scientific honesty pass
+
+- **At-a-glance** row updated to only the corrected `~99 %` headline,
+  with a generalizability-caveat link.
+- **Headline measurement** rewritten end-to-end: removed the
+  two-column as-measured / corrected split, replaced with a single
+  "Latest numbers" table + a new "Generalizability caveat (scientific
+  honesty)" subsection that explicitly states: SVG synthetics are
+  easy by construction; AI labels share a foundation-model family
+  with the extractor (self-similarity bias risk); the corpus was
+  built and audited by us; the 10.2 % Wilson upper on the GW FN
+  CI is real and we can't claim ≤ 10 % at 95 % confidence on this
+  corpus. Treat headline as a calibrated upper bound for in-
+  distribution behavior, not a forecast for field performance.
+- **Architecture / OCR-vs-LLM** clarified with a per-subscore table
+  showing exactly where each model is invoked. Text + caps subscores
+  are pure string ops on model-extracted text (no OCR). Bold + size
+  subscores are OCR-preferred with model self-report fallback.
+- **Latency budget** table now includes the second-opinion line
+  (+~2.5 s when it fires, only on REVIEW GW) + clarifies that
+  vision is provider-bound and cannot be further cut.
+
+### Validation
+
+- 440 / 440 tests passing (after updating the bold-size + scorer
+  tests to the corrected conventions).
+- Typecheck clean. Lint clean. Production build green.
+
 ## [True auto-batch — multi-row manifest detection + broadcast + batch-screen file upload] — 2026-05-13 early
 
 User-reported correctness bug + UX feedback: dropping 12 images +

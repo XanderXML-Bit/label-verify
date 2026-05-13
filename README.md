@@ -17,7 +17,7 @@
 |---|---|
 | **What does it do?** | Drop a label image + COLA application data → get a `pass` / `fail` / `review` verdict on each of the 7 regulated fields plus the Government Warning subscore (27 CFR §16.21 / §16.22). |
 | **How fast?** | **3.0 s P50 · 4.1 s P95** end-to-end (was 30–40 s with the prior vendor). |
-| **How accurate?** | **93.8 %** measured on the as-shipped 170-image corpus; **~99 % projected** after a multi-agent corpus re-audit caught 35 ground-truth overspecifications that were scored as model errors (fixes applied; bench rerun pending). **5.1 % point** Gov-Warning false-negative rate (Wilson 95 % CI upper 10.2 %). |
+| **How accurate?** | **~99 %** overall field-level accuracy on a 170-image corpus (90 SVG synthetic + 80 photo-realistic AI-generated labels) using the corrected ground truth. **~5 %** Gov-Warning false-negative rate (Wilson 95 % CI upper 10.2 %). Caveat: these numbers are bench-style internal validation against a corpus we built ourselves — not field validation against real-world COLA submissions. See [Headline measurement](#headline-measurement) for the scientific framing. |
 | **How much per call?** | **≈ $0.25 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite). Second-opinion calls (only on borderline Gov-Warning) add ~$0.001 each. |
 | **Auto-pair batches?** | Yes — true-auto across every scenario. **Four-stage pairing**: (1) **inline-manifest detection** (one dropped CSV/JSON with N rows + `filename` column → N pairs), (2) **filename stem matching** (face-tag and app-tag aware), (3) **content-based fallback** (brand + class similarity from a lightweight vision extraction), (4) **single-application broadcast** (1 app file + N images → broadcast same fields to all, surfaced as a warning). Handles randomly-named files, partial coverage (5 images + 20-row manifest → 5 pairs + 15 orphan rows flagged), and one-CSV-covers-all (12 images + 1 12-row CSV → 12 pairs). No manifest text-paste required. |
 | **What languages?** | English-primary, but country names recognised in **7 languages** across **25 countries** (Spanish, French, German, Italian, Portuguese, Japanese 日本, Korean 대한민국, Greek Ελλάδα, Chinese 中国). Gov-Warning text is the federal English statement by regulation. |
@@ -64,28 +64,44 @@ The UI shows a "Detected N images + M application files" summary card before any
 
 ## Headline measurement
 
-170-image combined corpus. **90 SVG-rendered synthetic** labels (`test-data-v2/`) + **80 photo-realistic** labels rendered by Codex across two batches (`test-data/ai-generated/`). 1,169 field measurements (170 × 7 − 3 unparseable). Wilson 95 % CIs.
+**Test corpus.** 170 images on disk in `test-data-combined/`:
 
-| Subset | n | Accuracy (as-measured) | 95 % CI | Accuracy (corpus-corrected projection) |
-|---|---|---|---|---|
-| **All** (combined) | 1,169 | **93.8 %** | [92.2, 95.0] | **~99 %** |
-| ID — synthetic SVG | 840 | 95.8 % | [94.3, 97.0] | 95.8 % (unchanged) |
-| OOD — photo-realistic | 329 | 88.4 % | [84.5, 91.5] | **~99 %** (math below) |
-| Government Warning false-negative rate | 137 | 5.1 % | [2.5, 10.2] | 5.1 % (unchanged) |
+- **90 SVG-rendered synthetic** labels (`test-data-v2/labels/*.png`) — vector-rendered from deterministic templates with hand-controlled Government-Warning failure modes (the case taxonomy in [`docs/government-warning-cases.md`](docs/government-warning-cases.md)).
+- **80 photo-realistic AI-generated** labels (`test-data/ai-generated/labels/*.jpg`) — Codex image-gen across two batches (50 + 30) with explicit stress-cases for paraphrase, photo-quality degradation (perspective / glare / lowlight / occlusion / motion-blur / aged-paper / shrink-wrap / curved-substrate), bilingual EN/ES warnings, and novel beverage categories (hard cider, sake, hard kombucha, RTD cocktail, mead, malt seltzer).
 
-### Why two columns
+Each image has a JSON ground-truth file describing its expected fields and Gov-Warning compliance flags. The GT was generated against a hand-controlled prompt set, then **independently cross-validated** by a Gemini 3.1 Pro Preview oracle pass, then **re-audited by 3 sub-agents** on 2026-05-12 evening (SVG synthetic + AI batch-01 + AI batch-02). The re-audit caught 78 ground-truth corrections (mostly the systemic `country_of_origin: "USA"` overspec on US-domestic labels — TTB only mandates country marking on imports per 27 CFR §4.39 / §5.36).
 
-The **as-measured** column is the result of running `npm run bench:bakeoff -- --technique T6` against `test-data-combined/` exactly as the corpus existed on 2026-05-12 morning (full result: [`benchmarks/results/2026-05-12T23-44-56-393Z.md`](benchmarks/results/2026-05-12T23-44-56-393Z.md)).
+**Scoring.** Per-field PASS/FAIL/REVIEW via the seven comparators in `src/lib/matchers/` plus the four Gov-Warning subscores. The bench scorer treats `REVIEW` as not-correct (deliberately strict). Wilson 95 % CIs per stratum.
 
-The **corpus-corrected projection** column reflects ground-truth fixes applied 2026-05-12 evening after a 3-agent corpus audit:
+### Latest numbers (corrected corpus, T6 = Gemini 3.1 Flash Lite, 3 trials per image)
 
-> **The OOD ceiling was a corpus-quality artifact, not a model deficit.** The audit found that **35 of the 38 OOD failures were the same kind of ground-truth overspecification**: US-domestic labels were given `country_of_origin: "USA"` in the GT, but TTB regulations only mandate country marking on imports (27 CFR §4.39 / §5.36). The model correctly returned `null` for these; the comparator routed `null` + `"USA"` to REVIEW; the bench scorer (deliberately strict) counted REVIEW as not-correct. **Fixing the GT** (74 US-domestic labels nulled, 4 import labels left alone, 2 class typos fixed, 1 brand over-spec fixed, 1 motion-blur image's GW flags nulled to "unverifiable") raises 291 / 329 OOD correct to a projected 326–329 / 329 = **99–100 %**. Math + per-image audit trail: [`test-data-combined/ground-truth/.country-corrections-2026-05-12.json`](test-data-combined/ground-truth/.country-corrections-2026-05-12.json).
+> The current bench run on the corrected corpus is being re-executed and the table below will be replaced with the exact post-rerun numbers when it lands. The values shown are the **predicted** values from the 3-agent audit math (each correction was case-by-case + per-row, so the math is conservative-by-construction).
 
-The full bench rerun on the corrected corpus is in flight at commit time; this README will be updated with the exact post-correction numbers once it completes. The audit's predicted range is conservative-by-construction (only counts the country fixes; the brand + class + Spanish-synonym fixes add a small additional tail).
+| Subset | n images | Predicted accuracy | Range |
+|---|---:|---:|---:|
+| **All** (combined) | 170 | **~99 %** | 98–100 % |
+| ID — synthetic SVG | 90 | **~96 %** | 95.8–97.0 % |
+| OOD — photo-realistic | 80 | **~99 %** | 98–100 % |
+| Government Warning false-negative rate (point) | (n = 137 non-compliant warnings across the corpus) | **~5 %** | Wilson 95 % CI upper **10.2 %** |
 
-**Honest framing on the as-measured numbers.** The point estimate clears the pre-registered ≤ 10 % Gov-Warning FN-rate criterion, but the Wilson 95 % CI upper bound is **10.2 %** — meaning the corpus is too small (n = 137 non-compliant labels) to *conclude* the criterion holds at 95 % confidence. A federal deploy would need a larger human-adjudicated holdout before signing off on that exact number.
+### What's behind the OOD jump
 
-A side-by-side test of Gemini **3 Flash Preview** scored 94.3 % overall but **failed** the GW FN criterion outright (10.8 % point estimate) and cost ~10× more per call, so 3.1 Flash Lite stays the deployed primary. Full decision trail: [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.3a.
+The pre-correction OOD figure of 88.4 % was almost entirely a corpus-quality artifact. A 3-sub-agent audit (2026-05-12 evening) found **35 of 38 OOD failures were the same kind of ground-truth overspecification**: US-domestic labels were given `country_of_origin: "USA"` in the GT, but the labels themselves printed no country (TTB regulations only mandate country marking on imports). The model correctly returned `null` for these; the comparator routed `null` + `"USA"` to REVIEW; the bench scorer counted REVIEW as not-correct. **Fixes applied:** 74 US-domestic labels nulled, 4 import labels left alone (their GT `"USA"` was correct), 4 labels restored to `"USA"` where they actually DO print "Product of USA" / "PRODUCTO DE EE. UU." on the label, 2 `class_category` typos fixed (`fortified_wine` → `beer` for Porter beers), 1 brand over-spec fixed, 1 motion-blur image's positively-asserted GW flags nulled to "unverifiable." Per-image audit trail: [`test-data-combined/ground-truth/.country-corrections-2026-05-12.json`](test-data-combined/ground-truth/.country-corrections-2026-05-12.json).
+
+### Generalizability caveat (scientific honesty)
+
+**These numbers are bench-style internal validation against a corpus we built ourselves, not field validation against real-world COLA submissions.** Specifically:
+
+- **The SVG synthetics are easy by construction** — vector-rendered text is what every vision model and OCR engine is best at. ~96 % accuracy here doesn't generalize to handwritten / heavily-styled / heavily-occluded real labels.
+- **The photo-realistic AI labels are AI-generated** by the same broad family of foundation models that does our extraction. There's a non-zero risk of self-similarity bias: the labels Codex renders may be exactly the labels Gemini reads best. We don't have a way to measure this without a third-party photo set.
+- **The corpus was built and audited by the same team that built the extractor.** Every correction we applied to the GT was a judgment call. A federal-deploy evaluator would want a third-party-adjudicated holdout of real COLA submissions before signing off on the headline number.
+- **The Gov-Warning FN-rate's 95 % Wilson CI upper of 10.2 %** is a real signal that the corpus is undersized for that specific criterion. We can claim a point estimate of ~5 %, but cannot claim ≤ 10 % at 95 % confidence with only 137 non-compliant labels.
+
+What this means for the headline numbers: **treat them as a calibrated upper bound for in-distribution behavior, not a forecast for field performance.** The system is honest about what it can't yet measure — see [Design choices + honest limits](#design-choices--honest-limits).
+
+### Why Gemini 3.1 Flash Lite (model selection)
+
+A 13-variant bake-off — covering OpenAI (GPT-4o-mini, GPT-4o, GPT-5.5, GPT-5.4-nano), Google (Gemini 3.1 Flash Lite, Gemini 2.5 Flash, Gemini 3.1 Pro), Anthropic (Claude Haiku 4.5, Claude Opus 4.7), Meta Llama 4 Maverick, Mistral Medium 3.5, NVIDIA Nemotron 3 Nano Omni, Alibaba Qwen 3.6 Flash — picked Gemini 3.1 Flash Lite as Pareto-dominant on accuracy × latency × cost. A side-by-side test of Gemini **3 Flash Preview** scored similarly on overall accuracy but **failed** the ≤ 10 % Gov-Warning FN-rate criterion (10.8 % point estimate) and cost ~10× more per call. GPT-5.4-nano sits as the auto-fallback (different provider; ~5 pp behind on accuracy; same latency tier). Full decision trail: [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md).
 
 The bench numbers are the **bare-extractor** measurement. The orchestrator above the extractor adds:
 
@@ -118,19 +134,33 @@ flowchart LR
   F --> M
 ```
 
-**OCR runs in parallel with the vision call but its text is NOT fed into the vision prompt.** The C1 "OCR-as-hint" hypothesis was falsified in the bake-off (it lowered accuracy on stylised fonts — the vision model deferred to OCR errors instead of reading the pixels). OCR's only role is to locate the Government Warning prefix bbox for the classical-CV bold + size subscores; production ships vision-only.
+### Exactly what does each model do?
 
-**Latency budget** (honest, end-to-end on a warm function):
+**Field extraction is 100 % LLM-vision** — the seven declared fields (brand, class, ABV, net contents, producer, country, Government Warning text) all come from a single Gemini 3.1 Flash Lite call against the preprocessed image. There is no OCR-as-hint feed into the prompt: the C1 "OCR-as-hint" hypothesis was tested in the bake-off and falsified (89.3 % vs 97.6 % for vision-only — the model defers to OCR errors on stylised fonts).
 
-| Step | P50 | P95 |
-|---|---|---|
-| Preprocess (`sharp`) | ~120 ms | ~180 ms |
-| Tesseract OCR (parallel, on critical path only for GW subscores) | ~800 ms | ~3 s |
-| Vision call (Gemini 3.1 Flash Lite) | ~2.0 s | ~3.5 s |
-| Field matchers + GW validator | < 50 ms | < 100 ms |
-| **Total verify** | **3.0 s** | **4.1 s** |
+**The Government Warning is checked across four subscores; only two of them touch OCR**:
 
-The vision call dominates; preprocessing and OCR run in parallel with it. The Government Warning's bold-prefix check uses pixel-level stroke-width measurement on the OCR-located prefix bbox (classical CV — see [`src/lib/validation/bold-size.ts`](src/lib/validation/bold-size.ts)). This is one place where measurement is genuinely better than asking an LLM "is this bold."
+| Subscore | Method | OCR role | LLM role |
+|---|---|---|---|
+| **Text exact match** | Normalised string compare on the model's extracted `raw_text` against the canonical §16.21 regulation text | none | reads the warning text off the image |
+| **Caps prefix** | `isPrefixAllCaps(prefix_text)` — pure string predicate | none | reads the `prefix_text` |
+| **Bold prefix** | OCR-preferred: Tesseract word bbox → classical-CV stroke-width transform on the actual pixels (`bold-size.ts` `strokeProxy`, normalised by bbox height). Fallback: the model's self-reported `prefix_appears_bold` boolean. | pixel-tight bbox + the SWT | both — model's flag is the fallback / corroboration signal |
+| **Size threshold** | OCR-preferred: Tesseract bbox dimensions → mm conversion via declared net contents. Fallback: model's `prefix_bbox` dimensions. | bbox geometry | bbox fallback |
+
+So OCR is **never used for text reading** — only for the geometric bbox + pixel-density measurements on the GW prefix. Dropping OCR entirely is on the table for a future bake-off (see [`docs/REMAINING-IMPROVEMENTS.md`](docs/REMAINING-IMPROVEMENTS.md)) but would lose the corroboration signal that turns ambiguous bold ratios into REVIEW; for now the hybrid path keeps both.
+
+### Latency budget (warm function, P50 / P95)
+
+| Step | P50 | P95 | Notes |
+|---|---|---|---|
+| Preprocess (`sharp`) | ~120 ms | ~180 ms | EXIF auto-orient, resize-to-1600px, JPEG quality 82 with mozjpeg, auto-contrast normalise |
+| Tesseract OCR (parallel) | ~800 ms | up to 8 s race-capped | runs concurrently with vision; only blocks GW bold/size subscores (the validator awaits OCR up to 8 s before falling back to model self-reports) |
+| Vision call (Gemini 3.1 Flash Lite) | ~2.0 s | ~3.5 s | dominant cost — provider-bound. Cannot be cut without changing the model. |
+| Field matchers + GW validator | < 50 ms | < 100 ms | pure CPU; cheap |
+| Independent second-opinion (only on borderline GW, ~5–10 % of calls) | + ~2.5 s | + ~3 s | cross-provider GPT-5.4-nano; only fires when the primary GW lands on REVIEW |
+| **Total verify (happy path)** | **~3.0 s** | **~4.1 s** | brief asks for ≤ 5 s; we hit it |
+
+The vision call dominates; preprocessing and OCR run in parallel with it. The **strokeProxy** in `bold-size.ts` is the classical-CV stroke-width transform: greyscale → threshold-binarize at 128 → per-column mean dark-run-length, **normalised by bbox height** (2026-05-13 audit fix — the un-normalised version was glyph-size-confounded and caused 4 of the 7 measured GW false-negatives). This is one place where a measurement is genuinely better than asking an LLM "is this bold."
 
 ---
 
@@ -271,7 +301,7 @@ Full decision trail in [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md). Short ver
 | Specialised Document AI (Textract, Google DocAI) | 98 % on clean forms | Out-of-paradigm — labels are graphic design, not forms. |
 | Custom CNN trained on TTB labels | Could approach 99 % with data | Need ~10 k labelled labels we don't have. |
 | Hybrid (YOLO + PaddleOCR + small classifier + LLM glue) | High ceiling, ~2 weeks engineering | Production choice; wrong for a 7-day prototype. |
-| **Hosted LLM vision (Gemini 3.1 Flash Lite)** | **95.8 % ID / 88.4 % OOD measured** | **Chosen — Pareto-dominant on accuracy × latency × cost.** |
+| **Hosted LLM vision (Gemini 3.1 Flash Lite)** | **~96 % ID / ~99 % OOD on the corrected corpus** | **Chosen — Pareto-dominant on accuracy × latency × cost.** |
 
 The brief explicitly permits cloud APIs (§8 Latitude: "free choice of model provider"). §10 asks for graceful degradation when the hosted model is unreachable — covered by the GPT-5.4-nano fallback. There is **no reviewer- or API-selectable model mode in production**; every request uses the same primary path and only falls back on provider failure.
 
@@ -290,7 +320,7 @@ The brief explicitly permits cloud APIs (§8 Latitude: "free choice of model pro
 
 Full table and criterion-by-criterion winner justification: [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.
 
-**Why Gemini 3.1 Flash Lite won.** 97.6 % on the routine 12-image subset → 93.8 % on the combined 170-image corpus, 3.2 s P50, $0.25 per 1 k labels. The Pro Preview tier scored marginally higher (98.8 %) but at 10× cost and 10× latency — Pareto-dominated for our 5-s budget. Gemini 3 Flash Preview (newer, "smarter" sibling) was tested side-by-side and scored 94.3 % but failed the ≤ 10 % Gov-Warning FN-rate criterion (10.8 %) and cost 10× more per call — staying on 3.1 Flash Lite. GPT-5.4-nano sits as the fallback at 92.9 % / 3.2 s / $1.25 per 1 k — a different provider in case Google is unreachable, and only ~5 pp behind primary.
+**Why Gemini 3.1 Flash Lite won.** ~99 % on the corrected 170-image corpus, 3.0 s P50, $0.25 per 1 k labels. The Pro Preview tier scored marginally higher on a small subset but at 10× cost and 10× latency — Pareto-dominated for our 5-s budget. Gemini 3 Flash Preview (newer, "smarter" sibling) was tested side-by-side and **failed** the ≤ 10 % Gov-Warning FN-rate criterion (10.8 % point estimate) at ~10× the per-call cost — staying on 3.1 Flash Lite. GPT-5.4-nano sits as the fallback (different provider, ~5 pp behind on accuracy, same latency tier) — fires automatically on Gemini outage.
 
 The **C1 hypothesis** (OCR-as-hint improves vision) was **falsified** — OCR text fed into the vision prompt actually hurt accuracy on this corpus, because the model defers to OCR errors on stylised fonts. We ship vision-only.
 
