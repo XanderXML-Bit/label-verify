@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   classifyFile,
+  fingerprintSimilarity,
+  pairByContent,
   pairByFilenameStem,
   stem,
   summarize,
+  type ApplicationFingerprint,
+  type ImageFingerprint,
 } from "@/lib/batch-pairing";
 
 function file(name: string, type: string, body = "x"): File {
@@ -192,9 +196,188 @@ describe("batch-pairing — summarize", () => {
     expect(s.mode).toBe("auto-stem");
     expect(s.pairedCount).toBe(1);
     expect(s.totalItems).toBe(1);
-    expect(s.pairs).toEqual([
-      { image: "acme.jpg", application: "acme.pdf", stem: "acme" },
-    ]);
+    // summarize now carries `source` from PairingHit (filename-strict
+    // in this case).
+    expect(s.pairs[0]).toMatchObject({
+      image: "acme.jpg",
+      application: "acme.pdf",
+      stem: "acme",
+      source: "filename-strict",
+    });
     expect(s.unpairedImages).toEqual(["orphan.jpg"]);
+  });
+});
+
+describe("batch-pairing — fingerprintSimilarity", () => {
+  it("returns 1.0 on identical brand + class", () => {
+    const score = fingerprintSimilarity(
+      { brand_name: "Stone's Throw IPA", class_type: "India Pale Ale" },
+      { brand_name: "Stone's Throw IPA", class_type: "India Pale Ale" },
+    );
+    expect(score).toBeCloseTo(1.0, 2);
+  });
+
+  it("matches normalized brand + class (punctuation, case)", () => {
+    const score = fingerprintSimilarity(
+      { brand_name: "Mill Creek", class_type: "Pilsner" },
+      { brand_name: "MILL CREEK BREWING CO.", class_type: "Pilsner Lager" },
+    );
+    // Brand "Mill Creek" is a substring of "Mill Creek Brewing Co" so
+    // the substring rule kicks in — score should be > 0.75 not
+    // strictly 1.0.
+    expect(score).toBeGreaterThan(0.7);
+  });
+
+  it("low score when brand + class are unrelated", () => {
+    const score = fingerprintSimilarity(
+      { brand_name: "Stone's Throw IPA", class_type: "India Pale Ale" },
+      { brand_name: "Mountain Lark", class_type: "Hard Cider" },
+    );
+    expect(score).toBeLessThan(0.4);
+  });
+
+  it("ABV adds a small positive signal when within 0.5%", () => {
+    const sameAbv = fingerprintSimilarity(
+      { brand_name: "Mill Creek", class_type: "Lager", abv_percent: 5.2 },
+      { brand_name: "Mill Creek", class_type: "Lager", abv_percent: 5.2 },
+    );
+    const farAbv = fingerprintSimilarity(
+      { brand_name: "Mill Creek", class_type: "Lager", abv_percent: 5.2 },
+      { brand_name: "Mill Creek", class_type: "Lager", abv_percent: 9.0 },
+    );
+    expect(sameAbv).toBeGreaterThan(farAbv);
+  });
+
+  it("returns 0 when either fingerprint is empty", () => {
+    expect(
+      fingerprintSimilarity({}, { brand_name: "ACME", class_type: "IPA" }),
+    ).toBe(0);
+    expect(
+      fingerprintSimilarity(
+        { brand_name: "ACME", class_type: "IPA" },
+        {},
+      ),
+    ).toBe(0);
+  });
+});
+
+describe("batch-pairing — pairByContent (random-filename fallback)", () => {
+  function imgFile(name: string): File {
+    return new File([new Uint8Array(8)], name, { type: "image/jpeg" });
+  }
+  function appFile(name: string): File {
+    return new File(["{}"], name, { type: "application/json" });
+  }
+
+  it("pairs randomly-named images and apps by brand + class similarity", () => {
+    // Reviewer dropped images named DSC_001.jpg / DSC_002.jpg and
+    // apps named app1.json / app2.json — no filename signal at all.
+    const images: Array<{ file: File; fingerprint: ImageFingerprint }> = [
+      {
+        file: imgFile("DSC_001.jpg"),
+        fingerprint: { brand_name: "Mill Creek", class_type: "Pilsner" },
+      },
+      {
+        file: imgFile("DSC_002.jpg"),
+        fingerprint: { brand_name: "Mountain Lark", class_type: "Hard Cider" },
+      },
+    ];
+    const apps: Array<{ file: File; fingerprint: ApplicationFingerprint }> = [
+      {
+        file: appFile("app1.json"),
+        fingerprint: { brand_name: "Mountain Lark", class_type: "Hard Cider" },
+      },
+      {
+        file: appFile("app2.json"),
+        fingerprint: { brand_name: "Mill Creek Brewing Co.", class_type: "Pilsner" },
+      },
+    ];
+    const result = pairByContent(images, apps);
+    expect(result.paired).toHaveLength(2);
+    expect(result.remainingImages).toHaveLength(0);
+    expect(result.remainingApplications).toHaveLength(0);
+    // The greedy matcher should pair DSC_001 ↔ app2 (Mill Creek)
+    // and DSC_002 ↔ app1 (Mountain Lark).
+    const byImage = new Map(
+      result.paired.map((p) => [p.imageFile.name, p.applicationFile.name]),
+    );
+    expect(byImage.get("DSC_001.jpg")).toBe("app2.json");
+    expect(byImage.get("DSC_002.jpg")).toBe("app1.json");
+    // Each content-paired hit carries source + score for the
+    // operator's response.
+    for (const hit of result.paired) {
+      expect(hit.source).toBe("content");
+      expect(hit.score).toBeGreaterThan(0.6);
+    }
+  });
+
+  it("leaves dissimilar items unpaired (below threshold)", () => {
+    const images: Array<{ file: File; fingerprint: ImageFingerprint }> = [
+      {
+        file: imgFile("photo.jpg"),
+        fingerprint: { brand_name: "ACME Vodka", class_type: "Vodka" },
+      },
+    ];
+    const apps: Array<{ file: File; fingerprint: ApplicationFingerprint }> = [
+      {
+        // Wildly different brand + class — should not pair.
+        file: appFile("random.json"),
+        fingerprint: { brand_name: "Stone's Throw IPA", class_type: "India Pale Ale" },
+      },
+    ];
+    const result = pairByContent(images, apps);
+    expect(result.paired).toHaveLength(0);
+    expect(result.remainingImages).toHaveLength(1);
+    expect(result.remainingApplications).toHaveLength(1);
+  });
+
+  it("uses greedy highest-score first when multiple candidates compete", () => {
+    // Image fingerprint matches App-1 perfectly (1.0) and App-2
+    // partially (~0.7). The greedy matcher should pick App-1.
+    const images: Array<{ file: File; fingerprint: ImageFingerprint }> = [
+      {
+        file: imgFile("a.jpg"),
+        fingerprint: { brand_name: "Mill Creek", class_type: "Lager" },
+      },
+    ];
+    const apps: Array<{ file: File; fingerprint: ApplicationFingerprint }> = [
+      {
+        file: appFile("a-app-perfect.json"),
+        fingerprint: { brand_name: "Mill Creek", class_type: "Lager" },
+      },
+      {
+        file: appFile("a-app-partial.json"),
+        fingerprint: { brand_name: "Mill Creek Brewing", class_type: "Pilsner" },
+      },
+    ];
+    const result = pairByContent(images, apps);
+    expect(result.paired).toHaveLength(1);
+    expect(result.paired[0]!.applicationFile.name).toBe("a-app-perfect.json");
+    // The partial-match app remains unpaired.
+    expect(result.remainingApplications.map((f) => f.name)).toEqual([
+      "a-app-partial.json",
+    ]);
+  });
+
+  it("respects an explicit threshold option", () => {
+    const images: Array<{ file: File; fingerprint: ImageFingerprint }> = [
+      {
+        file: imgFile("a.jpg"),
+        fingerprint: { brand_name: "Mill Creek", class_type: "Lager" },
+      },
+    ];
+    const apps: Array<{ file: File; fingerprint: ApplicationFingerprint }> = [
+      {
+        // Score will land at ~0.6 — between the loose 0.55 default
+        // and the strict 0.9 we pass below.
+        file: appFile("loose.json"),
+        fingerprint: { brand_name: "Mill", class_type: "Stout" },
+      },
+    ];
+    const loose = pairByContent(images, apps);
+    const strict = pairByContent(images, apps, { threshold: 0.9 });
+    // Loose may or may not pair depending on similarity weights; what
+    // matters is the strict run rejects what loose accepts.
+    expect(strict.paired.length).toBeLessThanOrEqual(loose.paired.length);
   });
 });

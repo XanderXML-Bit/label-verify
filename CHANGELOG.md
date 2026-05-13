@@ -4,6 +4,40 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Content-based fallback pairing] — 2026-05-12 late night
+
+User-explicit ask: the auto-pair should handle even **randomly-named
+files**, not just files whose stems happen to match. Now it does, via
+a two-stage strategy.
+
+### What's new
+- **`pairByContent(unpairedImages, unpairedApps)`** in
+  `src/lib/batch-pairing.ts`. Greedy assignment by weighted similarity
+  on `{ brand_name, class_type, abv_percent }` fingerprints. Brand
+  weighted highest (0.65) since it's the most distinctive label
+  signal; class 0.25; ABV 0.10 (when both sides have a finite value).
+  Threshold 0.55 by default.
+- **Fingerprint extraction** is asymmetric Levenshtein + substring
+  match, normalised for case + diacritics + punctuation. "Mill
+  Creek" ≡ "MILL CREEK BREWING CO." with a substring boost.
+- **Wired into the batch route**. After `pairByFilenameStem`, if any
+  images and apps remain unpaired AND `GOOGLE_API_KEY` is available,
+  the route parses each unpaired app's fingerprint (already needed
+  for verify downstream — cached so the loop doesn't re-parse) and
+  runs a lightweight `GeminiFlashExtractor.extract` on each unpaired
+  image, then calls `pairByContent`. Content-paired rows surface
+  in `pairing.mode === "auto-stem+content"` with `source: "content"`
+  and a `score` field per pair.
+- **+9 regression tests**: identical fingerprints score 1.0; mixed
+  case/punctuation matches; greedy picks highest score first;
+  randomly-named-file scenarios; threshold override; dissimilar
+  items remain unpaired.
+- **README + CHANGELOG** updated to describe the two-stage strategy.
+
+### Tests + validation
+- 427/427 vitest tests passing (was 418).
+- Typecheck clean. Lint clean. Build green.
+
 ## [Accuracy + UX wave: corpus corrections, multilingual, auto-pair, second-opinion] — 2026-05-12 late evening
 
 Three parallel sub-agent corpus audits + multiple user-explicit UX

@@ -108,6 +108,14 @@ export interface PairingHit {
   applicationFile: File;
   /** Stem both files share (after normalisation). */
   stem: string;
+  /** Where the pair came from. `"filename-strict"` and
+   *  `"filename-relaxed"` are pure filename-based matches; `"content"`
+   *  is the brand/class-similarity fallback fired only when filenames
+   *  don't pair (see `pairByContent`). */
+  source?: "filename-strict" | "filename-relaxed" | "content";
+  /** Similarity score 0..1 from the content pass (only set when
+   *  `source === "content"`). 1.0 = perfect brand + class match. */
+  score?: number;
 }
 
 export interface PairingResult {
@@ -174,7 +182,12 @@ export function pairByFilenameStem(files: File[]): PairingResult {
     const s = stem(img.name);
     const hit = appsByStrict.get(s);
     if (hit && !usedApps.has(hit)) {
-      paired.push({ imageFile: img, applicationFile: hit, stem: s });
+      paired.push({
+        imageFile: img,
+        applicationFile: hit,
+        stem: s,
+        source: "filename-strict",
+      });
       usedApps.add(hit);
     } else {
       unpairedAfterStrict.push(img);
@@ -189,7 +202,12 @@ export function pairByFilenameStem(files: File[]): PairingResult {
     const s = stem(img.name, { stripFaceTag: true });
     const hit = appsByRelaxed.get(s);
     if (hit) {
-      paired.push({ imageFile: img, applicationFile: hit, stem: s });
+      paired.push({
+        imageFile: img,
+        applicationFile: hit,
+        stem: s,
+        source: "filename-relaxed",
+      });
       usedApps.add(hit);
     } else {
       unpairedImages.push(img);
@@ -201,13 +219,211 @@ export function pairByFilenameStem(files: File[]): PairingResult {
 }
 
 export interface PairingSummary {
-  mode: "manifest" | "auto-stem";
+  mode: "manifest" | "auto-stem" | "auto-stem+content";
   totalItems: number;
   pairedCount: number;
-  pairs: Array<{ image: string; application: string; stem: string }>;
+  pairs: Array<{
+    image: string;
+    application: string;
+    stem: string;
+    source?: PairingHit["source"];
+    score?: number;
+  }>;
   unpairedImages: string[];
   unpairedApplications: string[];
   ignored: string[];
+}
+
+// ─── Content-based pairing fallback ─────────────────────────────────────────
+//
+// When filename stems can't pair an image to an application (the user
+// dropped files with mismatched / random names), fall back to MATCHING
+// BY CONTENT: extract brand + class from each unpaired image via the
+// vision extractor, then fuzzy-match against the brand + class parsed
+// from each unpaired application. Greedy assignment, highest-scoring
+// pair first, above a configurable threshold.
+//
+// This means a reviewer can drop a folder of randomly-named files and
+// the system still figures out which image belongs to which COLA app.
+//
+// Cost: one extraction per unpaired image. For the common case
+// (filenames pair cleanly), this never fires. For the worst case
+// (every filename is random), the per-image extraction cost is
+// bounded by the unpaired count and runs in parallel.
+
+/** Lightweight DeclaredFields-ish shape the content pairer reads off
+ *  each application. The application parser already returns this. */
+export interface ApplicationFingerprint {
+  brand_name?: string | null;
+  class_type?: string | null;
+  abv_percent?: number | null;
+}
+
+/** The bare extractor result the content pairer asks of each image.
+ *  Production wires this to a Gemini Flash Lite call; tests inject a
+ *  deterministic mock. */
+export interface ImageFingerprint {
+  brand_name?: string | null;
+  class_type?: string | null;
+  abv_percent?: number | null;
+}
+
+/** Asymmetric Levenshtein-based similarity. 1.0 = identical, 0.0 =
+ *  no overlap. Case- and punctuation-normalized so "Mill Creek" vs
+ *  "MILL CREEK BREWING" still scores high. */
+function normalizeForFuzzy(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const prev = new Array<number>(b.length + 1);
+  const curr = new Array<number>(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1]! + 1, prev[j]! + 1, prev[j - 1]! + cost);
+    }
+    for (let j = 0; j <= b.length; j++) prev[j] = curr[j]!;
+  }
+  return prev[b.length]!;
+}
+
+/** String similarity 0..1. Asymmetric: high if `a` is a substring of
+ *  `b` (e.g. brand "Mill Creek" matches printed "Mill Creek Brewing
+ *  Co."). Falls back to length-normalized Levenshtein otherwise. */
+function stringSimilarity(a: string | null | undefined, b: string | null | undefined): number {
+  if (!a || !b) return 0;
+  const na = normalizeForFuzzy(a);
+  const nb = normalizeForFuzzy(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1.0;
+  // Substring match: shorter inside longer scores high.
+  const [shorter, longer] = na.length <= nb.length ? [na, nb] : [nb, na];
+  if (shorter.length >= 3 && longer.includes(shorter)) {
+    // Score by how much of the longer string the shorter covers.
+    return 0.7 + 0.25 * (shorter.length / longer.length);
+  }
+  const dist = levenshtein(na, nb);
+  const maxLen = Math.max(na.length, nb.length);
+  return Math.max(0, 1 - dist / maxLen);
+}
+
+/** Compute similarity 0..1 between an image's extracted fingerprint
+ *  and an application's parsed fingerprint. Weighted toward brand
+ *  (most distinctive on real labels). */
+export function fingerprintSimilarity(
+  image: ImageFingerprint,
+  app: ApplicationFingerprint,
+): number {
+  const brandSim = stringSimilarity(image.brand_name, app.brand_name);
+  const classSim = stringSimilarity(image.class_type, app.class_type);
+  // ABV is a noisy signal — within 0.5% is a "match", farther is a
+  // miss. Skipped if either side is null.
+  let abvSim = 0;
+  let abvWeight = 0;
+  if (
+    image.abv_percent != null &&
+    app.abv_percent != null &&
+    isFinite(image.abv_percent) &&
+    isFinite(app.abv_percent)
+  ) {
+    const delta = Math.abs(image.abv_percent - app.abv_percent);
+    abvSim = delta < 0.5 ? 1 : delta < 2 ? 0.5 : 0;
+    abvWeight = 0.1;
+  }
+  // Brand 0.65, class 0.25, abv 0.1 (when available). Renormalise so
+  // missing ABV doesn't drag the score down.
+  const weights = { brand: 0.65, class: 0.25, abv: abvWeight };
+  const totalWeight = weights.brand + weights.class + weights.abv;
+  return (
+    (weights.brand * brandSim + weights.class * classSim + weights.abv * abvSim) /
+    totalWeight
+  );
+}
+
+export interface ContentPairingOptions {
+  /** Below this similarity, don't auto-pair. Default 0.55 — high
+   *  enough to avoid bad pairs on dissimilar labels, low enough to
+   *  handle "Mill Creek" ↔ "Mill Creek Brewing Co." typography
+   *  differences. */
+  threshold?: number;
+}
+
+/**
+ * Pair unpaired images to unpaired application files by CONTENT
+ * similarity. Each unpaired image's fingerprint must already be
+ * extracted (caller controls the extraction so it can mock in tests
+ * and share the result with downstream verify calls in production).
+ *
+ * Greedy assignment: take the highest-scoring (image, app) cell that
+ * exceeds the threshold, assign it, mark both as used, repeat.
+ * Hungarian assignment would be slightly more optimal but greedy is
+ * fine for the realistic batch sizes (≤ 100) and easier to reason
+ * about + test.
+ */
+export function pairByContent(
+  unpairedImages: Array<{ file: File; fingerprint: ImageFingerprint }>,
+  unpairedApplications: Array<{ file: File; fingerprint: ApplicationFingerprint }>,
+  opts: ContentPairingOptions = {},
+): {
+  paired: PairingHit[];
+  remainingImages: File[];
+  remainingApplications: File[];
+} {
+  const threshold = opts.threshold ?? 0.55;
+  // Build the score matrix (image × app).
+  const cells: Array<{ i: number; j: number; score: number }> = [];
+  for (let i = 0; i < unpairedImages.length; i++) {
+    for (let j = 0; j < unpairedApplications.length; j++) {
+      const score = fingerprintSimilarity(
+        unpairedImages[i]!.fingerprint,
+        unpairedApplications[j]!.fingerprint,
+      );
+      if (score >= threshold) {
+        cells.push({ i, j, score });
+      }
+    }
+  }
+  // Greedy: highest score first.
+  cells.sort((a, b) => b.score - a.score);
+  const usedImages = new Set<number>();
+  const usedApps = new Set<number>();
+  const paired: PairingHit[] = [];
+  for (const cell of cells) {
+    if (usedImages.has(cell.i) || usedApps.has(cell.j)) continue;
+    usedImages.add(cell.i);
+    usedApps.add(cell.j);
+    const imageFile = unpairedImages[cell.i]!.file;
+    const applicationFile = unpairedApplications[cell.j]!.file;
+    paired.push({
+      imageFile,
+      applicationFile,
+      // Stem is what they end up sharing on output for downstream
+      // consumers; we use the image filename stem since that's what
+      // the per-item result is keyed by everywhere else.
+      stem: stem(imageFile.name),
+      source: "content",
+      score: cell.score,
+    });
+  }
+  const remainingImages = unpairedImages
+    .filter((_, i) => !usedImages.has(i))
+    .map((x) => x.file);
+  const remainingApplications = unpairedApplications
+    .filter((_, j) => !usedApps.has(j))
+    .map((x) => x.file);
+  return { paired, remainingImages, remainingApplications };
 }
 
 export function summarize(
@@ -222,6 +438,8 @@ export function summarize(
       image: p.imageFile.name,
       application: p.applicationFile.name,
       stem: p.stem,
+      ...(p.source ? { source: p.source } : {}),
+      ...(p.score != null ? { score: p.score } : {}),
     })),
     unpairedImages: pairing.unpairedImages.map((f) => f.name),
     unpairedApplications: pairing.unpairedApplications.map((f) => f.name),
