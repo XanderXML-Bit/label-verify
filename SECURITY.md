@@ -137,21 +137,30 @@ and the per-route handlers for the exact implementations.
   (verified by tsc).
 - Next.js 15 + React 19 + Vitest 2 — kept current as of
   2026-05-12.
-- `npm audit --omit=dev`: 2 moderate findings, both in `postcss`
-  reached transitively via `next`. PostCSS's "XSS via unescaped
-  `</style>`" advisory only matters when an attacker controls the
-  CSS input stream that PostCSS stringifies — in our build pipeline,
-  PostCSS only ever runs against the developer-controlled CSS in
-  `src/app/globals.css`, never against user-supplied input. The
-  upgrade path (`npm audit fix --force`) would downgrade Next.js to
-  9.x, which we will NOT do. Documented for the next maintainer.
-- Dependabot has open PRs (`origin/dependabot/...`) for npm major
-  (TypeScript 6, Vitest 4, Tailwind 4, pdfjs-dist 5, tesseract.js 7,
-  zod 4) and npm minor (@anthropic-ai/sdk 0.95, @google/generative-
-  ai 0.24, sharp 0.34). The major bumps are deferred until after the
-  take-home submission window — they're all in critical paths that
-  would need a full regression cycle. The Anthropic SDK 0.30 → 0.95
-  jump is especially load-bearing.
+- `npm audit --omit=dev` (production deps): **0 vulnerabilities** as
+  of 2026-05-12 night. The earlier 2 moderate findings on `postcss`
+  (XSS via unescaped `</style>`, GHSA-qx2v-qp2m-jg93) were resolved
+  by bumping the direct `postcss` devDep from 8.4.49 to 8.5.14 — npm
+  audit's suggested "fix" was a 6-major-version Next.js downgrade
+  to 9.x, which was nonsense; the correct fix was the minor bump
+  (the patch series for that exact CVE ships in 8.5.10+).
+- `npm audit` (full tree, including dev): 6 moderate findings, all
+  in the `esbuild ← vite ← vitest` chain (test runner dev-server).
+  The advisory (GHSA-67mh-4wv8-2f99) says "esbuild enables any
+  website to send any requests to the development server" — it's
+  a dev-server-only attack, not reachable in production. The fix
+  requires bumping vitest 2.x → 4.x (a major rewrite); deferred
+  until after the submission window because the test suite would
+  need a full regression cycle. Production deploys do not run
+  vitest, vite, or esbuild's dev server. Documented.
+- Dependabot was kept enabled for ongoing weekly scans but all open
+  PRs from before submission (npm-major × 14 deps, npm-minor × 3
+  deps, github-actions × 5 actions) were closed with explicit
+  "defer post-submission" rationale citing the pinned bench numbers
+  and the test of live SDK calls happening on a Tesseract-only
+  routine bench (so green CI on the deps PRs would not have proved
+  runtime safety against Gemini/OpenAI). Dependabot will reopen
+  fresh PRs post-submission once main moves.
 
 ## Known unmitigated gaps
 
