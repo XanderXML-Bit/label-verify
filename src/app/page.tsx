@@ -24,6 +24,7 @@ import {
 import type { Sample } from "@/lib/samples";
 import { compressImageInBrowser } from "@/lib/client-compress";
 import { classifyFile } from "@/lib/batch-pairing";
+import { mergeFilesForRestage } from "@/lib/upload-merge";
 
 // Minimal HTTP error carrier so the batch XHR pipeline can surface
 // status codes to friendlyError() the same way the fetch() path
@@ -294,6 +295,37 @@ export default function Home() {
       files: [...images, ...apps],
       autoPair: apps.length > 0,
     });
+  }
+
+  /**
+   * Incremental, additive file staging.
+   *
+   * Why: iOS Safari's file picker often returns only a single Photo
+   * even when `<input multiple>` is set. If we replace the staged
+   * set on every picker callback (as the default UploadZone does
+   * from the idle screen), an iPhone user who needs to assemble a
+   * 5-photo batch ends up with only their last selection. This
+   * helper merges the new selection with whatever's already staged
+   * — preserving order and de-duping by (name, size, lastModified)
+   * — and re-routes through `handleFiles` so the same intent-
+   * inference logic decides which stage to land in.
+   *
+   * Called by the "Add more files" UploadZone rendered underneath
+   * the single-pending image preview and the batch-pending autoPair
+   * "Detected" summary. Desktop users are unaffected: the original
+   * idle-screen dropzone still uses replace semantics, so
+   * drag-and-drop-5-files-at-once works identically.
+   */
+  function handleAdditionalFiles(newFiles: File[]) {
+    if (newFiles.length === 0) return;
+    const existing: File[] =
+      stage.kind === "single-pending"
+        ? [stage.file]
+        : stage.kind === "batch-pending"
+          ? stage.files
+          : [];
+    const merged = mergeFilesForRestage(existing, newFiles);
+    handleFiles(merged);
   }
 
   /** Parse an application file via /api/application/parse and feed the
@@ -800,13 +832,30 @@ export default function Home() {
                 decoding="async"
                 className="max-h-96 w-full rounded-lg border border-slate-200 bg-white object-contain p-2 dark:border-slate-700 dark:bg-slate-900"
               />
-              <button
-                type="button"
-                onClick={reset}
-                className="rounded px-1 py-0.5 text-sm text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              >
-                Replace image
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="rounded px-1 py-0.5 text-sm text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                >
+                  Replace image
+                </button>
+                <span className="text-xs text-slate-400 dark:text-slate-500">
+                  or add more images below to verify them as a batch
+                </span>
+              </div>
+              {/* "Add more files" affordance — primarily for iOS Safari,
+                  whose picker often returns only a single photo per
+                  tap. Each picker action APPENDS to the staged set
+                  rather than replacing it. On desktop this is also
+                  useful for "I forgot to include the application
+                  PDF" mid-flow. If a second image lands the page
+                  flips into batch mode automatically (handleFiles
+                  intent-inference). */}
+              <UploadZone
+                mode="append"
+                onFiles={handleAdditionalFiles}
+              />
             </div>
             <DeclaredForm
               onSubmit={submitSingle}
@@ -952,6 +1001,19 @@ export default function Home() {
                   }
                 />
               )}
+              {/* iOS-tolerant additive staging — each "Add more files"
+                  picker action appends rather than replaces, so an
+                  iPhone user who needs the full batch can keep adding
+                  one photo at a time without losing the previously-
+                  staged set. Hidden while the batch POST is in flight. */}
+              {!batchSubmitting && (
+                <div className="mt-4">
+                  <UploadZone
+                    mode="append"
+                    onFiles={handleAdditionalFiles}
+                  />
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap gap-3">
                 <button
                   type="button"
@@ -1043,19 +1105,17 @@ export default function Home() {
               </div>
             )}
             {/* Primary path: file-upload dropzone for the application
-                file(s). Accepts the same MIMEs as the main UploadZone
-                but the onFiles handler routes them back through
-                handleFiles so they merge with the current stage's
-                images (the autoPair branch takes over once apps land). */}
+                file(s). Accepts the same MIMEs as the main UploadZone.
+                Uses `mode="append"` and `handleAdditionalFiles` so the
+                ordering / dedupe semantics match the rest of the
+                "Add more files" flow — and so iOS users on this
+                screen also get the per-platform multi-tap hint. The
+                router detects apps and flips autoPair=true, which
+                moves the user into the "Detected" summary screen. */}
             <div className="mt-4">
               <UploadZone
-                onFiles={(files) => {
-                  // Merge new application files with current images
-                  // and re-route through handleFiles. The router
-                  // detects apps and flips autoPair=true, which moves
-                  // the user into the "Detected" summary screen.
-                  handleFiles([...stage.files, ...files]);
-                }}
+                mode="append"
+                onFiles={handleAdditionalFiles}
               />
             </div>
             <details className="mt-4">
