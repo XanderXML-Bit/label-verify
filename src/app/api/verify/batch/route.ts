@@ -14,6 +14,14 @@ import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { rowToDeclared } from "@/lib/application/row-to-declared";
 import { parseApplication } from "@/lib/application/parse";
 import {
+  detectCsvManifestShape,
+  detectJsonManifestShape,
+} from "@/lib/application/detect-manifest";
+import {
+  classifyFile,
+  stem as pairingStem,
+} from "@/lib/batch-pairing";
+import {
   pairByContent,
   pairByFilenameStem,
   summarize,
@@ -266,8 +274,131 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const pairResult = pairByFilenameStem(allFiles);
-    let pairingMode: PairingSummary["mode"] = "auto-stem";
+    // ─── Inline-manifest detection (NEW 2026-05-12) ────────────────────────
+    //
+    // Before any filename-stem or content pairing, check if any of the
+    // dropped application files is actually a MULTI-ROW MANIFEST (CSV
+    // with N rows of {filename, fields...} or JSON array of N objects).
+    // If so, expand it into per-image pairings — this is the user's
+    // reported case of "12 images + 1 CSV containing all 12 → currently
+    // fails with no-pairs-found". The expanded pairs land in
+    // `pairResult.paired` exactly like a stem match, with
+    // `source: "manifest-inline"` so the UI labels them correctly.
+    //
+    // Detection rules (see detect-manifest.ts):
+    //   • CSV: > 1 data row → multi-row.
+    //   • JSON: array of length > 1 → multi-row.
+    // Single-row CSV/JSON falls through to the normal flow (filename or
+    // content pair). Multi-row WITHOUT a recognisable `filename`-aliased
+    // column also falls through (we can't safely match rows to images
+    // without that signal — let content pairing try its weight).
+    const allFiles_classified = allFiles.map((f) => ({
+      file: f,
+      kind: classifyFile(f),
+    }));
+    const candidateImages = allFiles_classified.filter((x) => x.kind === "image").map((x) => x.file);
+    const candidateApps = allFiles_classified.filter((x) => x.kind === "application").map((x) => x.file);
+    const inlineManifestPairs: Array<{
+      imageFile: File;
+      applicationFile: File;
+      stem: string;
+      source: "manifest-inline";
+      cachedDeclared: Record<string, string>;
+    }> = [];
+    const orphanedManifestRows: string[] = [];
+    const consumedAppsInManifestPath = new Set<File>();
+    let inlineManifestDidFire = false;
+    for (const appFile of candidateApps) {
+      // Only CSV / JSON files can be manifests. Skip PDFs, DOCX, etc.
+      const isCsv =
+        appFile.type === "text/csv" ||
+        appFile.type === "application/csv" ||
+        appFile.name.toLowerCase().endsWith(".csv");
+      const isJson =
+        appFile.type === "application/json" ||
+        appFile.type === "text/json" ||
+        appFile.name.toLowerCase().endsWith(".json");
+      if (!isCsv && !isJson) continue;
+      let text: string;
+      try {
+        const buf = Buffer.from(await appFile.arrayBuffer());
+        text = buf.toString("utf-8");
+      } catch {
+        continue;
+      }
+      const shape = isCsv ? detectCsvManifestShape(text) : detectJsonManifestShape(text);
+      if (shape.kind !== "multi-row" || !shape.hasFilenameColumn || !shape.filenameColumn) {
+        // Either not multi-row, or multi-row without a filename column
+        // — fall through to normal pairing.
+        continue;
+      }
+      inlineManifestDidFire = true;
+      // Pair each row to an image by filename stem.
+      const imagesByStem = new Map(candidateImages.map((img) => [pairingStem(img.name), img]));
+      const matchedImagesInThisManifest = new Set<File>();
+      for (let i = 0; i < shape.rows.length; i++) {
+        const row = shape.rows[i]!;
+        const rawFilename = (row[shape.filenameColumn] ?? "").trim();
+        if (!rawFilename) {
+          orphanedManifestRows.push(
+            `${appFile.name} row ${i + 1}: empty filename column.`,
+          );
+          continue;
+        }
+        const img = imagesByStem.get(pairingStem(rawFilename));
+        if (!img) {
+          orphanedManifestRows.push(
+            `${appFile.name} row ${i + 1} (filename "${rawFilename}"): no matching image in this upload.`,
+          );
+          continue;
+        }
+        if (matchedImagesInThisManifest.has(img)) {
+          // Manifest references the same image twice — surface and
+          // keep the first match.
+          orphanedManifestRows.push(
+            `${appFile.name} row ${i + 1} (filename "${rawFilename}"): image already paired earlier in this manifest.`,
+          );
+          continue;
+        }
+        matchedImagesInThisManifest.add(img);
+        inlineManifestPairs.push({
+          imageFile: img,
+          applicationFile: appFile,
+          stem: pairingStem(img.name),
+          source: "manifest-inline",
+          cachedDeclared: row,
+        });
+      }
+      if (matchedImagesInThisManifest.size > 0) {
+        consumedAppsInManifestPath.add(appFile);
+      }
+    }
+
+    // Remove inline-manifest-paired images from the input set so the
+    // existing pairByFilenameStem / pairByContent paths only see the
+    // residual. Build a fresh allFiles list excluding manifest-consumed
+    // apps + manifest-paired images.
+    const consumedImagesInManifestPath = new Set(
+      inlineManifestPairs.map((p) => p.imageFile),
+    );
+    const filesForStemPath = allFiles.filter(
+      (f) =>
+        !consumedAppsInManifestPath.has(f) &&
+        !consumedImagesInManifestPath.has(f),
+    );
+    const pairResult = pairByFilenameStem(filesForStemPath);
+    // Splice manifest pairs back into the result.
+    for (const p of inlineManifestPairs) {
+      pairResult.paired.push({
+        imageFile: p.imageFile,
+        applicationFile: p.applicationFile,
+        stem: p.stem,
+        source: p.source,
+      });
+    }
+    let pairingMode: PairingSummary["mode"] = inlineManifestDidFire
+      ? "auto-inline-manifest"
+      : "auto-stem";
 
     // Content-based fallback pairing. When filename stems don't fully
     // pair the upload (e.g. the reviewer dropped randomly-named files,
@@ -395,13 +526,83 @@ export async function POST(req: Request) {
       }
     }
 
+    // ─── Broadcast case (NEW 2026-05-12) ──────────────────────────────────
+    //
+    // If after inline-manifest + filename + content pairing, we still
+    // have ≥ 2 unpaired images AND exactly 1 unpaired application file
+    // AND that single app file is a single-product application (not a
+    // multi-row manifest — those were already handled above), broadcast
+    // the same parsed fields to every unpaired image. The reviewer
+    // explicitly asked for this: "if one app file describes a single
+    // product and N images are uploaded, the natural read is 'all N
+    // labels are of that product; verify each against the same
+    // declared fields.'" Surfaced as a warning so the operator can
+    // reject it post-hoc.
+    let broadcastFired = false;
+    if (
+      pairResult.unpairedImages.length >= 2 &&
+      pairResult.unpairedApplications.length === 1
+    ) {
+      const broadcastApp = pairResult.unpairedApplications[0]!;
+      try {
+        // @ts-expect-error — content-pairer might have cached it
+        const cached = broadcastApp.__cachedParsed as
+          | Awaited<ReturnType<typeof parseApplication>>
+          | undefined;
+        const parsed =
+          cached ??
+          (await parseApplication({
+            buffer: Buffer.from(await broadcastApp.arrayBuffer()),
+            filename: broadcastApp.name,
+            mime: broadcastApp.type,
+            ...(process.env.GOOGLE_API_KEY
+              ? { apiKey: process.env.GOOGLE_API_KEY }
+              : {}),
+          }));
+        // Stash for reuse by the per-pair loop.
+        // @ts-expect-error — runtime annotation
+        broadcastApp.__cachedParsed = parsed;
+        const n = pairResult.unpairedImages.length;
+        for (const img of pairResult.unpairedImages) {
+          pairResult.paired.push({
+            imageFile: img,
+            applicationFile: broadcastApp,
+            stem: pairingStem(img.name),
+            source: "manifest-broadcast",
+          });
+        }
+        pairResult.unpairedImages = [];
+        pairResult.unpairedApplications = [];
+        broadcastFired = true;
+        pairingMode = "auto-broadcast";
+        pairingWarnings.push(
+          `Single-application broadcast: "${broadcastApp.name}" applied to ${n} images (no filename matches, no manifest detected). If these images are NOT all of the same product, drop a multi-row CSV manifest or per-image application files instead.`,
+        );
+      } catch {
+        // If the broadcast app itself won't parse, fall through to
+        // the "no pairs" error below.
+      }
+    }
+
     pairing = summarize(pairResult, pairingMode);
+    if (broadcastFired) {
+      pairing.broadcast = true;
+    }
+    if (orphanedManifestRows.length > 0) {
+      pairing.orphanedManifestRows = orphanedManifestRows;
+      // Also surface each orphan as a non-fatal warning so the route's
+      // `pairingWarnings` aggregator (rendered in the UI) shows them
+      // inline next to the actual pairs.
+      for (const o of orphanedManifestRows) {
+        pairingWarnings.push(o);
+      }
+    }
 
     if (pairResult.paired.length === 0) {
       return NextResponse.json(
         {
           error:
-            "No image-application pairs found. Either include a 'manifest' field, OR upload paired files where each label image has a matching application file (the system will match by filename stem first, then by brand/class content similarity).",
+            "No image-application pairs found. The auto-pairer tried filename stems, then a multi-row manifest scan (CSV/JSON with a `filename` column), then brand/class content similarity — none yielded a match. Either include a `manifest` field, or upload each image alongside a matching application file.",
           pairing,
         },
         { status: 400 },
@@ -417,7 +618,15 @@ export async function POST(req: Request) {
       );
     }
 
-    for (const { imageFile, applicationFile, stem: s } of pairResult.paired) {
+    // Build a quick lookup from (imageFile → cached manifest row) so the
+    // per-pair loop can use the inline-manifest row directly instead of
+    // calling parseApplication on the whole multi-row file (which would
+    // collapse all 12 rows down to row-0 for every pair).
+    const inlineManifestRowsByImage = new Map<File, Record<string, string>>();
+    for (const p of inlineManifestPairs) {
+      inlineManifestRowsByImage.set(p.imageFile, p.cachedDeclared);
+    }
+    for (const { imageFile, applicationFile, stem: s, source } of pairResult.paired) {
       if (imageFile.size > MAX_IMAGE_BYTES) {
         pairingErrors.push(`${imageFile.name}: image exceeds 10MB.`);
         continue;
@@ -426,38 +635,53 @@ export async function POST(req: Request) {
         pairingErrors.push(`${imageFile.name}: unsupported image MIME ${imageFile.type}.`);
         continue;
       }
-      // Parse the application file. PDF-without-text auto-falls back
-      // to vision OCR when GOOGLE_API_KEY is configured (covers
-      // scanned application PDFs without forcing the operator to
-      // re-upload them as images).
-      // Content-paired items already had their application parsed
-      // during the content-pairing fingerprint step — reuse that
-      // payload instead of re-parsing the same file.
-      // @ts-expect-error — runtime annotation set on content-paired pairs
-      const cachedParsed = applicationFile.__cachedParsed as
-        | Awaited<ReturnType<typeof parseApplication>>
-        | undefined;
+      // Three sources for the parsed declared fields:
+      //   1. Inline manifest: the application file is a multi-row CSV/
+      //      JSON; this pair's row was cached during the detection pass.
+      //      Run it through rowToDeclared just like the explicit-manifest
+      //      path does.
+      //   2. Content-paired: parseApplication was already called for
+      //      the fingerprint; reuse the cached payload.
+      //   3. Stem-paired: parse the file fresh (PDF-vision auto-fallback
+      //      applies when GOOGLE_API_KEY is configured).
       let parsed: Awaited<ReturnType<typeof parseApplication>>;
-      if (cachedParsed) {
-        parsed = cachedParsed;
+      const inlineRow = inlineManifestRowsByImage.get(imageFile);
+      if (inlineRow) {
+        parsed = {
+          fields: rowToDeclared(inlineRow),
+          source: applicationFile.name.toLowerCase().endsWith(".json")
+            ? "json"
+            : "csv",
+          warnings: [],
+          confidence: "medium",
+        };
       } else {
-        try {
-          const appBuf = Buffer.from(await applicationFile.arrayBuffer());
-          parsed = await parseApplication({
-            buffer: appBuf,
-            filename: applicationFile.name,
-            mime: applicationFile.type,
-            ...(process.env.GOOGLE_API_KEY
-              ? { apiKey: process.env.GOOGLE_API_KEY }
-              : {}),
-          });
-        } catch (err) {
-          pairingErrors.push(
-            `${imageFile.name} ↔ ${applicationFile.name}: application parse failed — ${(err as Error).message}`,
-          );
-          continue;
+        // @ts-expect-error — runtime annotation set on content-paired pairs
+        const cachedParsed = applicationFile.__cachedParsed as
+          | Awaited<ReturnType<typeof parseApplication>>
+          | undefined;
+        if (cachedParsed) {
+          parsed = cachedParsed;
+        } else {
+          try {
+            const appBuf = Buffer.from(await applicationFile.arrayBuffer());
+            parsed = await parseApplication({
+              buffer: appBuf,
+              filename: applicationFile.name,
+              mime: applicationFile.type,
+              ...(process.env.GOOGLE_API_KEY
+                ? { apiKey: process.env.GOOGLE_API_KEY }
+                : {}),
+            });
+          } catch (err) {
+            pairingErrors.push(
+              `${imageFile.name} ↔ ${applicationFile.name}: application parse failed — ${(err as Error).message}`,
+            );
+            continue;
+          }
         }
       }
+      void source; // documented above; not used for control flow here.
       // The parser returns Partial<DeclaredFields>. Batch verify
       // requires the full set — anything missing fails closed.
       const validated = DeclaredFieldsSchema.safeParse(parsed.fields);

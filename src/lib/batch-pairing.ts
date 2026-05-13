@@ -108,11 +108,21 @@ export interface PairingHit {
   applicationFile: File;
   /** Stem both files share (after normalisation). */
   stem: string;
-  /** Where the pair came from. `"filename-strict"` and
-   *  `"filename-relaxed"` are pure filename-based matches; `"content"`
-   *  is the brand/class-similarity fallback fired only when filenames
-   *  don't pair (see `pairByContent`). */
-  source?: "filename-strict" | "filename-relaxed" | "content";
+  /** Where the pair came from.
+   *  - `"filename-strict"` / `"filename-relaxed"`: pure filename-based matches.
+   *  - `"content"`: brand/class fuzzy match (`pairByContent`).
+   *  - `"manifest-inline"`: a multi-row CSV/JSON file dropped alongside
+   *    the images was detected as a manifest, and this image matched
+   *    by the manifest's `filename` column.
+   *  - `"manifest-broadcast"`: a single-product application file was
+   *    broadcast to multiple images (operator confirmed all N labels
+   *    are of the same product). */
+  source?:
+    | "filename-strict"
+    | "filename-relaxed"
+    | "content"
+    | "manifest-inline"
+    | "manifest-broadcast";
   /** Similarity score 0..1 from the content pass (only set when
    *  `source === "content"`). 1.0 = perfect brand + class match. */
   score?: number;
@@ -219,7 +229,12 @@ export function pairByFilenameStem(files: File[]): PairingResult {
 }
 
 export interface PairingSummary {
-  mode: "manifest" | "auto-stem" | "auto-stem+content";
+  mode:
+    | "manifest"
+    | "auto-stem"
+    | "auto-stem+content"
+    | "auto-inline-manifest"
+    | "auto-broadcast";
   totalItems: number;
   pairedCount: number;
   pairs: Array<{
@@ -232,6 +247,14 @@ export interface PairingSummary {
   unpairedImages: string[];
   unpairedApplications: string[];
   ignored: string[];
+  /** Manifest rows that found no matching image (only set on
+   *  `auto-inline-manifest` mode). Each entry is a human-readable
+   *  description of the orphaned row. */
+  orphanedManifestRows?: string[];
+  /** True when a single application was broadcast to multiple images
+   *  (only set on `auto-broadcast` mode). The UI surfaces a banner so
+   *  the reviewer can confirm or reject the broadcast. */
+  broadcast?: boolean;
 }
 
 // ─── Content-based pairing fallback ─────────────────────────────────────────
