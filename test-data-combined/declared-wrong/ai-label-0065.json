@@ -1,0 +1,39 @@
+{
+  "id": "ai-label-0065",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0065.jpg",
+  "degradations": [
+    "peeling"
+  ],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Cabernet Sauvignon",
+    "class_category": "wine",
+    "abv_percent": 16.1,
+    "net_contents": {
+      "value": 1500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Creased Meadow Winery",
+      "street": "34 Arroyo Road",
+      "city": "Lodi",
+      "state": "CA",
+      "postal_code": "95240",
+      "country": "USA"
+    },
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Paper label is peeling at one corner and lightly creased."
+}

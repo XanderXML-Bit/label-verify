@@ -134,9 +134,17 @@ export interface GovernmentWarningCheck {
 
 /**
  * Normalize text for the strict text-match subscore. Folds Unicode
- * compatibility forms, smart-quote variants, dash variants, and excess
- * whitespace — without ever touching letter case (the caps subscore needs
- * the original).
+ * compatibility forms, smart-quote variants, dash variants, ellipsis
+ * variants, and excess whitespace — without ever touching letter case
+ * (the caps subscore needs the original).
+ *
+ * Also folds non-printing space variants (NBSP U+00A0, narrow NBSP
+ * U+202F, en/em spaces U+2002..U+2005, zero-width spaces U+200B/U+FEFF)
+ * to a regular space before the `\s+` collapse. Without this, a
+ * verbatim federal warning exported from a Canadian / European DTP
+ * pipeline (which often emits NBSP between "GOVERNMENT" and "WARNING"
+ * or around punctuation) returns text-mismatch even though the visible
+ * text is identical. Per Agent D accuracy audit 2026-05-13.
  */
 export function normalizeForTextMatch(input: string): string {
   return input
@@ -144,6 +152,15 @@ export function normalizeForTextMatch(input: string): string {
     .replace(/[‘’‚‛]/g, "'")
     .replace(/[“”„‟]/g, '"')
     .replace(/[–—−]/g, "-")
+    .replace(/…/g, "...")
+    // Fold non-printing / non-ASCII space variants to a regular
+    // space BEFORE the s+ collapse below. NFKC already folds many
+    // of these, but not zero-width forms. Codepoints folded:
+    //   U+00A0 NBSP, U+1680 Ogham,
+    //   U+2000..U+200A en-quad through hair-space,
+    //   U+202F narrow NBSP, U+205F medium math space,
+    //   U+3000 ideographic, U+200B zero-width, U+FEFF BOM.
+    .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\uFEFF]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }

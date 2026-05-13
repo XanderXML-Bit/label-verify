@@ -1,0 +1,34 @@
+{
+  "id": "ai-label-0029",
+  "source": "real",
+  "image": "test-data/ai-generated/labels/ai-label-0029.jpg",
+  "degradations": [
+    "flat spirits label"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Northstar Trading",
+    "class_type": "Vodka",
+    "class_category": "distilled_spirits",
+    "abv_percent": 39.5,
+    "net_contents": {
+      "value": 1500,
+      "unit": "ml"
+    },
+    "producer": "Vagrant Tide Beverage Co., New Orleans, LA",
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "C0",
+  "notes": "Flat spirits label; compliant warning confirmed.",
+  "_converted_from_ai": true,
+  "_usage_tier": "strictBenchmarkReady"
+}

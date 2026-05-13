@@ -1,0 +1,39 @@
+{
+  "id": "deg-fortified_wine-0001",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-fortified_wine-0001.png",
+  "degradations": [
+    "perspective:-20deg"
+  ],
+  "beverage_type": "fortified_wine",
+  "label_face": "back",
+  "container_size_ml": 200,
+  "fields": {
+    "brand_name": "Copperline",
+    "class_type": "Port",
+    "class_category": "fortified_wine",
+    "abv_percent": 22.1,
+    "net_contents": {
+      "value": 400,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Solstice No 7 Beverage Co.",
+      "street": "1190 Mission Ave",
+      "city": "San Antonio",
+      "state": "TX",
+      "postal_code": "78210",
+      "country": "USA"
+    },
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-fortified_wine-0003. perspective:-20deg."
+}

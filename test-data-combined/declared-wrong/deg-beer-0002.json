@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0002",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0002.png",
+  "degradations": [
+    "perspective:9deg"
+  ],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Saltwood Mill",
+    "class_type": "Porter",
+    "class_category": "beer",
+    "abv_percent": 9.4,
+    "net_contents": {
+      "value": 50,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "LATITUDE 7 Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "Ireland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-beer-0002. perspective:9deg."
+}

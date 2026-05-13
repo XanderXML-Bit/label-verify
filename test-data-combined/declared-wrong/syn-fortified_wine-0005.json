@@ -1,0 +1,37 @@
+{
+  "id": "syn-fortified_wine-0005",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-fortified_wine-0005.png",
+  "degradations": [],
+  "beverage_type": "fortified_wine",
+  "label_face": "neck",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Northstar Trading",
+    "class_type": "Vermouth",
+    "class_category": "fortified_wine",
+    "abv_percent": 23.5,
+    "net_contents": {
+      "value": 100,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Solstice Beverage Co.",
+      "street": "310 River Rd",
+      "city": "Lexington",
+      "state": "KY",
+      "postal_code": "40508",
+      "country": "USA"
+    },
+    "country_of_origin": "Mexico",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T6",
+  "notes": "neck label, single brand pattern, 50 ml container. Archetype: craft-artisanal. Government Warning case: T6."
+}

@@ -4,7 +4,11 @@ import sharp from "sharp";
 import { z } from "zod";
 
 const ROOT = process.cwd();
-const DEFAULT_OUTPUT = "test-data";
+// Default to the canonical 170-image superset corpus. See docs/CORPORA.md.
+// `test-data/` (v1) remains in place for historical provenance only —
+// its ground-truth was not back-ported with the 2026-05-12 corpus
+// correction wave.
+const DEFAULT_OUTPUT = "test-data-combined";
 
 const SourceSchema = z.enum(["synthetic", "degraded", "real"]);
 const BeverageTypeSchema = z.enum([

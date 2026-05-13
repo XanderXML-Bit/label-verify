@@ -1,0 +1,39 @@
+{
+  "id": "deg-wine-0002",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-wine-0002.png",
+  "degradations": [
+    "lowlight:0.35"
+  ],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 100,
+  "fields": {
+    "brand_name": "Northstar Trading",
+    "class_type": "Pinot Noir",
+    "class_category": "wine",
+    "abv_percent": 13.9,
+    "net_contents": {
+      "value": 200,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Old Schoolhouse Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-wine-0001. lowlight:0.35."
+}

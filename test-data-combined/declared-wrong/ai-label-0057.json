@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0057",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0057.jpg",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Saltwood Mill",
+    "class_type": "Chardonnay",
+    "class_category": "wine",
+    "abv_percent": 16.2,
+    "net_contents": {
+      "value": 1500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Brindle Atlas Vintners",
+      "street": "501 Mesa Drive",
+      "city": "Sonoma",
+      "state": "CA",
+      "postal_code": "95476",
+      "country": "USA"
+    },
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": false,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "non-compliant-caps",
+  "notes": "Warning prefix is title case rather than all caps."
+}

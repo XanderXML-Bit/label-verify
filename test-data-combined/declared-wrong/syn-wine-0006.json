@@ -1,0 +1,37 @@
+{
+  "id": "syn-wine-0006",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-wine-0006.png",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "front",
+  "container_size_ml": 50,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Cabernet Sauvignon",
+    "class_category": "wine",
+    "abv_percent": 13,
+    "net_contents": {
+      "value": 100,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Saltwood Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "Japan",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T3",
+  "notes": "front label, single brand pattern, 50 ml container. Archetype: craft-artisanal. Government Warning case: T3."
+}

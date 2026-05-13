@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0059",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0059.jpg",
+  "degradations": [],
+  "beverage_type": "distilled_spirits",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Whisky",
+    "class_category": "distilled_spirits",
+    "abv_percent": 44,
+    "net_contents": {
+      "value": 1500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "North Window Distillery",
+      "street": "203 Juniper Court",
+      "city": "Portland",
+      "state": "ME",
+      "postal_code": "04101",
+      "country": "USA"
+    },
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "non-compliant-size",
+  "notes": "Canonical warning is printed at a visibly undersized font."
+}

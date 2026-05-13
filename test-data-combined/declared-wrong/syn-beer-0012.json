@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0012",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0012.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 500,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Stout",
+    "class_category": "beer",
+    "abv_percent": 9.4,
+    "net_contents": {
+      "value": 34,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Mill Creek Beverage Co.",
+      "street": "1190 Mission Ave",
+      "city": "San Antonio",
+      "state": "TX",
+      "postal_code": "78210",
+      "country": "USA"
+    },
+    "country_of_origin": "Ireland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T6",
+  "notes": "front label, multi brand pattern, 500 ml container. Archetype: bold-display. Government Warning case: T6."
+}

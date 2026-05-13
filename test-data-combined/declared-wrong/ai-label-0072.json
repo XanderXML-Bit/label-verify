@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0072",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0072.jpg",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 720,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Cabernet Sauvignon",
+    "class_category": "wine",
+    "abv_percent": 17.5,
+    "net_contents": {
+      "value": 1440,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Hikari Field Kuramoto",
+      "street": "3-12 Kome Street",
+      "city": "Niigata",
+      "state": "Niigata",
+      "postal_code": "950-0087",
+      "country": "Japan"
+    },
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "Imported sake bottle marked Product of Japan."
+}

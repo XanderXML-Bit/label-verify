@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0055",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0055.jpg",
+  "degradations": [],
+  "beverage_type": "wine",
+  "label_face": "back",
+  "container_size_ml": 750,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Riesling",
+    "class_category": "wine",
+    "abv_percent": 15.8,
+    "net_contents": {
+      "value": 1500,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Lantern Loam Winery",
+      "street": "311 Vineyard Lane",
+      "city": "Paso Robles",
+      "state": "CA",
+      "postal_code": "93446",
+      "country": "USA"
+    },
+    "country_of_origin": "Japan",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "non-compliant-text",
+  "notes": "Warning uses a subtle alcohol misspelling and singular beverage."
+}

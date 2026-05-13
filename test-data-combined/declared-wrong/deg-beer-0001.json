@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0001",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0001.png",
+  "degradations": [
+    "occlusion:0.12"
+  ],
+  "beverage_type": "beer",
+  "label_face": "back",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Porter",
+    "class_category": "beer",
+    "abv_percent": 9.1,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Cairnmark Beverage Co.",
+      "street": "5400 Bayou Dr",
+      "city": "New Orleans",
+      "state": "LA",
+      "postal_code": "70117",
+      "country": "USA"
+    },
+    "country_of_origin": "Germany",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-beer-0006. occlusion:0.12."
+}

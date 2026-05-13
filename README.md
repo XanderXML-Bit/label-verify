@@ -24,7 +24,7 @@
 | **What if Gemini is down?** | Auto-fallback to GPT-5.4-nano (OpenAI) on provider failure, with a yellow "verified via backup" banner on the verdict. |
 | **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent cross-provider model re-reads the label. Agreement / disagreement is surfaced inline. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
-| **Is the code reviewed?** | 418 / 418 tests green, zero ESLint warnings, multiple independent audit passes (Hermes / Codex / 3 sub-agent corpus audits + 2 sub-agent code/UX audits), branch protection on `main`, 0 production vulnerabilities. |
+| **Is the code reviewed?** | 472 / 472 tests green, zero ESLint warnings, multiple independent audit passes (Hermes / Codex / 4 sub-agent comprehensive-hardening audits: E2E gaps, fixtures, docs, perf/accuracy + 3 sub-agent corpus audits + 2 sub-agent code/UX audits), branch protection on `main`, 0 production vulnerabilities. |
 
 **Pick your depth:**
 
@@ -180,12 +180,25 @@ For each label, the verifier computes:
 
 ---
 
+## Scope and limitations (read before drawing conclusions)
+
+A federal reviewer will want to know exactly what this prototype is and isn't claiming. To save you the read-between-the-lines:
+
+- **This is a prototype, not a regulatory decision system.** Output is intended to support a human adjudicator. Every numeric accuracy figure in this README comes from a stress corpus, not a production-validated COLA-acceptance benchmark. The cross-pair benchmark (`npm run bench:cross-pair`) measures *mismatch sensitivity* (does the verdict flip when declared fields are perturbed?) — it does NOT measure regulatory acceptance accuracy on a peer-reviewed dataset of real submitted COLA forms.
+- **Test corpus composition is mixed and self-similar.** 90 SVG-rendered synthetic labels + 80 AI-generated photo-realistic labels = 170 images. There are zero real submitted COLA labels in the corpus (the project couldn't obtain them inside the take-home window). The extractor is a foundation model and the AI-label half was rendered by a foundation model — there's inherent generalization risk to *real* labels with brand-design quirks, foreign-print pipelines, glare, curvature, and the long tail of typographic variation that synthetic templates can't capture. See [`docs/FAILURE-MODES.md`](docs/FAILURE-MODES.md) for the catalog.
+- **Government Warning text-matching is OCR-normalized.** The text-match subscore folds Unicode noise (NBSP, narrow NBSP, smart quotes, em-dashes, zero-width spaces, ellipsis) before strict equality. This handles export-pipeline noise without flagging visually-identical text. Typography subscores (caps / bold / size) are pixel/geometry heuristics, NOT a regulatory acceptance certification. Borderline visual differences route to REVIEW (not PASS), and a "we can't fully measure bold weight" condition explicitly downgrades a model-self-reported PASS to REVIEW. See [`docs/government-warning-cases.md`](docs/government-warning-cases.md) for the §16.21 / §16.22 case taxonomy.
+- **The three CLIs are operator/reviewer tools, NOT public surfaces.** `bin/labelverify.ts`, `bin/labelverify-web.ts`, and `bin/labelverify-bench.ts` are intended for operators, automation, and reviewers reproducing measurements. The public user surface is the web UI (`/`), behind per-IP rate limits and the multipart upload contract enforced by the API routes. There is no public "list batches" / "list verifications" endpoint; the `/api/queue/*` and `/api/debug/last` surfaces require a `DEBUG_TOKEN` bearer credential gated by branch-secret env-var.
+- **Batch ceiling is provider-limited, not application-limited.** The Vercel Hobby plan caps function duration at 60 s. With Gemini 3.1 Flash Lite at ~2.5–4 s P50 per verify and a CONCURRENCY=2 worker pool, the practical interactive batch ceiling is ~30 images per submit before timing out. A production deployment would move to either Vercel Pro (300 s) or an external worker (queue + webhooks) — neither in scope for this prototype.
+- **Generated/AI artifacts are explicitly labeled as such.** The `test-data/ai-generated/` corpus, the AI label half of `test-data-combined/`, and any benchmark output that exercises them are flagged in their provenance docs ([`docs/CORPORA.md`](docs/CORPORA.md)). Do not treat AI-generated label accuracy as evidence of real-label accuracy.
+
+---
+
 ## Verified state (pre-submission)
 
 | Surface | State |
 |---|---|
 | **Live production** | <https://label-verify-six.vercel.app> · `/api/health` returns `{ ok: true, ready: true, notes: [] }` · all routes 200 · live manual browser walkthrough completed (PASS / FAIL / REVIEW samples all returned correct verdicts in 4.5–5.2 s with 0 console errors) |
-| **Tests** | **418 / 418** passing (`vitest`) · 52 test files |
+| **Tests** | **472 / 472** passing (`vitest`) · 56 test files |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
 | **Lint** | `next lint` clean (zero warnings) |
 | **Production build** | green |
@@ -277,13 +290,40 @@ Reviewers reproducing the project locally can lean on any of these:
 ```bash
 npm run typecheck         # tsc --noEmit, zero output expected
 npm run lint              # next lint, zero warnings on a clean tree
-npm test                  # vitest, 410 tests across 51 files (~7 s)
+npm test                  # vitest, ~470 tests across 56 files (~10 s)
 npm run build             # production Next.js build
 npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results/<iso>.md
 npm run bench:bakeoff     # full 13-variant tournament (~30 min, ~$0.30 in API calls)
+npm run bench:cross-pair  # NEW: 170 images × {correct, wrong} declared, accuracy+timing (--limit N)
 npm run test:e2e:install  # one-time Playwright browser install
-npm run test:e2e          # Playwright headless E2E
+npm run test:e2e          # Playwright headless E2E (8 spec files: idle, samples,
+                          #   application-input, batch-autopair, form-validation,
+                          #   error-mapping, upload-rejection, sample-retry, api-status-banner)
 ```
+
+### Option D — Use the CLI
+
+Three command-line entrypoints ship with the repo, mirroring the GUI:
+
+```bash
+# Operator CLI — drives the backend in-process (no browser, no server).
+npm run cli -- verify public/samples/pass.jpg path/to/application.json
+npm run cli:health           # readiness + API-key probe
+npm run cli:samples          # list bundled samples
+
+# Web-app driver CLI — hits the deployed HTTP API the same way a browser does.
+npm run cli:web -- health                                # against prod
+npm run cli:web -- verify image.jpg app.json --local     # against npm run dev
+npm run cli:web -- batch ./labels/ --base-url https://your-deploy.vercel.app
+
+# Benchmark CLI — accuracy + latency across the canonical corpus.
+npm run bench:perturb        # (re)generate the wrong-declared set
+npm run bench:cross-pair -- --limit 10
+```
+
+Full CLI reference: [`docs/CLI.md`](docs/CLI.md). Why three CLIs (each
+exercises a different failure surface) is explained at the top of that
+doc.
 
 A live-API smoke checklist for production-deploy validation lives at [`docs/PRODUCTION-SMOKE.md`](docs/PRODUCTION-SMOKE.md) — five checks, all curl-pasteable.
 
@@ -427,10 +467,12 @@ Things that are deliberate (with the reasoning), and the residual unknowns we ca
 7. [`docs/REMAINING-IMPROVEMENTS.md`](docs/REMAINING-IMPROVEMENTS.md) — what we'd do next.
 8. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) + [`docs/DEPLOYMENT-CHECKLIST.md`](docs/DEPLOYMENT-CHECKLIST.md) + [`docs/PRODUCTION-SMOKE.md`](docs/PRODUCTION-SMOKE.md) — production runbook.
 9. [`docs/openapi.yaml`](docs/openapi.yaml) — public API surface.
-10. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — what's tested where and why.
-11. [`SECURITY.md`](SECURITY.md) — threat model + mitigations.
-12. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points.
-13. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline + audit findings closed.
+10. [`docs/CLI.md`](docs/CLI.md) — three CLI surfaces (operator / web-driver / benchmark).
+11. [`docs/CORPORA.md`](docs/CORPORA.md) — map of `test-data*/` and `public/samples/` directories.
+12. [`docs/TEST-STRATEGY.md`](docs/TEST-STRATEGY.md) — what's tested where and why.
+13. [`SECURITY.md`](SECURITY.md) — threat model + mitigations.
+14. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points.
+15. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline + audit findings closed.
 
 **Pre-implementation planning docs** (kept for the audit trail; the current state of the code is the authority):
 - [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) — pre-registered hypotheses.

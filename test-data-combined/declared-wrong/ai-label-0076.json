@@ -1,0 +1,37 @@
+{
+  "id": "ai-label-0076",
+  "source": "ai-generated",
+  "image": "test-data/ai-generated/labels/ai-label-0076.jpg",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "wrap",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Northstar Trading",
+    "class_type": "IPA",
+    "class_category": "beer",
+    "abv_percent": 7.2,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Sol Brumoso Brewing",
+      "street": "510 Mission Road",
+      "city": "San Antonio",
+      "state": "TX",
+      "postal_code": "78205",
+      "country": "USA"
+    },
+    "country_of_origin": "Italy",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "compliant",
+  "notes": "English and Spanish government warnings are stacked together."
+}

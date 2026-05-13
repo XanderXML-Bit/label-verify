@@ -1,0 +1,39 @@
+{
+  "id": "deg-spirits-0002",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-spirits-0002.png",
+  "degradations": [
+    "lowlight:0.57"
+  ],
+  "beverage_type": "spirits",
+  "label_face": "front",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Crowfoot Reserve",
+    "class_type": "Gin",
+    "class_category": "distilled_spirits",
+    "abv_percent": 55.5,
+    "net_contents": {
+      "value": 710,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Black Cardamom Beverage Co.",
+      "street": "65 Copper Hill Rd",
+      "city": "Burlington",
+      "state": "VT",
+      "postal_code": "05401",
+      "country": "USA"
+    },
+    "country_of_origin": "Ireland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": true,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": null,
+  "notes": "Derived from syn-spirits-0003. lowlight:0.57."
+}

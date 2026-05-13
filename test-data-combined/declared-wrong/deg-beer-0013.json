@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0013",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0013.png",
+  "degradations": [
+    "curved:0.27"
+  ],
+  "beverage_type": "beer",
+  "label_face": "neck",
+  "container_size_ml": 187,
+  "fields": {
+    "brand_name": "Bramble & Vine",
+    "class_type": "Stout",
+    "class_category": "beer",
+    "abv_percent": 6.8,
+    "net_contents": {
+      "value": 374,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "Mill Creek Beverage Co.",
+      "street": "1190 Mission Ave",
+      "city": "San Antonio",
+      "state": "TX",
+      "postal_code": "78210",
+      "country": "USA"
+    },
+    "country_of_origin": "France",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T4",
+  "notes": "Derived from syn-beer-0010. curved:0.27."
+}

@@ -9,6 +9,17 @@ import {
 import { verifyLabel } from "@/lib/verify";
 
 export const runtime = "nodejs";
+// LOCAL-DEV-ONLY in practice. The Vercel Hobby ceiling is 60 s, not 300;
+// the `300` here is a development-time hint (works in `npm run dev`'s
+// single-process Next server, where the in-memory batch-store IS shared
+// across the POST→GET hop). On production (Vercel serverless), the POST
+// handler in ../route.ts now processes the whole batch INLINE and returns
+// terminal results in the response body, so the BatchView component
+// skips the SSE entirely (see BatchView.tsx:45-49). This route is kept
+// only for local-dev convenience on long batches; it returns 404 on
+// production because the batch GET-instance can't see the batch-store
+// populated by the POST-instance. See CHANGELOG 2026-05-13 ("inline
+// batch processing for Vercel serverless").
 export const maxDuration = 300;
 
 const CONCURRENCY = 2;

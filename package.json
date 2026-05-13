@@ -18,16 +18,22 @@
     "bench:routine:bakeoff": "tsx benchmarks/run.ts --routine --bake-off",
     "bench:bakeoff": "tsx benchmarks/run.ts --bake-off",
     "bench:bakeoff:smoke": "tsx benchmarks/run.ts --bake-off --smoke",
+    "bench:perturb": "tsx scripts/perturb-declared.ts",
+    "bench:cross-pair": "tsx bin/labelverify-bench.ts cross-pair",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "gen:corpus": "tsx scripts/generate-corpus.ts",
     "validate:corpus": "tsx scripts/validate-corpus.ts",
     "cli": "tsx bin/labelverify.ts",
     "cli:health": "tsx bin/labelverify.ts health",
-    "cli:samples": "tsx bin/labelverify.ts samples"
+    "cli:samples": "tsx bin/labelverify.ts samples",
+    "cli:web": "tsx bin/labelverify-web.ts",
+    "cli:web:health": "tsx bin/labelverify-web.ts health",
+    "cli:web:samples": "tsx bin/labelverify-web.ts samples"
   },
   "bin": {
-    "labelverify": "bin/labelverify.ts"
+    "labelverify": "bin/labelverify.ts",
+    "labelverify-web": "bin/labelverify-web.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",

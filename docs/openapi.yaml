@@ -419,7 +419,30 @@ paths:
                     properties:
                       mode:
                         type: string
-                        enum: [manifest, auto-stem]
+                        # Pairing modes the route may report. Falls through
+                        # in order until one yields paired items.
+                        #   manifest             — explicit `manifest` form-field
+                        #                          (legacy / single-row CSV/JSON).
+                        #   auto-inline-manifest — multi-row CSV/JSON manifest
+                        #                          detected among the
+                        #                          `applications` files
+                        #                          (added 2026-05-13).
+                        #   auto-stem            — pair by filename stem.
+                        #   auto-stem+content    — stem-pairing fell short; the
+                        #                          content-fingerprint fallback
+                        #                          paired the remainder via
+                        #                          brand/class similarity
+                        #                          (added 2026-05-12).
+                        #   auto-broadcast       — 1 single-product app + N
+                        #                          images → broadcast the same
+                        #                          declared payload to all
+                        #                          images (added 2026-05-12).
+                        enum:
+                          - manifest
+                          - auto-stem
+                          - auto-inline-manifest
+                          - auto-stem+content
+                          - auto-broadcast
                       totalItems: { type: integer }
                       pairedCount: { type: integer }
                       pairs:

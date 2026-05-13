@@ -1,0 +1,37 @@
+{
+  "id": "syn-beer-0009",
+  "source": "synthetic",
+  "image": "test-data-v2/labels/syn-beer-0009.png",
+  "degradations": [],
+  "beverage_type": "beer",
+  "label_face": "front",
+  "container_size_ml": 200,
+  "fields": {
+    "brand_name": "Iron Harbor",
+    "class_type": "Pilsner",
+    "class_category": "beer",
+    "abv_percent": 8.1,
+    "net_contents": {
+      "value": 400,
+      "unit": "ml"
+    },
+    "producer": {
+      "name": "OReilly Hollow Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": true,
+      "text_matches_regulation": false,
+      "prefix_all_caps": true,
+      "prefix_bold": true,
+      "meets_size_minimum": true
+    }
+  },
+  "gov_warning_case": "T3",
+  "notes": "front label, punctuation brand pattern, 200 ml container. Archetype: vintage-classical. Government Warning case: T3."
+}

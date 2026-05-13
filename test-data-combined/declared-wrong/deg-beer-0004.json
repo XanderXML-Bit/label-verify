@@ -1,0 +1,39 @@
+{
+  "id": "deg-beer-0004",
+  "source": "degraded",
+  "image": "test-data-v2/labels/deg-beer-0004.png",
+  "degradations": [
+    "curved:0.33"
+  ],
+  "beverage_type": "beer",
+  "label_face": "neck",
+  "container_size_ml": 355,
+  "fields": {
+    "brand_name": "Saltwood Mill",
+    "class_type": "Hefeweizen",
+    "class_category": "beer",
+    "abv_percent": 8.4,
+    "net_contents": {
+      "value": 24,
+      "unit": "fl_oz"
+    },
+    "producer": {
+      "name": "Mill Creek Beverage Co.",
+      "street": "77 Market Plaza",
+      "city": "Santa Rosa",
+      "state": "CA",
+      "postal_code": "95401",
+      "country": "USA"
+    },
+    "country_of_origin": "Scotland",
+    "government_warning": {
+      "present": false,
+      "text_matches_regulation": false,
+      "prefix_all_caps": false,
+      "prefix_bold": false,
+      "meets_size_minimum": false
+    }
+  },
+  "gov_warning_case": "X1",
+  "notes": "Derived from syn-beer-0024. curved:0.33."
+}
