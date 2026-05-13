@@ -77,7 +77,15 @@ describe("application/parse-text", () => {
 
   it("returns a warning when no fields can be extracted", () => {
     const r = parseApplicationText("nothing structured here at all");
-    expect(Object.keys(r.fields).filter((k) => (r.fields as Record<string, unknown>)[k] !== undefined)).toEqual([]);
+    // country_of_origin: null is always emitted (US-domestic-omission
+    // semantics — see src/lib/application/row-to-declared.ts). All
+    // other fields stay undefined when nothing structured was found.
+    const parsedKeys = Object.keys(r.fields).filter(
+      (k) =>
+        (r.fields as Record<string, unknown>)[k] !== undefined &&
+        k !== "country_of_origin",
+    );
+    expect(parsedKeys).toEqual([]);
     expect(r.warnings[0]).toMatch(/No application fields recognised/);
   });
 

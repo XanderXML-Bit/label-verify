@@ -171,7 +171,7 @@ function isUsaCanonical(c: string): boolean {
 }
 
 export function compareCountry(
-  declared: string | null,
+  declared: string | null | undefined,
   extracted: string | null,
   extractedConfidence: number,
 ): FieldComparison {
@@ -180,7 +180,7 @@ export function compareCountry(
   // marking on imports per 27 CFR §4.39 / §5.36). PASS if the label
   // also has no country marking; REVIEW if the label DOES mark one
   // (the applicant should confirm whether they meant to declare it).
-  if (declared === null || declared === "") {
+  if (declared == null || declared === "") {
     if (!extracted) {
       return {
         field: "country_of_origin",
