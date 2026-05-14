@@ -135,8 +135,13 @@ export interface GovernmentWarningCheck {
 /**
  * Normalize text for the strict text-match subscore. Folds Unicode
  * compatibility forms, smart-quote variants, dash variants, ellipsis
- * variants, and excess whitespace — without ever touching letter case
- * (the caps subscore needs the original).
+ * variants, excess whitespace, and (wave-23) letter case.
+ *
+ * The orthogonal `scoreCaps` subscore is independent and remains case-
+ * sensitive — it specifically checks that the prefix is uppercase. So
+ * the regulation's actual case requirement (prefix in caps + bold)
+ * is still enforced; we just stopped enforcing it on the body where
+ * it was never required by 27 CFR §16.21.
  *
  * Also folds non-printing space variants (NBSP U+00A0, narrow NBSP
  * U+202F, en/em spaces U+2002..U+2005, zero-width spaces U+200B/U+FEFF)
@@ -162,7 +167,19 @@ export function normalizeForTextMatch(input: string): string {
     //   U+3000 ideographic, U+200B zero-width, U+FEFF BOM.
     .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\uFEFF]/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    // Case-fold (wave-23, 2026-05-13). 27 CFR \u00A716.21 requires the
+    // *prefix* in caps + bold (enforced by the orthogonal scoreCaps
+    // subscore); the body has no case requirement. All-caps body is
+    // compliant \u2014 7 of the 12 deterministic false-fails on the cross-
+    // pair bench (ai-label-0002/5/6/7/8/31/50) all share the same
+    // defect: their body is rendered in all caps and the pre-wave-23
+    // case-sensitive comparison treated it as a paraphrase defect.
+    // Paraphrase-class differences (missing/wrong words, wrong
+    // punctuation) are still caught \u2014 only the case variant is
+    // accepted here. Canonical text is ASCII-only so locale-sensitive
+    // folding (Turkish dotless-i et al.) is not a concern.
+    .toLowerCase();
 }
 
 /**
