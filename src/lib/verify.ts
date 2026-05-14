@@ -546,6 +546,64 @@ export async function verifyLabel(
     );
   }
 
+  // ─── 5c. Null-extraction safety net (wave-25, 2026-05-13) ────────────────
+  //
+  // Sister-safety-net to §5b. When the extractor returns `null` on a
+  // *mandatory* COLA field (brand_name, class_type) — typically because
+  // the relevant region of the label is obscured/cropped/illegible —
+  // the comparator emits a status="fail" with confidence ≤ 0.05 and a
+  // "No <field> found on the label" reason. The aggregate verdict
+  // becomes FAIL even though the verifier hasn't actually proven non-
+  // compliance — it just hasn't proven compliance either.
+  //
+  // The §5b net misses this case because `imageQuality === "bad"` is
+  // computed only over fields the model COULD read (we explicitly
+  // filter null values out so legitimate-absence cases like country
+  // on US-domestic labels don't tank quality). So a label with a
+  // partially-occluded brand or class region that the model reads
+  // CONFIDENTLY null still gets `imageQuality === "good"` and falls
+  // through to FAIL.
+  //
+  // Wave-25 catches the gap: if the only failing comparator(s) returned
+  // their null-extraction sentinel (status=fail + confidence ≤ 0.05),
+  // upgrade FAIL → REVIEW with a "couldn't read X from label" reason.
+  // The reviewer can see the label themselves and confirm whether the
+  // missing field is truly missing (regulatory issue) or merely
+  // obscured in the submitted photo (re-shoot needed).
+  //
+  // Risk-bounded:
+  //   • Never downgrades a PASS (the upgrade is FAIL → REVIEW only).
+  //   • Never overrides a FAIL where the comparator had real content
+  //     to compare (extractor returned a non-null value that didn't
+  //     match) — those still FAIL because the gate is "fail at conf
+  //     ≤ 0.05" which is the null-sentinel pattern.
+  //   • The reviewer is more or less guaranteed to look at this label
+  //     anyway because brand/class is missing from the verifier's
+  //     output, so the REVIEW landing matches expected operator
+  //     behavior.
+  //
+  // Recovers the 2 deterministic Cluster-C false-fails:
+  //   deg-beer-0001 (class_type null on a partially-degraded label)
+  //   deg-spirits-0003 (brand_name + class_type both unreadable due
+  //                     to an oval occluding the front-label region)
+  if (verdict === "fail") {
+    const nullExtractionFields = fieldResults.filter(
+      (cmp) => cmp.status === "fail" && cmp.confidence <= 0.05,
+    );
+    const otherFailures = fieldResults.filter(
+      (cmp) => cmp.status === "fail" && cmp.confidence > 0.05,
+    );
+    if (nullExtractionFields.length > 0 && otherFailures.length === 0 && gov.status !== "fail") {
+      verdict = "review";
+      const labels = nullExtractionFields
+        .map((cmp) => FIELD_LABEL[cmp.field] ?? cmp.field)
+        .join(", ");
+      reviewReasons.unshift(
+        `The extractor could not read ${labels} from the submitted image. The label may be perfectly compliant — re-photograph the obscured region(s) or confirm visually before treating this as non-compliance.`,
+      );
+    }
+  }
+
   // ─── 6. Independent second-opinion on borderline Gov-Warning ──────────────
   //
   // When the primary call lands on REVIEW for the Gov-Warning (either an
