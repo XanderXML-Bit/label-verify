@@ -58,8 +58,15 @@ describe("normalizeForTextMatch", () => {
     expect(normalizeForTextMatch("it’s")).toBe("it's");
     expect(normalizeForTextMatch("“hi”")).toBe('"hi"');
   });
-  it("does not change case", () => {
-    expect(normalizeForTextMatch("GOVERNMENT WARNING")).toBe("GOVERNMENT WARNING");
+  it("case-folds to lowercase (wave-23, 2026-05-13)", () => {
+    // 27 CFR §16.21 requires the *prefix* in caps (enforced by
+    // isPrefixAllCaps + scoreCaps), but the *body* has no case
+    // requirement. Case-folding here lets all-caps body renderings
+    // (compliant) match the canonical statement. The orthogonal caps
+    // subscore still enforces the prefix-caps rule on the prefix_text
+    // field, which is fed un-normalized to scoreCaps.
+    expect(normalizeForTextMatch("GOVERNMENT WARNING")).toBe("government warning");
+    expect(normalizeForTextMatch("Government Warning")).toBe("government warning");
   });
   it("folds ellipsis to three dots", () => {
     expect(normalizeForTextMatch("birth defects…")).toBe("birth defects...");
@@ -68,8 +75,9 @@ describe("normalizeForTextMatch", () => {
     // The visible text "GOVERNMENT WARNING" is identical, but the
     // exporter emitted U+00A0 between the two words. Without folding,
     // strict text comparison would flag this as a non-compliant body.
+    // (Output is lowercased per wave-23 case-fold.)
     expect(normalizeForTextMatch("GOVERNMENT WARNING")).toBe(
-      "GOVERNMENT WARNING",
+      "government warning",
     );
   });
   it("folds narrow NBSP (U+202F) to a regular space", () => {
@@ -133,6 +141,62 @@ describe("validateGovernmentWarning", () => {
     expect(r.subscores.caps.status).toBe("pass");
     expect(r.subscores.bold.status).toBe("pass");
     expect(r.subscores.size.status).toBe("pass");
+  });
+
+  it("PASS when the entire warning is rendered ALL CAPS (wave-23, ai-label-0002-style)", async () => {
+    // 27 CFR §16.21 requires the prefix in caps + bold but says
+    // nothing about the body's case. Real AI-photo labels in the
+    // bench corpus (ai-label-0002/5/6/7/8/31/50) render the full
+    // warning ALL CAPS — compliant, but the pre-wave-23 case-
+    // sensitive comparison failed them at text=fail conf 1.0.
+    const r = await validateGovernmentWarning({
+      extracted: {
+        ...fullyCompliant,
+        raw_text: COMPLIANT_TEXT.toUpperCase(),
+      },
+      declaredNetContents: LARGE_CONTAINER,
+      imageDimsPx: IMG_DIMS,
+    });
+    expect(r.subscores.text.status).toBe("pass");
+    expect(r.subscores.caps.status).toBe("pass");
+    expect(r.status).toBe("pass");
+  });
+
+  it("PASS when the warning is rendered Title Case body (wave-23)", async () => {
+    // Some labels render the body in Title Case for typographic
+    // consistency. Still compliant — the regulation only constrains
+    // the prefix's case. Title-case body matches after case-fold.
+    const titleBody = GOVERNMENT_WARNING_BODY.replace(
+      /\b\w/g,
+      (c) => c.toUpperCase(),
+    );
+    const r = await validateGovernmentWarning({
+      extracted: {
+        ...fullyCompliant,
+        raw_text: `${PREFIX_FULL} ${titleBody}`,
+      },
+      declaredNetContents: LARGE_CONTAINER,
+      imageDimsPx: IMG_DIMS,
+    });
+    expect(r.subscores.text.status).toBe("pass");
+    expect(r.status).toBe("pass");
+  });
+
+  it("FAIL on paraphrased body even when rendered ALL CAPS (wave-23 regression guard)", async () => {
+    // Case-folding does NOT relax paraphrase detection: a wrong
+    // word still fails after lowercasing because the substring/
+    // equality compare still doesn't match.
+    const paraphrased = COMPLIANT_TEXT.toUpperCase().replace(
+      "MAY CAUSE HEALTH PROBLEMS",
+      "MAY CAUSE HEALTH ISSUES",
+    );
+    const r = await validateGovernmentWarning({
+      extracted: { ...fullyCompliant, raw_text: paraphrased },
+      declaredNetContents: LARGE_CONTAINER,
+      imageDimsPx: IMG_DIMS,
+    });
+    expect(r.subscores.text.status).toBe("fail");
+    expect(r.status).toBe("fail");
   });
 
   it("FAIL on substituted body word (T1)", async () => {
