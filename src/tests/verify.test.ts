@@ -268,4 +268,109 @@ describe("verifyLabel (happy path)", () => {
     // is independent.
     expect(["fail", "review"]).toContain(result.verdict);
   });
+
+  // ─── Wave-25: null-extraction safety net ────────────────────────────
+  it("WAVE-25: FAIL upgraded to REVIEW when class_type is null-extracted (deg-beer-0001 pattern)", async () => {
+    // Real corpus case: a partially-occluded label where the
+    // extractor confidently emits class_type=null (the
+    // class-designation region is hidden) but brand_name and
+    // government warning read cleanly. Pre-wave-25 this came
+    // back FAIL; wave-25 routes to REVIEW with a "couldn't read
+    // class" reason.
+    const fields: ExtractedFields = {
+      ...COMPLIANT_FIELDS,
+      class_type: { value: null, confidence: 0 },
+    };
+    const img = await tinyJpeg();
+    const result = await verifyLabel(
+      img,
+      {
+        brand_name: "Stone's Throw Brewing",
+        class_type: "India Pale Ale",
+        class_category: "beer",
+        abv_percent: 6.4,
+        net_contents: { value: 12, unit: "fl_oz" },
+        producer: {
+          name: "Stone's Throw Brewing Co.",
+          street: "14 Mill St",
+          city: "Asheville",
+          state: "NC",
+          postal_code: "28801",
+          country: "USA",
+        },
+        country_of_origin: "USA",
+      },
+      { extractor: buildExtractor(fields) },
+    );
+    expect(result.verdict).toBe("review");
+    expect(
+      result.reviewReasons.some((r) => /could not read|couldn't read/i.test(r)),
+    ).toBe(true);
+  });
+
+  it("WAVE-25: FAIL stays FAIL when ANY non-null-extraction comparator failed", async () => {
+    // Regression guard. If a field fails on a real mismatch (extractor
+    // returned a non-null value that doesn't match declared), the
+    // verifier still FAILs even when ANOTHER field happens to be
+    // null-extracted. We only relax when the null-extraction is the
+    // SOLE reason the verdict tipped to FAIL.
+    const fields: ExtractedFields = {
+      ...COMPLIANT_FIELDS,
+      class_type: { value: null, confidence: 0 },
+      // A real ABV mismatch — extractor read 12.0 but declared 6.4.
+      abv_percent: { value: 12.0, confidence: 0.95 },
+    };
+    const img = await tinyJpeg();
+    const result = await verifyLabel(
+      img,
+      {
+        brand_name: "Stone's Throw Brewing",
+        class_type: "India Pale Ale",
+        class_category: "beer",
+        abv_percent: 6.4,
+        net_contents: { value: 12, unit: "fl_oz" },
+        producer: {
+          name: "Stone's Throw Brewing Co.",
+          street: "14 Mill St",
+          city: "Asheville",
+          state: "NC",
+          postal_code: "28801",
+          country: "USA",
+        },
+        country_of_origin: "USA",
+      },
+      { extractor: buildExtractor(fields) },
+    );
+    // ABV mismatch is a REAL failure that the verifier should still flag.
+    expect(result.verdict).toBe("fail");
+  });
+
+  it("WAVE-25: PASS is never downgraded by the null-extraction net", async () => {
+    // The safety net only upgrades FAIL → REVIEW. A clean PASS
+    // verdict stays PASS even if some unrelated null check were
+    // triggered (defensive — null-extracted fields shouldn't be
+    // in a PASS verdict, but verify the guard).
+    const img = await tinyJpeg();
+    const result = await verifyLabel(
+      img,
+      {
+        brand_name: "Stone's Throw Brewing",
+        class_type: "India Pale Ale",
+        class_category: "beer",
+        abv_percent: 6.4,
+        net_contents: { value: 12, unit: "fl_oz" },
+        producer: {
+          name: "Stone's Throw Brewing Co.",
+          street: "14 Mill St",
+          city: "Asheville",
+          state: "NC",
+          postal_code: "28801",
+          country: "USA",
+        },
+        country_of_origin: "USA",
+      },
+      { extractor: buildExtractor(COMPLIANT_FIELDS) },
+    );
+    expect(result.verdict).toBe("pass");
+  });
 });
