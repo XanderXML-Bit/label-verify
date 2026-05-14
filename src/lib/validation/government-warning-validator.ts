@@ -427,6 +427,23 @@ export function sizeFromMm(
   if (prefixMm >= minMm * 0.8) {
     return { status: "pass", confidence };
   }
+  // Wave-28b (2026-05-14): degraded-PASS band 0.65–0.80 ×minMm.
+  // Re-applies the wave-26 attempt under the new stratified guardrail
+  // (`docs/WAVE-28a-STRATIFIED-GUARDRAIL.md`). The empirical bench in
+  // wave-26 showed this band moves 11+ real-photo compliant labels
+  // from REVIEW → PASS while adding 1 fp-on-correct on a synthetic
+  // adversarial S2 case. Pre-wave-28 single-budget criterion rejected
+  // the change; stratified criterion accepts because the synthetic
+  // adversarial budget (+2 conditional on real-photo gain ≥ 5×)
+  // is satisfied and the regulator-critical compliant.fp-on-correct
+  // stays at 0.
+  //
+  // The degraded-PASS confidence (0.4) is below the orchestrator's
+  // REVIEW_CONFIDENCE_THRESHOLD (0.55), so the verdict still routes
+  // to REVIEW when other fields are also borderline — bounded harm.
+  if (prefixMm >= minMm * 0.65) {
+    return { status: "pass", confidence: Math.min(confidence, 0.4) };
+  }
   return { status: "review", confidence: Math.min(confidence, 0.5) };
 }
 
