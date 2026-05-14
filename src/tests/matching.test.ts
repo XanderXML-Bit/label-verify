@@ -263,6 +263,62 @@ describe("compareClass", () => {
     // earlier branch.
     expect(compareClass("IPA", "IPA", 0.9).status).toBe("pass");
   });
+
+  // ─── Wave-24: generic-class-on-label vs specific-on-application ──────
+  it("WAVE-24: declared 'Grenache' vs label 'WINE' → REVIEW", () => {
+    // ai-label-0065 corpus case. The label prints only the generic
+    // family designation; the application declares the specific
+    // varietal. Both compliant under 27 CFR §4.32. Land at REVIEW.
+    const r = compareClass("Grenache", "WINE", 0.9);
+    expect(r.status).toBe("review");
+    expect(r.reason ?? "").toMatch(/generic class/i);
+  });
+
+  it("WAVE-24: declared 'Lager' vs label 'BEER' → REVIEW", () => {
+    // ai-label-0076 corpus case.
+    const r = compareClass("Lager", "BEER", 0.9);
+    expect(r.status).toBe("review");
+  });
+
+  it("WAVE-24: declared 'Mango Lime Malt Seltzer' vs label 'MALT BEVERAGE' → REVIEW", () => {
+    // ai-label-0080 corpus case.
+    const r = compareClass("Mango Lime Malt Seltzer", "MALT BEVERAGE", 0.9);
+    expect(r.status).toBe("review");
+  });
+
+  it("WAVE-24: declared 'Bourbon' vs label 'DISTILLED SPIRITS' → REVIEW", () => {
+    const r = compareClass("Bourbon", "DISTILLED SPIRITS", 0.9);
+    expect(r.status).toBe("review");
+  });
+
+  it("WAVE-24: cross-family generic does NOT escalate (declared 'Lager' vs label 'WINE' → FAIL)", () => {
+    // Regression guard. A label printing the GENERIC name of a
+    // *different* family from the declared subtype must still FAIL —
+    // otherwise the verifier loses its sharp-rejection on cross-class
+    // wrong-GT perturbations.
+    const r = compareClass("Lager", "WINE", 0.9);
+    expect(r.status).toBe("fail");
+  });
+
+  it("WAVE-24: unknown subtype on the generic side does NOT escalate", () => {
+    // If the declared value isn't in the family's subtype set, the
+    // generic-acceptance path must NOT fire — otherwise typos and
+    // entirely-different drinks would silently pass to REVIEW.
+    const r = compareClass("ProprietaryStyleX", "BEER", 0.9);
+    // Should fall through to the final fail/review branch on
+    // Levenshtein similarity. Since "ProprietaryStyleX" vs "BEER"
+    // has very low similarity, expect fail.
+    expect(r.status).toBe("fail");
+  });
+
+  it("WAVE-24: case-insensitive on both sides", () => {
+    // The normalize step canonicalizes; the generic-family lookup
+    // works on canonical lower-case strings.
+    const r1 = compareClass("grenache", "wine", 0.9);
+    expect(r1.status).toBe("review");
+    const r2 = compareClass("GRENACHE", "Wine", 0.9);
+    expect(r2.status).toBe("review");
+  });
 });
 
 describe("compareProducer (structured)", () => {
