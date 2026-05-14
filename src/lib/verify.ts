@@ -1,13 +1,21 @@
 import { preprocessImage } from "./preprocess";
 import { GeminiFlashExtractor } from "./vision/gemini";
 import { tesseractEngine } from "./ocr/tesseract";
+import {
+  buildSecondOpinionExtractor,
+  secondOpinionAvailable,
+} from "./vision/second-opinion";
 
-// Lazy-but-memoized loader for the OpenAI extractor module. Previously
-// re-imported on every borderline second-opinion + every fallback path
-// (3 dynamic `await import("./vision/openai")` sites) — Node caches
-// the module after the first call, but each `await import` still
-// resolves a microtask. Cheap, but free is cheaper. Per Agent D
-// code-quality audit 2026-05-13.
+// Lazy-but-memoized loader for the OpenAI extractor module. Used by
+// the cross-PROVIDER FALLBACK path (primary fails entirely → retry on
+// OpenAI). NOT used by the second-opinion path anymore; that goes
+// through buildSecondOpinionExtractor which defaults to Gemini 2.5
+// Flash (wave-22, per user direction 2026-05-13).
+//
+// Previously re-imported on every borderline second-opinion + every
+// fallback path — Node caches the module after the first call, but
+// each `await import` still resolves a microtask. Cheap, but free is
+// cheaper. Per Agent D code-quality audit 2026-05-13.
 // `type OpenAiModule = typeof import("./vision/openai")` would
 // trip @typescript-eslint/consistent-type-imports; declare a typed
 // alias up front with a type-only import. The runtime import is the
@@ -566,7 +574,7 @@ export async function verifyLabel(
   if (
     govReviewBorderline &&
     !fallbackUsed &&
-    process.env.OPENAI_API_KEY &&
+    secondOpinionAvailable(process.env) &&
     !externalAbort?.aborted
   ) {
     const soStart = performance.now();
@@ -581,11 +589,15 @@ export async function verifyLabel(
       externalAbort.addEventListener("abort", onExternalAbortSo, { once: true });
     }
     try {
-      const soMod = await loadOpenAiModule();
-      const soExtractor = new soMod.GPT4oMiniExtractor({
-        apiKey: process.env.OPENAI_API_KEY,
-        modelVersion: process.env.MODEL_FALLBACK ?? "gpt-5.4-nano",
-      });
+      // Wave-22: default to Gemini 2.5 Flash (smarter than primary
+      // Flash-Lite, same price tier). Falls back to OpenAI nano if
+      // SECOND_OPINION_PROVIDER=openai or GOOGLE_API_KEY is missing.
+      const soExtractor = await buildSecondOpinionExtractor(process.env);
+      if (!soExtractor) {
+        // Shouldn't happen — secondOpinionAvailable() returned true above.
+        // Defensive: skip the call rather than throw.
+        throw new Error("second-opinion extractor unavailable");
+      }
       const soResult = await soExtractor.extract(pre.buffer, {
         ocrWords,
         signal: soCtrl.signal,
