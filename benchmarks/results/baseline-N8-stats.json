@@ -1,0 +1,78 @@
+{
+  "n": 8,
+  "stats": {
+    "true-pass": {
+      "n": 8,
+      "mean": 39.25,
+      "sd": 7,
+      "min": 31,
+      "max": 48
+    },
+    "true-reject": {
+      "n": 8,
+      "mean": 164.25,
+      "sd": 1.56,
+      "min": 162,
+      "max": 167
+    },
+    "false-fail": {
+      "n": 8,
+      "mean": 11.88,
+      "sd": 0.33,
+      "min": 11,
+      "max": 12
+    },
+    "review-on-correct": {
+      "n": 8,
+      "mean": 41.25,
+      "sd": 7.71,
+      "min": 31,
+      "max": 51
+    },
+    "true-fail": {
+      "n": 8,
+      "mean": 72,
+      "sd": 0,
+      "min": 72,
+      "max": 72
+    },
+    "review-on-wrong": {
+      "n": 8,
+      "mean": 4.75,
+      "sd": 1.56,
+      "min": 2,
+      "max": 7
+    },
+    "error-on-correct": {
+      "n": 8,
+      "mean": 1,
+      "sd": 0,
+      "min": 1,
+      "max": 1
+    },
+    "error-on-wrong": {
+      "n": 8,
+      "mean": 1,
+      "sd": 0,
+      "min": 1,
+      "max": 1
+    },
+    "false-pass-on-correct": {
+      "n": 8,
+      "mean": 4.63,
+      "sd": 1.49,
+      "min": 3,
+      "max": 7
+    }
+  },
+  "source_files": [
+    "cross-pair-2026-05-14T00-09-22-050Z.json",
+    "cross-pair-2026-05-14T00-19-45-345Z.json",
+    "cross-pair-2026-05-14T00-55-06-427Z.json",
+    "cross-pair-2026-05-14T00-55-07-010Z.json",
+    "cross-pair-2026-05-14T01-06-39-075Z.json",
+    "cross-pair-2026-05-14T01-19-53-508Z.json",
+    "cross-pair-2026-05-14T01-20-30-409Z.json",
+    "cross-pair-2026-05-14T01-28-09-681Z.json"
+  ]
+}
