@@ -29,19 +29,25 @@ vi.mock("@/lib/ocr/tesseract", () => ({
   warmupTesseract: async () => undefined,
 }));
 
-// Mock the OpenAI extractor module the second-opinion path dynamically
-// imports. Each test installs its own mock implementation.
+// Mock the second-opinion selector module. Wave-22 routes the borderline
+// recheck through buildSecondOpinionExtractor(), which (by default) picks
+// Gemini 2.5 Flash — but tests don't care WHICH provider runs, only that
+// the orchestration logic threads the result correctly. Mocking the
+// selector keeps the test independent of provider choice and avoids
+// reaching for any real SDK.
 const mockSecondOpinionExtract = vi.fn<
   (...args: Parameters<Extractor["extract"]>) => ReturnType<Extractor["extract"]>
 >();
-vi.mock("@/lib/vision/openai", () => {
-  class GPT4oMiniExtractor {
-    id = "openai:second-opinion-mock";
-    networkRequired = true;
-    constructor(_opts: { apiKey: string; modelVersion?: string }) {}
-    extract = mockSecondOpinionExtract;
-  }
-  return { GPT4oMiniExtractor };
+vi.mock("@/lib/vision/second-opinion", () => {
+  return {
+    buildSecondOpinionExtractor: async () => ({
+      id: "mock:second-opinion",
+      networkRequired: true,
+      extract: mockSecondOpinionExtract,
+    }),
+    secondOpinionAvailable: (env: { GOOGLE_API_KEY?: string; OPENAI_API_KEY?: string }) =>
+      !!env.GOOGLE_API_KEY || !!env.OPENAI_API_KEY,
+  };
 });
 
 async function tinyJpeg(): Promise<Buffer> {
