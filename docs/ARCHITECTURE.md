@@ -35,10 +35,10 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 | Vision extractor (second-opinion) | **Gemini 2.5 Flash** via `@google/generative-ai` | Smarter same-provider second-opinion fires on borderline-Gov-Warning REVIEW. Wave 22 swap (2026-05-13) — see [`WAVE-22-FINDINGS.md`](WAVE-22-FINDINGS.md). |
 | Vision extractor (cross-provider fallback) | **GPT-5.4-nano** via `openai` | Provider-diversity safety net on primary provider failure (5xx / timeout / abort). Distinct from the second-opinion above. |
 | OCR | **tesseract.js 5** | Server-side only. Used for the Government-Warning prefix bbox + pixel-density measurements; not used for text reading (the vision extractor returns the text directly). |
-| Field matching | Hand-written comparators in `src/lib/matchers/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
+| Field matching | Hand-written comparators in `src/lib/matching/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
 | Government-Warning validation | `src/lib/validation/` | Four subscores: text exact match (string predicate), all-caps prefix (string predicate), bold prefix (classical CV stroke-width transform on OCR-anchored pixels), size threshold (bbox dimensions vs declared net contents). |
 | Schemas | **Zod** | All inbound JSON validated at the route boundary. Same schemas reused by the CLI. |
-| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 474 in-process tests, Playwright for the 9 GUI E2E specs. |
+| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 628 in-process tests across 65 files, Playwright for the 9 GUI E2E specs. |
 | Benchmarks | Custom harness in `benchmarks/` and `bin/labelverify-bench.ts` | The bake-off (`bench:bakeoff`) and the cross-pair benchmark (`bench:cross-pair`). |
 | Deploy | **Vercel** (Hobby plan) | Free, public URL, post-deploy smoke workflow validates `/api/health` on every push to `main`. |
 
@@ -52,7 +52,7 @@ For one POST to `/api/verify`:
    - The vision extractor (`src/lib/vision/gemini.ts`) issues a single structured-output JSON-schema call to Gemini 3.1 Flash Lite. The prompt requests all seven declared fields plus the Government-Warning block (`raw_text`, `prefix_text`, `prefix_bbox`, `prefix_appears_bold`, `prefix_appears_caps`).
    - Concurrently, `tesseract.js` produces word-level bounding boxes and confidences. The OCR text is not passed into the vision prompt; OCR exists for the Government-Warning bold/size measurements only.
    - Both calls share an `AbortController` bounded by the per-mode vision timeout. The Government-Warning validator awaits OCR up to an 8-second cap before falling back to model-self-reported bold/caps flags.
-4. **Match fields** (`src/lib/matchers/`). Seven independent comparators run in parallel (`Promise.all`). Each returns `{ status: pass | fail | review, expected, actual, confidence, reason? }`. Notable semantics:
+4. **Match fields** (`src/lib/matching/`). Seven independent comparators run in parallel (`Promise.all`). Each returns `{ status: pass | fail | review, expected, actual, confidence, reason? }`. Notable semantics:
    - `brand`: Levenshtein + token-set similarity. Thresholds in `brand.ts`.
    - `abv`: percentage-point tolerance differentiated by `class_category` (TTB rules differ for beer / wine / spirits). See `abv.ts`.
    - `net_contents`: value + unit comparison with `max(1.5 ml, 0.5 %)` tolerance after unit conversion.
@@ -65,7 +65,7 @@ For one POST to `/api/verify`:
    - **Caps** — `isPrefixAllCaps(prefix_text)` after small-caps Unicode folding.
    - **Bold** — `measureRelativeBold` runs a classical-CV stroke-width transform on the OCR-bbox-anchored pixels (greyscale → threshold-binarise at 128 → per-column mean dark-run-length, normalised by bbox height) and compares prefix stroke to body stroke. Falls back to the model's `prefix_appears_bold` flag at advisory 0.6 confidence when OCR cannot locate the prefix.
    - **Size** — bbox height converted to mm via declared net contents, compared to §16.22 minima (1 mm small containers / 2 mm large).
-6. **Aggregate verdict** (`src/lib/score.ts`). Worst-of across all field statuses plus the Government-Warning status. A single FAIL on any regulated field produces a FAIL verdict.
+6. **Aggregate verdict** (in `src/lib/verify.ts` — the `aggregateVerdict` helper). Worst-of across all field statuses plus the Government-Warning status. A single FAIL on any regulated field produces a FAIL verdict.
 7. **Image quality** (`src/lib/verify.ts`). Independent of the verdict. Derived from per-field extractor confidence on fields the model actually read (`value !== null`). `bad` = mean < 0.6 and min < 0.3; `low` = mean < 0.6; otherwise `good`. When image quality is `bad` and the worst-of rule would have returned FAIL, the orchestrator routes to REVIEW with a re-photograph reason — a corrupt photo of a compliant label is not non-compliance.
 8. **Confidence-based deferral**. If every field PASSED but any field's extractor confidence is below `REVIEW_CONFIDENCE_THRESHOLD = 0.55`, downgrade PASS → REVIEW with a citation-grade reason identifying the borderline field.
 9. **No-OCR Government-Warning gate**. If OCR failed or timed out AND the Government-Warning status is PASS at confidence below 0.55, route to REVIEW. The bold and size subscores fell back to model-self-reported flags without a pixel-tight measurement; a human is the right adjudicator.

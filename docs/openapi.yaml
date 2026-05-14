@@ -173,7 +173,30 @@ components:
         reviewReasons:
           type: array
           items: { type: string }
-        fallbackUsed: { type: boolean }
+        fallbackUsed:
+          type: string
+          description: |
+            Present only when the cross-provider primary-failure
+            fallback fired (default `gpt-5.4-nano` via OpenAI). The
+            value is the model id that actually served the response.
+            Distinct from `secondOpinion` below.
+        secondOpinion:
+          type: object
+          description: |
+            Present only when the borderline-Gov-Warning recheck
+            path fired (wave 22, ~5–15 % of verifications). The
+            default second-opinion model is `gemini-2.5-flash`
+            (configurable via `SECOND_OPINION_PROVIDER` /
+            `SECOND_OPINION_MODEL`). Use this for surfacing
+            two-model agreement / disagreement to the operator.
+          required: [modelId, governmentWarning, agreesWithPrimary, reason, latencyMs]
+          properties:
+            modelId: { type: string }
+            governmentWarning:
+              $ref: "#/components/schemas/GovernmentWarning"
+            agreesWithPrimary: { type: boolean }
+            reason: { type: string }
+            latencyMs: { type: number }
     Error:
       type: object
       required: [error]
@@ -209,7 +232,11 @@ paths:
                   description: JSON-encoded DeclaredFields
                 mode:
                   type: string
-                  description: Optional model-mode id (e.g. "default").
+                  description: |
+                    Legacy field — ignored. The route always runs the
+                    single production "default" mode. Present for
+                    backwards compatibility with older clients.
+                  deprecated: true
           application/json:
             schema:
               type: object
@@ -217,7 +244,9 @@ paths:
               properties:
                 url: { type: string, format: uri }
                 declared: { $ref: "#/components/schemas/DeclaredFields" }
-                mode: { type: string }
+                mode:
+                  type: string
+                  deprecated: true
       responses:
         "200":
           description: Verification succeeded
@@ -498,10 +527,11 @@ paths:
         anonymous callers (the page-load banner consumes this to warn
         about missing provider keys without leaking which provider
         drives the primary path). The detailed shape (`model`,
-        `fallbackModel`, `providers`, `version`, `timestamp`, `notes`)
-        is gated on `Authorization: Bearer ${DEBUG_TOKEN}` via a
-        constant-time comparison. When `DEBUG_TOKEN` is unset the
-        detailed shape is unreachable.
+        `secondOpinion`, `fallback`, `providers`, `version`,
+        `timestamp`, `debugTokenEnabled`, `ready`, `notes`) is gated
+        on `Authorization: Bearer ${DEBUG_TOKEN}` via a constant-time
+        comparison. When `DEBUG_TOKEN` is unset the detailed shape
+        is unreachable.
       responses:
         "200":
           description: OK (minimal or detailed depending on caller)
@@ -515,8 +545,35 @@ paths:
                   service: { type: string }
                   ready: { type: boolean }
                   version: { type: string }
-                  model: { type: string }
-                  providers: { type: object }
+                  model:
+                    type: string
+                    description: |
+                      Primary extractor model id. Defaults to
+                      `gemini-3.1-flash-lite`; overridable via
+                      `MODEL_PRIMARY`.
+                  secondOpinion:
+                    type: [string, "null"]
+                    description: |
+                      Resolved second-opinion model id (wave 22).
+                      Default `gemini-2.5-flash`; configurable via
+                      `SECOND_OPINION_PROVIDER` / `SECOND_OPINION_MODEL`.
+                      `null` when no second-opinion key is available.
+                  fallback:
+                    type: [string, "null"]
+                    description: |
+                      Cross-provider primary-failure fallback model id
+                      (`MODEL_FALLBACK`, default `gpt-5.4-nano`). Fires
+                      only when the primary Gemini call fails entirely.
+                      Distinct from `secondOpinion`.
+                  providers:
+                    type: object
+                    description: |
+                      Per-vendor key-availability bitmap:
+                      `{ google, openai, anthropic, openrouter }`.
+                  debugTokenEnabled: { type: boolean }
+                  notes:
+                    type: array
+                    items: { type: string }
                   timestamp: { type: string, format: date-time }
 
   /api/warmup:

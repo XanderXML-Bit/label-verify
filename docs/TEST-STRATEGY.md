@@ -6,7 +6,7 @@ How the project is tested, what corpus the benchmark runs against, what statisti
 
 | Surface | Count | Runtime | Purpose |
 |---|---:|---|---|
-| Vitest specs (unit + integration) | 474 across 56 files | ~10 s (`npm test`) | Pipeline correctness: matchers, validators, scorers, route handlers, schemas, CLI argument parsing. |
+| Vitest specs (unit + integration) | 628 across 65 files | ~10 s (`npm test`) | Pipeline correctness: matchers, validators, scorers, route handlers, schemas, CLI argument parsing. |
 | Playwright E2E specs | 9 spec files | ~30–60 s with `npm run dev` (`npm run test:e2e`) | Browser-driven user-flow validation. Covers idle screen + samples, application-input prefill, batch autopair, form validation, friendlyError mapping, upload rejection, sample retry, API status banner, extract-only. |
 | Benchmark harness | `benchmarks/run.ts` (T-variant tournament) + `bin/labelverify-bench.ts` (cross-pair) | ~5 min routine, ~30 min full bake-off, ~15 min cross-pair | Accuracy + latency measurement on the corpus. |
 | CLI smoke tests | 3 test files (`cli.test.ts`, `cli-web.test.ts`, `bench-cross-pair.test.ts`) | included in Vitest | Subprocess-level argument parsing, help, exit-code semantics for all three CLIs. |
@@ -87,7 +87,7 @@ Runs every image × {correct ground-truth, perturbed wrong-declared} through the
 - **Net contents**: `pass` if values match after unit conversion within `max(1.5 ml, 0.5 %)` tolerance. "12 fl oz" matches "355 ml" within ~0.1 ml.
 - **Brand name**: normalize (Unicode-fold, lowercase, strip punctuation, collapse whitespace), then `pass` if Levenshtein ratio ≥ 0.92 AND token-set ratio ≥ 0.85. The token-set backstop prevents single-edit short brands from sneaking past Levenshtein.
 - **Producer / address**: structured per-component comparison (street, city, state, postal_code, country). A single mismatched component routes to REVIEW rather than collapsing the whole field to FAIL. US-domestic inference (label prints state code but no explicit "USA") is gated on a strict 2-letter state code plus at least one corroborating component.
-- **Country**: synonym table across 7 languages and 25 countries (`src/lib/matchers/country.ts`). French `RÉPUBLIQUE FRANÇAISE` matches `France`; Japanese `日本` matches `Japan`.
+- **Country**: synonym table across 7 languages and 25 countries (`src/lib/matching/country.ts`). French `RÉPUBLIQUE FRANÇAISE` matches `France`; Japanese `日本` matches `Japan`.
 - **Class / type**: alias table with two tiers — `SAFE_ALIASES` (auto-PASS for known interchangeable terms like Whisky/Whiskey) and `REVIEW_ALIASES` (route to REVIEW for terms that are commonly used interchangeably but are distinct under TTB classification, e.g. Lager / Pilsner).
 - **Government Warning** has four subscores:
   - `text`: normalized exact match against the canonical §16.21 body.

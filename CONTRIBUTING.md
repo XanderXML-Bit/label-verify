@@ -14,7 +14,7 @@ cp .env.example .env.local
 # Fill in at least GOOGLE_API_KEY. OPENAI_API_KEY enables the fallback.
 npm install
 npm run dev          # → http://localhost:3000
-npm run test         # full vitest suite (~470 tests, ~10 s)
+npm run test         # full vitest suite (~628 tests across 65 files, ~10 s)
 ```
 
 If `npm install` fails on Windows due to native module compile, you
@@ -57,7 +57,7 @@ Three files touch:
      }
    }
    ```
-   Use the EXTRACTION_PROMPT in `src/lib/vision/prompts.ts` verbatim
+   Use the EXTRACTION_PROMPT in `src/lib/vision/prompt.ts` verbatim
    — it has the prompt-injection hardening baked in.
 2. **Technique registration** in `benchmarks/techniques.ts`. Add a
    new entry to `BUILTIN_TECHNIQUES`:
@@ -98,8 +98,8 @@ the selector via the `--routine` / `--smoke` precedence rules
 
 ## The prompt-hash contract
 
-`src/lib/vision/prompts.ts` exports `EXTRACTION_PROMPT_HASH` (sha256
-of the prompt string). Every extractor reports the hash alongside
+`src/lib/vision/prompt.ts` exports `EXTRACTION_PROMPT` and `getPromptHash()` (sha256
+of the prompt string + schema shape). Every extractor reports the hash alongside
 its result. This lets a reviewer prove that two benchmark runs used
 the same prompt — critical when comparing accuracy numbers across
 git revisions.
@@ -115,7 +115,7 @@ Every PR must pass:
 ```bash
 npm run typecheck    # tsc --noEmit, zero output expected
 npm run lint         # next lint, only pre-existing warnings allowed
-npm run test         # full vitest suite (~470 tests, ~10 s)
+npm run test         # full vitest suite (~628 tests across 65 files, ~10 s)
 ```
 
 The `bench:routine` script runs in a separate workflow on demand

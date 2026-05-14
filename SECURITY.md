@@ -85,7 +85,7 @@ and the per-route handlers for the exact implementations.
 - Vision extraction prompt Rule #11 explicitly instructs the model
   to ignore any instructions found inside the `<untrusted_ocr>`
   block.
-- See `src/lib/vision/prompts.ts` and `src/lib/ocr/sanitise.ts`.
+- See `src/lib/vision/prompt.ts` (`buildOcrHintSection` performs the sanitization + length cap before the OCR text reaches any model).
 
 ### Rate limiting
 - Per-IP token bucket on `/api/verify`, `/api/extract`, and
@@ -136,9 +136,9 @@ and the per-route handlers for the exact implementations.
 - TypeScript strict mode; no `any` in production code paths
   (verified by tsc).
 - Next.js 15 + React 19 + Vitest 2 — kept current as of
-  2026-05-12.
+  2026-05-14.
 - `npm audit --omit=dev` (production deps): **0 vulnerabilities** as
-  of 2026-05-12 night. The earlier 2 moderate findings on `postcss`
+  of 2026-05-14. The earlier 2 moderate findings on `postcss`
   (XSS via unescaped `</style>`, GHSA-qx2v-qp2m-jg93) were resolved
   by bumping the direct `postcss` devDep from 8.4.49 to 8.5.14 — npm
   audit's suggested "fix" was a 6-major-version Next.js downgrade
@@ -192,4 +192,5 @@ This is a prototype, so we acknowledge:
 
 All security-relevant changes are tagged `Security:` in
 `CHANGELOG.md` and have commit messages explaining the threat
-they address. Last security audit pass: 2026-05-12.
+they address. Last security audit pass: 2026-05-14 (multi-agent
+docs+code audit + npm-audit re-verification).

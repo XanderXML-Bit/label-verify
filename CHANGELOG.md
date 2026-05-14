@@ -4,6 +4,205 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Docs + UI consolidation pass + audit-driven fact refresh] — 2026-05-14
+
+### Docs
+
+- Refreshed every user-facing doc against actual project state.
+  Stale claims corrected across `README.md`, `CONTRIBUTING.md`,
+  `SECURITY.md`, `docs/ARCHITECTURE.md`, `docs/TEST-STRATEGY.md`,
+  `docs/DEPLOYMENT.md`, `docs/DEPLOYMENT-CHECKLIST.md`,
+  `docs/PRODUCTION-SMOKE.md`, `docs/MODEL-SELECTION.md`,
+  `docs/FAILURE-MODES.md`:
+  - Test count `~470/506` → **628** across **65** files.
+  - Bake-off variants `13` → **16**.
+  - Headline pass-rate `~76 %` → **65.1 % deterministic across N=12
+    successive cross-pair benches** (waves 22–25 stabilised the
+    noise band).
+  - `src/lib/matchers/` → `src/lib/matching/` (directory rename).
+  - `src/lib/vision/prompts.ts` → `src/lib/vision/prompt.ts`.
+  - `src/lib/score.ts` reference replaced with "the `aggregateVerdict`
+    helper in `src/lib/verify.ts`" — the standalone scorer was inlined.
+  - `EXTRACTION_PROMPT_HASH` → `EXTRACTION_PROMPT` + `getPromptHash()`.
+  - `src/lib/ocr/sanitise.ts` reference dropped — sanitization lives
+    in `buildOcrHintSection` (`src/lib/vision/prompt.ts`).
+  - Second-opinion vs cross-provider-fallback paths disentangled
+    everywhere (pre-wave-22 docs conflated them).
+  - New env vars documented: `MODEL_PRIMARY`,
+    `SECOND_OPINION_PROVIDER`, `SECOND_OPINION_MODEL`.
+- Pruned orphan archive docs:
+  - `docs/archive/REVIEW-PASS.md` (broken self-link).
+  - `docs/archive/UI-SPEC.md` (UI shipped; spec dead paper).
+- Tailwind config comment reference to `docs/UI-SPEC.md` trimmed.
+
+### Code
+
+- `src/lib/verify.ts:buildDefaultExtractor`: `MODEL_PRIMARY` env-var
+  override (operations escape hatch for future Google A/B without
+  a code change). Default unchanged: `gemini-3.1-flash-lite`.
+- `src/app/api/health/route.ts`: detailed health response now
+  includes `secondOpinion` field alongside `model` (primary) and
+  `fallback` (primary-failure cross-provider). Each is independent.
+
+### UI — Simple-mode prune (user direction)
+
+- `Download JSON` / `Download CSV` result-panel buttons →
+  `.detailed-only` (technical exports; non-technical reviewer
+  doesn't need them on the simple surface).
+- `About this prototype` idle-screen `<details>` → `.detailed-only`.
+- Long intro paragraph → simple/detailed split. Simple gets the
+  one-line "Upload a label image to get a pass / fail / review
+  verdict.". Detailed keeps the full description.
+- Skip-/re-upload affordances kept; mode-toggle layer unchanged.
+
+### Validation
+
+- 628/628 vitest tests pass. `tsc --noEmit` clean. `next lint`
+  clean. `npm audit --omit=dev` reports 0 production-dependency
+  vulnerabilities. Live production health endpoint returns
+  `{ ok:true, ready:true }`. Playwright sub-agent confirmed the
+  Simple/Detailed mode toggle correctly hides/shows the pruned
+  surfaces.
+
+## [Wave 27: primary-model bake-off — no architecture change] — 2026-05-14
+
+### Decision
+
+- Confirmed by direct head-to-head bench (`gemini-3.1-flash-lite`
+  vs `gemini-2.5-flash` vs `gemini-3-flash-preview`, each tested as
+  the **primary** with second-opinion disabled): the current
+  architecture is correct.
+  - `gemini-3.1-flash-lite` Pareto-dominates on
+    latency × cost × accuracy × error rate.
+  - `gemini-2.5-flash` is 5.8× worse as primary on false-fails
+    (3 → 17.5), confirming it belongs on the second-opinion path
+    (wave 22), not the primary.
+  - `gemini-3-flash-preview` has the best raw pass-rate (+7.5 pp)
+    but violates fp-on-correct (+2 deterministic), latency
+    (p50 17 s vs 2.6 s), error rate (5× higher), and cost (6×) —
+    disqualified.
+
+### Artifacts
+
+- `docs/WAVE-27-PRIMARY-BAKEOFF.md` — full methodology + results.
+- `benchmarks/results/bakeoff/{compare-bakeoff.js,
+  gemini-3.1-flash-lite-run{1,2}.json,
+  gemini-2.5-flash-run{1,2}.json,
+  gemini-3-flash-preview-run1.json}`.
+
+## [Waves 26 + 21: pre-registered reverts] — 2026-05-13/14
+
+### Reverted at the regulator-critical guardrail
+
+- **Wave 26** (size-threshold degraded-PASS band 0.65–0.80): N=3
+  bench showed +1 deterministic false-pass-on-correct on synthetic
+  S2 case `ai-label-0049`. Pass-rate gained +7 pp but the user
+  principle "false-pass-on-correct is worse than review" disqualified
+  the change. Methodology lesson banked: my measurement script
+  averaged Tesseract bbox heights, but the validator uses MAX —
+  any future size-threshold experiment must use the same
+  aggregation as the validator end-to-end.
+- **Wave 21** (prompt-engineered `prefix_taller_than_body`): N=1
+  bench showed +14.4 pp pass-rate but +6 deterministic
+  false-pass-on-correct. Same revert mechanism. The
+  relative-tallness question is structurally wrong for synthetic
+  S-cases because the generator's "normal" prefix is already
+  larger than body text — 0.45× of normal is still taller than
+  body, so the model correctly answers "yes" and false-passes.
+
+## [Wave 25: null-extraction safety net] — 2026-05-13
+
+### What changed
+
+- New `src/lib/verify.ts` §5c safety net: when the FAIL verdict is
+  driven SOLELY by null-extraction comparators (status=fail at
+  confidence ≤ 0.05 — the comparator's null-sentinel pattern) and
+  the Gov-Warning isn't FAIL, upgrade FAIL → REVIEW with a
+  "could not read [fields] from the submitted image" reason. Sister
+  safety net to §5b (image-quality), which misses null-extraction
+  cases because the image-quality calc explicitly filters null
+  values to avoid penalising legitimately-absent fields like
+  country on US-domestic labels.
+- Recovery: 1 deterministic false-fail (`deg-beer-0001` — class_type
+  region overlaid by a peeling-degradation graphic on the photo).
+
+### Bench
+
+- false-fail 4 → **3** (cumulative vs baseline: 11.9 → 3, −8.9).
+- fp-on-correct unchanged at 5 (within ±2σ baseline noise).
+- All 9 buckets identical across all 3 wave-25 replicates.
+- Doc: `docs/WAVE-25-FINDINGS.md`.
+
+## [Wave 24: class_type generic-on-label acceptance] — 2026-05-13
+
+### What changed
+
+- New `GENERIC_CLASS_FAMILIES` table in `src/lib/matching/class.ts`
+  (wine / beer / distilled spirits / fortified wine → known subtypes).
+  When the LABEL canonicalizes to a generic family name (e.g.
+  "WINE", "BEER", "MALT BEVERAGE", "DISTILLED SPIRITS") AND the
+  DECLARED canonicalizes to (or token-contains) a known subtype
+  (e.g. "Grenache", "Lager", "Mango Lime Malt Seltzer", "Bourbon"),
+  route to REVIEW at confidence 0.65. Conservative landing
+  preserves sharp rejection on wrong-GT perturbations.
+- Recovery: 3 deterministic false-fails on AI-photo labels
+  (`ai-label-0065` Grenache/WINE, `ai-label-0076` Lager/BEER,
+  `ai-label-0080` Mango Lime Malt Seltzer/MALT BEVERAGE). All
+  three are compliant under TTB class-of-fitness regs (27 CFR
+  §4.32 / §7.22 / §5.22).
+
+### Bench
+
+- false-fail 7 → **4**. Cumulative −7.9 vs baseline.
+- fp-on-correct held at 5.
+- Doc: `docs/WAVE-24-FINDINGS.md`.
+
+## [Wave 23: Gov-Warning text case-fold] — 2026-05-13
+
+### What changed
+
+- `normalizeForTextMatch` now case-folds (`.toLowerCase()`) as its
+  final step. 27 CFR §16.21 prescribes the prefix in caps + bold
+  (still enforced separately by `scoreCaps` on the un-normalized
+  prefix), but says nothing about body case. The pre-wave-23
+  strict-equality compare treated ALL CAPS body as a paraphrase
+  defect and emitted `text=fail` at confidence 1.0.
+- Recovery: 5 deterministic false-fails on AI-photo labels with
+  ALL CAPS body (`ai-label-0002/5/6` → PASS, `0007/0008` → REVIEW
+  due to size=review co-fail).
+
+### Bench
+
+- false-fail 12 → **7** (cumulative −4.9 already).
+- fp-on-correct held at 5.
+- Doc: `docs/WAVE-23-FINDINGS.md`.
+
+## [Wave 22: Gemini 2.5 Flash second-opinion (smarter, same provider)] — 2026-05-13
+
+### What changed
+
+- New `src/lib/vision/second-opinion.ts` selector. The
+  REVIEW-trigger recheck path now uses **Gemini 2.5 Flash** by
+  default (same provider as the primary, smarter on borderline
+  reasoning) instead of GPT-5.4-nano. Cross-provider OpenAI
+  fallback remains wired separately for the primary-failure path.
+  Env vars: `SECOND_OPINION_PROVIDER` (`gemini` default | `openai`),
+  `SECOND_OPINION_MODEL` (per-provider model id override).
+- Health endpoint exposes a `secondOpinion` field alongside `model`
+  and `fallback` so operators can verify the resolved model id
+  matches expectations.
+
+### Bench
+
+- true-reject 164.3 → **168** (+3.7, outside +2σ — sharper
+  wrong-GT rejection).
+- review-on-wrong 4.8 → **1** (paired transfer — same cases moved
+  from review to reject).
+- false-pass-on-correct unchanged (5, within ±2σ baseline noise).
+- 6 of 9 buckets became deterministic across replicates (baseline
+  had ±10 pp pass-rate jitter on the same corpus).
+- Doc: `docs/WAVE-22-FINDINGS.md`.
+
 ## [Wave 7: surgical false-positive fix + image-zoom UI + user-batch fix] — 2026-05-13 late
 
 ### What changed
