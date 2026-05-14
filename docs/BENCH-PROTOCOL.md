@@ -47,13 +47,45 @@ For a code change you want to test (call it `experiment-X`):
 2. Run the bench N≥3 times on the same corpus, same concurrency.
 3. Aggregate the new set into its own `aggregate-<iso>.md`.
 
-### Step 3 — Decide
+### Step 3 — Decide (corpus-wide metrics)
 
 Compare the experiment's `mean` to the baseline's `mean ± 2σ`:
 
 - **|Δmean| ≤ 2σ_baseline** → effect is within noise. Claim NO conclusion. Either gather more samples (cheap if N=3, expensive if N=10), or accept that the change is benign on accuracy and decide on other grounds (latency, cost, complexity).
 - **Δmean > 2σ_baseline** (favourable direction) → defensible improvement claim. Update `.best-known.json` with the mean (not the best single draw).
 - **Δmean > 2σ_baseline** (adverse direction) → defensible regression claim. Revert or fix.
+
+### Step 3b — Stratified pre-registered guardrail (wave 28a, 2026-05-14)
+
+The single corpus-wide budget above is necessary but not sufficient. Wave-26 demonstrated the failure mode: a single synthetic adversarial false-pass-on-correct counted equivalently to one real-photo compliant true-pass under the old criterion, which over-rejected a +11.5-real-photo-true-pass gain. The stratified criterion replaces the single budget for any wave that touches the orchestrator or comparators.
+
+Each cross-pair record stratifies by its `gov_warning_case` GT tag via `src/lib/bench-stratify.ts` into one of: `compliant` (real-photo C0 + synthetic compliant + untagged baseline), `adversarial` (B/S/T/C-not-C0/X defect cases + `non-compliant-*` + `missing` + `N1_*`), `quality` (Q*-prefixed degradation). The CLI report:
+
+```sh
+npx tsx bin/bench-stratified-report.ts <run.json> [<run2.json> ...]
+```
+
+Hard criteria (must hold for the experiment to ship):
+
+| Stratum × bucket | Criterion | Rationale |
+|---|---|---|
+| **compliant.false-pass-on-correct** | must not increase | Regulator-critical. Real-photo / compliant baseline is the production-shape stratum. fp here is the strict ≤ pre-wave-28 criterion. |
+| **compliant.false-fail** | must not increase by more than +1 | Soft slack for single-image jitter. Persistent +2 or worse → fail. |
+
+Conditional criteria:
+
+| Stratum × bucket | Criterion | Rationale |
+|---|---|---|
+| **adversarial.false-pass-on-correct** | may increase by up to +2 if matched by a `compliant.review-on-correct → compliant.true-pass` shift of at least 5× | Synthetic adversarial fp is smaller real-world harm than chronic compliant-review friction. The 5× ratio is the operator's stated preference. If the compliant uplift is absent or small, default-strict applies. |
+| **adversarial.false-pass-on-correct** | default strict: must not increase | When the compliant uplift gate is not met, fall back to the pre-wave-28 single-budget criterion. |
+
+Informational only:
+
+| Stratum × bucket | Criterion |
+|---|---|
+| `quality.*` | No hard budget. The quality stratum tests image-quality REVIEW routing, not compliance. Report changes; do not gate on them. |
+
+See `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the retroactive wave-26 re-evaluation that motivated this protocol upgrade.
 
 ### Step 4 — Per-image consistency analysis
 
