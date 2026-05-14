@@ -205,10 +205,19 @@ TTB-defensible verdict:
    single subscore failure surfaces in the reason field with
    reg citation.
 
-3. **Auto-fallback.** If Gemini fails (network, rate-limit, schema
+3. **Cross-provider auto-fallback.** If primary Gemini fails (network, rate-limit, schema
    parse error), the request retries against GPT-5.4-nano with a
    fresh budget. A yellow banner on the result tells the reviewer
-   which provider answered, so they can opt to re-verify.
+   which provider answered, so they can opt to re-verify. Distinct
+   from the borderline-Gov-Warning second-opinion (Gemini 2.5 Flash
+   since wave 22).
+
+4. **Borderline-Gov-Warning second-opinion.** When the primary lands
+   on REVIEW for the Gov-Warning, the orchestrator fires a single
+   call against the configured second-opinion model (default
+   `gemini-2.5-flash`, switchable to OpenAI via `SECOND_OPINION_PROVIDER`).
+   Agreement / disagreement renders inline; the bench shows this
+   path cleanly reduces wrong-GT review-on-wrong by ~3.7 cases.
 
 ---
 

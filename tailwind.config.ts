@@ -13,7 +13,7 @@ const config: Config = {
       colors: {
         // High-contrast palette tuned for the 55+ reviewer audience.
         // Pass / Fail / Review never communicate by color alone — icon + word
-        // are always present (see docs/UI-SPEC.md §1.5).
+        // are always present.
         //
         // Verdict-review uses yellow-800 (#854d0e) not yellow-700 (#a16207):
         // the chip rendered at `text-xs` (12px) on `bg-yellow-100` (#fef3c7)

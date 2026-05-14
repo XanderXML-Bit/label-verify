@@ -52,11 +52,13 @@ CHECKLIST cover acquisition.
 
 | Var | Required? | Purpose |
 |-----|-----------|---------|
-| `GOOGLE_API_KEY` | **Yes** | Primary vision tier (Gemini 3.1 Flash Lite). |
-| `OPENAI_API_KEY` | Recommended | Auto-fallback (GPT-5.4-nano) when Gemini fails. |
+| `GOOGLE_API_KEY` | **Yes** | Primary vision tier (Gemini 3.1 Flash Lite) + default second-opinion model (Gemini 2.5 Flash). |
+| `OPENAI_API_KEY` | Recommended | Cross-provider primary-failure fallback (GPT-5.4-nano). Used only when the primary Gemini call fails entirely (5xx / timeout / abort) — not the second-opinion path. |
 | `OPENROUTER_API_KEY` | Optional | Used only by the bake-off harness (not the deployed verify path). |
 | `MODEL_PRIMARY` | Optional | Override the primary model id. Default: `gemini-3.1-flash-lite`. |
-| `MODEL_FALLBACK` | Optional | Override the fallback model id. Default: `gpt-5.4-nano`. |
+| `MODEL_FALLBACK` | Optional | OpenAI model id used for the primary-failure fallback. Default: `gpt-5.4-nano`. |
+| `SECOND_OPINION_PROVIDER` | Optional | `gemini` (default) or `openai`. Routes the borderline-Gov-Warning recheck. Wave 22 added the same-provider Gemini path. |
+| `SECOND_OPINION_MODEL` | Optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
 | `VISION_TIMEOUT_MS` | Optional | Wall-clock budget for the vision call. Default: `60000`. |
 | `MAX_BATCH_SIZE` | Optional | Hard cap on uploads per batch request. Default: `1000`. |
 | `RATE_LIMIT_PER_MIN` | Optional | Per-IP per-endpoint cap on the public demo. Default: `60`. |

@@ -1029,9 +1029,18 @@ function round(n: number): number {
 }
 
 let cachedExtractor: GeminiFlashExtractor | null = null;
+let cachedExtractorVersion: string | undefined;
 function buildDefaultExtractor(): GeminiFlashExtractor {
-  if (cachedExtractor) return cachedExtractor;
   const apiKey = process.env.GOOGLE_API_KEY;
+  // Operations escape hatch: MODEL_PRIMARY overrides the adapter's
+  // default `gemini-3.1-flash-lite` without a code change. Used by
+  // wave-27 primary bake-off + any future operator-side A/B against
+  // a new Google flash variant. Production main leaves this unset
+  // and defaults to flash-lite.
+  const overrideVersion = process.env.MODEL_PRIMARY;
+  if (cachedExtractor && cachedExtractorVersion === overrideVersion) {
+    return cachedExtractor;
+  }
   if (!apiKey) {
     // Surface a maximally helpful message: this is the #1 deployment
     // pitfall — the user copies the repo, deploys to Vercel, and forgets
@@ -1044,6 +1053,10 @@ function buildDefaultExtractor(): GeminiFlashExtractor {
         "See docs/DEPLOYMENT-CHECKLIST.md §2.",
     );
   }
-  cachedExtractor = new GeminiFlashExtractor({ apiKey });
+  cachedExtractor = new GeminiFlashExtractor({
+    apiKey,
+    modelVersion: overrideVersion,
+  });
+  cachedExtractorVersion = overrideVersion;
   return cachedExtractor;
 }

@@ -53,10 +53,25 @@ export async function GET(req: Request) {
     });
   }
 
+  // Wave-22 added the same-provider Gemini second-opinion path; resolve the
+  // configured second-opinion model id here for observability. The selector
+  // honors SECOND_OPINION_PROVIDER (gemini|openai) + SECOND_OPINION_MODEL,
+  // and defaults to Gemini 2.5 Flash when GOOGLE_API_KEY is set.
+  const soProvider = (process.env.SECOND_OPINION_PROVIDER ?? "").toLowerCase().trim();
+  const soModel =
+    soProvider === "openai"
+      ? (process.env.SECOND_OPINION_MODEL ?? process.env.MODEL_FALLBACK ?? "gpt-5.4-nano")
+      : hasGoogle
+        ? (process.env.SECOND_OPINION_MODEL ?? "gemini-2.5-flash")
+        : hasOpenAi
+          ? (process.env.SECOND_OPINION_MODEL ?? process.env.MODEL_FALLBACK ?? "gpt-5.4-nano")
+          : null;
+
   return NextResponse.json({
     ok: true,
     service: "label-verify",
     model: process.env.MODEL_PRIMARY ?? "gemini-3.1-flash-lite",
+    secondOpinion: soModel,
     fallback: process.env.MODEL_FALLBACK ?? null,
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev",
     timestamp: new Date().toISOString(),

@@ -51,16 +51,16 @@ If any step fails, the deployment is **not** ready to ship. See
      "service": "label-verify",
      "ready": true,
      "model": "gemini-3.1-flash-lite",
+     "secondOpinion": "gemini-2.5-flash",
      "fallback": "gpt-5.4-nano",
      "providers": { "google": true, "openai": true, "anthropic": false, "openrouter": false },
      "debugTokenEnabled": true,
      "version": "a1b2c3d",
-     "timestamp": "2026-05-12T...",
+     "timestamp": "2026-05-14T...",
      "notes": []
    }
    ```
-   (The field name is `fallback`, not `fallbackModel`. The detailed
-   shape was renamed when the code-review pass caught the drift.)
+   `model` is the primary extractor, `secondOpinion` is the wave-22 same-provider Gemini 2.5 Flash recheck on borderline Gov-Warning, and `fallback` is the OpenAI cross-provider safety net on primary failure. All three are independent.
 4. **Failure looks like:**
    - `404` → routing broken, redeploy.
    - `ready: false` with `notes` listing a missing key → set the

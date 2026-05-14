@@ -32,7 +32,8 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 | UI primitives | **Tailwind 3** + lightweight bespoke components | Accessible defaults; no design-system dependency. |
 | Image preprocessing | **sharp** (libvips) | EXIF auto-orient, resize-to-1600 px long edge, JPEG 82 with mozjpeg. Trims vision payload by ~70 %. |
 | Vision extractor (primary) | **Gemini 3.1 Flash Lite** via `@google/generative-ai` | Pareto-dominant on the bake-off (accuracy × latency × cost). See [`MODEL-SELECTION.md`](MODEL-SELECTION.md) §4. |
-| Vision extractor (fallback) | **GPT-5.4-nano** via `openai` | Cross-provider fallback on Gemini provider failure. Different vendor; comparable latency tier. |
+| Vision extractor (second-opinion) | **Gemini 2.5 Flash** via `@google/generative-ai` | Smarter same-provider second-opinion fires on borderline-Gov-Warning REVIEW. Wave 22 swap (2026-05-13) — see [`WAVE-22-FINDINGS.md`](WAVE-22-FINDINGS.md). |
+| Vision extractor (cross-provider fallback) | **GPT-5.4-nano** via `openai` | Provider-diversity safety net on primary provider failure (5xx / timeout / abort). Distinct from the second-opinion above. |
 | OCR | **tesseract.js 5** | Server-side only. Used for the Government-Warning prefix bbox + pixel-density measurements; not used for text reading (the vision extractor returns the text directly). |
 | Field matching | Hand-written comparators in `src/lib/matchers/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
 | Government-Warning validation | `src/lib/validation/` | Four subscores: text exact match (string predicate), all-caps prefix (string predicate), bold prefix (classical CV stroke-width transform on OCR-anchored pixels), size threshold (bbox dimensions vs declared net contents). |
@@ -68,7 +69,7 @@ For one POST to `/api/verify`:
 7. **Image quality** (`src/lib/verify.ts`). Independent of the verdict. Derived from per-field extractor confidence on fields the model actually read (`value !== null`). `bad` = mean < 0.6 and min < 0.3; `low` = mean < 0.6; otherwise `good`. When image quality is `bad` and the worst-of rule would have returned FAIL, the orchestrator routes to REVIEW with a re-photograph reason — a corrupt photo of a compliant label is not non-compliance.
 8. **Confidence-based deferral**. If every field PASSED but any field's extractor confidence is below `REVIEW_CONFIDENCE_THRESHOLD = 0.55`, downgrade PASS → REVIEW with a citation-grade reason identifying the borderline field.
 9. **No-OCR Government-Warning gate**. If OCR failed or timed out AND the Government-Warning status is PASS at confidence below 0.55, route to REVIEW. The bold and size subscores fell back to model-self-reported flags without a pixel-tight measurement; a human is the right adjudicator.
-10. **Independent second opinion**. When the verdict lands on REVIEW because of the Government-Warning (steps 8 or 9), the orchestrator fires a single cross-provider vision call against `MODEL_FALLBACK` (default `gpt-5.4-nano` via OpenAI), re-validates the warning from the second extractor's read, and attaches `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, reason, latencyMs }` to the response. The UI surfaces agreement (🔁) or disagreement (⚖) inline. Approximate cost: ~$0.001 per fired call; fires on ~5–10 % of verifications.
+10. **Independent second opinion**. When the verdict lands on REVIEW because of the Government-Warning (steps 8 or 9), the orchestrator fires a single vision call against the second-opinion model (default `gemini-2.5-flash` since wave 22, configurable via `SECOND_OPINION_PROVIDER` / `SECOND_OPINION_MODEL`), re-validates the warning from that extractor's read, and attaches `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, reason, latencyMs }` to the response. The UI surfaces agreement (🔁) or disagreement (⚖) inline. Fires on ~5–15 % of verifications. The OpenAI `MODEL_FALLBACK` is a separate concern (provider-diversity safety net when the primary itself fails); see §6 env-var table.
 11. **Return**. JSON response includes the verdict, per-field statuses, the Government-Warning block, the extracted-fields block, timings (`preprocess`, `ocr`, `vision`, `matching`, `total`), `imageQuality`, `modelId`, `modelVersion`, `modeUsed`, `requiresHumanReview`, and `reviewReasons[]`. `X-Request-Id` header echoes the client's request id when provided.
 
 ## 4. Latency budget
@@ -81,7 +82,7 @@ End-to-end target: ≤ 5 s. Warm-function, single-image measurements:
 | Vision call (Gemini 3.1 Flash Lite) | ~2 000 ms | ~3 500 ms | Provider-bound; dominant cost. |
 | OCR (`tesseract.js`, parallel with vision) | ~800 ms | up to 8 000 ms cap | Off the critical path unless OCR is bound to the GW validator's 8-s race. |
 | Field matchers + GW validator | < 50 ms | < 100 ms | Pure CPU. |
-| Independent second opinion (~5–10 % of calls) | + ~2 500 ms | + ~3 000 ms | Fires only on borderline GW outcomes. |
+| Independent second opinion (~5–15 % of calls) | + ~2 500 ms | + ~7 000 ms | Fires only on borderline GW outcomes. Gemini 2.5 Flash (wave 22) is ~2× the per-call latency of the previous gpt-5.4-nano second-opinion. |
 | **Total (happy path)** | **~3.0 s** | **~4.1 s** | Critical path; second-opinion path adds ~2.5 s on the ~5–10 % of calls that fire it. |
 
 Cold start adds ~500–1 500 ms on the first request after idle. The `/api/warmup` route pre-warms `sharp`, the Tesseract worker, and the Gemini SDK; it is fired on page load.
@@ -111,11 +112,14 @@ Runtime environment variables (see `.env.example`):
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `GOOGLE_API_KEY` | yes | Primary vision (Gemini 3.1 Flash Lite). |
-| `OPENAI_API_KEY` | recommended | Auto-fallback (GPT-5.4-nano) on Gemini provider failure. Without it, Gemini failures surface as 5xx responses. |
+| `GOOGLE_API_KEY` | yes | Primary vision (Gemini 3.1 Flash Lite) + default second-opinion (Gemini 2.5 Flash). |
+| `OPENAI_API_KEY` | recommended | Cross-provider primary-failure fallback (GPT-5.4-nano). When primary Gemini fails entirely (5xx / timeout / abort), the orchestrator retries on OpenAI. Without it, Gemini failures surface as 5xx responses. NOT the second-opinion path. |
 | `OPENROUTER_API_KEY` | optional | Bake-off harness only; not used at runtime. |
 | `ANTHROPIC_API_KEY` | optional | Bake-off harness for the Claude tier. |
-| `MODEL_FALLBACK` | optional | Defaults to `gpt-5.4-nano`. |
+| `MODEL_PRIMARY` | optional | Overrides the default `gemini-3.1-flash-lite` primary extractor. Operations escape hatch for A/B testing a new Google model without a code change. |
+| `MODEL_FALLBACK` | optional | OpenAI model id used for the primary-failure fallback. Defaults to `gpt-5.4-nano`. |
+| `SECOND_OPINION_PROVIDER` | optional | `gemini` (default) or `openai`. Routes the REVIEW-trigger recheck. Wave 22. |
+| `SECOND_OPINION_MODEL` | optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
 | `RATE_LIMIT_PER_MIN` | optional | Per-IP rate limit on `/api/verify`, `/api/extract`, `/api/application/parse`. Defaults to 60. |
 | `RATE_LIMIT_BATCH_PER_MIN` | optional | Per-IP rate limit on `/api/verify/batch`. Defaults to 3. |
 | `GEMINI_RPM_LIMIT` | optional | Project-level Gemini RPM. The interactive batch capacity derives from this. Defaults to 30. |

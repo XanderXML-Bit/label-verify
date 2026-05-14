@@ -39,14 +39,16 @@ You will paste these into Vercel in Step 2. Have them ready first.
 
 | Variable | Required? | Where to get it |
 |---|---|---|
-| `GOOGLE_API_KEY` | **Yes** — primary vision path | https://aistudio.google.com → "Get API key" |
-| `OPENAI_API_KEY` | Optional fallback | https://platform.openai.com/api-keys |
-| `ANTHROPIC_API_KEY` | Optional fallback | https://console.anthropic.com → Settings → API Keys |
-| `MODEL_PRIMARY` | Yes | Set to `gemini-3.1-flash-lite` |
-| `MODEL_FALLBACK` | Yes | Set to `gpt-5.4-nano` |
-| `VISION_TIMEOUT_MS` | Yes | Set to `60000` |
-| `RATE_LIMIT_PER_MIN` | Yes | Set to `60` |
-| `MAX_BATCH_SIZE` | Yes | Set to `1000` |
+| `GOOGLE_API_KEY` | **Yes** — primary vision path + default second-opinion | https://aistudio.google.com → "Get API key" |
+| `OPENAI_API_KEY` | Recommended — cross-provider fallback on primary failure | https://platform.openai.com/api-keys |
+| `ANTHROPIC_API_KEY` | Optional | https://console.anthropic.com → Settings → API Keys |
+| `MODEL_PRIMARY` | Optional | Defaults to `gemini-3.1-flash-lite`. Override to A/B a new Google model. |
+| `MODEL_FALLBACK` | Optional | OpenAI primary-failure fallback id. Defaults to `gpt-5.4-nano`. Distinct from the second-opinion. |
+| `SECOND_OPINION_PROVIDER` | Optional | `gemini` (default) or `openai`. Wave 22 routes the borderline-Gov-Warning recheck. |
+| `SECOND_OPINION_MODEL` | Optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
+| `VISION_TIMEOUT_MS` | Optional | Wall-clock budget per vision call. Default `60000`. |
+| `RATE_LIMIT_PER_MIN` | Optional | Per-IP per-endpoint cap on the public demo. Default `60`. |
+| `MAX_BATCH_SIZE` | Optional | Hard cap on uploads per batch request. Default `1000`. |
 | `DEBUG_TOKEN` | Optional | Any random string. Enables `/api/debug/last`. Leave unset to hide that route. |
 
 A populated `.env.local` (locally, never committed) is the easiest source —

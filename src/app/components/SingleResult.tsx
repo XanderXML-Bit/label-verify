@@ -383,6 +383,11 @@ export function SingleResult({
             >
               Verify another label
             </button>
+            {/* Export buttons live in detailed mode only.
+                Simple mode keeps the verdict + the one re-upload affordance
+                visible without secondary technical actions. The data is still
+                downloadable — operator just flips the mode toggle in the
+                header. Per user direction 2026-05-14. */}
             <button
               type="button"
               onClick={() => {
@@ -393,7 +398,7 @@ export function SingleResult({
                   "application/json",
                 );
               }}
-              className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              className="detailed-only min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
               aria-label="Download this verification result as JSON"
             >
               Download JSON
@@ -408,7 +413,7 @@ export function SingleResult({
                   "text/csv",
                 );
               }}
-              className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+              className="detailed-only min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
               aria-label="Download this verification result as CSV"
             >
               Download CSV

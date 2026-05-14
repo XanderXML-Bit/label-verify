@@ -763,11 +763,16 @@ export default function Home() {
         <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Verify a label against application data
         </h2>
-        <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+        {/* Long-form intro is detailed-only. Simple mode gets a one-line
+            CTA so the upload zone is the dominant surface. */}
+        <p className="detailed-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
           Upload a label image, then add the COLA application data (PDF,
           JSON, CSV, Markdown, text, or a photo of the form) — or fill
           the fields in manually. Returns a pass / fail / review verdict
           in seconds.
+        </p>
+        <p className="simple-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+          Upload a label image to get a pass / fail / review verdict.
         </p>
         {/* The "extract-only" path is discoverable from a link below
             the form's primary Verify button. Surfacing it on idle adds
@@ -793,7 +798,10 @@ export default function Home() {
               idle screen — it required a DEBUG_TOKEN access code that
               confused non-operator visitors. Operators with the token
               hit /api/queue directly. User feedback 2026-05-13. */}
-          <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
+          {/* About-this-prototype is regulatory-detail text. Detailed
+              mode only — simple mode keeps the idle screen to "upload
+              a label" and nothing else. User direction 2026-05-14. */}
+          <details className="detailed-only rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
               About this prototype
             </summary>

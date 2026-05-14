@@ -17,14 +17,14 @@
 |---|---|
 | **What does it do?** | Drop a label image + COLA application data → get a `pass` / `fail` / `review` verdict on each of the 7 regulated fields plus the Government Warning subscore (27 CFR §16.21 / §16.22). |
 | **Latency** | **~3 s P50 end-to-end** (warm function, single image). Vision call is the dominant cost. Live verifies on the deployed instance complete in 3.2–4.5 s depending on image size and provider tail. |
-| **Field-level accuracy** | On the 170-image bench corpus (90 SVG-rendered synthetic + 80 photo-realistic AI-generated labels): the cross-pair benchmark (`npm run bench:cross-pair`) measures **76 % strict pass-rate on correct ground truth and 100 % fail-or-review on perturbed wrong ground truth**, with the residual mismatches dominated by deliberate orchestrator deferrals (REVIEW) rather than wrong PASS verdicts. Bare-extractor field-level accuracy on the bake-off is ~96 % on synthetic and ~99 % on photo-realistic. The Government-Warning false-negative rate is **~5 %** (Wilson 95 % CI upper 10.2 %, n = 137 non-compliant labels). See [Headline measurement](#headline-measurement) and [Scope and limitations](#scope-and-limitations). |
-| **Cost** | **≈ $0.25 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite). Cross-provider second-opinion calls (~5–10 % of verifications, only when the Government-Warning subscore is borderline) add ~$0.001 each. |
+| **Field-level accuracy** | On the 170-image bench corpus (90 SVG-rendered synthetic + 80 photo-realistic AI-generated labels): the cross-pair benchmark (`npm run bench:cross-pair`) measures **65.1 % strict pass-rate on correct ground truth (deterministic across N=12 successive runs) and 100 % fail-or-review on perturbed wrong ground truth**, with **3 deterministic false-fails** and **5 deterministic false-passes-on-correct** (the latter all on deliberately-subtle synthetic defect cases). Bare-extractor field-level accuracy on the bake-off is ~96 % on synthetic and ~99 % on photo-realistic. The Government-Warning false-negative rate is **~5 %** (Wilson 95 % CI upper 10.2 %, n = 137 non-compliant labels). See [Headline measurement](#headline-measurement) and [Scope and limitations](#scope-and-limitations). |
+| **Cost** | **≈ $1.50 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite at the current Google rate card: $0.25 / 1M input, $1.50 / 1M output). Same-provider second-opinion calls (Gemini 2.5 Flash, ~5–15 % of verifications, only when the Government-Warning subscore is borderline) add ~$0.001 each. |
 | **Auto-pair batches?** | Yes. **Four-stage pairing**: (1) inline-manifest detection (one dropped CSV/JSON with N rows + a `filename` column → N pairs; filename-keyed JSON object maps are also auto-detected), (2) filename stem matching (face-tag and app-tag aware), (3) content-based fallback (brand + class similarity from a lightweight vision extraction), (4) single-application broadcast (1 app file + N images → broadcast same fields to all, surfaced as a warning). Handles randomly-named files, partial coverage (5 images + 20-row manifest → 5 pairs + 15 orphan rows flagged), and one-CSV-covers-all (12 images + 1 12-row CSV → 12 pairs). The batch UI shows a determinate progress bar with the four stages labelled as it advances. |
 | **Single image + roster manifest?** | Yes. Drop one image + a multi-row manifest together (or upload the manifest after the image); the parser picks the row matching the image's filename. Multi-row CSV / JSON with a `filename` column and filename-keyed JSON object maps both work. |
 | **Simple or detailed view?** | A header toggle (next to dark mode) flips the result panel between **Simple** (verdict + Government-Warning status + only the failing/review fields with their reasons) and **Detailed** (full per-subscore breakdown, extractor confidences, second-opinion panel, per-call timing). Default = Simple. Choice persists per browser. |
 | **What languages?** | English-primary, but country names recognised in **7 languages** across **25 countries** (Spanish, French, German, Italian, Portuguese, Japanese 日本, Korean 대한민국, Greek Ελλάδα, Chinese 中国). Gov-Warning text is the federal English statement by regulation. |
-| **What if Gemini is down?** | Auto-fallback to GPT-5.4-nano (OpenAI) on provider failure, with a yellow "verified via backup" banner on the verdict. |
-| **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent cross-provider model re-reads the label. Agreement / disagreement is surfaced inline. |
+| **What if Gemini is down?** | Cross-provider auto-fallback to GPT-5.4-nano (OpenAI) on primary failure, with a yellow "verified via backup" banner on the verdict. Separate from the second-opinion path. |
+| **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent second-opinion model (default **Gemini 2.5 Flash** since wave 22) re-reads the label. Agreement / disagreement is surfaced inline. Operator can route this to OpenAI instead via `SECOND_OPINION_PROVIDER=openai`. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
 | **Code review** | 506 / 506 vitest tests passing, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit). |
 
@@ -94,13 +94,14 @@ The Government-Warning false-negative rate is the rate at which a non-compliant 
 
 | Metric | Latest |
 |---|---:|
-| Pass-rate on correct ground truth | ~76 % |
+| Pass-rate on correct ground truth | **65.1 % (deterministic across N=12 successive runs)** |
 | Fail-or-review-rate on perturbed wrong | **100 %** |
-| End-to-end P50 / P95 latency | ~3.0 s / ~5.9 s |
-| Vision-call P50 / P95 latency | ~2.3 s / ~3.2 s |
-| Residual false-positives (non-compliant marked PASS) | 3 (all in the bold/size cluster, both primary and second-opinion models agree on `prefix_appears_bold: true` despite pixel measurement disagreeing) |
+| Deterministic false-fails on compliant labels | **3** |
+| Deterministic false-pass-on-correct (regulator-critical) | **5** (all on synthetic B/S defect cases) |
+| End-to-end P50 / P95 latency | ~2.8 s / ~12.5 s |
+| Vision-call P50 / P95 latency | ~2.3 s / ~3.5 s |
 
-The strict pass-rate is bounded below by deliberate orchestrator deferrals (REVIEW): when the bold subscore lacks a pixel-tight measurement, the orchestrator fires a cross-provider second-opinion and only restores PASS if the two models agree. The bench's `--no-track`-aware best-known record at `benchmarks/.best-known.json` tracks per-metric champions so future runs flag regressions immediately.
+The strict pass-rate is bounded below by deliberate orchestrator deferrals (REVIEW): when the bold or size subscore lacks pixel-tight evidence, the orchestrator fires a same-provider second-opinion (Gemini 2.5 Flash since wave 22) and only restores PASS if the two models agree. The 5 residual false-passes-on-correct are deliberately-subtle synthetic defect cases (B1/B2/B3 bold cases + S3 size case) — see `docs/SESSION-2026-05-13-OVERNIGHT.md` for the cumulative N=12 noise band and per-image trace. The bench's `--no-track`-aware best-known record at `benchmarks/.best-known.json` tracks per-metric champions so future runs flag regressions immediately.
 
 ### Generalizability caveats
 
@@ -117,7 +118,7 @@ Treat the headline numbers as a calibrated upper bound on in-distribution behavi
 
 The bake-off (`npm run bench:bakeoff`) ran 13 variants across OpenAI (GPT-4o-mini, GPT-4o, GPT-5.5, GPT-5.4-nano), Google (Gemini 3.1 Flash Lite, Gemini 2.5 Flash, two Gemini 3.1 Pro routing paths), Anthropic (Claude Haiku 4.5, Claude Opus 4.7), Meta Llama 4 Maverick, Mistral Medium 3.5, NVIDIA Nemotron 3 Nano Omni, and Alibaba Qwen 3.6 Flash. The selection criteria, in order: Government-Warning false-negative rate ≤ 10 %, P95 end-to-end latency ≤ 5 s, then per-call cost.
 
-Gemini 3.1 Flash Lite is Pareto-dominant on the three criteria. A side-by-side test of Gemini 3 Flash Preview scored marginally higher on overall accuracy but did not clear the ≤ 10 % Government-Warning FN-rate criterion (10.8 % point estimate) at roughly 10× the per-call cost, so it is not the default. GPT-5.4-nano (different provider, comparable latency, lower accuracy on this benchmark) is the configured fallback and fires automatically on Gemini provider failure. Full criterion-by-criterion table and pairwise McNemar tests: [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4.
+Gemini 3.1 Flash Lite is Pareto-dominant on the three criteria. A side-by-side test of Gemini 3 Flash Preview scored marginally higher on overall accuracy but did not clear the ≤ 10 % Government-Warning FN-rate criterion (10.8 % point estimate) at roughly 10× the per-call cost, so it is not the default. **Gemini 2.5 Flash** (same provider, ~1.5× the per-call cost of Flash Lite, materially smarter on borderline cases) is the wave-22 default for the borderline-Gov-Warning second-opinion path — fires on ~5–15 % of verifications. **GPT-5.4-nano** (different provider, comparable latency, lower accuracy on this benchmark) is the cross-provider primary-failure fallback and fires automatically on full Gemini provider failure (distinct from the second-opinion). Full criterion-by-criterion table and pairwise McNemar tests: [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) §4. Cumulative wave-22-to-wave-25 outcomes: `docs/SESSION-2026-05-13-OVERNIGHT.md`.
 
 The bench numbers are the **bare-extractor** measurement. The orchestrator layered above the extractor adds:
 
@@ -126,8 +127,11 @@ The bench numbers are the **bare-extractor** measurement. The orchestrator layer
 - **Multilingual country comparator.** 25 countries across 7 languages (English, Spanish, French, German, Italian, Portuguese, Japanese), plus Korean, Greek, and Chinese script. A French import printing `RÉPUBLIQUE FRANÇAISE` matches a declared `France`; a sake import printing `日本` matches a declared `Japan`.
 - **No-OCR Government-Warning gate.** When OCR fails or times out, a Government-Warning PASS at confidence below threshold routes to REVIEW rather than PASS — the bold and size subscores would otherwise rely solely on the model's self-reported flags.
 - **Unreadable-image safety net.** When image quality is `bad` (mean extractor confidence < 0.6 and min < 0.3) and the worst-of-rule verdict would have been FAIL, the orchestrator routes to REVIEW with a re-photograph reason. A corrupt photo of a compliant label is not non-compliance.
-- **Independent second opinion on borderline Government-Warning.** Fires on REVIEW or low-confidence-PASS-without-OCR-corroboration. Calls a cross-provider model (GPT-5.4-nano), re-validates the warning, and attaches `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, reason, latencyMs }` to the response. The UI surfaces agreement or disagreement inline.
-- **Provider auto-fallback.** Gemini failure → GPT-5.4-nano with a fresh `AbortController` and a remaining-budget timer.
+- **Independent second opinion on borderline Government-Warning.** Fires on REVIEW or low-confidence-PASS-without-OCR-corroboration. Default model: **Gemini 2.5 Flash** (wave 22 swap — same provider, smarter than the Flash-Lite primary on borderline reasoning). Operator can switch to OpenAI via `SECOND_OPINION_PROVIDER=openai`. Re-validates the warning and attaches `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, reason, latencyMs }` to the response. The UI surfaces agreement or disagreement inline.
+- **Null-extraction safety net (wave 25).** When the FAIL verdict is driven solely by null-extraction comparators (extractor returned `null` on a mandatory field at confidence ≤ 0.05) and the Gov-Warning isn't FAIL, upgrade FAIL → REVIEW with a "could not read X from the submitted image" reason. Recovers compliant labels with partially-occluded fields.
+- **Gov-Warning text case-fold (wave 23).** §16.21 prescribes the prefix in caps + bold but says nothing about body case; case-folding the normalizer lets all-caps body renderings (compliant) match the canonical statement. The orthogonal `scoreCaps` subscore still enforces the prefix-caps rule.
+- **Generic-class-on-label acceptance (wave 24).** When the label prints only a generic family designation (`WINE`, `BEER`, `MALT BEVERAGE`, `DISTILLED SPIRITS`) and the declared class is a known subtype (Grenache, Lager, Mango Lime Malt Seltzer, Bourbon, etc.), route to REVIEW instead of FAIL — both are compliant under TTB class-of-fitness regulations.
+- **Cross-provider auto-fallback.** Primary failure → GPT-5.4-nano with a fresh `AbortController` and a remaining-budget timer. Separate from the second-opinion path.
 
 ---
 
@@ -173,8 +177,8 @@ So OCR is **never used for text reading** — only for the geometric bbox + pixe
 | Tesseract OCR (parallel) | ~800 ms | up to 8 s race-capped | runs concurrently with vision; only blocks GW bold/size subscores (the validator awaits OCR up to 8 s before falling back to model self-reports) |
 | Vision call (Gemini 3.1 Flash Lite) | ~2.0 s | ~3.5 s | dominant cost — provider-bound. Cannot be cut without changing the model. |
 | Field matchers + GW validator | < 50 ms | < 100 ms | pure CPU; cheap |
-| Independent second-opinion (only on borderline GW, ~5–10 % of calls) | + ~2.5 s | + ~3 s | cross-provider GPT-5.4-nano; only fires when the primary GW lands on REVIEW |
-| **Total verify (happy path)** | **~3.0 s** | **~4.1 s** | brief asks for ≤ 5 s; we hit it |
+| Independent second-opinion (only on borderline GW, ~5–15 % of calls) | + ~2.5 s | + ~7 s | same-provider Gemini 2.5 Flash since wave 22; only fires when the primary GW lands on REVIEW |
+| **Total verify (happy path)** | **~2.8 s** | **~4.1 s** | brief asks for ≤ 5 s; we hit it. Second-opinion-firing cases add up to ~10 s P95. |
 
 The vision call dominates; preprocessing and OCR run in parallel with it. The **strokeProxy** in `bold-size.ts` is the classical-CV stroke-width transform: greyscale → threshold-binarize at 128 → per-column mean dark-run-length, **normalised by bbox height** (2026-05-13 audit fix — the un-normalised version was glyph-size-confounded and caused 4 of the 7 measured GW false-negatives). This is one place where a measurement is genuinely better than asking an LLM "is this bold."
 
@@ -190,7 +194,7 @@ For each label, the verifier computes:
 4. **Image-quality flag** — independent of the verdict. Driven by per-field extractor confidence aggregates. A `bad` image (mean < 0.6, min < 0.3) means "re-photograph and resubmit," NOT "non-compliant." If the image is bad AND the worst-of rule would have returned FAIL, the orchestrator routes to REVIEW with a re-photograph reason: a corrupt photo of a compliant label is not non-compliance.
 5. **Confidence-based deferral** — if every field PASSED individually but any field's extractor confidence is below `REVIEW_CONFIDENCE_THRESHOLD = 0.55`, the orchestrator downgrades PASS → REVIEW with a citation-grade reason explaining which field was borderline.
 6. **No-OCR Gov-Warning gate** — if OCR failed/timed out AND the Gov-Warning status is PASS at confidence below 0.55, route to REVIEW. The validator's bold/size subscores fell back to model-self-reported flags without pixel-tight measurement; a human should confirm.
-7. **Independent second opinion** — when the verdict lands on REVIEW because of the Gov-Warning (steps 5 or 6 above), the orchestrator fires a single cross-provider vision call against the configured fallback model (typically GPT-5.4-nano via OpenAI), re-validates the Gov-Warning from the second extractor's read, and attaches a `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, ... }` block to the response. The UI renders either a 🔁 "both models agree" panel or a ⚖ "models disagree, you adjudicate" panel inline under the GW subscores. Cost: ~$0.001 per fired call; fires on ~5–10 % of verifications.
+7. **Independent second opinion** — when the verdict lands on REVIEW because of the Gov-Warning (steps 5 or 6 above), the orchestrator fires a single vision call against the configured second-opinion model (default `gemini-2.5-flash` since wave 22; `SECOND_OPINION_PROVIDER=openai` switches to `MODEL_FALLBACK` for cross-provider diversity instead), re-validates the Gov-Warning from the second extractor's read, and attaches a `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, ... }` block to the response. The UI renders either a 🔁 "both models agree" panel or a ⚖ "models disagree, you adjudicate" panel inline under the GW subscores. Cost: ~$0.001 per fired call; fires on ~5–15 % of verifications. The OpenAI `MODEL_FALLBACK` is independent of this path — it's the cross-provider safety net when the primary itself fails (5xx / timeout / abort).
 
 **REVIEW is a first-class verdict**, not a refusal. Every REVIEW row carries human-readable reasons — what disagreed, the comparator's confidence, the regulation cited. The review-queue panel surfaces those for adjudication. **Unreadable images route to REVIEW (not FAIL)** — a federal reviewer should know the difference between "this label fails compliance" and "we can't read this photo."
 
@@ -286,11 +290,14 @@ That's it — the dev server runs the same Next.js App Router build as productio
 
 | Var | Required? | Purpose |
 |---|---|---|
-| `GOOGLE_API_KEY` | **yes** | Primary vision (Gemini 3.1 Flash Lite). |
-| `OPENAI_API_KEY` | recommended | Auto-fallback (GPT-5.4-nano) on Gemini outage. Without it, Gemini failures surface as 5xx. |
+| `GOOGLE_API_KEY` | **yes** | Primary vision (Gemini 3.1 Flash Lite) + default second-opinion (Gemini 2.5 Flash). |
+| `OPENAI_API_KEY` | recommended | Cross-provider primary-failure fallback (GPT-5.4-nano). Without it, Gemini failures surface as 5xx. NOT the second-opinion path. |
 | `OPENROUTER_API_KEY` | optional | Bake-off harness only (`npm run bench:bakeoff`). Not used at runtime. |
 | `ANTHROPIC_API_KEY` | optional | Bake-off harness for the Claude tier. |
-| `MODEL_FALLBACK` | optional | Defaults to `gpt-5.4-nano`. Override if OpenAI ships a cheaper-faster tier. |
+| `MODEL_PRIMARY` | optional | Overrides the default `gemini-3.1-flash-lite` primary extractor. Operations escape hatch for A/B testing a new Google model. |
+| `MODEL_FALLBACK` | optional | OpenAI model id for the primary-failure fallback. Defaults to `gpt-5.4-nano`. |
+| `SECOND_OPINION_PROVIDER` | optional | `gemini` (default) or `openai`. Routes the borderline-Gov-Warning recheck. Wave 22. |
+| `SECOND_OPINION_MODEL` | optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
 | `RATE_LIMIT_PER_MIN` | optional | Per-IP rate limit. Defaults to 60. |
 | `GEMINI_RPM_LIMIT` | optional | Project-level Gemini RPM. Batch capacity derives from this × the 300 s SSE window. Defaults to 30. |
 | `DEBUG_TOKEN` | optional | Bearer-gated access to `/api/debug/last` ring buffer. Timing-safe compare. |
@@ -400,7 +407,7 @@ The brief asks for a working prototype with sound model justification. The submi
 
 - **Four input modes.** (1) Manual form. (2) Image + application-file upload (PDF / JSON / CSV / MD / TXT / DOCX / photo of the form, parsed into the form for confirmation). (3) Smart batch with auto-pair — drop N images and their application files in one shot and the server pairs them through a four-stage strategy (inline-manifest detection, filename stem matching, content similarity, single-application broadcast). (4) Image-only "extract without verdict" for the case where no application data is available.
 - **Auto-pair batch pipeline.** Four stages in cost order: (1) Inline-manifest detection — one CSV or JSON with N rows plus a `filename`/`file`/`image`/`label`/`cola_number`/`id` column expands to N per-image pairs. (2) Filename stem matching — case-insensitive, face-tag-aware (`123-front.jpg` ↔ `123-back.jpg` ↔ `123.pdf`), app-tag-aware (`123-front.jpg` ↔ `123-app.pdf`). (3) Content-based fallback — for anything still unpaired, brand + class extracted from each unpaired application and from each unpaired image (lightweight vision call), greedy-matched by weighted similarity (brand 0.65, class 0.25, ABV 0.10, threshold 0.55). (4) Single-application broadcast — when ≥ 2 unpaired images remain alongside exactly 1 unpaired single-product application, the same parsed fields broadcast to every image, surfaced as a warning. Each stage emits a `source` field on the result so the operator sees how each row was paired.
-- **Independent second-opinion vision call** on borderline Government-Warning. When the primary verdict is REVIEW on the warning, a cross-provider model (GPT-5.4-nano via OpenAI) re-reads the same image and re-validates the warning. The UI renders agreement (🔁) or disagreement (⚖) inline. Cost: ~$0.001 per fired call.
+- **Independent second-opinion vision call** on borderline Government-Warning. When the primary verdict is REVIEW on the warning, the configured second-opinion model (default **Gemini 2.5 Flash** since wave 22) re-reads the same image and re-validates the warning. The UI renders agreement (🔁) or disagreement (⚖) inline. Cost: ~$0.001 per fired call. Operator can switch to OpenAI cross-provider diversity via `SECOND_OPINION_PROVIDER=openai`.
 - **Multilingual country comparator.** 25 countries across 7 languages. Examples: French `RÉPUBLIQUE FRANÇAISE` ≡ `France`; Japanese `日本` ≡ `Japan`; Spanish `PRODUCTO DE EE. UU.` ≡ `USA`; Korean `대한민국` ≡ `South Korea`; Greek `Ελλάδα` ≡ `Greece`.
 - **Scanned-PDF auto-fallback.** PDFs without extractable text route to vision OCR of the rendered first page. The batch route surfaces a `pairingWarnings` array so the operator sees which rows came from a lower-confidence OCR-on-a-scan path.
 - **Confidence-based deferral and unreadable-image safety net.** Borderline PASS verdicts auto-route to REVIEW with a regulation-citing reason. Unreadable images (mean extractor confidence < 0.6 and min < 0.3) that would otherwise FAIL route to REVIEW with a re-photograph reason, preserving the distinction between "this label is non-compliant" and "we can't read this photo."
@@ -424,7 +431,7 @@ The brief asks for a working prototype with sound model justification. The submi
 
 ## Security posture
 
-Full threat model: [`SECURITY.md`](SECURITY.md). Last review 2026-05-12 (multi-agent audit pass).
+Full threat model: [`SECURITY.md`](SECURITY.md). Last review 2026-05-14 (multi-agent audit pass + wave-22-25 surface review).
 
 **Inputs:**
 - Strict MIME allow-list on every upload endpoint (image: `jpeg`/`png`/`webp`/`heic`/`heif`; application: `pdf`/`json`/`csv`/`md`/`txt`/`docx` + image MIMEs for photo-of-form). SVG / GIF / BMP are 415'd at the route.
@@ -462,7 +469,7 @@ The deliberate choices, in plain terms:
 
 - **Vision-only extractor.** OCR runs in parallel with the vision call but is not fed into the vision prompt. The hypothesis that OCR-as-hint improves accuracy was tested in the bake-off and rejected for this corpus. OCR's role in production is the classical-CV stroke-width measurement for the Government-Warning bold and size subscores, where a pixel-level measurement is more reliable than a model-self-reported boolean.
 - **Bench scorer treats `REVIEW` as not-correct.** Deliberately strict accuracy convention. In the production orchestrator, `REVIEW` is a routed-to-human verdict with a regulation-citing reason — not a refusal. As one example, US-domestic labels that print no country marking are routed to REVIEW on the `country_of_origin` field; the regulation (27 CFR §4.39 / §5.36) only mandates country marking on imports, so a human is the right adjudicator. The headline metric counts these as not-correct; the orchestrator handles them sensibly.
-- **Independent second opinion only on borderline Government-Warning.** A confident PASS or clear FAIL does not fire a second vision call. Only `REVIEW` cases (roughly 5–10 % of volume) get an independent cross-provider read; the reviewer sees both verdicts when they disagree.
+- **Independent second opinion only on borderline Government-Warning.** A confident PASS or clear FAIL does not fire a second vision call. Only `REVIEW` cases (roughly 5–15 % of volume) get an independent same-provider read (Gemini 2.5 Flash by default since wave 22; switchable to OpenAI for cross-provider diversity); the reviewer sees both verdicts when they disagree.
 - **No persistent storage.** Review queue and batch store are in-process. The prototype is intentionally stateless; a federal deployment would add Postgres + Redis. Brief §9 explicitly waives persistence.
 
 ### Limits worth naming
