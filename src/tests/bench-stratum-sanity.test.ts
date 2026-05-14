@@ -43,13 +43,39 @@ function findLatestSummary(): BenchSummary | null {
         // shape — the cross-pair bench has its own per-image trace
         // (`cross-pair-<iso>.md`) and aggregate (`aggregate-<iso>.md`).
         !f.startsWith("cross-pair-") &&
-        !f.startsWith("aggregate-"),
+        !f.startsWith("aggregate-") &&
+        // Wave-22 (and any future wave-N cross-pair replicate set)
+        // also writes the cross-pair schema but to an explicit
+        // `--out` path that doesn't start with `cross-pair-`. Same
+        // skip rationale.
+        !f.startsWith("wave") &&
+        // baseline-N8-stats.json is a manually-rolled aggregate of
+        // bucket counts (different schema again). Skip.
+        !f.startsWith("baseline-"),
     )
     .sort();
   if (files.length === 0) return null;
-  const latest = files[files.length - 1]!;
-  const text = readFileSync(join(dir, latest), "utf8");
-  return JSON.parse(text) as BenchSummary;
+  // Defensive last-mile: even after the filename filters, walk the
+  // most recent files until we find one that actually has the
+  // technique-bench shape. Catches any future bench output that
+  // accidentally collides with the technique filename prefix.
+  for (let i = files.length - 1; i >= 0; i--) {
+    const text = readFileSync(join(dir, files[i]!), "utf8");
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      continue;
+    }
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      Array.isArray((parsed as BenchSummary).techniques)
+    ) {
+      return parsed as BenchSummary;
+    }
+  }
+  return null;
 }
 
 describe("Bench result stratified sanity (REMAINING-IMPROVEMENTS T4)", () => {
