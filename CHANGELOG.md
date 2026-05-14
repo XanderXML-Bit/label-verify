@@ -4,6 +4,132 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 30: prefix/body OCR ratio — FALSIFIED before bench] — 2026-05-14
+
+### Hypothesis
+
+- Tested whether OCR-measured `prefix_height / body_median_height`
+  could discriminate synthetic adversarial S-cases (prefix scaled to
+  0.45× normal) from compliant labels (where prefix is typically
+  larger than body). This was an attempt to salvage the wave-21
+  "prefix taller than body" idea by MEASURING the ratio instead of
+  asking the model.
+
+### Outcome
+
+- **Falsified at the pre-bench measurement stage.** The empirical
+  ratio distribution overlaps:
+  - Compliant cases: ratio 0.75–2.00 (font, OCR jitter, angle drift)
+  - Synthetic S-cases: ratio 0.92–1.29
+  - `ai-label-0049` (S2 adversarial): ratio 1.29 — *higher* than
+    several compliant cases.
+- No single ratio threshold separates strata. Synthetic generator
+  scales prefix DOWN to body-size, deliberately preserving visual
+  legibility; the defect is regulatory absolute-mm, not relative-
+  ratio.
+
+### Cost
+
+- Zero API spend. Bench not run.
+
+### Artifacts
+
+- `docs/WAVE-30-PREFIX-BODY-RATIO-FALSIFIED.md` — record on main.
+- `bin/measure-prefix-vs-body.ts` — measurement tool (kept; useful
+  for any future size-channel design work).
+
+## [Wave 29: cross-provider second-opinion — FALSIFIED] — 2026-05-14
+
+### Hypothesis
+
+- The retrospective (`docs/RETROSPECTIVE-2026-05-14.md` §A2) claimed
+  that swapping the wave-22 same-provider second-opinion (Gemini
+  2.5 Flash) for cross-provider (OpenAI GPT-5.4-nano) would be a
+  calibration win, per published 2025 calibration literature on
+  diverse-foundation ensembling.
+
+### Outcome
+
+- **Falsified empirically on this corpus.** N=1 cross-pair bench with
+  `SECOND_OPINION_PROVIDER=openai`:
+  - +1 adversarial.fp-on-correct caught (`deg-beer-0012`, B1 case)
+  - **−7 true-reject** (wrong-GT cases now route to REVIEW instead
+    of REJECT)
+  - `compliant.*` metrics unchanged
+- Net operational impact: −1 adversarial fp + 7 wrong-GT review-
+  burden additions = +6 manual-review-burden units. The wave-22
+  same-provider choice was correct for this corpus.
+
+### Decision
+
+- Do not ship. The `SECOND_OPINION_PROVIDER=openai` env-var flip
+  remains available for deployments where the cost/benefit favors
+  cross-provider diversity (e.g. low wrong-GT volume).
+- Per Apex §13.8a: retrospective claim updated to "theoretically
+  sound but empirically dominated by other effects on THIS corpus."
+
+### Artifacts
+
+- `docs/WAVE-29-CROSS-PROVIDER-FALSIFIED.md` — full record on main.
+- `benchmarks/results/wave29-falsified-run1.json` — bench trace.
+- `bin/measure-prefix-ratios.ts` — OCR ratio measurement tool used
+  during this wave to characterize the synthetic S-case distribution.
+
+## [Wave 28a + 28b: stratified guardrail + size-threshold band (+6.5pp pass-rate)] — 2026-05-14
+
+### Pre-registered methodology change (28a)
+
+- New stratified pre-registered guardrail replaces the single
+  corpus-wide `false-pass-on-correct ≤ baseline + 2σ` budget:
+  - **compliant** stratum (real-photo C0 + synthetic compliant +
+    untagged baseline, n≈72): `fp-on-correct` must NOT increase
+    (HARD); `false-fail` ≤ +1 (soft).
+  - **adversarial** stratum (B/S/T/X defect cases, n≈86):
+    `fp-on-correct` may increase up to +2, conditional on
+    compliant-stratum true-pass uplift ≥ 5× the adversarial fp delta.
+  - **quality** stratum (Q*-prefixed degradation, n≈12):
+    informational only.
+- Zero API spend. Pure methodology + tooling change.
+- New library: `src/lib/bench-stratify.ts`. New CLI: `bin/bench-
+  stratified-report.ts`.
+
+### Code change (28b)
+
+- `src/lib/validation/government-warning-validator.ts:sizeFromMm`
+  adds a degraded-PASS band:
+  ```
+  ratio ≥ 0.80           → pass at full confidence (unchanged)
+  0.65 ≤ ratio < 0.80    → pass at confidence 0.4 (NEW)
+  ratio < 0.65           → review (unchanged)
+  ```
+- Degraded-PASS confidence (0.4) is below `REVIEW_CONFIDENCE_
+  THRESHOLD = 0.55`, so the orchestrator's deferral catches the
+  degraded PASS when other fields are also borderline. Relaxation
+  is bounded.
+
+### Bench result (N=1, stratified criterion applied)
+
+| Stratum × bucket | Wave 25 | Wave 28b | Criterion verdict |
+|---|---:|---:|---|
+| compliant.fp-on-correct | 0 | **0** | HARD ✓ |
+| compliant.false-fail | 1 | **1** | soft ✓ |
+| compliant.true-pass | 30 | **40** | (+10 real-photo recoveries) |
+| compliant.review-on-correct | 41 | **31** | (−10 paired) |
+| adversarial.fp-on-correct | 5 | **6** | conditional ✓ (10:1 uplift) |
+| pass-rate-on-correct | 65.1% | **71.6%** | **+6.5 pp** |
+
+The +1 adversarial fp is `ai-label-0049` (S2_MINI_TINY_TEXT
+synthetic — not production-realistic). First wave since 22 that
+meaningfully moves the headline pass-rate.
+
+### Artifacts
+
+- `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md`
+- `docs/WAVE-28b-SIZE-THRESHOLD-STRATIFIED.md`
+- `docs/BENCH-PROTOCOL.md` §Step 3b — stratified criterion now the
+  default for any orchestrator/comparator wave.
+- `benchmarks/results/wave28b/run1.json`.
+
 ## [Docs + UI consolidation pass + audit-driven fact refresh] — 2026-05-14
 
 ### Docs
