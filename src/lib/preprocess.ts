@@ -33,7 +33,8 @@ export interface PreprocessedImage {
 /**
  * Server-side preprocessing per ARCHITECTURE.md §3 step 2:
  *  - EXIF orient (rotate to upright)
- *  - resize so the longest edge is <= maxEdge (default 1600)
+ *  - Lanczos-3 resize so the longest edge == maxEdge (wave-31j default 2000;
+ *    sub-target images are UPSCALED unless `enlarge:false` or `LV_ENLARGE=0`)
  *  - auto-contrast on low-light histograms
  *  - re-encode JPEG quality 82 (good balance of size vs detail for OCR)
  *
