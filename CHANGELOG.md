@@ -4,6 +4,160 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 31k: per-image resolution analysis — 2000 stays as flat default] — 2026-05-14
+
+### Hypothesis (user-asked follow-up to wave-31j)
+
+- Investigate whether the wave-31j `LV_MAX_EDGE=2000` default is
+  per-image optimal, or whether the optimum varies across images. If
+  variation is structured, an adaptive rule could be Pareto-better.
+
+### Outcome
+
+- **H-A "2000 is uniformly per-image best": FALSIFIED.** Per-image
+  sweep across 8 resolutions (1536–3200) × 14 stratified stems
+  showed 4 of 14 stems have non-monotonic resolution sensitivity.
+  `syn-spirits-0013` (S1 adversarial) is PASS at 2000 AND 2400 but
+  caught at 1800, 2200, 2600+. Mechanism: Lanczos interpolation
+  + fixed-128 threshold in `strokeProxy` produces irregular bold-ratio
+  crossings at specific resolution steps.
+- **H-B "per-image optimum varies": CONFIRMED.**
+- **H-C "dual-resolution ensemble is Pareto-better": FALSIFIED on
+  full corpus.** Sample bench (14 stems) showed promise but the full
+  340-task corpus reveals the ensemble inherits the secondary
+  resolution's compliant regressions.
+- **H-D "2200 or 2800 is Pareto-better as flat default": FALSIFIED.**
+  - 2200 full bench: catches +1 adversarial BUT introduces +1
+    compliant.false-fail (hard guardrail failure) + 57 % slower
+    latency.
+  - 2800 full bench: catches +1 adversarial BUT 8 compliant labels
+    regress to REVIEW + 2× slower latency.
+
+### Decision
+
+- **Keep `LV_MAX_EDGE=2000`** as the production default. No tested
+  flat alternative is Pareto-better.
+- The 2 remaining adversarial false-passes (`deg-beer-0012` B1,
+  `syn-spirits-0013` S1) are not solvable by resolution tuning.
+  Forwarded to wave-32 candidates (Pixtral / Llama-4-Scout narrow
+  second-opinion on bold-fallback path; model-bbox-driven
+  body-words search).
+
+### Artifacts
+
+- `docs/WAVE-31k-RESOLUTION-PER-IMAGE-ANALYSIS.md` — full analysis
+- `benchmarks/results/wave31j/` — pinned baseline (N=2 identical)
+- Per-image sweep + ensemble scripts live on
+  `experiment/wave-31-survey` branch only.
+
+---
+
+## [Wave 31j: Lanczos upscale to 2000-px long edge — SHIPPED] — 2026-05-14
+
+### Hypothesis
+
+- Corpus is AI-generated at 1024×1536 (long-edge 1536, below previous
+  1600 target). Production used `withoutEnlargement: true`, keeping
+  these at native size. Hypothesis: Lanczos-upscaling sub-target
+  images to 2000 long-edge would give the VLM more pixels at the
+  prefix region, helping it discriminate the 6 synthetic adversarial
+  bold/size perturbations production currently false-passes.
+
+### Outcome
+
+- **Confirmed.** Cross-pair bench (340 tasks, N=2 bit-identical):
+  - `adversarial.fp-on-correct`: 6 → **2** (regulator-critical
+    metric, −4)
+  - `compliant.false-fail`: 1 → **0** (−1, improvement)
+  - `compliant.fp-on-correct`: held at 0 (hard guardrail ✓)
+  - Latency p50: 3208 ms → **3038 ms** (faster — Tesseract finds
+    prefix more often, doesn't trip the 8 s OCR-race timeout)
+  - Trade: 4 compliant labels move PASS → REVIEW (~4 % extra
+    human-review burden per 170-image batch)
+- Aspect ratio preserved by sharp's `fit: "inside"` semantics
+  (1024×1536 → 1333×2000, aspect 0.6667 → 0.6665, delta < 0.001).
+
+### Stratified guardrail (Apex §13.7 noise check passed)
+
+| Criterion | Verdict |
+|---|---|
+| compliant.fp-on-correct = 0 (hard) | ✓ (0) |
+| compliant.false-fail ≤ +1 (hard) | ✓ (−1, better than baseline) |
+| adversarial.fp-on-correct must not increase (hard) | ✓✓ (−4) |
+| Latency p50 ≤ 5 s (soft) | ✓ (3.0 s, faster) |
+| Pass-rate regression > 2σ (soft) | partial (−2.96 pp; decomposes
+  cleanly: 4 compliant→review + 4 adversarial-fp→review) |
+
+### Wave-31 research survey (catalog of 16 candidates tested)
+
+The wave-31j ship landed after exhaustive testing of 16 alternatives
+across 4 categories. All 15 others falsified.
+
+| # | Category | Candidate | Outcome |
+|---|---|---|---|
+| 1 | OCR engine | PaddleOCR | FALSIFIED (latency 5.6×, SWT bottleneck unchanged) |
+| 2-7 | Open-source VLM (primary) | Qwen3-VL-30B-A3B, Llama-4-Scout, Pixtral-12B, Qwen2.5-VL-32B, InternVL3-78B, GLM-4.5V (errored) | ALL FALSIFIED (compliant.false-fail jumped +4 to +17) |
+| 8 | Text-only candidate | DeepSeek V4 (Pro + Flash) | TEXT-ONLY — cannot replace primary VLM |
+| 9-11 | Closed-source frontier VLM | Claude Sonnet 4.5, Gemini Pro, Grok 4.3 | ALL FALSIFIED (same conservative-transcription failure mode) |
+| 12 | Preprocess sweep | LV_MAX_EDGE 800/1200/2000/2400 (no enlargement) | FALSIFIED (1600 was already flat region) |
+| 13 | Preprocess | LV_NORMALIZE_ORDER=before-resize | FALSIFIED (zero verdict diffs) |
+| 14 | Classical-CV | Otsu thresholding in strokeProxy | FALSIFIED (OCR upstream blocker on 5/6 adversarials) |
+| 15 | Classical-CV | Body-relative-size 5th subscore | FALSIFIED (same OCR upstream blocker) |
+| 16 | Preprocess | **LV_MAX_EDGE=2000 + LV_ENLARGE=1 (Lanczos)** | **SHIPPED** |
+
+### Ground-truth correction (compounds the wave-31j win)
+
+- `ai-label-0031` and `ai-label-0050` ground truth corrected from
+  `text_matches_regulation: true` → `false`. Both labels have
+  printed-text typos baked into the Government Warning body itself
+  (`defetts`/`youf abilty tc` on 0031, `Surghneral`/`risk risls`
+  on 0050) — properly non-compliant under 27 CFR §16.21 strict
+  literal-text requirement.
+- Effect: 2 quality-stratum cases move `false-fail` →
+  `true-reject`. The `compliant.false-fail = 0` reading is now both
+  correct under the existing classifier AND robust to future
+  re-stratification.
+- Per `docs/WAVE-31b-GT-NOISE-FINDING.md`.
+
+### Forward-looking wave-32 candidates (not implemented)
+
+1. **Pixtral-12B / Llama-4-Scout as narrow second-opinion** on the
+   bold-fallback path only. Both achieve `adv.fp = 0` as primary VLM
+   but at unacceptable compliant cost; as a narrow gate they should
+   harvest the adversarial win without the compliant cost.
+2. **Model-bbox-driven body-words search**. Tesseract returns 0
+   prefix words on 5/6 adversarial cases. The VLM's `prefix_bbox` IS
+   populated. Refactoring `findBodyWords` to accept either source
+   would unblock the body-relative-size hypothesis.
+3. **Grounding DINO smoke test** as alternate prefix locator.
+4. **Learned adaptive resolution classifier** — image features →
+   predicted right resolution. ~1-2 days; uncertain gain.
+
+### Artifacts on main
+
+- `docs/WAVE-31-EXHAUSTIVE-FINAL.md` — full wave summary
+- `docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md` — ship rationale + bench
+- `docs/WAVE-31k-RESOLUTION-PER-IMAGE-ANALYSIS.md` — per-image follow-up
+- `docs/WAVE-31a` through `WAVE-31i` — falsified-experiment record
+- `benchmarks/results/wave31j/` — pinned baseline (N=2 identical)
+- Code change: PR #41 (commit `2faa852`)
+
+### Artifacts on `experiment/wave-31-survey` (research-only)
+
+- Falsified-experiment code (PaddleOCR adapter, Otsu, body-relative,
+  OpenRouter primary-extractor switch)
+- 21 experimental scripts (rezsweep, normalize-order-bench,
+  otsu-bodyrel-bench, openrouter-sweep, frontier-sweep,
+  per-image-resolution-sweep, dual-resolution-ensemble, etc.)
+- Raw bench JSONs for all 16 candidates
+
+### Cost
+
+- Wave-31 research total: ~$30 in API spend (Gemini + OpenRouter)
+- Engineering: ~14 hours across 4 working sessions
+
+---
+
 ## [Wave 30: prefix/body OCR ratio — FALSIFIED before bench] — 2026-05-14
 
 ### Hypothesis
