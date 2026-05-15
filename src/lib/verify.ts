@@ -60,6 +60,12 @@ interface VerifyOptions {
   /** Hard wall-clock budget for the vision call in ms. */
   visionTimeoutMs?: number;
   /**
+   * Override the default preprocessing behaviour. Used by tests that pass
+   * tiny synthetic images and want to skip the wave-31j Lanczos upscale.
+   * Production never sets this.
+   */
+  preprocessOpts?: { maxEdge?: number; enlarge?: boolean; autoContrast?: boolean };
+  /**
    * External abort signal. When aborted (e.g. SSE client disconnect),
    * the per-item timeout controller is aborted too — stopping any
    * in-flight vision call so we don't keep billing after the user has
@@ -148,7 +154,7 @@ export async function verifyLabel(
 
   // ─── 1. Preprocess ───────────────────────────────────────────────────────
   const preStart = performance.now();
-  const pre = await preprocessImage(imageBytes);
+  const pre = await preprocessImage(imageBytes, opts.preprocessOpts);
   const preElapsed = performance.now() - preStart;
 
   // ─── 2. OCR + vision in parallel ─────────────────────────────────────────
@@ -827,7 +833,7 @@ export async function extractOnly(
   const visionTimeoutMs = opts.visionTimeoutMs ?? DEFAULT_VISION_TIMEOUT_MS;
 
   const preStart = performance.now();
-  const pre = await preprocessImage(imageBytes);
+  const pre = await preprocessImage(imageBytes, opts.preprocessOpts);
   const preElapsed = performance.now() - preStart;
 
   const ctrl = new AbortController();
