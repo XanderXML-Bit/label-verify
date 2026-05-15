@@ -13,10 +13,12 @@
       "corpus": "test-data-combined"
     },
     "p50_total": {
-      "value": 3213,
-      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
-      "benchAt": "2026-05-13T09:23:12.849Z",
-      "corpus": "test-data-combined"
+      "value": 3078,
+      "commit": "2faa852",
+      "benchAt": "2026-05-15T01:43:08.000Z",
+      "corpus": "test-data-combined",
+      "wave": "wave-31j",
+      "previous": { "value": 3213, "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e", "benchAt": "2026-05-13T09:23:12.849Z" }
     },
     "p95_total": {
       "value": 7317,
@@ -25,22 +27,33 @@
       "corpus": "test-data-combined"
     },
     "p50_vision": {
-      "value": 2701,
-      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
-      "benchAt": "2026-05-13T09:23:12.849Z",
-      "corpus": "test-data-combined"
+      "value": 2338,
+      "commit": "2faa852",
+      "benchAt": "2026-05-15T01:43:08.000Z",
+      "corpus": "test-data-combined",
+      "wave": "wave-31j",
+      "previous": { "value": 2701, "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e", "benchAt": "2026-05-13T09:23:12.849Z" }
     },
     "p95_vision": {
-      "value": 3769,
-      "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e",
-      "benchAt": "2026-05-13T09:23:12.849Z",
-      "corpus": "test-data-combined"
+      "value": 3152,
+      "commit": "2faa852",
+      "benchAt": "2026-05-15T01:43:08.000Z",
+      "corpus": "test-data-combined",
+      "wave": "wave-31j",
+      "previous": { "value": 3769, "commit": "d8c6b2d59de86900bf5fb5b5802baeb4320c8f2e", "benchAt": "2026-05-13T09:23:12.849Z" }
     },
     "errors": {
-      "value": 5,
-      "commit": "66f093cc2805687626b2f12598c516039dab1000",
-      "benchAt": "2026-05-13T16:16:44.764Z",
-      "corpus": "test-data-combined"
+      "value": 2,
+      "commit": "2faa852",
+      "benchAt": "2026-05-15T01:43:08.000Z",
+      "corpus": "test-data-combined",
+      "wave": "wave-31j",
+      "previous": { "value": 5, "commit": "66f093cc2805687626b2f12598c516039dab1000", "benchAt": "2026-05-13T16:16:44.764Z" }
     }
-  }
+  },
+  "_notes": [
+    "Updated 2026-05-15: wave-31j sets 4 new latency/error records (p50_total, p50_vision, p95_vision, errors).",
+    "passRateOnCorrect champion at 76.5% reflects a deprecated pre-wave-28 config that traded stratified guardrail safety for higher headline pass-rate. The current production state (wave-31j, 69.8%) is a deliberate Pareto move: adv.fp-on-correct 6→2 with comp.false-fail 1→0, regulator-critical metrics. See docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md.",
+    "p95_total champion at 7317 ms is from a smaller-N early bench; not a fair comparison to the wave-31j 340-task cross-pair bench."
+  ]
 }

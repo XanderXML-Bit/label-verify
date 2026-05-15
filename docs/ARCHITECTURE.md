@@ -30,7 +30,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 | Framework | **Next.js 15** (App Router) | One artifact for UI + API; first-class Vercel deploy; streaming-response semantics for the batch route. |
 | Language | **TypeScript strict** | Catches contract drift between extractor output and downstream validators at compile time. |
 | UI primitives | **Tailwind 3** + lightweight bespoke components | Accessible defaults; no design-system dependency. |
-| Image preprocessing | **sharp** (libvips) | EXIF auto-orient, resize-to-1600 px long edge, JPEG 82 with mozjpeg. Trims vision payload by ~70 %. |
+| Image preprocessing | **sharp** (libvips) | EXIF auto-orient, Lanczos-3 resize to **2000 px long edge** (wave-31j upscales sub-target images), JPEG 82 with mozjpeg. Trims oversize payloads while giving the VLM enough resolution to discriminate subtle bold/size perturbations. |
 | Vision extractor (primary) | **Gemini 3.1 Flash Lite** via `@google/generative-ai` | Pareto-dominant on the bake-off (accuracy × latency × cost). See [`MODEL-SELECTION.md`](MODEL-SELECTION.md) §4. |
 | Vision extractor (second-opinion) | **Gemini 2.5 Flash** via `@google/generative-ai` | Smarter same-provider second-opinion fires on borderline-Gov-Warning REVIEW. Wave 22 swap (2026-05-13) — see [`WAVE-22-FINDINGS.md`](WAVE-22-FINDINGS.md). |
 | Vision extractor (cross-provider fallback) | **GPT-5.4-nano** via `openai` | Provider-diversity safety net on primary provider failure (5xx / timeout / abort). Distinct from the second-opinion above. |
@@ -47,7 +47,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 For one POST to `/api/verify`:
 
 1. **Receive**. Multipart upload (`image` + `declared` JSON) or JSON body (`{ url, declared }`). The route validates MIME (image: JPEG / PNG / WebP / HEIC / HEIF / PDF), size (≤ 10 MB image, ≤ 25 MB PDF), and the `declared` payload against `DeclaredFieldsSchema`. Per-IP rate limit applies.
-2. **Preprocess** (`src/lib/preprocess.ts`). `sharp` performs EXIF auto-orient, resizes the long edge to 1600 px (no enlargement), re-encodes JPEG at quality 82 with mozjpeg. PDFs render the first page via `pdfjs-dist` + `@napi-rs/canvas` before entering this step.
+2. **Preprocess** (`src/lib/preprocess.ts`). `sharp` performs EXIF auto-orient, then Lanczos-3 resize to a 2000-px long edge (wave-31j; aspect ratio preserved). Sub-target images are upscaled (the wave-28b default `withoutEnlargement: true` kept 1024×1536-class corpora at native size, which silently under-resolved subtle bold/size perturbations — see `WAVE-31j-UPSCALE-2000-SHIPPABLE.md`). The pipeline re-encodes JPEG at quality 82 with mozjpeg. PDFs render the first page via `pdfjs-dist` + `@napi-rs/canvas` before entering this step. Env overrides `LV_MAX_EDGE` and `LV_ENLARGE=0` are retained for research/benching.
 3. **Extract and OCR in parallel** (`src/lib/verify.ts:verifyLabel`).
    - The vision extractor (`src/lib/vision/gemini.ts`) issues a single structured-output JSON-schema call to Gemini 3.1 Flash Lite. The prompt requests all seven declared fields plus the Government-Warning block (`raw_text`, `prefix_text`, `prefix_bbox`, `prefix_appears_bold`, `prefix_appears_caps`).
    - Concurrently, `tesseract.js` produces word-level bounding boxes and confidences. The OCR text is not passed into the vision prompt; OCR exists for the Government-Warning bold/size measurements only.

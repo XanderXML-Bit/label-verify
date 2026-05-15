@@ -174,7 +174,7 @@ So OCR is **never used for text reading** — only for the geometric bbox + pixe
 
 | Step | P50 | P95 | Notes |
 |---|---|---|---|
-| Preprocess (`sharp`) | ~120 ms | ~180 ms | EXIF auto-orient, resize-to-1600px, JPEG quality 82 with mozjpeg, auto-contrast normalise |
+| Preprocess (`sharp`) | ~150 ms | ~220 ms | EXIF auto-orient, Lanczos-3 resize to 2000-px long edge (wave-31j upscales sub-target images), JPEG quality 82 with mozjpeg, auto-contrast normalise |
 | Tesseract OCR (parallel) | ~800 ms | up to 8 s race-capped | runs concurrently with vision; only blocks GW bold/size subscores (the validator awaits OCR up to 8 s before falling back to model self-reports) |
 | Vision call (Gemini 3.1 Flash Lite) | ~2.0 s | ~3.5 s | dominant cost — provider-bound. Cannot be cut without changing the model. |
 | Field matchers + GW validator | < 50 ms | < 100 ms | pure CPU; cheap |
