@@ -3,7 +3,8 @@
   "source": "real",
   "image": "test-data/ai-generated/labels/ai-label-0031.jpg",
   "degradations": [
-    "upside-down flat label"
+    "upside-down flat label",
+    "printed text typos: 'defetts' / 'youf abilty tc' / comma instead of period between sentences"
   ],
   "beverage_type": "wine",
   "label_face": "front",
@@ -21,14 +22,14 @@
     "country_of_origin": null,
     "government_warning": {
       "present": true,
-      "text_matches_regulation": true,
+      "text_matches_regulation": false,
       "prefix_all_caps": true,
       "prefix_bold": true,
       "meets_size_minimum": true
     }
   },
   "gov_warning_case": "Q6_ROTATED_180",
-  "notes": "Upside-down orientation case; keep robustness-only.",
+  "notes": "Upside-down orientation AND printed-text typos in the warning body (defetts/youf/abilty/tc and comma-vs-period between sentences). Marked non-compliant on text grounds per 27 CFR §16.21 strict literal-text requirement. Per WAVE-31b GT-noise finding.",
   "_converted_from_ai": true,
   "_usage_tier": "robustnessOnly"
 }
