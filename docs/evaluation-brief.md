@@ -108,8 +108,9 @@ attempt.** Scope discipline is itself part of the design.
 - **Network constraints at TTB** — government networks block many third-party
   domains. Our deployment must work from a standard browser; our verification
   pipeline should degrade gracefully if a hosted model is unreachable. See
-  `APPROACH.md` for the local-model fallback plan.
+  `docs/archive/APPROACH.md` for the local-model fallback plan (the
+  pre-implementation planning doc; never shipped as code).
 - **5-second budget is tight** for vision-model calls — multiple round trips
-  to a hosted LLM will not fit. See `ARCHITECTURE.md` §"Latency Budget."
+  to a hosted LLM will not fit. See `docs/ARCHITECTURE.md` §4 (Latency budget).
 - **Ground truth is hard** — we need test labels where we *know* every field
   precisely. See `TEST-STRATEGY.md`.

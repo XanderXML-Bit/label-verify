@@ -113,4 +113,67 @@ describe("preprocessImage", () => {
     expect(pre.width).toBe(100);
     expect(pre.height).toBe(200);
   });
+
+  // Wave-32 audit (Sub-agent B G6): env-var override paths.
+  describe("env-var overrides (wave-31 research escape hatches)", () => {
+    it("LV_MAX_EDGE=1600 LV_ENLARGE=0 opts back into wave-28b behaviour", async () => {
+      const original = {
+        max: process.env.LV_MAX_EDGE,
+        enl: process.env.LV_ENLARGE,
+      };
+      try {
+        process.env.LV_MAX_EDGE = "1600";
+        process.env.LV_ENLARGE = "0";
+        // Input below the target — must NOT enlarge.
+        const input = await solidJpeg(1024, 1536);
+        const pre = await preprocessImage(input);
+        expect(pre.width).toBe(1024);
+        expect(pre.height).toBe(1536);
+      } finally {
+        if (original.max === undefined) delete process.env.LV_MAX_EDGE;
+        else process.env.LV_MAX_EDGE = original.max;
+        if (original.enl === undefined) delete process.env.LV_ENLARGE;
+        else process.env.LV_ENLARGE = original.enl;
+      }
+    });
+
+    it("LV_MAX_EDGE=2400 LV_ENLARGE=1 enlarges past wave-31j default", async () => {
+      const original = {
+        max: process.env.LV_MAX_EDGE,
+        enl: process.env.LV_ENLARGE,
+      };
+      try {
+        process.env.LV_MAX_EDGE = "2400";
+        process.env.LV_ENLARGE = "1";
+        const input = await solidJpeg(1024, 1536);
+        const pre = await preprocessImage(input);
+        // long-edge 1536 → 2400, aspect-preserved → 1024 * (2400/1536) = 1600.
+        expect(pre.height).toBe(2400);
+        expect(pre.width).toBe(1600);
+      } finally {
+        if (original.max === undefined) delete process.env.LV_MAX_EDGE;
+        else process.env.LV_MAX_EDGE = original.max;
+        if (original.enl === undefined) delete process.env.LV_ENLARGE;
+        else process.env.LV_ENLARGE = original.enl;
+      }
+    });
+
+    it("LV_NORMALIZE_ORDER=before-resize swaps normalize/resize order without breaking the pipeline", async () => {
+      const original = process.env.LV_NORMALIZE_ORDER;
+      try {
+        process.env.LV_NORMALIZE_ORDER = "before-resize";
+        const input = await solidJpeg(800, 600);
+        const pre = await preprocessImage(input, { enlarge: false });
+        // We don't assert pixel-identity (normalize() is degenerate on solid
+        // backgrounds), only that the env-flagged code path runs without
+        // throwing and still produces a JPEG of the expected size.
+        expect(pre.width).toBe(800);
+        expect(pre.height).toBe(600);
+        expect(pre.buffer[0]).toBe(0xff);
+      } finally {
+        if (original === undefined) delete process.env.LV_NORMALIZE_ORDER;
+        else process.env.LV_NORMALIZE_ORDER = original;
+      }
+    });
+  });
 });

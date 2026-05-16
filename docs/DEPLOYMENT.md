@@ -59,9 +59,9 @@ CHECKLIST cover acquisition.
 | `MODEL_FALLBACK` | Optional | OpenAI model id used for the primary-failure fallback. Default: `gpt-5.4-nano`. |
 | `SECOND_OPINION_PROVIDER` | Optional | `gemini` (default) or `openai`. Routes the borderline-Gov-Warning recheck. Wave 22 added the same-provider Gemini path. |
 | `SECOND_OPINION_MODEL` | Optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
-| `VISION_TIMEOUT_MS` | Optional | Wall-clock budget for the vision call. Default: `60000`. |
-| `MAX_BATCH_SIZE` | Optional | Hard cap on uploads per batch request. Default: `1000`. |
+| `MODEL_APPLICATION_VISION` | Optional | Override the model used by application-image OCR fallback. Default: `gemini-3.1-flash-lite`. Consumed by `src/lib/application/parse-image.ts`. |
 | `RATE_LIMIT_PER_MIN` | Optional | Per-IP per-endpoint cap on the public demo. Default: `60`. |
+| `GEMINI_RPM_LIMIT` | Optional | Rough Gemini provider RPM ceiling used by the batch capacity planner. Default: `60`. Consumed by `src/lib/batch-capacity.ts`. |
 | `DEBUG_TOKEN` | Optional | Bearer token gating `/api/debug/last`, `/api/queue`, and the detailed `/api/health` payload. Leave unset to hide those surfaces entirely. |
 
 A `.env.example` documents every var. The README explains how to obtain
@@ -101,15 +101,18 @@ Vercel flow is:
   idle has a cold start (~500–1500 ms for Node, more if `sharp` /
   `tesseract.js` are first-loaded on the same call).
 - Mitigation: a tiny **warmup pinger** on the deployed home page that hits
-  `/api/health` and `/api/warmup-tesseract` on load. Keeps the function and
-  the OCR engine warm during a demo session.
+  `/api/health` and `/api/warmup` on load. Keeps the function and the OCR
+  engine warm during a demo session.
 - `sharp` and `tesseract.js` are declared in
   [`next.config.js`](../next.config.js) under `serverExternalPackages` so
   Next's bundler does not try to inline their native / WASM payloads.
-- Hard 5 s `AbortSignal` on every vision call (see `ARCHITECTURE.md` §4.3).
-  If the call exceeds budget, we fall back to OCR-only validation instead of
-  blocking the user; the UI surfaces this as a `REVIEW` outcome with a
-  "Run again with stronger model" CTA.
+- Hard 60 s `AbortSignal` on every vision call (the `DEFAULT_VISION_TIMEOUT_MS`
+  constant in `src/lib/verify.ts`, intentionally not env-overridable to avoid
+  a hidden production mode). The per-mode 5 s end-to-end target documented
+  in `ARCHITECTURE.md §4` is the budget the orchestrator aims for; the
+  60 s value is the safety wall. When a call exceeds the per-mode budget but
+  not the wall, the orchestrator returns a `REVIEW` outcome with the slow
+  call surfaced in the timings panel.
 
 ## 7. Observability
 
@@ -145,7 +148,7 @@ reasons relevant to this app:
 
 | Limit | Hobby (current) | Pro | Why it matters here |
 |---|---|---|---|
-| Function timeout | 30 s | up to 300 s | Cold-start + a Smart-tier (Gemini 3.1 Pro Preview) verify call can flirt with 30 s. Pro removes the worry. |
+| Function timeout | 60 s (Hobby cap; `vercel.json` sets `maxDuration: 60`) | up to 300 s | Cold-start + a Smart-tier (Gemini 3.1 Pro Preview) verify call can flirt with the 60 s ceiling on a worst-case batch row. Pro removes the worry. |
 | Function memory | 2 GB | up to 3 GB (per-function override) | The vision call is small; the ceiling matters only if we ever introduce a local VLM. Headroom for `sharp` + `tesseract.js-core` is already comfortable at 2 GB. |
 | Concurrency | best-effort | provisioned concurrency available | Reduces cold starts during a batch upload of 1,000 labels. |
 | Bandwidth | 100 GB / mo | 1 TB / mo | Batch CSV / image traffic could plausibly exceed Hobby for a real ops team. |

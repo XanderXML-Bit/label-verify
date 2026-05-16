@@ -1,0 +1,26 @@
+Acting as a skeptical senior engineer reviewing the LabelVerify project ON MAIN before a Treasury TTB hiring manager reviews it: I just ran two automated audits (docs/code drift, test coverage). They found:
+
+DOCS/CODE DRIFT (9 critical, 6 medium):
+- README headline cost claim contradicts itself: one line says approx 1.50 USD per 1000 labels, another says 0.25 USD per 1000 labels (off by 6x)
+- README still says 6 residual false-passes in one paragraph but 2 in two other paragraphs (wave-31j drove the actual count to 2)
+- README headline pass-rate 69.8 percent vs WAVE-31j-SHIPPABLE doc 68.6 percent (multiple files disagree by 1.2pp)
+- DEPLOYMENT.md references a non-existent /api/warmup-tesseract route (actual route is /api/warmup)
+- DEPLOYMENT.md says 30s Vercel Hobby cap (actually 60s)
+- DEPLOYMENT.md and DEPLOYMENT-CHECKLIST.md both document VISION_TIMEOUT_MS as an env var but it is hardcoded in src/lib/verify.ts
+- DEPLOYMENT.md documents MAX_BATCH_SIZE env var but the code never reads it
+- DEPLOYMENT.md references a non-existent ARCHITECTURE.md section 4.3 with a wrong 5s claim
+- README CSP string truncated vs vercel.json
+- README test count 635 vs RETROSPECTIVE 628
+
+TEST COVERAGE (10 gaps, 7 brittle):
+- Cross-provider OpenAI fallback path in verify.ts lines 224-293 (190 lines) has zero direct tests
+- extractOnly function in verify.ts (190 lines duplicate of verifyLabel) has zero direct tests
+- LV_MAX_EDGE and LV_ENLARGE env-override paths uncovered
+- Wave-31j 2000-px default never integration-tested through verifyLabel (only in unit-level preprocess test); all verify tests pin LV_ENLARGE=0 globally in setup.ts
+- GT-corrected ai-label-0031 and ai-label-0050 producing text=fail is not pinned (a future model swap could silently regress wave-31j)
+- /api/warmup route has zero tests
+- 6 verify-* test files all share an identical hand-tuned OCR-bbox fixture that would silently invalidate on a bbox-height refactor or container-size change
+
+Project state on main: pass-rate-on-correct 69.8 percent, adv.fp-on-correct 2/170, comp.fp-on-correct 0, latency p50 3s. Wave-31j shipped via PR 41, docs follow-ups 42 and 43. The 2 remaining adversarial false-passes (deg-beer-0012 B1, syn-spirits-0013 S1) were root-caused to Tesseract-recognition-failure (wave-32 attempted Grounding-DINO-bbox + Tesseract-on-crop fallback, falsified because Tesseract returns aN instead of GOVERNMENT WARNING even on tight crops).
+
+QUESTION: What is the single strongest critique a Treasury TTB regulatory engineer would make of this submission given the above? Skip the niceties. What is the killer point that would make the hiring manager dock the candidate the most? Limit to one critique, with concrete evidence. Be terse and brutally honest.

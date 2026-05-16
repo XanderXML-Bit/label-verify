@@ -18,7 +18,7 @@
 | **What does it do?** | Drop a label image + COLA application data → get a `pass` / `fail` / `review` verdict on each of the 7 regulated fields plus the Government Warning subscore (27 CFR §16.21 / §16.22). |
 | **Latency** | **~3 s P50 end-to-end** (warm function, single image). Vision call is the dominant cost. Live verifies on the deployed instance complete in 3.2–4.5 s depending on image size and provider tail. |
 | **Field-level accuracy** | On the 170-image bench corpus (90 SVG-rendered synthetic + 80 photo-realistic AI-generated labels): the cross-pair benchmark (`npm run bench:cross-pair`) measures **69.8 % strict pass-rate on correct ground truth and 100 % fail-or-review on perturbed wrong ground truth**, with **0 deterministic compliant false-fails** and **2 deterministic adversarial.fp-on-correct** (wave-31j drove these 6→2 via Lanczos upscaling to 2000-px long edge). The regulator-critical `compliant.false-pass-on-correct` metric on real-photo labels remains **zero across every wave since 22**. Bare-extractor field-level accuracy on the bake-off is ~96 % on synthetic and ~99 % on photo-realistic. The Government-Warning false-negative rate is **~5 %** (Wilson 95 % CI upper 10.2 %, n = 137 non-compliant labels). See [Headline measurement](#headline-measurement), `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the stratified criterion, `docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md` for the wave-31j rationale, and [Scope and limitations](#scope-and-limitations). |
-| **Cost** | **≈ $1.50 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite at the current Google rate card: $0.25 / 1M input, $1.50 / 1M output). Same-provider second-opinion calls (Gemini 2.5 Flash, ~5–15 % of verifications, only when the Government-Warning subscore is borderline) add ~$0.001 each. |
+| **Cost** | **≈ $0.25 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite at the current Google rate card: $0.25 / 1M input, $1.50 / 1M output; a typical verify call uses ~700 input + ~250 output tokens). Same-provider second-opinion calls (Gemini 2.5 Flash, ~5–15 % of verifications, only when the Government-Warning subscore is borderline) add ~$0.001 each. |
 | **Auto-pair batches?** | Yes. **Four-stage pairing**: (1) inline-manifest detection (one dropped CSV/JSON with N rows + a `filename` column → N pairs; filename-keyed JSON object maps are also auto-detected), (2) filename stem matching (face-tag and app-tag aware), (3) content-based fallback (brand + class similarity from a lightweight vision extraction), (4) single-application broadcast (1 app file + N images → broadcast same fields to all, surfaced as a warning). Handles randomly-named files, partial coverage (5 images + 20-row manifest → 5 pairs + 15 orphan rows flagged), and one-CSV-covers-all (12 images + 1 12-row CSV → 12 pairs). The batch UI shows a determinate progress bar with the four stages labelled as it advances. |
 | **Single image + roster manifest?** | Yes. Drop one image + a multi-row manifest together (or upload the manifest after the image); the parser picks the row matching the image's filename. Multi-row CSV / JSON with a `filename` column and filename-keyed JSON object maps both work. |
 | **Simple or detailed view?** | A header toggle (next to dark mode) flips the result panel between **Simple** (verdict + Government-Warning status + only the failing/review fields with their reasons) and **Detailed** (full per-subscore breakdown, extractor confidences, second-opinion panel, per-call timing). Default = Simple. Choice persists per browser. |
@@ -26,7 +26,7 @@
 | **What if Gemini is down?** | Cross-provider auto-fallback to GPT-5.4-nano (OpenAI) on primary failure, with a yellow "verified via backup" banner on the verdict. Separate from the second-opinion path. |
 | **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent second-opinion model (default **Gemini 2.5 Flash** since wave 22) re-reads the label. Agreement / disagreement is surfaced inline. Operator can route this to OpenAI instead via `SECOND_OPINION_PROVIDER=openai`. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
-| **Code review** | **635 / 635** vitest tests passing across **66 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
+| **Code review** | **636 / 636** vitest tests passing across **66 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
 
 **How to read this report**
 
@@ -102,7 +102,7 @@ The Government-Warning false-negative rate is the rate at which a non-compliant 
 | End-to-end P50 / P95 latency | **~3.0 s / ~13.0 s** (wave-31j; faster than the wave-28b baseline because the larger preprocessed image gives Tesseract enough resolution to find the prefix more often, reducing the 8s OCR-race timeout) |
 | Vision-call P50 / P95 latency | ~2.3 s / ~3.5 s |
 
-The strict pass-rate is bounded below by deliberate orchestrator deferrals (REVIEW): when the bold or size subscore lacks pixel-tight evidence, the orchestrator fires a same-provider second-opinion (Gemini 2.5 Flash since wave 22) and only restores PASS if the two models agree. The 6 residual false-passes-on-correct are *all* synthetic adversarial defect cases (B1/B2/B3 bold cluster + S3 + the S2 case that wave-28b's 0.65 degraded-PASS band accepts as a deliberate tradeoff). The **regulator-critical metric — `compliant.false-pass-on-correct`** on real-photo and synthetic-compliant baselines — has been **zero across every wave since 22**. See `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the stratified criterion that makes this distinction operational, and `docs/SESSION-2026-05-13-OVERNIGHT.md` for the cumulative N=12 noise band and per-image trace. The bench's `--no-track`-aware best-known record at `benchmarks/.best-known.json` tracks per-metric champions so future runs flag regressions immediately.
+The strict pass-rate is bounded below by deliberate orchestrator deferrals (REVIEW): when the bold or size subscore lacks pixel-tight evidence, the orchestrator fires a same-provider second-opinion (Gemini 2.5 Flash since wave 22) and only restores PASS if the two models agree. The 2 residual `adversarial.fp-on-correct` cases (`deg-beer-0012` B1 and `syn-spirits-0013` S1) are both synthetic adversarial defects whose Tesseract recognition fails — root-caused in wave-32, queued for a wave-33+ narrow-second-opinion or learned-bold-classifier intervention (`docs/WAVE-32-GROUNDING-DINO-FALSIFIED.md`). The **regulator-critical metric — `compliant.false-pass-on-correct`** on real-photo and synthetic-compliant baselines — has been **zero across every wave since 22**. See `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the stratified criterion that makes this distinction operational, and `docs/SESSION-2026-05-13-OVERNIGHT.md` for the cumulative N=12 noise band and per-image trace. The bench's `--no-track`-aware best-known record at `benchmarks/.best-known.json` tracks per-metric champions so future runs flag regressions immediately.
 
 ### Generalizability caveats
 
@@ -179,7 +179,7 @@ So OCR is **never used for text reading** — only for the geometric bbox + pixe
 | Vision call (Gemini 3.1 Flash Lite) | ~2.0 s | ~3.5 s | dominant cost — provider-bound. Cannot be cut without changing the model. |
 | Field matchers + GW validator | < 50 ms | < 100 ms | pure CPU; cheap |
 | Independent second-opinion (only on borderline GW, ~5–15 % of calls) | + ~2.5 s | + ~7 s | same-provider Gemini 2.5 Flash since wave 22; only fires when the primary GW lands on REVIEW |
-| **Total verify (happy path)** | **~2.8 s** | **~4.1 s** | brief asks for ≤ 5 s; we hit it. Second-opinion-firing cases add up to ~10 s P95. |
+| **Total verify (happy path)** | **~3.0 s** | **~4.1 s** | brief asks for ≤ 5 s; we hit it. Second-opinion-firing cases add up to ~10 s P95. Wave-31j post-merge bench p50 = 3078 ms (`benchmarks/results/wave31j/post-merge-validation.json`). |
 
 The vision call dominates; preprocessing and OCR run in parallel with it. The **strokeProxy** in `bold-size.ts` is the classical-CV stroke-width transform: greyscale → threshold-binarize at 128 → per-column mean dark-run-length, **normalised by bbox height** (2026-05-13 audit fix — the un-normalised version was glyph-size-confounded and caused 4 of the 7 measured GW false-negatives). This is one place where a measurement is genuinely better than asking an LLM "is this bold."
 
@@ -219,7 +219,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | Surface | State |
 |---|---|
 | **Live production** | <https://label-verify-six.vercel.app> · `/api/health` returns `{ ok: true, ready: true, notes: [] }` · all routes 200 · live manual browser walkthrough completed (PASS / FAIL / REVIEW samples all returned correct verdicts in 4.5–5.2 s with 0 console errors) |
-| **Tests** | **635 / 635** passing (`vitest`) · 66 test files (~10 s) |
+| **Tests** | **636 / 636** passing (`vitest`) · 66 test files (~10 s) |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
 | **Lint** | `next lint` clean (zero warnings) |
 | **Production build** | green |
@@ -299,6 +299,9 @@ That's it — the dev server runs the same Next.js App Router build as productio
 | `MODEL_FALLBACK` | optional | OpenAI model id for the primary-failure fallback. Defaults to `gpt-5.4-nano`. |
 | `SECOND_OPINION_PROVIDER` | optional | `gemini` (default) or `openai`. Routes the borderline-Gov-Warning recheck. Wave 22. |
 | `SECOND_OPINION_MODEL` | optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
+| `MODEL_APPLICATION_VISION` | optional | Override the model used by application-image OCR fallback (`src/lib/application/parse-image.ts`). Defaults to `gemini-3.1-flash-lite`. |
+| `LV_MAX_EDGE` | optional | Preprocess long-edge target (px). Defaults to 2000 (wave-31j). Setting `1600` opts back into wave-28b behaviour for back-compat A/B. |
+| `LV_ENLARGE` | optional | `1` (default) enables Lanczos upscale of sub-target images; `0` keeps `sharp`'s `withoutEnlargement: true` (pre-wave-31j behaviour). |
 | `RATE_LIMIT_PER_MIN` | optional | Per-IP rate limit. Defaults to 60. |
 | `GEMINI_RPM_LIMIT` | optional | Project-level Gemini RPM. Batch capacity derives from this × the 300 s SSE window. Defaults to 30. |
 | `DEBUG_TOKEN` | optional | Bearer-gated access to `/api/debug/last` ring buffer. Timing-safe compare. |
@@ -455,7 +458,7 @@ Full threat model: [`SECURITY.md`](SECURITY.md). Last review 2026-05-14 (multi-a
 - Gov-Warning PASS at low confidence WITHOUT OCR corroboration routes to REVIEW (not PASS) so a no-OCR degraded run can't silently approve a non-compliant warning.
 
 **Transport:**
-- Security headers in `vercel.json`: HSTS preload (`max-age=63072000; includeSubDomains; preload`), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` deny-all on sensitive APIs, `Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`.
+- Security headers in `vercel.json`: HSTS preload (`max-age=63072000; includeSubDomains; preload`), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()` (deny-list of four), `Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`.
 
 **Authentication:**
 - The `/api/debug/last` ring buffer is gated by `DEBUG_TOKEN` (Bearer header, `crypto.timingSafeEqual` compare with length-spoof dummy so a wrong token can't be length-distinguished). Every other endpoint is unauthenticated by design — this is a prototype per brief §9.
@@ -504,6 +507,17 @@ The deliberate choices, in plain terms:
 13. [`SECURITY.md`](SECURITY.md) — threat model + mitigations.
 14. [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup + extension points.
 15. [`CHANGELOG.md`](CHANGELOG.md) — submission timeline + audit findings closed.
+
+**Wave-by-wave research record** (each wave a pre-registered hypothesis with shipped or falsified outcome; full text in `docs/WAVE-*.md`):
+- Wave 22–25: Gemini 2.5 Flash second-opinion, Gov-Warning case-fold, class-generic acceptance, null-extraction safety net.
+- Wave 27: primary-model bake-off.
+- Wave 28a-b: stratified guardrail + size-threshold band.
+- Wave 29: cross-provider second-opinion (falsified).
+- Wave 30: prefix/body OCR ratio (falsified before bench).
+- Wave 31j: **Lanczos upscale to 2000-px long edge** — shipped — `docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md`.
+- Wave 31k: per-image resolution sensitivity follow-up — `docs/WAVE-31k-RESOLUTION-PER-IMAGE-ANALYSIS.md`. 2000 stays as flat default.
+- Wave 31a-i: full survey of 16 candidate model/preprocess swaps (15 falsified) — `docs/WAVE-31-EXHAUSTIVE-FINAL.md`.
+- Wave 32: Grounding DINO prefix-locator fallback (falsified at OCR-recognition layer) — `docs/WAVE-32-GROUNDING-DINO-FALSIFIED.md`.
 
 **Pre-implementation planning docs** (kept for the audit trail; the current state of the code is the authority):
 - [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) — pre-registered hypotheses.

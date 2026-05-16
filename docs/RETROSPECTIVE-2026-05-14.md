@@ -1,5 +1,16 @@
 # Retrospective: would we build it the same way? (2026-05-14)
 
+> **SUPERSEDED BY WAVE-31 / WAVE-32.** This retrospective was written pre-wave-31 and
+> reflects the state at wave-28b. The wave-31j ship (PR #41) and the wave-32
+> falsified follow-up have since moved several anchor numbers and addressed
+> some of the §A1/§A4 items below. Read this for historical context; for
+> current state see `README.md`, `CHANGELOG.md`, and
+> `docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md` /
+> `docs/WAVE-32-GROUNDING-DINO-FALSIFIED.md`. Body claims preserved as audit
+> trail; numbers below (628 tests, "5 false-passes survive", "ai-label-0031/0050"
+> false-fails) are pre-wave-31j and now correctly reflected as 636 tests, 2
+> adversarial false-passes, and GT-corrected respectively.
+>
 > Honest post-mortem on the LabelVerify architecture, written after the project is functionally complete. Two sub-agent passes informed this — one on 2026-state-of-the-art VLM document-verification practice, one on the code-level fragility of what we shipped. Sources cited at bottom.
 
 ## TL;DR

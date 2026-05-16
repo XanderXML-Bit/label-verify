@@ -1,0 +1,5 @@
+Killer critique: the project is not regulator-trustworthy because its compliance claims are not backed by a stable, tested evidence chain.
+
+Concrete evidence: it still returns false PASS on mandatory Government Warning failures — deg-beer-0012 B1 and syn-spirits-0013 S1 — and the root cause is a known OCR recognition failure that wave-32 could not fix even on tight crops. Meanwhile the code paths most likely to affect that outcome are under-tested: cross-provider fallback in verify.ts has zero direct tests, extractOnly duplicates ~190 lines with zero direct tests, Wave-31j’s 2000px default is not integration-tested through verifyLabel, and the GT-corrected regressions ai-label-0031 / ai-label-0050 are not pinned.
+
+That is what a TTB engineer docks hardest: not “accuracy is imperfect,” but “you are claiming regulatory PASS/FAIL performance while known false-compliance cases remain, the relevant decision paths are insufficiently tested, and the public docs disagree on the actual metrics.”
