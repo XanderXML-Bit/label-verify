@@ -1,6 +1,6 @@
 # Security policy
 
-LabelVerify is a take-home prototype, not a production system, but
+LabelVerify is a prototype, not a production system, but
 treats security as a first-class concern because TTB-regulated label
 data could plausibly contain personally identifying information (the
 producer field is a brewer/distiller and may name an individual).
@@ -15,7 +15,7 @@ issue**. Email <xandermlopez@gmail.com> with:
 - The deployment URL where you reproduced it (almost certainly
   https://label-verify-six.vercel.app).
 
-Expect a reply within 48 hours during the take-home review window.
+Expect a reply within 48 hours during the review window.
 After review wraps, the prototype is unmaintained — open a public
 issue at that point if needed.
 

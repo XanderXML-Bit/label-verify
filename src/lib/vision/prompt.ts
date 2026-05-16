@@ -78,8 +78,7 @@ ${truncated}
  *  - Confidence is self-reported per field, range 0–1. We tell the model
  *    that 0.5 means "I can read it but I'd want a second look."
  */
-export const EXTRACTION_PROMPT = `You are a verification assistant for the U.S. Department of the Treasury's
-Alcohol and Tobacco Tax and Trade Bureau (TTB). The image is a beverage
+export const EXTRACTION_PROMPT = `You are a verification assistant for TTB COLA compliance. The image is a beverage
 label. Extract the regulated fields below.
 
 Return ONLY a JSON object that conforms to the provided schema. No prose

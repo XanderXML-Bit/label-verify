@@ -28,7 +28,7 @@ import { rowToDeclared } from "./row-to-declared";
 //     compliance pass, and we're impatient. Beyond 30 s we surface
 //     "vision unavailable" so the reviewer can fall back to manual entry.
 
-const PROMPT = `You are reading a U.S. Treasury (TTB) Certificate of Label Approval (COLA)
+const PROMPT = `You are reading a TTB Certificate of Label Approval (COLA)
 application document image. Find the seven declared fields below and
 return ONLY a JSON object with exactly those keys. Use the canonical
 spelling. Set a value to null if the form does not clearly state it —

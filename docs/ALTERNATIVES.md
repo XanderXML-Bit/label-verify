@@ -83,7 +83,7 @@ bake-off) returned 20-38 % accuracy — the schema-output gap is the
 limiting factor: open-weight models don't honour `{value, confidence}`
 envelopes well even with a coercion shim.
 
-**Why we didn't pick it.** For a take-home prototype, the engineering
+**Why we didn't pick it.** For a prototype, the engineering
 trade is bad. For a production deployment with compliance-driven
 "data stays in our infrastructure" requirements, Qwen2.5-VL-7B
 self-hosted is the path. We document the swap point in §5 below.
@@ -134,10 +134,10 @@ against the applicant value.
 |-----|-----|
 | Each component independently auditable | ~2 weeks of integration engineering |
 | Could fit R1 with room to spare (1-2 s) | More moving parts, more ways to fail |
-| Cheapest on per-label cost at high volume | Doesn't help on a prototype that needs to ship in 7 days |
+| Cheapest on per-label cost at high volume | Doesn't help on a prototype that needs to ship quickly |
 
 **Why we didn't pick it.** This is the right long-term architecture
-for production. The take-home doesn't reward it — a working LLM-vision
+for production. A prototype doesn't reward it — a working LLM-vision
 prototype with explicit measurement of alternatives demonstrates
 exactly what the brief asks ("attention to stated requirements" +
 "creative problem-solving"). We document the path so a follow-up

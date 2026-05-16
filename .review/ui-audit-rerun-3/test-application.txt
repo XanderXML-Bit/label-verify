@@ -1,7 +1,0 @@
-Brand Name: Test Brand
-Class / Type: India Pale Ale
-Class Category: beer
-ABV: 6.5%
-Net Contents: 12 fl oz
-Producer: Test Brewing Co.
-Country of Origin: USA

@@ -136,7 +136,7 @@ complexity; we ship the single-model winner instead.
 
 **We reject C1 if:** vision-only matches it within 2 pp accuracy AND
 runs ≥ 30 % faster. In that case the simpler architecture wins and the
-take-home submission says so explicitly. The pre-registered kill
+submission says so explicitly. The pre-registered kill
 criterion is itself a quality signal: it says we will *follow the data*,
 not the prior.
 
@@ -202,8 +202,8 @@ See `TEST-STRATEGY.md` for the test corpus. Pipeline:
 
 ## 8. Why This Is the Right Framing
 
-A take-home that *picks a technique by intuition* tells the evaluator very
-little about how the candidate thinks. A take-home that *measures and picks*
+A project that *picks a technique by intuition* tells the reader very
+little about how the author thinks. A project that *measures and picks*
 demonstrates:
 
 - Scientific discipline.

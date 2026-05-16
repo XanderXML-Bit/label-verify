@@ -2,7 +2,7 @@
 
 > Compiled 2026-05-12 after the morning sprint. Each item names a real
 > issue, a concrete deliverable, and an honest "is this worth doing
-> for the take-home" call. Ordered roughly by accuracy impact, then by
+> for the prototype" call. Ordered roughly by accuracy impact, then by
 > effort. Items already done are NOT here — see `CHANGELOG.md`.
 
 ## Wave-15 outcome (size-band relaxation, reverted)
@@ -318,7 +318,7 @@ skip items where `status === "done" || status === "error"` on
 reconnect. Client-side: tag SSE messages with a stable sequence
 number so the UI can dedupe replayed events.
 
-For the take-home submission window, document the realistic ceiling
+For this prototype submission window, document the realistic ceiling
 in the route docstring (done) and recommend batches ≤ 100 for the
 prototype demo URL.
 
@@ -402,7 +402,7 @@ Scope if built: ~6-8 hours including the state machine, abort
 plumbing, race-condition tests, and a "do not speculate if
 GOOGLE_API_KEY is unset" guard. Worth doing if the demo URL ever
 serves real TTB submission traffic; not worth doubling cost for the
-take-home review window.
+prototype review window.
 
 ### F7. Multi-image batch without a manifest, fill-each-form UI
 **Not yet built.** When the operator drops N images (no application

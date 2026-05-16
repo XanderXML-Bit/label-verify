@@ -5,7 +5,7 @@
 [![Production](https://img.shields.io/badge/production-live-22c55e?logo=vercel&logoColor=white)](https://label-verify-six.vercel.app)
 [![License](https://img.shields.io/badge/license-prototype-blue)](#license)
 
-> Vision-LLM verification of beverage-label artwork against COLA application data, with explicit Government-Warning compliance subscores per 27 CFR §16.21 / §16.22. Take-home prototype for the U.S. Department of the Treasury, Alcohol and Tobacco Tax and Trade Bureau (TTB).
+> Vision-LLM verification of beverage-label artwork against COLA application data, with explicit Government-Warning compliance subscores per 27 CFR §16.21 / §16.22. Prototype demonstrating AI-assisted COLA verification for TTB-regulated alcohol labels.
 
 **Live demo:** <https://label-verify-six.vercel.app> · **Repository:** <https://github.com/XanderXML-Bit/label-verify> · **API:** [`docs/openapi.yaml`](docs/openapi.yaml)
 
@@ -261,7 +261,7 @@ Every `/api/*` response carries `X-Request-Id` — echoes the inbound `X-Request
 
 ### Option A — Just use the live demo
 
-Open <https://label-verify-six.vercel.app>. No install. The deployment uses my own Google API key for the duration of the take-home review.
+Open <https://label-verify-six.vercel.app>. No install. The deployment uses the author's Google API key.
 
 ### Option B — Local dev (5 minutes)
 
@@ -511,10 +511,10 @@ The deliberate choices, in plain terms:
 - [`docs/archive/TODO.md`](docs/archive/TODO.md) — phase 1–8 work plan.
 - [`docs/archive/CODEX-HANDOFF.md`](docs/archive/CODEX-HANDOFF.md) + [`docs/archive/CODEX-BATCH-02-HANDOFF.md`](docs/archive/CODEX-BATCH-02-HANDOFF.md) — corpus generation prompts.
 
-The repo is documentation-first because, for a take-home, the *decisions* demonstrate the candidate more than half-built features do. Read the brief, then MODEL-SELECTION §4, and the rest follows.
+The repo is documentation-first because the *decisions* demonstrate engineering judgment more than half-built features do. Read the brief, then MODEL-SELECTION §4, and the rest follows.
 
 ---
 
 ## License
 
-Prototype for the U.S. Department of the Treasury, Alcohol and Tobacco Tax and Trade Bureau take-home assignment. Not a production verification service. Source available for review under standard portfolio-review terms; not licensed for commercial redistribution. Contact <xandermlopez@gmail.com> for any other use.
+Prototype for TTB COLA verification. Not a production verification service. Source available for review under standard portfolio-review terms; not licensed for commercial redistribution. Contact <xandermlopez@gmail.com> for any other use.

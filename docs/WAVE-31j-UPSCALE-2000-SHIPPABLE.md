@@ -78,7 +78,7 @@ trade is:
 - **Catching 4 more defective labels that production currently waves through** (regulator win)
 - **Routing 4 legitimate labels to human review instead of auto-PASS** (operational cost: ~4 extra human reviews per 170-image batch)
 
-In a take-home prototype context where "demonstrate regulator-defensible compliance" is the primary brief, this trade is clearly in our favor.
+In a prototype context where "demonstrate regulator-defensible compliance" is the primary brief, this trade is clearly in our favor.
 
 ## Noise characterization (Apex §13.7)
 

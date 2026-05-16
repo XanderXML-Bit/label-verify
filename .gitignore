@@ -29,10 +29,8 @@ eng.traineddata
 # tracked as nested git directories).
 .claude/worktrees/
 
-# Per-run bench log transcripts. The *.json/.md sibling files in
-# benchmarks/results/ + .review/threshold-calibration-*.{json,md} are
-# the durable artifacts.
-.review/calibrate-log.txt
+# Internal review artifacts (AI audit logs, calibration data, audit prompts).
+.review/
 
 audit-report.html
 .inv*.json

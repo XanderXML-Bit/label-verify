@@ -19,7 +19,7 @@
   the prototype ships on the Vercel hostname and that's the URL in
   the README + GitHub repo. A custom domain would add no reviewer
   value and would add maintenance burden post-submission.
-- **Region:** `iad1` (us-east-1, same coast as Treasury / DC reviewers — minimizes RTT).
+- **Region:** `iad1` (us-east-1, low-latency for East Coast users).
 
 ### 1.1 Provision-Today Checklist
 
@@ -140,7 +140,7 @@ Bare minimum for a prototype:
 ## 7a. Vercel plan deltas (Hobby → Pro)
 
 The deployed demo runs on **Hobby**, which is sufficient for a
-take-home review. A TTB-deployed fork would want **Pro** for two
+prototype review. A TTB-deployed fork would want **Pro** for two
 reasons relevant to this app:
 
 | Limit | Hobby (current) | Pro | Why it matters here |

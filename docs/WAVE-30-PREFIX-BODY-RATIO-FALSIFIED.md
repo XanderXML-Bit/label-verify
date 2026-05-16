@@ -70,7 +70,7 @@ After waves 28b (shipped) + 29 + 30 (falsified), the remaining size-channel opti
 
 1. **Region detection for the printed-label bbox** — gives a real px↔mm anchor instead of relying on long-edge-of-photo. Requires either a VLM call ("return the label quadrilateral") or a classical CV pipeline. Not pursued this session.
 2. **Higher-resolution OCR on a cropped GW region** — combines with #1.
-3. **Fine-tuning** — out of scope for this take-home.
+3. **Fine-tuning** — out of scope for this prototype.
 
 ## Artifacts
 

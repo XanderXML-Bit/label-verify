@@ -285,7 +285,7 @@ pass before committing.
 
 Constraints:
 - **Trademarks:** these labels carry trademark text. The corpus is
-  inside a public GitHub repo for an academic/take-home submission.
+  inside a public GitHub repo for a prototype submission.
   Use labels from TTB's public registry only — that is the legally
   defensible source.
 - **No personal info.** Producer addresses on real labels are public

@@ -1,19 +1,18 @@
-# TTB Label Verification — Evaluation Brief
+# TTB Label Verification — Project Brief
 
 > **Status:** Bible document. Every design decision in this repo traces back to
 > a requirement on this page. If a feature does not map to something here, it
 > probably should not be built.
 
-## 1. Hiring Context
+## 1. Project Context
 
-- **Position:** IT Specialist (AI), U.S. Department of the Treasury
-- **Bureau:** Alcohol and Tobacco Tax and Trade Bureau (TTB)
-- **Deliverable due:** 2026-05-18
+- **Domain:** Certificate of Label Approval (COLA) verification for TTB-regulated alcohol labels
 - **Format:** Public GitHub repository + a deployed, reachable URL
+- **Scope:** Standalone prototype demonstrating AI-assisted label verification
 
 ## 2. Problem Statement
 
-The TTB processes roughly **150,000 Certificate of Label Approval (COLA)
+TTB processes roughly **150,000 Certificate of Label Approval (COLA)
 applications per year** with about **47 reviewing agents**. Each agent
 manually compares submitted label artwork against the application form, field
 by field, to confirm the printed label matches what the applicant declared.
@@ -75,19 +74,19 @@ Validation rules:
 - A single missing word, swapped word, or non-bold prefix is a **fail**.
 - Detection must survive low-resolution renders and angled photos.
 
-## 7. Evaluation Criteria (Stated)
+## 7. Evaluation Criteria
 
-The reviewer will judge on:
+The prototype is judged on:
 
 1. **Correctness** — does it actually verify labels accurately?
 2. **Code quality** — clean, readable, idiomatic, tested.
-3. **User experience** — can a 55-year-old reviewer use it on day one?
+3. **User experience** — can a non-technical reviewer use it on day one?
 4. **Tech choices** — sensible stack, clear justification.
 5. **Attention to stated requirements** — every R1–R8 visibly addressed.
 6. **Creative problem-solving** — interesting decisions, not cargo-culted.
 
-The brief explicitly says: **a working core beats an ambitious incomplete
-attempt.** Scope discipline is itself part of the evaluation.
+The guiding principle: **a working core beats an ambitious incomplete
+attempt.** Scope discipline is itself part of the design.
 
 ## 8. Latitude
 

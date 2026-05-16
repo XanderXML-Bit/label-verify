@@ -109,7 +109,7 @@ What happens when Tesseract is fed a label that says `G0VERNMENT WARN1NG: pour e
 
 The published 2025 case study on Gemini Flash supervised fine-tuning reports an **80% accuracy improvement on information extraction + 90% cost reduction + 60% latency reduction** for a fixed-format extraction task with ~hundreds of labeled examples. We have ~170 ground-truth-labeled examples sitting in `test-data-combined/ground-truth/`. A LoRA pass on Qwen2.5-VL or a Gemini Flash SFT job (~$500–$5K, 1–2 days of work) would very likely (a) collapse the 5 deterministic false-pass-on-correct synthetic defect cases, (b) make the §16.22 size/bold checks learnable rather than heuristic, and (c) eliminate most borderline second-opinion calls.
 
-This is the highest-potential single move available. It is out of scope for the original take-home brief (no budget, no training infrastructure) but should be the v2 north star.
+This is the highest-potential single move available. It is out of scope for the original prototype brief (no budget, no training infrastructure) but should be the v2 north star.
 
 ## Concrete v2 priorities
 
@@ -122,7 +122,7 @@ If the brief were re-issued with 5 additional days:
 
 The reference-image lane (A3) is a separate workstream — not 5 days, more like 2-3 weeks because it requires a registered-template store that doesn't exist in the prototype.
 
-## What this means for the take-home submission
+## What this means for the prototype submission
 
 Our submission is defensible. The architecture is industry-aligned. The wave-history demonstrates real scientific discipline. The bench results are honest. The known weaknesses are documented (Cluster A residuals + synthetic B/S false-passes were called out in `SESSION-2026-05-13-OVERNIGHT.md` before this retrospective).
 

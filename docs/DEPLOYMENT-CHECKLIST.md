@@ -143,11 +143,11 @@ your own deploy) want a custom domain:
 4. Wait ~30 s for propagation. Vercel marks the domain "Configuration:
    Valid" once the CNAME resolves.
 
-For the take-home submission this step is skipped. The reasoning: a
+For this prototype submission this step is skipped. The reasoning: a
 half-wired custom domain (Vercel-side alias set but DNS unresolved)
 is worse than no custom domain — anyone copying the URL hits NXDOMAIN
 and thinks the site is broken. `*.vercel.app` is professional, stable,
-and unambiguous to TTB reviewers.
+and unambiguous to reviewers.
 
 ---
 

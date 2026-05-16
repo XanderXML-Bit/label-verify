@@ -138,8 +138,7 @@ export default function RootLayout({
             UX audit P-9. The inset is 0 on devices that don't have one,
             so it's a no-op everywhere else. */}
         <footer className="mx-auto max-w-5xl px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-xs text-slate-400 dark:text-slate-500">
-          Prototype for the U.S. Department of the Treasury, Alcohol and
-          Tobacco Tax and Trade Bureau. Not a production verification
+          TTB COLA verification prototype. Not a production verification
           service. See{" "}
           {/* Touch target ≥ 44 px tall on mobile (inline-block + py-2) so
               tapping it on a phone meets WCAG 2.5.5 / Apple HIG guidance.

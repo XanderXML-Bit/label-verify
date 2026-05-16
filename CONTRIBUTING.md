@@ -1,6 +1,6 @@
 # Contributing
 
-LabelVerify is a take-home prototype, so contributions during the
+LabelVerify is a prototype, so contributions during the
 review window are unlikely — but if a future self-hoster wants to
 extend it, this doc covers the three most common extensions plus the
 CI gates a change has to pass.
