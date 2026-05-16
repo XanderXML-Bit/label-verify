@@ -7,6 +7,15 @@
 > `WAVE-31j-UPSCALE-2000-SHIPPABLE.md` and shipped via PR #41
 > (commit `2faa852`). The per-image-resolution follow-up is in
 > `WAVE-31k-RESOLUTION-PER-IMAGE-ANALYSIS.md`.
+>
+> **Pass-rate note**: the 68.6 % figures throughout this document
+> are the pre-merge wave-31j bench results. The post-merge bench
+> (with the wave-31b GT correction applied) reports **69.8 %**
+> — that's the figure cited in `README.md` and `benchmarks/.best-known.json`.
+> The wave-31j *code change* contributes the same `adversarial.fp 6→2`
+> delta on either corpus version; the +1.2 pp difference is purely
+> the GT correction reclassifying two Q-stratum cases from
+> `false-fail` to `true-fail`.
 
 ## Scoreboard — 16 candidates, 1 ship-ready, 15 falsified
 

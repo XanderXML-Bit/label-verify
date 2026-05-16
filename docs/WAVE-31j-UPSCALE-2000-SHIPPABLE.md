@@ -1,9 +1,21 @@
-# Wave 31j — Image upscaling to 2000px (SHIPPABLE — merge approval requested)
+# Wave 31j — Image upscaling to 2000px (SHIPPED)
 
 > First wave-31 candidate to pass the stratified pre-registered guardrail.
 > Two full 340-task runs at `LV_MAX_EDGE=2000, LV_ENLARGE=1` produce
 > bit-identical verdicts. **adversarial.fp-on-correct drops 6 → 2.
 > compliant.false-fail drops 1 → 0. Latency is faster.**
+
+> **Note on the headline pass-rate.** This document quotes **68.6 %**
+> for the pre-merge runs (`benchmarks/results/wave31j/run1.json`,
+> `run2.json`). The post-merge bench
+> (`benchmarks/results/wave31j/post-merge-validation.json`, with the
+> wave-31b GT correction for `ai-label-0031`/`ai-label-0050` applied)
+> reports **69.8 %** — that's the figure cited by `README.md` and
+> `benchmarks/.best-known.json`. The +1.2 pp difference is entirely
+> the GT correction reclassifying two Q-stratum cases from
+> `false-fail` to `true-fail`; the wave-31j code change itself
+> contributes the same `adversarial.fp 6→2` delta on either corpus
+> version.
 
 ## The intervention
 

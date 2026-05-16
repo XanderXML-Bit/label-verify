@@ -46,9 +46,9 @@ You will paste these into Vercel in Step 2. Have them ready first.
 | `MODEL_FALLBACK` | Optional | OpenAI primary-failure fallback id. Defaults to `gpt-5.4-nano`. Distinct from the second-opinion. |
 | `SECOND_OPINION_PROVIDER` | Optional | `gemini` (default) or `openai`. Wave 22 routes the borderline-Gov-Warning recheck. |
 | `SECOND_OPINION_MODEL` | Optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
-| `VISION_TIMEOUT_MS` | Optional | Wall-clock budget per vision call. Default `60000`. |
+| `MODEL_APPLICATION_VISION` | Optional | Override the model used by application-image OCR fallback. Default `gemini-3.1-flash-lite`. |
 | `RATE_LIMIT_PER_MIN` | Optional | Per-IP per-endpoint cap on the public demo. Default `60`. |
-| `MAX_BATCH_SIZE` | Optional | Hard cap on uploads per batch request. Default `1000`. |
+| `GEMINI_RPM_LIMIT` | Optional | Provider RPM ceiling used by the batch capacity planner. Default `60`. |
 | `DEBUG_TOKEN` | Optional | Any random string. Enables `/api/debug/last`. Leave unset to hide that route. |
 
 A populated `.env.local` (locally, never committed) is the easiest source —
@@ -119,7 +119,7 @@ Before touching DNS, prove the deploy works.
    (no cached cookies, no logged-in state).
 2. The home page should render within 2–3 seconds. If you see a generic
    404 or a "deployment failed" page, jump to Troubleshooting.
-3. Drag-and-drop one of the sample images from `test-data/labels/` (any
+3. Drag-and-drop one of the sample images from `test-data-combined/labels/` (any
    `.jpg` will do) onto the upload zone.
 4. Within ~5 seconds you should see a result screen with a verdict
    (PASS / FAIL / REVIEW) and per-field rows.

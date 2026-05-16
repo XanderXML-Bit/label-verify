@@ -1024,7 +1024,10 @@ function makeTraceId(): string {
   return `${Date.now().toString(36)}-${tail}`;
 }
 
-function aggregateVerdict(statuses: ("pass" | "fail" | "review")[]): Verdict {
+// Exported solely for unit testing (Sub-agent B B5). The function is a
+// load-bearing single-point mutation that decides the final verdict —
+// pinning its semantics protects against subtle refactors.
+export function aggregateVerdict(statuses: ("pass" | "fail" | "review")[]): Verdict {
   if (statuses.includes("fail")) return "fail";
   if (statuses.includes("review")) return "review";
   return "pass";
