@@ -247,6 +247,13 @@ export function compareProducer(
       }
     }
 
+    // Wave-35 Track 1 #1: emit passReason on the string-declared fuzzy
+    // PASS bin when the similarity ratio was non-exact (0.86 ≤ r < 0.99).
+    // A perfect r === 1.0 PASS gets no passReason.
+    const fuzzyPassReason: string | undefined =
+      r >= COMPONENT_THRESHOLD && r < 0.99
+        ? `Fuzzy match accepted: declared producer string vs joined extracted address fields at similarity ${r.toFixed(2)} (above the ${COMPONENT_THRESHOLD.toFixed(2)} threshold).`
+        : undefined;
     return {
       field: "producer",
       status: r >= COMPONENT_THRESHOLD ? "pass" : r >= 0.75 ? "review" : "fail",
@@ -257,6 +264,7 @@ export function compareProducer(
         r >= COMPONENT_THRESHOLD
           ? undefined
           : `Producer / address similarity ${r.toFixed(2)} below threshold.`,
+      ...(fuzzyPassReason ? { passReason: fuzzyPassReason } : {}),
     };
   }
 

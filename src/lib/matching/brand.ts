@@ -74,6 +74,14 @@ export function compareBrand(
   const reviewing =
     !passes && lev >= REVIEW_BAND && tok >= REVIEW_BAND;
 
+  // Wave-35 Track 1 #1: emit passReason when the PASS was non-exact.
+  // Threshold: at least one of the two ratios is below 0.99. Trivial
+  // exact-match PASSes (both lev=1.0 and tok=1.0) get no passReason.
+  const passReason: string | undefined =
+    passes && (lev < 0.99 || tok < 0.99)
+      ? `Fuzzy match accepted: "${declared}" vs "${extracted}" (Levenshtein ${lev.toFixed(2)}, token-set ${tok.toFixed(2)} — both above the ${levT.toFixed(2)} / ${tokT.toFixed(2)} thresholds).`
+      : undefined;
+
   return {
     field: "brand_name",
     status: passes ? "pass" : reviewing ? "review" : "fail",
@@ -85,5 +93,6 @@ export function compareBrand(
       : reviewing
         ? `Close but not a confident match (Levenshtein ${lev.toFixed(2)}, token-set ${tok.toFixed(2)}). Human review.`
         : `Declared brand and label brand do not match closely enough (Levenshtein ${lev.toFixed(2)}, token-set ${tok.toFixed(2)}).`,
+    ...(passReason ? { passReason } : {}),
   };
 }

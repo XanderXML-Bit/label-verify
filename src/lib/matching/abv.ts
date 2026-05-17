@@ -55,6 +55,15 @@ export function compareAbv(
   // Floor bumped from 0.60 → 0.70 to align with the intelligence-first
   // deferral policy: when the extractor isn't confident, prefer a human.
   const review = pass && extractedConfidence < 0.7;
+  // Wave-35 Track 1 #1: emit `passReason` on the tolerance-applied
+  // bin so a reviewer auditing a PASS understands WHY it wasn't FAIL.
+  // Trivial exact-match PASSes (delta === 0) get no passReason —
+  // there's nothing interesting to say. Threshold is `delta > 0`
+  // (any non-zero delta within tolerance is interesting).
+  const passReason: string | undefined =
+    pass && !review && delta > 0
+      ? `Tolerance applied: declared ${declared}%, label printed ${extracted}% — within the ±${tol} pp ${cls.replace("_", " ")} allowance.`
+      : undefined;
   return {
     field: "abv_percent",
     status: review ? "review" : pass ? "pass" : "fail",
@@ -66,5 +75,6 @@ export function compareAbv(
         ? `ABV matches within ±${tol} pp but extractor confidence is low (${extractedConfidence.toFixed(2)}).`
         : undefined
       : `Declared ${declared}% vs printed ${extracted}% — off by ${delta.toFixed(2)} pp (allowed ±${tol} pp for ${cls}).`,
+    ...(passReason ? { passReason } : {}),
   };
 }

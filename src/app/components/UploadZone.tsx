@@ -201,6 +201,16 @@ export function UploadZone({
       e.preventDefault();
       setDragOver(false);
       if (disabled) return;
+      // Wave-35 Track 1 #7 (audit cleanup): reset the folder-scoped
+      // notice state at HANDLER ENTRY, not after the kept-classification.
+      // Previously a stale amber "No valid files in 'myfolder'" notice
+      // could linger after a subsequent non-folder pick that rejected
+      // all files, because the reset only ran inside the kept-files
+      // branch. Always-clear-first is the safe ordering; the
+      // `else if (sourceWasFolder)` branch below conditionally
+      // re-populates the state when the new pick was also a folder.
+      setEmptyFolderName("");
+      setEmptyFolderHadFiles(false);
       // CRITICAL: capture every piece of state we need from the event
       // object SYNCHRONOUSLY, before any `await`. The handler became
       // async to support folder traversal, but `e.dataTransfer.items`
@@ -241,11 +251,8 @@ export function UploadZone({
       }
       const { kept, rejected } = filterAccepted(all);
       announceRejection(rejected);
-      // Always reset the source / folder-name state on every entry so
-      // a stale amber notice from a previous folder action doesn't
-      // linger after a subsequent non-folder pick.
-      setEmptyFolderName("");
-      setEmptyFolderHadFiles(false);
+      // (Wave-35 Track 1 #7: reset moved to handler entry above so a
+      // stale folder notice can never linger past a rejected-only pick.)
       if (kept.length) {
         setLastAccepted(kept.map((f) => f.name));
         onFiles(kept);
@@ -264,6 +271,15 @@ export function UploadZone({
 
   const handleSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Wave-35 Track 1 #7 (audit cleanup): same reset-at-entry fix as
+      // handleDrop. Always clear the folder-scoped notice state first,
+      // then conditionally re-set inside the isFolderPick branch below.
+      // Previously a stale amber "No valid files in 'myfolder'" notice
+      // could linger after a subsequent single-file pick that yielded
+      // zero kept files, because the reset only ran inside the
+      // kept-files branch.
+      setEmptyFolderName("");
+      setEmptyFolderHadFiles(false);
       // The `accept` attribute on the underlying <input> is only a
       // hint to the OS file picker, not enforced — users can switch
       // the picker to "All files" and pick anything. Filter here so a
@@ -295,10 +311,8 @@ export function UploadZone({
       }
       const { kept, rejected } = filterAccepted(all);
       announceRejection(rejected);
-      // Always reset on every entry so a stale folder-pick notice
-      // doesn't linger after a subsequent single-file pick.
-      setEmptyFolderName("");
-      setEmptyFolderHadFiles(false);
+      // (Wave-35 Track 1 #7: reset moved to handler entry above so a
+      // stale folder notice can never linger past a rejected-only pick.)
       if (kept.length) {
         setLastAccepted(kept.map((f) => f.name));
         onFiles(kept);

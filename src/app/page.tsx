@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DeclaredFields, VerifyResponse } from "@/lib/types";
 import type { ExtractOnlyResponse } from "@/lib/verify";
 import { UploadZone } from "./components/UploadZone";
@@ -12,11 +12,14 @@ import { ApiStatusBanner } from "./components/ApiStatusBanner";
 import { BatchView, type BatchRow } from "./components/BatchView";
 import { BatchProgress, type BatchPhase } from "./components/BatchProgress";
 import { SampleAffordance } from "./components/SampleAffordance";
-// ReviewQueuePanel intentionally not imported on the idle screen — it
-// surfaces a DEBUG_TOKEN access-code prompt to public visitors, which
-// is confusing UX for the prototype. Operators with the token can use
-// /api/queue directly. User feedback 2026-05-13.
-// import { ReviewQueuePanel } from "./components/ReviewQueuePanel";
+// Wave-35 Track 1 #6 (audit cleanup): deleted the `ReviewQueuePanel`
+// component + its test file. It was commented out from the idle
+// screen since wave-31 (user feedback 2026-05-13: the DEBUG_TOKEN
+// access-code prompt confused public visitors). Operators with the
+// token still hit `/api/queue` directly. A future Operator-mode UI
+// can rebuild the panel cleanly; the backend `/api/queue` route +
+// `src/lib/review-queue.ts` store remain intact and are exercised
+// by `api-queue-resolve.test.ts` + `api-queue-auth.test.ts`.
 import {
   ApplicationUpload,
   type ApplicationParsePayload,
@@ -173,32 +176,35 @@ export default function Home() {
   // who tabs away to email can see "(Verifying…) Label Verify" in the
   // tab strip and know when to switch back. UX audit P-8. Restored on
   // unmount and on any state transition that lands on idle/done/error.
-  useEffect(() => {
-    const baseTitle = "Label Verify";
-    // batch-running stays as the stage even after the inline-batch
-    // POST returns terminal rows (all done/error). In that case we're
-    // not actually verifying anymore — the title should revert to
-    // baseTitle so the tab strip doesn't lie. Detect "all rows
-    // terminal" inside the batch-running stage.
+  //
+  // Wave-35 Track 1 #4 (audit cleanup): derive `isBusy` via useMemo so
+  // the title-mutation effect depends on a primitive boolean. The
+  // previous version listed `[stage]` as the dep array, which is a
+  // fresh object reference on every setState call — even when the
+  // boolean derivation was unchanged. The result was an effect re-fire
+  // (with cleanup → reset → reapply) on every keystroke into the
+  // manifest textarea, every interval tick of the now-deleted parent
+  // ticker (#5), and every batch-row update. Now the effect only
+  // re-fires when the busy/idle bucket actually transitions.
+  const isBusy = useMemo(() => {
     const batchActive =
       stage.kind === "batch-running" &&
       stage.rows.some(
         (r) => r.status === "pending" || r.status === "running",
       );
-    const isBusy =
+    return (
       stage.kind === "single-verifying" ||
       stage.kind === "single-extracting" ||
-      batchActive;
+      batchActive
+    );
+  }, [stage]);
+  useEffect(() => {
+    const baseTitle = "Label Verify";
     document.title = isBusy ? `(Verifying…) ${baseTitle}` : baseTitle;
     return () => {
       document.title = baseTitle;
     };
-    // Depend on the entire stage so the title re-evaluates when
-    // stage.rows transitions terminal — for the inline-batch path
-    // both the kind AND the rows land in one setStage call but the
-    // batchActive predicate above keys on rows, so we need rows in
-    // the dep array.
-  }, [stage]);
+  }, [isBusy]);
 
   function revokeIfPreview(s: Stage): void {
     if (
@@ -575,15 +581,16 @@ export default function Home() {
     | { passed: number; failed: number; review: number; errored: number }
     | null
   >(null);
-  // Re-render ticker for the progress bar's elapsed-time estimate.
-  // The interval lives in the BatchProgress component itself, but we
-  // also need a way to compute elapsedMs here for the prop.
-  const [, setNowTick] = useState(0);
-  useEffect(() => {
-    if (batchPhase === "idle") return;
-    const id = setInterval(() => setNowTick((t) => t + 1), 200);
-    return () => clearInterval(id);
-  }, [batchPhase]);
+  // Wave-35 Track 1 #5 (audit cleanup): removed a parent-level
+  // `setNowTick` setInterval that fired every 200 ms and forced a
+  // full subtree re-render of the dropzone, manifest textarea, and
+  // every staged file row just to drive the ETA on a child progress
+  // bar. `BatchProgress` already owns its own internal ticker (see
+  // `BatchProgress.tsx` `useEffect` with `setTick`) so the parent
+  // never needed to render-loop. `elapsedMs` is still computed
+  // synchronously at the JSX site below as
+  // `batchStartedAt ? Date.now() - batchStartedAt : 0`; on each
+  // child re-render the value is read fresh.
 
   // The `manifestOverride` parameter exists to dodge a real React state
   // race: `setManifestText("")` schedules an update, but `submitBatch`

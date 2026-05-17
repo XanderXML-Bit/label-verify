@@ -239,6 +239,10 @@ export function compareCountry(
         actual: extracted,
         confidence: 0.7,
         reason: undefined,
+        // Wave-35 Track 1 #1: pass-reason for the implicit-US-domestic
+        // inference path so an auditor sees WHY a blank declared
+        // country PASSed against an extracted "USA" / "Product of EE. UU.".
+        passReason: `Implicit US-domestic accepted: application left country blank but the label prints "${extracted}" — TTB only requires explicit country marking on imports (27 CFR §4.39 / §5.36).`,
       };
     }
     return {
@@ -299,11 +303,25 @@ export function compareCountry(
       reason: `Declared "${declared}" vs printed "${extracted}" — both roll up to "${a.canon}" but are distinct constituent countries.`,
     };
   }
+  // Wave-35 Track 1 #1: emit passReason when the PASS came through
+  // the SYNONYMS / SUB_REGIONS canonicalisation rather than an exact
+  // string match. Detection rule: declared and extracted normalise
+  // to the same canon but their normalised raw forms differ — i.e.
+  // they're spellings / language variants of the same country.
+  // Trivial exact-match PASSes (declared "USA" vs extracted "USA")
+  // get no passReason.
+  const declaredNorm = normalizeBrand(declared);
+  const extractedNorm = normalizeBrand(extracted);
+  const passReason: string | undefined =
+    declaredNorm !== extractedNorm
+      ? `Country synonym accepted: declared "${declared}" and label "${extracted}" both canonicalise to "${a.canon}".`
+      : undefined;
   return {
     field: "country_of_origin",
     status: "pass",
     expected: declared,
     actual: extracted,
     confidence: extractedConfidence,
+    ...(passReason ? { passReason } : {}),
   };
 }

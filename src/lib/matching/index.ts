@@ -16,6 +16,22 @@ export interface FieldComparison {
    * "street matches, city doesn't" instead of collapsing to one FAIL.
    */
   components?: Record<string, FieldStatus>;
+  /**
+   * Wave-35 Track 1 #1 (re-scoped PASS reasoning): when a PASS verdict
+   * is *non-trivial* — i.e., the comparator accepted via a tolerance,
+   * a fuzzy match, an implicit-USA-from-state inference, or a
+   * country-synonym canonicalisation — emit a one-sentence plain-
+   * English explanation here so a reviewer auditing the verdict
+   * understands WHY the field was a PASS and not a FAIL.
+   *
+   * Deliberately separate from `reason` (which historically carries
+   * FAIL / REVIEW explanations and is asserted-absent on PASS by
+   * existing tests). Only emitted by the four PASS bins listed
+   * above. Trivial exact-match PASSes have `passReason === undefined`.
+   *
+   * Surfaced in the UI only in detailed mode.
+   */
+  passReason?: string;
 }
 
 export { compareBrand, normalizeBrand } from "./brand";

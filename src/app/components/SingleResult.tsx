@@ -13,29 +13,12 @@ import {
   triggerDownload,
 } from "@/lib/export-result";
 
-// Approximate cost-per-call by model id, in USD. Refreshed from
-// `benchmarks/results/<latest>.md` columns "USD / call". Surfaced on
-// the result panel so a TTB ops viewer sees the order-of-magnitude
-// economics of a single verify alongside the latency — useful for
-// procurement conversations ("cost / 1k labels" = call × 1000).
-// REMAINING-IMPROVEMENTS.md U6.
-const COST_PER_CALL_BY_MODEL: Record<string, number> = {
-  "gemini:gemini-3.1-flash-lite": 0.00025,
-  "gemini:gemini-3-flash-preview": 0.00243,
-  "gemini:gemini-3.1-pro-preview": 0.00345,
-  "openai:gpt-5.4-nano": 0.00125,
-  "openai:gpt-4o-mini": 0.00045,
-};
-
-function approximateCostUsd(modelId: string | undefined): number | null {
-  if (!modelId) return null;
-  const direct = COST_PER_CALL_BY_MODEL[modelId];
-  if (typeof direct === "number") return direct;
-  // Best-effort prefix match: "gemini:..." → gemini lite default.
-  if (modelId.startsWith("gemini:")) return 0.00025;
-  if (modelId.startsWith("openai:")) return 0.00125;
-  return null;
-}
+// Wave-35 Track 1 #2 (audit cleanup): the per-call cost table used to
+// live here as a client-side `COST_PER_CALL_BY_MODEL` constant. The
+// server already knows the model id that ran (it owns the extractor
+// selection), so the cost is now computed server-side and shipped on
+// `result.costUsd`. The component reads that field directly. The
+// canonical table lives at `src/lib/vision/cost.ts`.
 
 /** Plain-English field labels for the simple-mode "things to double-
  *  check" summary. Maps the per-field comparator's `field` key to a
@@ -94,11 +77,12 @@ export function SingleResult({
         </h2>
         <span
           className="detailed-only text-sm text-slate-500 dark:text-slate-400"
-          aria-live="polite"
         >
           Verified in {(result.timings.total / 1000).toFixed(1)} s
           {(() => {
-            const usd = approximateCostUsd(result.modelId);
+            // Wave-35 Track 1 #2: read the server-stamped cost from
+            // the response envelope (was: client-side table lookup).
+            const usd = result.costUsd ?? null;
             if (usd === null) return null;
             const per1k = usd * 1000;
             // Sub-penny costs read as "$0.00025" — visually noisy and
@@ -605,6 +589,18 @@ function FieldRow({ cmp }: { readonly cmp: FieldComparison }) {
       <FieldValueComparison expected={cmp.expected} actual={cmp.actual} />
       {cmp.reason && (
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{cmp.reason}</p>
+      )}
+      {/* Wave-35 Track 1 #1: surface the non-trivial PASS reasoning
+          (tolerance applied / fuzzy accepted / implicit-USA / country
+          synonym) so a reviewer auditing a PASS understands WHY it
+          wasn't FAIL. Detailed-mode only — the simple verdict surface
+          stays uncluttered. Italicised + smaller font signals
+          "explanatory clarification" vs the larger FAIL/REVIEW
+          `reason` text above. */}
+      {cmp.status === "pass" && cmp.passReason && (
+        <p className="detailed-only mt-2 text-xs italic text-slate-500 dark:text-slate-400">
+          {cmp.passReason}
+        </p>
       )}
       {cmp.components && (
         // Auto-expand on REVIEW/FAIL so the reviewer immediately sees which
