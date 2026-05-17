@@ -163,13 +163,23 @@ export function DeclaredForm({
     }
     setErrors([]);
     setFieldErrors({});
+    // Wave-34 audit fix (#13): submitting `producer: ""` for an
+    // unfilled field treated the empty string as a declared value
+    // downstream — the comparator matched it against extracted="" /
+    // null and silently PASSED, masking the case where the applicant
+    // genuinely forgot to declare the producer. Producer is a TTB-
+    // required field on COLA applications (27 CFR §4.32 / §5.32), so
+    // a blank submission should surface as REVIEW server-side, not
+    // pass silently. We now submit `undefined` and let the server
+    // decide policy.
+    const trimmedProducer = producer.trim();
     onSubmit({
       brand_name: brand,
       class_type: classType,
       class_category: classCategory,
       abv_percent: abvN,
       net_contents: { value: ncN, unit: ncUnit },
-      producer: producer || "",
+      producer: trimmedProducer || undefined,
       country_of_origin: country,
     });
   }

@@ -55,7 +55,12 @@ describe("DeclaredForm", () => {
     expect(arg.class_category).toBe("beer");
     expect(arg.abv_percent).toBe(6);
     expect(arg.net_contents).toEqual({ value: 200, unit: "fl_oz" });
-    expect(arg.producer).toBe("");
+    // Wave-34 audit fix #13: blank producer is now submitted as
+    // `undefined` (not empty string) so the comparator can REVIEW
+    // for "applicant didn't declare" instead of silently PASSING on
+    // empty-vs-empty. Producer is a TTB-required field per
+    // 27 CFR §4.32 / §5.32.
+    expect(arg.producer).toBeUndefined();
     expect(arg.country_of_origin).toBe("USA");
   });
 

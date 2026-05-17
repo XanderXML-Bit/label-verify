@@ -38,6 +38,13 @@ export function ImageZoom({
   const [scale, setScale] = useState(1);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  // Wave-34 audit fix #17: the modal dialog needs a real focus trap.
+  // Previous version only handled Escape + zoom keys — Tab was not
+  // intercepted, so a keyboard user could Tab out into the
+  // background page underneath the overlay. We collect every
+  // tabbable element inside the dialog container and cycle focus
+  // on Tab / Shift+Tab.
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -64,6 +71,32 @@ export function ImageZoom({
       } else if (e.key === "0") {
         e.preventDefault();
         setScale(1);
+      } else if (e.key === "Tab" && dialogRef.current) {
+        // Focus-trap (wave-34 a11y fix). Cycle focus within the
+        // dialog so keyboard users can't accidentally Tab out into
+        // the background page underneath the overlay.
+        const focusables = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter(
+          (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1,
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0]!;
+        const last = focusables[focusables.length - 1]!;
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey) {
+          if (active === first || !dialogRef.current.contains(active)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (active === last || !dialogRef.current.contains(active)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     document.addEventListener("keydown", onKey);
@@ -102,6 +135,7 @@ export function ImageZoom({
 
       {open ? (
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label={`Larger view: ${alt}`}

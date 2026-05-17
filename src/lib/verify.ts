@@ -388,6 +388,7 @@ export async function verifyLabel(
   if (
     country.status === "review" &&
     producer.components?.country === "pass" &&
+    declared.producer != null &&
     typeof declared.producer !== "string" &&
     declared.producer.country
   ) {

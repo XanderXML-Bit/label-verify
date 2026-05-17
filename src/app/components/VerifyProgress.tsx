@@ -25,6 +25,13 @@ interface Props {
    * 95% (we don't claim 100% until the response arrives). Default 5s.
    */
   readonly expectedMs?: number;
+  /**
+   * Optional cancel handler. When provided, a Cancel button is shown
+   * next to the elapsed counter so a reviewer who realises mid-upload
+   * that they chose the wrong image doesn't have to wait the full
+   * timeout to get back to idle. Wave-34 audit fix #30.
+   */
+  readonly onCancel?: () => void;
 }
 
 const DEFAULT_EXPECTED_MS = 5_000;
@@ -38,6 +45,7 @@ const TICK_MS = 100;
 export function VerifyProgress({
   verb,
   expectedMs = DEFAULT_EXPECTED_MS,
+  onCancel,
 }: Props) {
   const [elapsed, setElapsed] = useState(0);
 
@@ -92,15 +100,27 @@ export function VerifyProgress({
             {elapsedSec} s
           </span>
         </p>
-        {veryLongWait ? (
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Still working — a cold start on the free tier can take up to 30 seconds.
-          </span>
-        ) : longWait ? (
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Larger or more detailed images take a moment.
-          </span>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {veryLongWait ? (
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Still working — a cold start on the free tier can take up to 30 seconds.
+            </span>
+          ) : longWait ? (
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Larger or more detailed images take a moment.
+            </span>
+          ) : null}
+          {onCancel ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              aria-label="Cancel verification"
+              className="min-h-[36px] rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </button>
+          ) : null}
+        </div>
       </div>
       <div className="mt-3 h-2 w-full overflow-hidden rounded bg-slate-200 dark:bg-slate-700">
         <div

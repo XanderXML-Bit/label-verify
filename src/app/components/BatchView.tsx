@@ -188,8 +188,17 @@ export function BatchView({
       closed = true;
       es.close();
     };
+    // Wave-34 audit fix #5: `onDone` was previously listed in the
+    // dep array, but parents typically pass a fresh arrow `() =>
+    // undefined` (see page.tsx batch-running render). That made the
+    // effect re-run on every parent re-render — opening and closing
+    // a fresh EventSource each time, wasting server connections and
+    // flickering the row state. Pin to `batchId` + `reconnectKey`
+    // only; the `onDone` callback is captured by closure at mount
+    // time and is fine to be stale (the reconnect button triggers
+    // a deliberate re-run via reconnectKey).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [batchId, onDone, reconnectKey]);
+  }, [batchId, reconnectKey]);
 
   const counts = useMemo(() => {
     let passed = 0;

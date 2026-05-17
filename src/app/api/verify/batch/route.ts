@@ -881,6 +881,16 @@ export async function POST(req: Request) {
     results,
     summary: { passed, failed, review, errored },
     elapsedMs: Date.now() - startedAt,
+    // Wave-34 (concurrency display fix): surface the effective worker
+    // concurrency the server ran for this batch so the UI's progress
+    // copy can't drift from server behaviour. The client previously
+    // hardcoded `2` in BatchProgress.tsx, which was correct for
+    // wave-12 and stale by a factor of 6 after wave-15b bumped the
+    // server default to 12. Returning the actual value used means
+    // the two surfaces can never diverge again. Clamped to the
+    // batch size (matches `Math.min(MAX_INLINE_CONCURRENCY,
+    // job.items.length)` above).
+    concurrency: CONCURRENCY,
   });
 }
 

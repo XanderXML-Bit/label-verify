@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DeclaredFields, VerifyResponse } from "@/lib/types";
 import type { ExtractOnlyResponse } from "@/lib/verify";
 import { UploadZone } from "./components/UploadZone";
@@ -420,12 +420,14 @@ export default function Home() {
     revokeIfPreview(stage);
     const url = URL.createObjectURL(file);
     setStage({ kind: "single-verifying", file, previewUrl: url });
+    const ac = new AbortController();
+    singleAbortRef.current = ac;
     try {
       const uploadFile = await compressImageInBrowser(file);
       const fd = new FormData();
       fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(sample.declared));
-      const res = await fetch("/api/verify", { method: "POST", body: fd });
+      const res = await fetch("/api/verify", { method: "POST", body: fd, signal: ac.signal });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         setStage({
@@ -453,6 +455,8 @@ export default function Home() {
   async function submitSingle(declared: DeclaredFields) {
     if (stage.kind !== "single-pending") return;
     setStage({ ...stage, kind: "single-verifying" });
+    const ac = new AbortController();
+    singleAbortRef.current = ac;
     try {
       // Compress in the browser before upload. Cuts a 4–8 MB phone photo
       // to ~250–500 KB and shaves multi-second uploads on cellular.
@@ -460,7 +464,7 @@ export default function Home() {
       const fd = new FormData();
       fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(declared));
-      const res = await fetch("/api/verify", { method: "POST", body: fd });
+      const res = await fetch("/api/verify", { method: "POST", body: fd, signal: ac.signal });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         setStage({
@@ -491,11 +495,13 @@ export default function Home() {
   async function submitExtractOnly() {
     if (stage.kind !== "single-pending") return;
     setStage({ ...stage, kind: "single-extracting" });
+    const ac = new AbortController();
+    singleAbortRef.current = ac;
     try {
       const uploadFile = await compressImageInBrowser(stage.file);
       const fd = new FormData();
       fd.append("image", uploadFile);
-      const res = await fetch("/api/extract", { method: "POST", body: fd });
+      const res = await fetch("/api/extract", { method: "POST", body: fd, signal: ac.signal });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         setStage({
@@ -529,6 +535,15 @@ export default function Home() {
   // (previously the auto-pair path had no submission indicator until
   // the SSE stream opened, which felt unresponsive on slow networks).
   // Per user feedback 2026-05-13.
+  // AbortController for the currently-in-flight verify / extract /
+  // sample request. Stored in a ref so the cancel handler reads the
+  // latest controller without depending on stale closure state.
+  // Wave-34 audit fix #30 — reviewers who realise mid-upload they
+  // chose the wrong image can hit Cancel and get back to idle
+  // immediately instead of waiting the full ~30 s timeout.
+  const singleAbortRef = useRef<AbortController | null>(null);
+  const batchXhrRef = useRef<XMLHttpRequest | null>(null);
+
   const [batchSubmitting, setBatchSubmitting] = useState(false);
   // filename → blob: URL map built at submit time so the BatchView
   // can show a thumbnail per row and the drilldown panel can render
@@ -548,6 +563,18 @@ export default function Home() {
     number | undefined
   >(undefined);
   const [batchStartedAt, setBatchStartedAt] = useState<number | null>(null);
+  // Server-reported concurrency for the in-flight batch — used by the
+  // BatchProgress copy + ETA math so the two surfaces can never drift
+  // again. Default 12 matches the server's INLINE_CONCURRENCY_DEFAULT
+  // so the ETA estimate is right even before the server has responded
+  // (used during the upload + pairing phases).
+  const [batchConcurrency, setBatchConcurrency] = useState<number>(12);
+  // One-shot completion toast for the batch (wave-34 audit #8). Cleared
+  // on reset or when the user starts a new batch.
+  const [batchCompletionToast, setBatchCompletionToast] = useState<
+    | { passed: number; failed: number; review: number; errored: number }
+    | null
+  >(null);
   // Re-render ticker for the progress bar's elapsed-time estimate.
   // The interval lives in the BatchProgress component itself, but we
   // also need a way to compute elapsedMs here for the prop.
@@ -606,6 +633,17 @@ export default function Home() {
         count: number;
         pairingErrors?: string[];
         inline?: boolean;
+        /** Server-side worker concurrency for this batch (wave-34).
+         *  Surfaced so the progress copy matches reality — used to be
+         *  hardcoded `2` client-side, which drifted by 6× after the
+         *  server bumped to 12. */
+        concurrency?: number;
+        summary?: {
+          passed: number;
+          failed: number;
+          review: number;
+          errored: number;
+        };
         results?: Array<{
           index: number;
           filename: string;
@@ -615,6 +653,7 @@ export default function Home() {
         }>;
       }>((resolveBody, rejectBody) => {
         const xhr = new XMLHttpRequest();
+        batchXhrRef.current = xhr;
         xhr.open("POST", "/api/verify/batch");
         xhr.responseType = "json";
         xhr.upload.onprogress = (e: ProgressEvent): void => {
@@ -651,6 +690,9 @@ export default function Home() {
         };
         xhr.send(fd);
       });
+      if (body.concurrency && body.concurrency > 0) {
+        setBatchConcurrency(body.concurrency);
+      }
       if (body.inline && body.results) {
         // Inline batch — render results immediately.
         const rows: BatchRow[] = body.results.map((r) =>
@@ -668,6 +710,19 @@ export default function Home() {
                 error: r.error ?? "Verification failed",
               },
         );
+        // Surface a completion toast (wave-34 audit #8). The previous
+        // `onDone={() => undefined}` threw away the server's summary —
+        // reviewers got no signal that a 47-image batch was actually
+        // complete. We show a non-modal toast with the verdict mix.
+        if (body.summary) {
+          setBatchCompletionToast(body.summary);
+        } else {
+          const passed = rows.filter((r) => r.status === "done" && r.result?.verdict === "pass").length;
+          const failed = rows.filter((r) => r.status === "done" && r.result?.verdict === "fail").length;
+          const review = rows.filter((r) => r.status === "done" && r.result?.verdict === "review").length;
+          const errored = rows.filter((r) => r.status === "error").length;
+          setBatchCompletionToast({ passed, failed, review, errored });
+        }
         setStage({ kind: "batch-running", batchId: body.batchId, rows });
       } else {
         // Legacy SSE path (back-compat for local single-process dev).
@@ -729,6 +784,45 @@ export default function Home() {
     });
   }
 
+  // Cancel handler for the single-verify / extract / sample paths.
+  // Aborts the fetch and routes the user back to single-pending (so
+  // they keep their staged image + form values, can edit and retry).
+  // The fetch's catch branch will land on `single-error` anyway when
+  // the abort fires; we intercept first by checking the controller
+  // state. Wave-34 audit fix #30.
+  function cancelSingleInFlight() {
+    singleAbortRef.current?.abort();
+    singleAbortRef.current = null;
+    // Re-derive a sensible target stage. If we have a preview we go
+    // back to single-pending (user keeps their staged image); else
+    // we go fully idle.
+    if (
+      stage.kind === "single-verifying" ||
+      stage.kind === "single-extracting"
+    ) {
+      setStage({
+        kind: "single-pending",
+        file: stage.file,
+        previewUrl: stage.previewUrl,
+      });
+    }
+  }
+
+  // Cancel handler for the batch path. Aborts the in-flight XHR
+  // (which lets the user keep their staged files + manifest so they
+  // can edit and retry without re-uploading).
+  function cancelBatchInFlight() {
+    try {
+      batchXhrRef.current?.abort();
+    } catch {
+      // ignore — xhr.abort() can throw if the request has already
+      // completed in the same tick.
+    }
+    batchXhrRef.current = null;
+    setBatchSubmitting(false);
+    setBatchPhase("idle");
+  }
+
   function reset() {
     revokeIfPreview(stage);
     // Revoke batch preview blob: URLs so the browser can free the
@@ -742,6 +836,7 @@ export default function Home() {
       }
     }
     setBatchPreviewByFilename({});
+    setBatchCompletionToast(null);
     setStage({ kind: "idle" });
     setAppPrefill(null);
     setBgAppParse({ kind: "idle" });
@@ -916,6 +1011,7 @@ export default function Home() {
               ? "Checking the label"
               : "Extracting from the label"
           }
+          onCancel={cancelSingleInFlight}
         />
       )}
 
@@ -1048,8 +1144,27 @@ export default function Home() {
         // and parses each app file — no manifest paste required. We
         // show the reviewer a "Detected" summary so they see what
         // will pair before they click Verify.
-        const imageFiles = stage.files.filter((f) => f.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
-        const appFiles = stage.files.filter((f) => !imageFiles.includes(f));
+        //
+        // Wave-34 fix (audit #4): the previous classifier used
+        // `f.type.startsWith("image/")` which accepted GIF, SVG, BMP,
+        // TIFF etc. The server verify route rejects everything outside
+        // {jpeg, png, webp, heic, heif}, so a GIF would survive the
+        // client-side "Images" count, get uploaded, and 415 server-
+        // side. Now we use the SAME extension regex + MIME allow-list
+        // the server accepts.
+        const SUPPORTED_IMAGE_EXT = /\.(jpe?g|png|webp|heic|heif)$/i;
+        const SUPPORTED_IMAGE_MIME = new Set([
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "image/heic",
+          "image/heif",
+        ]);
+        const isSupportedImage = (f: File): boolean =>
+          SUPPORTED_IMAGE_MIME.has(f.type) || SUPPORTED_IMAGE_EXT.test(f.name);
+        const imageFiles = stage.files.filter(isSupportedImage);
+        const imageSet = new Set(imageFiles);
+        const appFiles = stage.files.filter((f) => !imageSet.has(f));
         return (
           <div className="space-y-4">
             <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
@@ -1109,9 +1224,11 @@ export default function Home() {
                   imageCount={imageFiles.length}
                   appCount={appFiles.length}
                   uploadFraction={batchUploadFraction}
+                  concurrency={batchConcurrency}
                   elapsedMs={
                     batchStartedAt ? Date.now() - batchStartedAt : 0
                   }
+                  onCancel={cancelBatchInFlight}
                 />
               )}
               {/* iOS-tolerant additive staging — each "Add more files"
@@ -1275,12 +1392,52 @@ export default function Home() {
       )}
 
       {stage.kind === "batch-running" && (
-        <BatchView
-          batchId={stage.batchId}
-          rows={stage.rows}
-          onDone={() => undefined}
-          imagePreviewByFilename={batchPreviewByFilename}
-        />
+        <>
+          {batchCompletionToast && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-lg border-l-4 border-emerald-500 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-200"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-semibold">Batch complete:</span>
+                <span>
+                  <strong>{batchCompletionToast.passed}</strong> pass
+                </span>
+                <span>·</span>
+                <span>
+                  <strong>{batchCompletionToast.failed}</strong> fail
+                </span>
+                <span>·</span>
+                <span>
+                  <strong>{batchCompletionToast.review}</strong> review
+                </span>
+                {batchCompletionToast.errored > 0 ? (
+                  <>
+                    <span>·</span>
+                    <span>
+                      <strong>{batchCompletionToast.errored}</strong> errored
+                    </span>
+                  </>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setBatchCompletionToast(null)}
+                  aria-label="Dismiss completion toast"
+                  className="ml-auto rounded px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+          <BatchView
+            batchId={stage.batchId}
+            rows={stage.rows}
+            onDone={() => undefined}
+            imagePreviewByFilename={batchPreviewByFilename}
+          />
+        </>
       )}
     </div>
   );
