@@ -156,6 +156,17 @@ export function findBodyWords(
   for (let i = lastPrefixIdx + 1; i < words.length && out.length < 60; i++) {
     const w = words[i]!;
     const cy = w.bbox.y + w.bbox.height / 2;
+    // Wave-33 audit (Sub-agent A bug #2): we initially relaxed this
+    // filter from `cy < prefixY` to `bottom < prefixY` to keep
+    // same-line body words on single-line warning layouts. The
+    // wave-33 regression bench then flagged it: the relaxed filter
+    // changed downstream SWT measurements enough to flip
+    // `syn-beer-0016` (B3 adversarial) from review-on-correct to
+    // false-pass-on-correct — a hard-guardrail violation. Reverted
+    // to the original behaviour. The single-line-warning concern
+    // remains a real but lower-priority issue that needs a
+    // measurement-driven fix (not a filter relaxation) — tracked
+    // for a future wave.
     if (cy < prefixY) continue; // above the prefix — different region
     if (cy > yMax) break; // far below the warning block — stop scanning
     if (

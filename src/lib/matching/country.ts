@@ -139,6 +139,31 @@ interface Canon {
   subRegion: string | null;
 }
 
+// Exported (wave-33 audit, Sub-agent A bug #14) so the producer
+// string-declared path can re-use the same canonicaliser as the
+// standalone country comparator — keeping the regulator-disqualifying
+// gate consistent across both code paths.
+export function canonicalizeCountry(s: string): Canon {
+  return canonicalize(s);
+}
+
+/**
+ * Returns the canonical country name if `s` matched the synonym /
+ * sub-region tables; otherwise null. Used by `producer.ts`'s
+ * string-declared branch to decide whether a trailing token in the
+ * declared producer string is actually a country (vs e.g. a city
+ * name) before applying the regulator-disqualifying mismatch gate.
+ */
+export function recognisedCountry(s: string): string | null {
+  const c = canonicalize(s);
+  // canonicalize returns `{ canon: normalized-input, subRegion: null }`
+  // on no match. Detect "matched" by checking whether the canon is
+  // EITHER a known SYNONYMS key OR was reached via a sub-region.
+  if (c.subRegion !== null) return c.canon;
+  if (Object.prototype.hasOwnProperty.call(SYNONYMS, c.canon)) return c.canon;
+  return null;
+}
+
 function canonicalize(s: string): Canon {
   const n = normalizeBrand(s);
   for (const [canon, synonyms] of Object.entries(SYNONYMS)) {

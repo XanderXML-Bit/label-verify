@@ -2,6 +2,29 @@ import { fuzzy as ratio } from "fast-fuzzy";
 import type { ProducerAddress } from "../vision/types";
 import type { FieldComparison, FieldStatus } from "./index";
 import { normalizeBrand } from "./brand";
+import { canonicalizeCountry, recognisedCountry } from "./country";
+
+// US state + territory abbreviations. Single canonical set used by:
+//   (a) the wave-33 producer string-declared country gate, to avoid
+//       mis-canonicalising state-code tokens (CA, IT, IN, DE, MX, etc.)
+//       as ISO-2 country codes when they appear in the comma-separated
+//       tail of a declared producer string;
+//   (b) the implicit-USA inference in `countryStatus`, to validate
+//       that an `extracted.state` is a real US state code before
+//       inferring USA on labels with no explicit country marking.
+//
+// Wave-33 audit pass 3 consolidated two near-duplicate sets in this
+// file (US_STATE_ABBREVS + US_STATE_CODES) into one canonical
+// definition so future updates can't drift between them. Coverage:
+// 50 states + DC + 5 TTB-jurisdiction territories.
+const US_STATE_ABBREVS = new Set([
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "DC", "PR", "VI", "GU", "AS", "MP",
+]);
 
 /**
  * Producer / address comparator. The declared producer may be a structured
@@ -15,20 +38,10 @@ import { normalizeBrand } from "./brand";
 
 const COMPONENT_THRESHOLD = 0.86;
 
-// USPS two-letter state codes. If a label's producer block shows a US
-// state (e.g. "Portland, ME 04101"), most labels do NOT also print
-// "USA" — the country is implied by the state. Pre-2026-05 the
-// producer comparator counted `extracted.country = null` as a hard
-// mismatch even when state was a US state, producing a REVIEW status
-// on labels that were actually correct. The set below is the fix.
-const US_STATE_CODES = new Set([
-  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
-  "DC", "PR",
-]);
+// (Wave-33 pass 3) Removed the duplicate `US_STATE_CODES` set — the
+// canonical `US_STATE_ABBREVS` above is now the single source of truth
+// for both the string-declared country gate and the implicit-USA
+// inference in `countryStatus`.
 
 function isUsa(s: string | null | undefined): boolean {
   if (!s) return false;
@@ -88,7 +101,7 @@ function countryStatus(
     isUsa(declaredCountry) &&
     extractedState &&
     /^[A-Za-z]{2}$/.test(extractedState) &&
-    US_STATE_CODES.has(extractedState.toUpperCase()) &&
+    US_STATE_ABBREVS.has(extractedState.toUpperCase()) &&
     hasCorroboratingComponent
   ) {
     return "pass";
@@ -126,6 +139,92 @@ export function compareProducer(
       .filter(Boolean)
       .join(" ");
     const r = ratio(decl, normalize(joined));
+
+    // Wave-33 audit (Sub-agent A bug #14): regulator-disqualifying
+    // country gate on the string-declared path. The structured-declared
+    // path already runs `compareCountry` against `declared.country`
+    // and forces FAIL on canonical mismatch; the string path
+    // previously did fuzzy-string-only, so "...San Diego, CA, USA" vs
+    // an extracted MEXICO country could PASS at similarity ~0.93
+    // because one token-swap is below the threshold. We now extract
+    // the trailing country-like token from the declared string and
+    // canonicalise both sides; a mismatch is a hard FAIL regardless
+    // of overall similarity. Per 27 CFR §4.39 / §5.36 country marking
+    // is a compliance-critical field.
+    //
+    // Wave-33 pass 3 (asymmetric-gate fix, Hermes critique): the
+    // gate originally only fired when `extracted.country` was non-null,
+    // which left the symmetric hole open: declared "...Mexico" vs
+    // `extracted.country = null` would skip the gate entirely and fall
+    // through to fuzzy-only. Mirror `compareCountry` semantics: when
+    // declared parses to a non-USA country and extracted prints no
+    // country, that's an import-marking FAIL (27 CFR §4.39 / §5.36).
+    // When declared parses to USA and extracted is null, we DON'T
+    // force FAIL (US-domestic labels legitimately omit country
+    // marking) — defer to the fuzzy ratio below.
+    {
+      // Take up to the last 2 comma-separated segments as country candidates
+      // (covers "..., CA, USA" and "..., USA" but not the street/city tail).
+      //
+      // Self-audit fix (wave-33, sub-agent pass 2): the previous version
+      // walked `tail` in array order and short-circuited on the FIRST
+      // recognised match. That was wrong because 2-letter tokens like
+      // `CA` / `IT` / `IN` / `DE` / `MX` / `IE` / `CH` are simultaneously
+      // (a) US state abbreviations and (b) ISO-2 country codes in our
+      // SYNONYMS table. On "Stone Brewing Co., San Diego, CA, USA",
+      // `tail = ["CA","USA"]` and the old short-circuit returned
+      // `canonical("CA") === "canada"`, then compared "canada" vs the
+      // extracted USA — incorrectly forcing FAIL on a fully compliant
+      // US label. Two-part fix:
+      //   1. Walk `tail` from RIGHT to LEFT so the trailing segment
+      //      (where country marking actually lives) wins.
+      //   2. Skip 2-letter tokens that match a US state abbreviation
+      //      (they're disambiguating context, not the country claim).
+      const segs = declared.split(/,/).map((s) => s.trim()).filter(Boolean);
+      const tail = segs.slice(-2);
+      let tailRecognised: string | null = null;
+      let tailRecognisedDisplay = "";
+      for (let i = tail.length - 1; i >= 0; i--) {
+        const t = tail[i]!;
+        if (US_STATE_ABBREVS.has(t.toUpperCase())) continue;
+        const c = recognisedCountry(t);
+        if (c !== null) {
+          tailRecognised = c;
+          tailRecognisedDisplay = t;
+          break;
+        }
+      }
+      if (tailRecognised) {
+        if (extracted.country) {
+          const extractedCanon = canonicalizeCountry(extracted.country).canon;
+          if (tailRecognised !== extractedCanon) {
+            return {
+              field: "producer",
+              status: "fail",
+              expected: declared,
+              actual: extracted,
+              confidence: 1,
+              reason: `Declared producer country (${tailRecognisedDisplay}) does not match extracted (${extracted.country}). 27 CFR §4.39 / §5.36 require country-of-origin marking to match the application.`,
+            };
+          }
+        } else if (tailRecognised !== "united states") {
+          // Declared parses to a non-USA country, but the label prints
+          // no country marking at all. That's an import-marking
+          // violation regardless of how well the rest of the address
+          // matches (27 CFR §4.39 / §5.36). US-domestic labels are
+          // exempt and fall through to fuzzy.
+          return {
+            field: "producer",
+            status: "fail",
+            expected: declared,
+            actual: extracted,
+            confidence: 1,
+            reason: `Declared producer country (${tailRecognisedDisplay}) requires country-of-origin marking on the label per 27 CFR §4.39 / §5.36, but the extracted label has none.`,
+          };
+        }
+      }
+    }
+
     return {
       field: "producer",
       status: r >= COMPONENT_THRESHOLD ? "pass" : r >= 0.75 ? "review" : "fail",

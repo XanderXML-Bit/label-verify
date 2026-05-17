@@ -6,7 +6,7 @@ How the project is tested, what corpus the benchmark runs against, what statisti
 
 | Surface | Count | Runtime | Purpose |
 |---|---:|---|---|
-| Vitest specs (unit + integration) | 635 across 66 files | ~10 s (`npm test`) | Pipeline correctness: matchers, validators, scorers, route handlers, schemas, CLI argument parsing. |
+| Vitest specs (unit + integration) | 699 across 74 files | ~10 s (`npm test`) | Pipeline correctness: matchers, validators, scorers, route handlers, schemas, CLI argument parsing. |
 | Playwright E2E specs | 9 spec files | ~30–60 s with `npm run dev` (`npm run test:e2e`) | Browser-driven user-flow validation. Covers idle screen + samples, application-input prefill, batch autopair, form validation, friendlyError mapping, upload rejection, sample retry, API status banner, extract-only. |
 | Benchmark harness | `benchmarks/run.ts` (T-variant tournament) + `bin/labelverify-bench.ts` (cross-pair) | ~5 min routine, ~30 min full bake-off, ~15 min cross-pair | Accuracy + latency measurement on the corpus. |
 | CLI smoke tests | 3 test files (`cli.test.ts`, `cli-web.test.ts`, `bench-cross-pair.test.ts`) | included in Vitest | Subprocess-level argument parsing, help, exit-code semantics for all three CLIs. |
@@ -110,7 +110,7 @@ The bench scorer treats a `REVIEW` outcome the same as a `FAIL` when computing a
 
 ## 7. Ground-truth validation
 
-For the photo-realistic stratum (which was not generated from a deterministic template), ground truth was cross-validated by an independent vision-model oracle pass (Gemini 3.1 Pro Preview) and a four-sub-agent visual audit. The cross-validation report is at `.review/ai-corpus-cross-validation.md`. Human-resolved ground truth is the source of truth where automated cross-checks disagree.
+For the photo-realistic stratum (which was not generated from a deterministic template), ground truth was cross-validated by an independent vision-model oracle pass (Gemini 3.1 Pro Preview) and a four-sub-agent visual audit. The cross-validation results were recorded internally during corpus build (2026-05-12) and informed the GT-correction pinned in `src/tests/wave31b-gt-correction-pin.test.ts`. Human-resolved ground truth is the source of truth where automated cross-checks disagree.
 
 Borderline-bold cases are excluded from the bold-detection subscore (they still score on text match, caps, and size). Encoding a confused answer in the ground truth would silently grade a flawed technique as wrong, or a confused technique as right.
 

@@ -1,7 +1,7 @@
 # Benchmark Harness
 
 Picks the extractor that ships in production. Four contenders (per
-[`docs/APPROACH.md`](../docs/APPROACH.md) §2.1):
+[`docs/archive/APPROACH.md`](../docs/archive/APPROACH.md) §2.1):
 
 | ID | Technique | What it is |
 |----|-----------|------------|
@@ -11,7 +11,7 @@ Picks the extractor that ships in production. Four contenders (per
 | C1 | OCR + Vision combined | T1 OCR text fed into the T6 prompt via `ExtractorContext.ocrText`. Requires `GOOGLE_API_KEY`. |
 
 Out-of-scope candidates (Tesseract+ML classifier, AWS Textract, Claude Vision,
-etc.) are enumerated in `docs/APPROACH.md` §2.2.
+etc.) are enumerated in `docs/archive/APPROACH.md` §2.2.
 
 ## Running
 
@@ -19,7 +19,7 @@ etc.) are enumerated in `docs/APPROACH.md` §2.2.
 # Smoke run — first 20 images, 1 trial each. T1 has no API-key dependency.
 npx tsx benchmarks/run.ts --smoke --corpus test-data-v2 --technique T1
 
-# Full run, all four techniques, 3 trials per image (per APPROACH.md §5 step 3).
+# Full run, all four techniques, 3 trials per image (per ../docs/archive/APPROACH.md §5 step 3).
 GOOGLE_API_KEY=... OPENAI_API_KEY=... npx tsx benchmarks/run.ts
 
 # Specific technique, against the larger v2 corpus.

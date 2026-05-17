@@ -78,10 +78,13 @@ Implemented in `scripts/calibrate-review-threshold.ts`. Result:
 `loss(τ)` is flat at 30 across τ ∈ [0.30, 0.90] (6 missed wrong-PASSes
 × 5 weight, 0 false-positive defers). τ ≥ 0.91 adds 3 FPDs without
 catching any additional wrong PASSes. Current production τ = 0.55 is
-on the Pareto plateau — **no change needed**. Full sweep table and
-analysis in `.review/threshold-calibration-report.md`. The 6 wrong
-PASSes can't be caught by raising τ because the model was confidently
-wrong (conf ≥ 0.90) — they need a second-opinion model, see A8.
+on the Pareto plateau — **no change needed**. The full sweep table and
+analysis were recorded during wave-28a calibration (internal); the
+production constant + decision rationale lives in
+`src/lib/verify.ts` (see the calibration-history comment block above
+`REVIEW_CONFIDENCE_THRESHOLD`). The 6 wrong PASSes can't be caught by
+raising τ because the model was confidently wrong (conf ≥ 0.90) —
+they need a second-opinion model, see A8.
 
 ### A3. Re-run T6 with the new comparators to refresh the headline
 `compareCountry` was relaxed for US-domestic labels (REVIEW instead
@@ -99,9 +102,10 @@ trial latency / cost / error records. Enables offline calibration
 
 ### A5. Ground-truth audit of the AI corpus
 Codex's `country_of_origin` field over-claims USA on labels that
-don't visibly print one (the cross-validation oracle pass at
-`.review/ai-corpus-cross-validation.md` confirmed this on 43 of 46
-drifts). The fix is in the *ground-truth*, not the model: walk each
+don't visibly print one. An independent cross-validation oracle pass
+(Gemini 3.1 Pro Preview, run during corpus build 2026-05-12) confirmed
+this on 43 of 46 drifts. The fix is in the *ground-truth*, not the
+model: walk each
 AI label image, confirm visually whether the label shows a country
 marking, and rewrite the ground-truth `country_of_origin` to null
 when it doesn't. ~50 images × 30 s = ~25 min of manual review.
