@@ -310,6 +310,95 @@ describe("application/parse (dispatcher)", () => {
       }),
     ).rejects.toMatchObject({ code: "vision-unavailable" });
   });
+
+  // Wave-33 coverage push: parse.ts was at 62 % on main. The dispatcher
+  // has 8 source paths (pdf-text / pdf-vision-fallback / json / docx /
+  // csv / md / txt / image-reject); the existing tests covered ~5 of
+  // them. Adding the remaining edge-case + format-routing tests.
+  it("routes markdown by extension when MIME is generic", async () => {
+    const r = await parseApplication({
+      buffer: Buffer.from(
+        "Brand: TestBrew\nClass: IPA\nABV: 6.4%\nNet: 12 fl oz\n",
+      ),
+      filename: "app.md",
+      mime: "application/octet-stream", // generic; ext wins
+    });
+    expect(r.source).toBe("md");
+    expect(r.fields.brand_name).toBe("TestBrew");
+  });
+
+  it("routes plain text via text/* MIME family", async () => {
+    const r = await parseApplication({
+      buffer: Buffer.from(
+        "Brand: TestBrew\nClass: IPA\nABV: 6.4%\nNet: 12 fl oz",
+      ),
+      filename: "app.txt",
+      mime: "text/plain",
+    });
+    expect(r.source).toBe("txt");
+  });
+
+  it("rejects oversize input (too-large) with HTTP 413", async () => {
+    const huge = Buffer.alloc(11 * 1024 * 1024, 0x20);
+    await expect(
+      parseApplication({
+        buffer: huge,
+        filename: "app.txt",
+        mime: "text/plain",
+      }),
+    ).rejects.toMatchObject({ code: "too-large", status: 413 });
+  });
+
+  it("rejects unknown MIME and unknown extension as unsupported-mime", async () => {
+    await expect(
+      parseApplication({
+        buffer: Buffer.from("hello"),
+        filename: "app.unknown",
+        mime: "application/x-strange",
+      }),
+    ).rejects.toMatchObject({ code: "unsupported-mime", status: 415 });
+  });
+
+  it("falls back to vision when a PDF has no extractable text (no API key → fails closed)", async () => {
+    // The minimal PDF we craft has an empty content stream → 0 extractable text.
+    // Without args.apiKey, the dispatcher must error rather than silently pass.
+    const objects = [
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << >> /Contents 4 0 R >>\nendobj\n",
+      "4 0 obj\n<< /Length 8 >>\nstream\nBT ET\n\nendstream\nendobj\n",
+    ];
+    let body = "%PDF-1.4\n%\xC2\xA5\xC2\xB1\xC3\xAB\n";
+    const offsets: number[] = [];
+    for (const obj of objects) {
+      offsets.push(Buffer.byteLength(body, "binary"));
+      body += obj;
+    }
+    const xrefStart = Buffer.byteLength(body, "binary");
+    body += "xref\n0 5\n0000000000 65535 f \n";
+    for (const off of offsets) {
+      body += `${off.toString().padStart(10, "0")} 00000 n \n`;
+    }
+    body += `trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
+    const emptyPdf = Buffer.from(body, "binary");
+    await expect(
+      parseApplication({
+        buffer: emptyPdf,
+        filename: "scan.pdf",
+        mime: "application/pdf",
+        // no apiKey
+      }),
+    ).rejects.toMatchObject({ code: "parse-failed" });
+  });
+
+  it("uses ext-only routing when MIME is empty", async () => {
+    const r = await parseApplication({
+      buffer: Buffer.from('{"brand_name":"X"}'),
+      filename: "app.json",
+      mime: "",
+    });
+    expect(r.source).toBe("json");
+  });
 });
 
 describe("ApplicationParseError instances are well-formed", () => {

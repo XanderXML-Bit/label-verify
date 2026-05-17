@@ -48,7 +48,9 @@ You will paste these into Vercel in Step 2. Have them ready first.
 | `SECOND_OPINION_MODEL` | Optional | Model id for the chosen second-opinion provider. Defaults: `gemini-2.5-flash` (gemini), `gpt-5.4-nano` (openai). |
 | `MODEL_APPLICATION_VISION` | Optional | Override the model used by application-image OCR fallback. Default `gemini-3.1-flash-lite`. |
 | `RATE_LIMIT_PER_MIN` | Optional | Per-IP per-endpoint cap on the public demo. Default `60`. |
-| `GEMINI_RPM_LIMIT` | Optional | Provider RPM ceiling used by the batch capacity planner. Default `60`. |
+| `GEMINI_RPM_LIMIT` | Optional | Provider RPM ceiling used by the batch capacity planner. Default `30`. |
+| `MAX_BATCH_SIZE` | Optional | Hard ceiling on derived batch capacity. Default `1000`; capped at `5000` defensively. |
+| `RATE_LIMIT_BATCH_PER_MIN` | Optional | Per-IP create-rate on the batch endpoint. Default `3`. |
 | `DEBUG_TOKEN` | Optional | Any random string. Enables `/api/debug/last`. Leave unset to hide that route. |
 
 A populated `.env.local` (locally, never committed) is the easiest source —

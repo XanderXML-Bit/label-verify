@@ -92,6 +92,22 @@ type ParsedApplication = Awaited<ReturnType<typeof parseApplication>>;
 
 export async function POST(req: Request) {
   const parsedAppCache = new WeakMap<File, ParsedApplication>();
+  // Wave-33 audit (Sub-agent A bugs #1/#9): defensive Buffer cache so
+  // each File's bytes are read at most once per request. Previously
+  // multiple code paths (inline-manifest detection, content-pairing
+  // fingerprint, broadcast, per-pair verify) each independently called
+  // `file.arrayBuffer()` on the same File, which is implementation-
+  // defined on undici's web-streams-backed File at the edge runtime
+  // (the body stream can be one-shot, surfacing as "The stream has
+  // already been read."). Buffering once removes the foot-gun.
+  const fileBytesCache = new WeakMap<File, Buffer>();
+  const readFileBytes = async (f: File): Promise<Buffer> => {
+    const cached = fileBytesCache.get(f);
+    if (cached) return cached;
+    const buf = Buffer.from(await f.arrayBuffer());
+    fileBytesCache.set(f, buf);
+    return buf;
+  };
   const key = callerKey(req.headers);
   const rl = rateLimit(`batch-create:${key}`, {
     perMinute: RATE_LIMIT_BATCH_PER_MIN,
@@ -256,7 +272,7 @@ export async function POST(req: Request) {
         );
         continue;
       }
-      const buf = Buffer.from(await file.arrayBuffer());
+      const buf = await readFileBytes(file);
       items.push({
         index: items.length,
         filename,
@@ -334,7 +350,7 @@ export async function POST(req: Request) {
       if (!isCsv && !isJson) continue;
       let text: string;
       try {
-        const buf = Buffer.from(await appFile.arrayBuffer());
+        const buf = await readFileBytes(appFile);
         text = buf.toString("utf-8");
       } catch {
         continue;
@@ -445,7 +461,7 @@ export async function POST(req: Request) {
         }> = [];
         for (const app of pairResult.unpairedApplications) {
           try {
-            const buf = Buffer.from(await app.arrayBuffer());
+            const buf = await readFileBytes(app);
             const parsed = await parseApplication({
               buffer: buf,
               filename: app.name,
@@ -477,7 +493,7 @@ export async function POST(req: Request) {
         }> = await Promise.all(
           pairResult.unpairedImages.map(async (img) => {
             try {
-              const buf = Buffer.from(await img.arrayBuffer());
+              const buf = await readFileBytes(img);
               const pre = await preprocessImage(buf);
               const result = await extractor.extract(pre.buffer);
               return {
@@ -560,7 +576,7 @@ export async function POST(req: Request) {
         const parsed =
           cached ??
           (await parseApplication({
-            buffer: Buffer.from(await broadcastApp.arrayBuffer()),
+            buffer: await readFileBytes(broadcastApp),
             filename: broadcastApp.name,
             mime: broadcastApp.type,
             ...(process.env.GOOGLE_API_KEY
@@ -668,7 +684,7 @@ export async function POST(req: Request) {
           parsed = cachedParsed;
         } else {
           try {
-            const appBuf = Buffer.from(await applicationFile.arrayBuffer());
+            const appBuf = await readFileBytes(applicationFile);
             parsed = await parseApplication({
               buffer: appBuf,
               filename: applicationFile.name,
@@ -712,7 +728,7 @@ export async function POST(req: Request) {
           `${imageFile.name} ↔ ${applicationFile.name}: application parsed at ${parsed.confidence} confidence (source: ${parsed.source}) — ${parsed.warnings.join(" / ") || "verify the declared values manually."}`,
         );
       }
-      const buf = Buffer.from(await imageFile.arrayBuffer());
+      const buf = await readFileBytes(imageFile);
       items.push({
         index: items.length,
         filename: imageFile.name,

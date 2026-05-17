@@ -26,7 +26,7 @@
 | **What if Gemini is down?** | Cross-provider auto-fallback to GPT-5.4-nano (OpenAI) on primary failure, with a yellow "verified via backup" banner on the verdict. Separate from the second-opinion path. |
 | **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent second-opinion model (default **Gemini 2.5 Flash** since wave 22) re-reads the label. Agreement / disagreement is surfaced inline. Operator can route this to OpenAI instead via `SECOND_OPINION_PROVIDER=openai`. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
-| **Code review** | **636 / 636** vitest tests passing across **66 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
+| **Code review** | **699 / 699** vitest tests passing across **74 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
 
 **How to read this report**
 
@@ -219,7 +219,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | Surface | State |
 |---|---|
 | **Live production** | <https://label-verify-six.vercel.app> · `/api/health` returns `{ ok: true, ready: true, notes: [] }` · all routes 200 · live manual browser walkthrough completed (PASS / FAIL / REVIEW samples all returned correct verdicts in 4.5–5.2 s with 0 console errors) |
-| **Tests** | **636 / 636** passing (`vitest`) · 66 test files (~10 s) |
+| **Tests** | **699 / 699** passing (`vitest`) · 74 test files (~10 s) |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
 | **Lint** | `next lint` clean (zero warnings) |
 | **Production build** | green |
@@ -317,7 +317,7 @@ Reviewers reproducing the project locally can lean on any of these:
 ```bash
 npm run typecheck         # tsc --noEmit, zero output expected
 npm run lint              # next lint, zero warnings on a clean tree
-npm test                  # vitest, ~635 tests across 66 files (~10 s)
+npm test                  # vitest, ~699 tests across 74 files (~10 s)
 npm run build             # production Next.js build
 npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results/<iso>.md
 npm run bench:bakeoff     # full 16-variant tournament (~30 min, ~$0.30 in API calls)
@@ -398,7 +398,7 @@ The **C1 hypothesis** (passing OCR text into the vision prompt as a hint improve
 The bench is a proxy benchmark, not a field validation. A federal deployment would supplement it with a human-adjudicated holdout of real submitted COLA labels. With that scope understood, the methodology is:
 
 - **Corpus.** 170 images. 90 SVG-rendered synthetic labels from deterministic templates, with the Government-Warning failure modes enumerated in [`docs/government-warning-cases.md`](docs/government-warning-cases.md). 80 photo-realistic labels rendered with Codex image-gen across two batches (50 + 30), targeting Government-Warning paraphrase, photo-quality degradations (perspective, glare, lowlight, occlusion, motion-blur, aged paper, shrink-wrap, curved substrate), bilingual EN/ES warnings, and novel beverage categories (hard cider, sake, hard kombucha, RTD cocktail, mead, malt seltzer).
-- **Ground truth.** Each image has a JSON ground-truth file with all seven declared fields and the four Government-Warning compliance booleans (`present`, `text_matches_regulation`, `prefix_all_caps`, `prefix_bold`, `meets_size_minimum`). The photo-realistic ground truth was cross-validated by an independent Gemini 3.1 Pro Preview oracle pass and a four-sub-agent visual audit. Per-stratum audit summaries: `.review/ai-corpus-cross-validation.md`.
+- **Ground truth.** Each image has a JSON ground-truth file with all seven declared fields and the four Government-Warning compliance booleans (`present`, `text_matches_regulation`, `prefix_all_caps`, `prefix_bold`, `meets_size_minimum`). The photo-realistic ground truth was cross-validated by an independent Gemini 3.1 Pro Preview oracle pass and a four-sub-agent visual audit (per-stratum audit summaries recorded internally during corpus build; the CHANGELOG entry for 2026-05-12 records the result).
 - **Scoring.** Per-field PASS / FAIL / REVIEW from the seven `compare*` functions in `src/lib/matching/`, plus the four Government-Warning subscores (text exact match, all-caps, bold via stroke-width transform, size threshold). Aggregated by worst-of rule across all fields.
 - **Statistics.** Wilson 95 % CI per technique × stratum. McNemar pairwise tests between candidate models. Strata reported separately (synthetic vs photo-realistic) rather than pooled.
 - **Scorer convention.** The bench scorer treats `REVIEW` the same as `FAIL` when computing accuracy — the metric only counts an unambiguous PASS as correct. This is a deliberately strict measurement convention: a REVIEW outcome carries a routed-to-human verdict with a regulation-citing reason in the production orchestrator, but on a strict binary accuracy column it cannot count as correct. The headline number therefore understates the orchestrator-level operator experience. Rationale catalogued in [`docs/FAILURE-MODES.md`](docs/FAILURE-MODES.md) §F1.

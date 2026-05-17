@@ -116,7 +116,7 @@ triggers the `REVIEW_CONFIDENCE_THRESHOLD = 0.55` floor in
 confidence on brand_name extraction, the verdict demotes from PASS to
 REVIEW even though the comparator passed. The threshold was calibrated
 against the 170-image corpus — see
-[`.review/threshold-calibration-report.md`](../.review/threshold-calibration-report.md).
+the wave-28a threshold calibration record (internal; the resulting τ=0.55 is pinned in `src/lib/verify.ts:REVIEW_CONFIDENCE_THRESHOLD` and explained in the calibration-history comment block immediately above the constant).
 
 **Headline impact.** 1–2 false PASSes per 170 in our corpus. Reviewers
 should treat brand_name PASS at low extractor confidence as the place
@@ -198,7 +198,7 @@ TTB-defensible verdict:
 1. **`REVIEW_CONFIDENCE_THRESHOLD` floor.** Any field comparator
    returning PASS at confidence below the threshold demotes the
    overall verdict to REVIEW. Calibrated against the corpus — see
-   [`.review/threshold-calibration-report.md`](../.review/threshold-calibration-report.md).
+   the wave-28a threshold calibration record (internal; the resulting τ=0.55 is pinned in `src/lib/verify.ts:REVIEW_CONFIDENCE_THRESHOLD` and explained in the calibration-history comment block immediately above the constant).
 
 2. **Gov-Warning multi-subscore aggregation.** Four independent
    subscores (text, caps, bold-via-SWT, size) → worst-of rule. A
@@ -242,5 +242,5 @@ fine-tune a CNN as a third opinion on borderline Gov-Warning bold).
 ---
 
 _Maintained alongside [`docs/REMAINING-IMPROVEMENTS.md`](REMAINING-IMPROVEMENTS.md)
-and the per-image dumps under `.review/`. Last updated 2026-05-12 after
-the 170-image bake-off + threshold calibration._
+and the bench artifacts under `benchmarks/results/`. Last updated 2026-05-16
+after the wave-32 deep-audit pass; bug-fixes documented in CHANGELOG._

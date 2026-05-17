@@ -1,0 +1,22 @@
+# Normalize line endings to LF in the repository.
+# Prevents CRLF churn from Windows checkouts polluting diffs.
+* text=auto eol=lf
+
+# Explicit binary classifications so Git doesn't try to text-normalize them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.pdf binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.bz2 binary
+*.7z binary

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PdfExtractError, extractPdfFirstPage } from "@/lib/pdf";
+import {
+  PdfExtractError,
+  extractPdfFirstPage,
+  extractPdfText,
+} from "@/lib/pdf";
 
 // ─── Minimal valid 1-page PDF ───────────────────────────────────────────────
 // Hand-rolled to keep the test suite dependency-free (no pdf-lib needed).
@@ -66,5 +70,51 @@ describe("extractPdfFirstPage", () => {
     await expect(extractPdfFirstPage(oversize)).rejects.toMatchObject({
       code: "too-large",
     });
+  });
+});
+
+// Wave-33 coverage push: pdf.ts dropped to 53 % at audit time. Add
+// the text-extraction path + error envelope shape to cover the
+// `extractPdfText` half of the module.
+describe("extractPdfText", () => {
+  it("returns an empty text result on a content-stream-only PDF (no extractable text)", async () => {
+    const pdf = minimalPdf();
+    const result = await extractPdfText(pdf);
+    // minimalPdf renders an EMPTY content stream — no text operators.
+    // The extractor should return an empty / whitespace-only string,
+    // not throw.
+    expect(typeof result.text).toBe("string");
+    expect(result.pageCount).toBe(1);
+  });
+
+  it("respects the same too-large gate as extractPdfFirstPage", async () => {
+    const oversize = Buffer.alloc(21 * 1024 * 1024, 0x20);
+    oversize.write("%PDF-1.4\n", 0, "binary");
+    await expect(extractPdfText(oversize)).rejects.toMatchObject({
+      code: "too-large",
+    });
+  });
+
+  it("returns render-failed on a corrupt PDF", async () => {
+    const garbage = Buffer.from("not a pdf");
+    await expect(extractPdfText(garbage)).rejects.toBeInstanceOf(
+      PdfExtractError,
+    );
+    try {
+      await extractPdfText(garbage);
+    } catch (err) {
+      expect((err as PdfExtractError).code).toBe("render-failed");
+    }
+  });
+});
+
+describe("PdfExtractError shape", () => {
+  it("preserves the original error name and message", () => {
+    const err = new PdfExtractError("encrypted", "PDF is locked");
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(PdfExtractError);
+    expect(err.name).toBe("PdfExtractError");
+    expect(err.code).toBe("encrypted");
+    expect(err.message).toBe("PDF is locked");
   });
 });

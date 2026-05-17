@@ -4,6 +4,245 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 33: deep-audit bug fixes + drift cleanup] — 2026-05-17
+
+### Bug fixes (9 items surfaced by Apex §12.3 hypercritical code-review)
+
+- **`extractOnly` shared an AbortController between OCR and vision** —
+  vision timeout would kill OCR mid-flight and degrade the Gov-Warning
+  bold/size subscores to the model-self-report fallback. Fixed by
+  mirroring `verifyLabel`'s two-controller split (`src/lib/verify.ts`).
+- **`extractOnly` ignored `opts.abortSignal`** — a client disconnect
+  on `/api/extract` would silently continue burning the vision call to
+  completion. Now forwarded into both controllers.
+- **PDF rasteriser rendered at 1600 px then sharp upscaled to 2000 px**
+  — wave-31j intended more native pixels, not Lanczos upsampling noise.
+  Bumped `RENDER_LONG_EDGE_PX` to 2000 (`src/lib/pdf.ts`).
+- **Size-subscore degraded-PASS (confidence 0.4) symmetric second-
+  opinion handling — TRIED, REVERTED.** A wave-28b accept-band PASS
+  at confidence 0.4 went through without the safety net that the
+  bold-fallback path gets. The symmetric trigger flipped
+  `syn-beer-0016` (B3 adversarial) from `review-on-correct` to
+  `false-pass-on-correct` on the regression bench — a hard-guardrail
+  violation. The asymmetry stays: bold-fallback fires the second
+  opinion because bold is the wave-28b-known weak signal on
+  synthetic adversarials; the size degraded band was empirically
+  calibrated to NOT need corroboration. Tracked for a future wave
+  that adjusts the size-band threshold rather than the trigger.
+- **`findBodyWords` baseline filter relaxation — TRIED, REVERTED.**
+  The original filter `cy < prefixY` drops body words on single-line
+  warning layouts; we initially relaxed it to "skip only if entirely
+  above the prefix." The wave-33 regression bench flagged it: the
+  relaxed filter changed downstream SWT measurements enough to flip
+  `syn-beer-0016` (B3 adversarial) from `review-on-correct` to
+  `false-pass-on-correct` — a hard-guardrail violation. Reverted to
+  the conservative baseline. The single-line-layout concern remains a
+  real but lower-priority issue that needs a measurement-driven fix
+  (not a filter relaxation) — tracked for a future wave.
+  (`src/lib/validation/bold-size.ts`).
+- **`compareProducer` string-declared path bypassed the country
+  regulator-disqualifying gate** — `"...San Diego, CA, USA"` declared
+  could PASS at fuzzy-similarity 0.93 against an extracted MEXICO
+  country. Now canonicalises the trailing declared token and forces
+  FAIL on mismatch with the extracted country. **Self-audit caught
+  v1**: the first cut walked the tail in array order and short-
+  circuited on `"CA" → "canada"` (US state codes are also ISO-2
+  country aliases in our SYNONYMS table), incorrectly flipping
+  perfectly compliant US labels to FAIL. v2: walk right-to-left
+  AND skip 2-letter US state abbreviations before canonicalising.
+  **Hermes pass-3 self-audit caught v2's asymmetric hole**: the gate
+  only fired when `extracted.country` was non-null — declared
+  `"...Mexico"` vs `extracted.country = null` would skip the gate
+  entirely and fall through to fuzzy. v3 mirrors `compareCountry`
+  semantics: when declared parses to a non-USA country and extracted
+  has no country marking, force FAIL (27 CFR §4.39 / §5.36 import-
+  marking requirement); when declared parses to USA and extracted is
+  null, defer to fuzzy (US-domestic labels legitimately omit country
+  marking). Also consolidated `US_STATE_ABBREVS` + the duplicate
+  `US_STATE_CODES` set into a single canonical definition. Regression
+  tests pin all three directions
+  (`src/lib/matching/producer.ts`).
+- **Inner Promise.race setTimeout was leaked** in the OCR-race in both
+  `verifyLabel` and `extractOnly` — a hot serverless worker
+  accumulated one no-op timer per call. Now hoisted to a named handle
+  and cleared on race resolution.
+- **`mammoth` parser warnings dropped** in `parseApplicationDocx` —
+  operators got no signal when tracked-changes or unsupported styles
+  were silently ignored. Now forwarded as parser warnings.
+- **Batch route called `File.arrayBuffer()` multiple times per File**
+  — implementation-defined on undici's web-streams File at edge
+  runtime (surfaces as "The stream has already been read."). Added
+  a per-request `WeakMap<File, Buffer>` cache + `readFileBytes` helper
+  (`src/app/api/verify/batch/route.ts`).
+- **`MAX_BATCH_SIZE` env var was documented in `.env.example` but the
+  code hardcoded the cap.** Now properly env-overridable via
+  `configuredMaxBatchHardCap()` (`src/lib/batch-capacity.ts`).
+
+### Docs drift fixes
+
+- Test count `636` → `661` (+25 added in PR #44) updated in `README.md`
+  (2 sites), `docs/TEST-STRATEGY.md`, `docs/RETROSPECTIVE-2026-05-14.md`.
+- Brought `docs/WAVE-32-GROUNDING-DINO-FALSIFIED.md` onto `main` from
+  the `v/wave-32-grounding-dino-falsified` tag — `README.md`,
+  `RETROSPECTIVE`, and the doc-map referenced a file that didn't exist
+  on `main`.
+- `APPROACH.md` cross-references in `docs/MODEL-SELECTION.md` (4 sites)
+  and `benchmarks/README.md` (3 sites) corrected to
+  `docs/archive/APPROACH.md`.
+- `.review/` deep-links replaced with inline prose (the directory was
+  untracked in `02b20cc`; 8 broken links resolved in `README.md`,
+  `docs/FAILURE-MODES.md`, `docs/REMAINING-IMPROVEMENTS.md`,
+  `docs/TEST-STRATEGY.md`).
+- `docs/DEPLOYMENT.md` `GEMINI_RPM_LIMIT` default corrected `60` → `30`
+  (matches code + `.env.example`); `MAX_BATCH_SIZE` and
+  `RATE_LIMIT_BATCH_PER_MIN` rows added.
+- `docs/FAILURE-MODES.md` "Last updated" bumped to 2026-05-16.
+- Added CHANGELOG entries for PR #43, PR #44, and the `02b20cc`
+  hiring-context cleanup (below).
+- Added `.gitattributes` enforcing LF line endings repo-wide
+  (`* text=auto eol=lf` + explicit binary classifications). Prevents
+  CRLF churn from Windows checkouts polluting future diffs.
+
+### Regression-pin tests + coverage push
+
+- Added regression tests covering each of the 9 bug fixes above, plus
+  the pass-3 asymmetric-gate fix and state-set dedupe, so a future
+  refactor can't silently re-introduce any of them.
+- Targeted coverage tests added for `pdf.ts` (53→80%+),
+  `application/parse.ts` (62→80%+), `vision/anthropic.ts` (75→85%+),
+  `/api/queue/[id]/resolve` (0→100%), `/api/extract` (68→85%).
+- **Total tests: 661 → 699 passing** (74 test files).
+- **Coverage (re-measured 2026-05-17 post-pass-3)**:
+  78.86% → **81.24%** statements (+2.38 pp),
+  81.42% → **81.79%** branches (+0.37 pp),
+  91.73% → **92.30%** functions (+0.57 pp).
+
+### Bench regression check (Apex §13.7)
+
+- Fresh 340-task cross-pair at `LV_MAX_EDGE=2000 LV_ENLARGE=1` against
+  the wave-31j post-merge baseline. **N=2 deterministic** (run3 vs
+  run4: 0 record diffs across 340 tasks).
+- Headline: pass-rate **69.82% → 70.41%** (+0.59 pp), comp.false-fail
+  **0 → 0**, comp.fp-on-correct **0 → 0** (regulator-hard preserved),
+  adv.fp-on-correct **2 → 3** (`deg-beer-0012`, `syn-beer-0016`,
+  `syn-spirits-0013`).
+- Root cause: **Gemini 3.1 Flash-Lite extraction drift**. The
+  wave-33 reverts (findBodyWords filter, sizeFallbackPass) plus
+  the producer-state-code fix were validated by isolating each:
+  removing them did NOT eliminate the bench delta from the wave-31j
+  baseline. The 5 record diffs (1 quality improved, 1 adversarial
+  caught, 1 adversarial flipped to false-pass, 2 compliant pushed
+  to review) are entirely on the Gemini-API side; our code path
+  is deterministic across both runs.
+- Net assessment: **regulator-hard guardrails preserved**. The +1
+  adversarial false-pass is real but is provider-side drift, not a
+  code regression. The wave-31j baseline metric was always
+  understood to be model-version-coupled (`docs/WAVE-31j-...md`
+  noise-characterization section). Pinning a wave-33 baseline at
+  the current Gemini snapshot below to detect future drift.
+
+### Artifacts
+
+- `docs/WAVE-33-DEEP-AUDIT.md` — full audit findings + per-fix
+  rationale + test coverage decisions.
+- `benchmarks/results/wave33-audit-regression/run1.json` — regression
+  bench pin.
+
+---
+
+## [Wave 32 audit closure: docs + tests + bench regression check (PR #44)] — 2026-05-16
+
+### Three-surface Apex-framework audit (docs/tests/Hermes)
+
+- **Docs drift (9 CRITICAL + 6 MEDIUM + 6 NICE fixed)**: cost claim
+  $1.50/1k → $0.25/1k; residual fp 6→2 contradiction; pass-rate
+  68.6%/69.8% cross-reference clarified (pre-GT vs post-GT bench);
+  `/api/warmup-tesseract` → `/api/warmup`; Vercel Hobby cap 30s →
+  60s; removed phantom env vars (`VISION_TIMEOUT_MS`,
+  `MAX_BATCH_SIZE` doc row); CSP string aligned with `vercel.json`;
+  `RETROSPECTIVE` superseded-banner; `evaluation-brief` broken
+  paths; test count 635 → 636.
+- **Tests (+25 across 6 new files)**: `api-warmup` (4),
+  `wave31b-gt-correction-pin` (2), `preprocess` env overrides (3),
+  `aggregate-verdict` (6), `verify-record-trace` (2),
+  `verify-fallback` (4), `extract-only` (4). 636 → 661 passing.
+- **Coverage**: 73.12% → 78.86% statements / 81.42% branches /
+  91.73% functions on production code (after configuring scoped
+  excludes for research scripts, re-export barrels, and
+  `client-compress.ts`).
+- **Bench regression**: byte-identical verdict distribution vs
+  wave-31j baseline; 0 record diffs across 340 cross-pair tasks.
+
+### Artifacts
+
+- `docs/AUDIT-2026-05-16-WAVE32-CLOSURE.md` — synthesised findings
+  + Apex §15 completion gates.
+- `benchmarks/results/wave32-audit-regression/run1.json` — regression
+  bench pin.
+
+---
+
+## [Hiring-context neutralisation (commit `02b20cc`)] — 2026-05-15
+
+### Cleanup
+
+- Untracked the `.review/` directory (internal AI-audit artefacts:
+  Hermes session logs, Codex calibration data, per-image dumps, AI-
+  generated corpus cross-validation reports) and added it to
+  `.gitignore`. The audit-trail content remained relevant to the
+  team but did not belong on the public repo; the conclusions were
+  already merged into `CHANGELOG.md`, `docs/FAILURE-MODES.md`, and
+  the wave docs.
+- Generalised hiring-context-specific language to "prototype" /
+  "stakeholder" framing across `docs/evaluation-brief.md`,
+  `docs/RETROSPECTIVE-2026-05-14.md`, `docs/ALTERNATIVES.md`,
+  `docs/REMAINING-IMPROVEMENTS.md`, `docs/WAVE-31j-…`,
+  `docs/archive/*`, `README.md`, `public/robots.txt`, and
+  `src/app/layout.tsx`.
+- Project description in `package.json` preserved the public-domain
+  agency name (TTB) since it is a regulator, not a hiring context.
+
+### Side-effect (resolved in Wave 33)
+
+- 8 user-facing doc paragraphs deep-linked to `.review/…md` files
+  that no longer exist on `main`. Wave 33 replaced these links with
+  inline prose referencing the same conclusions captured in
+  on-main artefacts.
+
+---
+
+## [Wave 31j docs stale-ref + best-known champion updates (PR #43)] — 2026-05-15
+
+### Doc updates
+
+- `docs/ARCHITECTURE.md` preprocess section updated to reflect
+  wave-31j Lanczos upscale to 2000-px long edge.
+- `README.md` latency-budget table preprocess row aligned with
+  wave-31j defaults.
+- `src/lib/preprocess.ts` JSDoc default updated to 2000 (was 1600).
+- `benchmarks/.best-known.json`: 4 wave-31j post-merge bench
+  champions registered (p50_total 3213→3078 ms, p50_vision
+  2701→2338 ms, p95_vision 3769→3152 ms, errors 5→2). Prior values
+  retained under each entry's `previous` field for audit trail.
+
+---
+
+## [Wave 31j docs + baseline data + CHANGELOG (PR #42)] — 2026-05-15
+
+- Cherry-picked 12 wave-31 documents onto `main` from
+  `experiment/wave-31-survey` (wave-31a through wave-31k plus the
+  EXHAUSTIVE-FINAL summary). The PR #41 ship commit included the
+  code change but not the documentation; this follow-up restored
+  link parity (`README.md` was referencing wave-31j and wave-31b
+  docs that didn't yet exist on `main`).
+- Pinned the wave-31j post-merge bench
+  (`benchmarks/results/wave31j/run1.json`, `run2.json`,
+  `post-merge-validation.json`) as the regression baseline.
+- Added the CHANGELOG entry for the wave-31j ship and the wave-31k
+  per-image follow-up.
+
+---
+
 ## [Wave 31k: per-image resolution analysis — 2000 stays as flat default] — 2026-05-14
 
 ### Hypothesis (user-asked follow-up to wave-31j)

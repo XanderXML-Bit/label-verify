@@ -24,7 +24,7 @@ be able to trace it directly back to this document.
 
 ## 2. Candidate set
 
-Per [`APPROACH.md`](APPROACH.md) §2, the full bake-off candidate set is:
+Per [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) §2, the full bake-off candidate set is:
 
 | ID | Model | Provider | Pricing (per 1M in / out) |
 |----|-------|----------|---------------------------|
@@ -140,7 +140,7 @@ contenders fail decisive criteria:
 | T10 | Qwen 3.6 Flash (OR) | 38.1 %† | 25.3 s | $0.25 | Below FN-rate floor; 3 timeout failures |
 | T11 | Llama 4 Maverick (OR) | 34.5 % | 3.58 s | $0.15 | Below FN-rate floor; fast but flat-schema model with confidence-coercion gap |
 | T12 | Claude Opus 4.7 (OR) | 51.2 % | 6.39 s | $5.00 | Flat-schema model — coercion-path ceiling ~55 % on this corpus |
-| C1 | OCR + Gemini Flash Lite (T1 + T6 combined) | 89.3 % | 2.89 s | $0.25 | OCR-as-hint provides no accuracy gain — the C1 working hypothesis from `APPROACH.md` §4.1 is **falsified** |
+| C1 | OCR + Gemini Flash Lite (T1 + T6 combined) | 89.3 % | 2.89 s | $0.25 | OCR-as-hint provides no accuracy gain — the C1 working hypothesis from `docs/archive/APPROACH.md` §4.1 is **falsified** |
 | T1 | Tesseract OCR baseline | 33.3 % | 0.64 s | $0 | Network-blocked fallback; not a serious contender on accuracy |
 | T5b | Claude Haiku 4.5 (OR) | 54.8 % | 4.07 s | $1.00 | Schema-coercion gap; well below floor on this run |
 
@@ -174,7 +174,7 @@ computed across the 5 successful images.
 
 ### 4.3 What the priors got wrong
 
-The pre-registered prediction matrix in `APPROACH.md` §4 expected:
+The pre-registered prediction matrix in `docs/archive/APPROACH.md` §4 expected:
 
 | Prediction | Predicted | Measured | Verdict |
 |------------|-----------|----------|---------|
@@ -285,6 +285,6 @@ smoke mode it's about 90 seconds.
 - [ ] Pareto frontier table actually includes the winner
 - [ ] Runtime primary path remains pinned; benchmark candidates stay out of `.env.example`
 - [ ] `vercel.json` env block (if present) updated
-- [ ] [`APPROACH.md`](APPROACH.md) §6 Decision Record table updated
+- [ ] [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) §6 Decision Record table updated
 - [ ] Markdown report committed to `benchmarks/results/`
 - [ ] One paragraph in this file's §4.2 explaining the choice

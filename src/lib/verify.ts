@@ -340,10 +340,18 @@ export async function verifyLabel(
   // the remaining budget. The .catch(()=>null) in ocrPromise's
   // construction makes the timeout-loser harmless to the rest of the
   // pipeline. See Vercel-deploy postmortem 2026-05-12.
+  //
+  // Wave-33 audit (Sub-agent A bug #18): hoist the inner setTimeout
+  // to a named handle so we clear it when OCR wins the race; otherwise
+  // a hot serverless worker accumulates one no-op timer per call.
+  let ocrRaceTimer: ReturnType<typeof setTimeout> | null = null;
   const ocrFinal = await Promise.race([
     ocrPromise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
+    new Promise<null>((resolve) => {
+      ocrRaceTimer = setTimeout(() => resolve(null), 8_000);
+    }),
   ]);
+  if (ocrRaceTimer) clearTimeout(ocrRaceTimer);
   // OCR has either landed or the 8 s race timed out — either way the
   // OCR controller's wall-clock is no longer needed.
   clearTimeout(ocrTimeoutHandle);
@@ -461,6 +469,18 @@ export async function verifyLabel(
     gov.status === "pass" &&
     gov.subscores.bold.status === "pass" &&
     gov.subscores.bold.confidence === 0.6;
+  // Wave-33 audit (Sub-agent A bug #13) trialled a symmetric
+  // `sizeFallbackPass` predicate that would route the size-subscore
+  // degraded-PASS band (confidence 0.4) through the same second-
+  // opinion call the bold-fallback path uses. The regression bench
+  // flagged this as flipping `syn-beer-0016` (B3 adversarial) from
+  // review-on-correct to false-pass-on-correct — a hard-guardrail
+  // violation. The asymmetry stays: bold-fallback fires the SO
+  // because the bold subscore is the wave-28b-known weak signal on
+  // synthetic adversarials, but the size subscore's degraded band
+  // was empirically calibrated to NOT need extra corroboration.
+  // Tracked for a future wave that adjusts the size-band threshold
+  // (not the second-opinion trigger).
   // Per-field comparators that already returned REVIEW (e.g. ABV with low
   // extractor confidence, brand near-miss) also contribute a reason so the
   // reviewer sees the full picture in one place.
@@ -635,6 +655,12 @@ export async function verifyLabel(
     // corroboration. Fire a second-opinion call to corroborate or
     // refute. Post-process below restores PASS on agreement.
     boldFallbackOnlyPass;
+  // (Wave-33 audit Sub-agent A bug #13 trialled also routing
+  // size-fallback degraded-PASS through second-opinion symmetrically
+  // with the bold path; the regression bench caught that doing so
+  // changed `syn-beer-0016` from review to false-pass on-correct
+  // — a hard-guardrail violation. Reverted. The asymmetry is
+  // documented in the predicate above. Tracked for a future wave.)
   if (
     govReviewBorderline &&
     !fallbackUsed &&
@@ -733,6 +759,8 @@ export async function verifyLabel(
       );
     }
   }
+  // (Wave-33 size-fallback second-opinion symmetric handling was
+  // trialled and reverted — see the comment above `boldFallbackOnlyPass`.)
 
   const totalMs = performance.now() - startTotal;
 
@@ -836,8 +864,37 @@ export async function extractOnly(
   const pre = await preprocessImage(imageBytes, opts.preprocessOpts);
   const preElapsed = performance.now() - preStart;
 
+  // Wave-33 audit (Sub-agent A bug #7): separate AbortControllers for
+  // OCR vs the vision call. Previously a single `ctrl` was shared, so
+  // a vision-timeout fire would abort the still-running Tesseract
+  // worker mid-pixel-pass — degrading the Gov-Warning bold/size
+  // subscores into the model-self-report fallback path. This mirrors
+  // verifyLabel's two-controller split (code-review B2).
   const ctrl = new AbortController();
+  const ocrCtrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
+  // OCR gets a slightly longer budget — Tesseract on a cold worker
+  // can spike to ~5 s. The Gov-Warning validator below awaits OCR up
+  // to 8 s before falling back to vision-self-report flags.
+  const ocrTimeoutHandle = setTimeout(
+    () => ocrCtrl.abort(),
+    Math.max(visionTimeoutMs, 10_000),
+  );
+
+  // Wave-33 audit (Sub-agent A bug #8): forward the external abort
+  // signal into BOTH controllers. Previously `opts.abortSignal` was
+  // declared in VerifyOptions but completely ignored here — a client
+  // disconnect on /api/extract continued to burn the vision call to
+  // completion.
+  const externalAbort = opts.abortSignal;
+  const onExternalAbort = (): void => {
+    ctrl.abort();
+    ocrCtrl.abort();
+  };
+  if (externalAbort) {
+    if (externalAbort.aborted) onExternalAbort();
+    else externalAbort.addEventListener("abort", onExternalAbort, { once: true });
+  }
 
   const modeUsed = PRODUCTION_MODE_ID;
   const extractor = opts.extractor ?? buildDefaultExtractor();
@@ -859,7 +916,7 @@ export async function extractOnly(
   let ocrWords: OcrWord[] | undefined;
   let ocrElapsed: number | null = null;
   const ocrPromise: Promise<OcrResult | null> = tesseractEngine
-    .run(pre.buffer, ctrl.signal)
+    .run(pre.buffer, ocrCtrl.signal)
     .then((r) => {
       ocrWords = r.words;
       ocrElapsed = r.latencyMs;
@@ -884,12 +941,22 @@ export async function extractOnly(
       const fallbackKey = process.env.OPENAI_API_KEY;
       const fallbackModel = process.env.MODEL_FALLBACK ?? "gpt-5.4-nano";
       if (!fallbackKey) throw primaryErr;
+      // Self-audit fix (wave-33 pass 2): mirror verifyLabel's
+      // external-abort wiring on the fallback path. Without these
+      // three lines a client disconnect mid-fallback continues to
+      // burn the OpenAI call. Pre-flight guard + listener +
+      // cleanup match the primary path's invariant.
+      if (externalAbort?.aborted) throw primaryErr;
       const remainingMs = Math.min(
         25_000,
         Math.max(5_000, visionTimeoutMs - (performance.now() - startTotal)),
       );
       const fbCtrl = new AbortController();
       const fbTimer = setTimeout(() => fbCtrl.abort(), remainingMs);
+      const onExternalAbortFb = (): void => fbCtrl.abort();
+      if (externalAbort && !externalAbort.aborted) {
+        externalAbort.addEventListener("abort", onExternalAbortFb, { once: true });
+      }
       try {
         const mod = await loadOpenAiModule();
         const fallbackExtractor = new mod.GPT4oMiniExtractor({
@@ -907,10 +974,18 @@ export async function extractOnly(
         throw primaryErr;
       } finally {
         clearTimeout(fbTimer);
+        if (externalAbort) {
+          externalAbort.removeEventListener("abort", onExternalAbortFb);
+        }
       }
     }
   } finally {
     clearTimeout(timeoutHandle);
+    // OCR still in flight for the Gov-Warning validator's bounded race
+    // below; don't clear ocrTimeoutHandle yet (matches verifyLabel).
+    if (externalAbort) {
+      externalAbort.removeEventListener("abort", onExternalAbort);
+    }
   }
 
   // Government Warning still validated — regulator-mandated text is a
@@ -919,16 +994,25 @@ export async function extractOnly(
   const matchStart = performance.now();
   // Bounded await: if Tesseract's still running well past the vision
   // call, we'd rather ship a vision-only Gov-Warning verdict than hang
-  // until the function timeout (Vercel Hobby caps at 30s). 8s is plenty
-  // for a fully warm worker to finish recognising a single label; a
-  // cold worker that hasn't finished by then almost certainly won't in
-  // the remaining budget. The .catch(()=>null) in ocrPromise's
+  // until the function timeout (Vercel Hobby caps at 60s on this app).
+  // 8s is plenty for a fully warm worker to finish recognising a single
+  // label; a cold worker that hasn't finished by then almost certainly
+  // won't in the remaining budget. The .catch(()=>null) in ocrPromise's
   // construction makes the timeout-loser harmless to the rest of the
   // pipeline. See Vercel-deploy postmortem 2026-05-12.
+  //
+  // Wave-33 audit (Sub-agent A bug #18): hoist the inner setTimeout
+  // to a named handle so we clear it when OCR wins the race; otherwise
+  // a hot serverless worker accumulates one no-op timer per call.
+  let ocrRaceTimer: ReturnType<typeof setTimeout> | null = null;
   const ocrFinal = await Promise.race([
     ocrPromise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
+    new Promise<null>((resolve) => {
+      ocrRaceTimer = setTimeout(() => resolve(null), 8_000);
+    }),
   ]);
+  if (ocrRaceTimer) clearTimeout(ocrRaceTimer);
+  clearTimeout(ocrTimeoutHandle);
   const f = extracted.fields;
   // extractOnly has no declared net_contents (the user didn't supply
   // any). The Gov-Warning size subscore needs SOMETHING to compute
