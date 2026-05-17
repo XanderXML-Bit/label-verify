@@ -59,11 +59,23 @@ export function compareNetContents(
   const dMl = toMl(declared);
   const eMl = toMl(extracted);
   const tol = mlTolerance(Math.max(dMl, eMl));
-  const pass = Math.abs(dMl - eMl) <= tol;
+  const deltaMl = Math.abs(dMl - eMl);
+  const pass = deltaMl <= tol;
   // Floor bumped from 0.60 → 0.70 to align with the intelligence-first
   // deferral policy in verify.ts: when the extractor isn't confident,
   // prefer a human reviewer over a possibly-wrong PASS.
   const review = pass && extractedConfidence < 0.7;
+  // Wave-35 Track 1 #1: emit passReason when the PASS was non-trivial
+  // (any non-zero ml delta, or a unit conversion was involved — e.g.
+  // 12 fl oz declared vs 355 ml extracted). Trivial same-unit-same-
+  // value PASSes get no passReason.
+  const unitConversionInvolved = declared.unit !== extracted.unit;
+  const passReason: string | undefined =
+    pass && !review && (deltaMl > 0 || unitConversionInvolved)
+      ? unitConversionInvolved
+        ? `Unit conversion accepted: declared ${declared.value} ${declared.unit} (${dMl.toFixed(1)} ml) vs printed ${extracted.value} ${extracted.unit} (${eMl.toFixed(1)} ml) — within the ±${tol.toFixed(1)} ml rounding band.`
+        : `Rounding accepted: declared ${declared.value} ${declared.unit} vs printed ${extracted.value} ${extracted.unit} — off by ${deltaMl.toFixed(1)} ml, within the ±${tol.toFixed(1)} ml allowance.`
+      : undefined;
   return {
     field: "net_contents",
     status: review ? "review" : pass ? "pass" : "fail",
@@ -75,5 +87,6 @@ export function compareNetContents(
         ? "Net contents match within rounding band but extractor confidence is low."
         : undefined
       : `Declared ${declared.value} ${declared.unit} (${dMl.toFixed(1)} ml) vs printed ${extracted.value} ${extracted.unit} (${eMl.toFixed(1)} ml).`,
+    ...(passReason ? { passReason } : {}),
   };
 }

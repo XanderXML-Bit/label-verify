@@ -1,5 +1,6 @@
 import { preprocessImage } from "./preprocess";
 import { GeminiFlashExtractor } from "./vision/gemini";
+import { approximateCostUsd } from "./vision/cost";
 import { tesseractEngine } from "./ocr/tesseract";
 import {
   buildSecondOpinionExtractor,
@@ -790,6 +791,12 @@ export async function verifyLabel(
     modeUsed,
     requiresHumanReview: verdict === "review",
     reviewReasons: verdict === "review" ? reviewReasons : [],
+    // Wave-35 Track 1 #2: per-call USD cost computed here from the
+    // canonical server-side `cost.ts` table. Was previously a client-
+    // side lookup in `SingleResult.tsx` that drifted on model rotation.
+    ...(approximateCostUsd(extracted.modelId) !== null
+      ? { costUsd: approximateCostUsd(extracted.modelId) ?? undefined }
+      : {}),
     ...(imageQualityReason ? { imageQualityReason } : {}),
     ...(fallbackUsed ? { fallbackUsed } : {}),
     ...(secondOpinion ? { secondOpinion } : {}),

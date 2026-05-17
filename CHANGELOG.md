@@ -4,6 +4,39 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35 Track 1: GUI audit cleanup — 7 deferred items] — 2026-05-17
+
+Smaller items deferred from the wave-34 GUI audit. Each lands with a
+§13.8a claim and a regression-pin test. No bench required (no
+orchestrator or comparator bucket change — see Apex §13.7 / §15
+completion gates below).
+
+### Changes
+
+- **Re-scoped non-trivial PASS reasoning** (`src/lib/matching/{abv,brand,country,net-contents,producer}.ts`, `src/app/components/SingleResult.tsx`). Comparators now emit an optional `FieldComparison.passReason` on the four non-trivial PASS bins (tolerance applied, fuzzy-match, implicit-USA-from-state, country-synonym). Trivial exact-match PASSes keep `passReason === undefined` and surface nothing. The reasoning is rendered only in detailed mode as an italicised clarification under the field value. Regulator audit answer to "why isn't this a FAIL?" without flooding the verdict surface with "trivially-equal" noise.
+- **Per-call cost computed server-side** (`src/lib/vision/cost.ts` new; `src/lib/types.ts`, `src/lib/verify.ts`, `src/app/components/SingleResult.tsx`). The `COST_PER_CALL_BY_MODEL` table used to live on the client and could drift from the server's actual model rotation. It's now computed in `src/lib/vision/cost.ts` and shipped on `VerifyResponse.costUsd`; the UI just reads the field. Unknown models still degrade gracefully (no cost line rendered).
+- **Removed `aria-live="polite"` on the cost banner** (`src/app/components/SingleResult.tsx`). Static post-load metadata should not re-announce on every re-render. Identified by audit a11y item #18.
+- **Title-mutation effect depends on a primitive `isBusy` boolean** (`src/app/page.tsx`). Was `[stage]` (a fresh object reference on every setState); now `[isBusy]` via `useMemo`. Eliminates effect-fire on every keystroke into the manifest textarea + every batch row update.
+- **Deleted the parent-level `setNowTick` interval** (`src/app/page.tsx`). It ran every 200 ms and forced a full subtree re-render of the dropzone, manifest textarea, and every staged file just to drive a child progress bar's ETA. `BatchProgress` already owns its own ticker.
+- **Deleted dead `ReviewQueuePanel.tsx`** + its test file. Was commented out from the idle screen since wave-31 (DEBUG_TOKEN UX confused public visitors). Backend `/api/queue` route + `src/lib/review-queue.ts` store remain intact and are exercised by `api-queue-resolve.test.ts` + `api-queue-auth.test.ts`. A future Operator-mode UI can rebuild the panel cleanly.
+- **`UploadZone` empty-folder state reset at handler entry** (`src/app/components/UploadZone.tsx`). A stale amber "No valid files in 'myfolder'" notice could linger after a subsequent non-folder pick that rejected all files. Reset is now the first mutation in both `handleDrop` and `handleSelect`, then conditionally re-set inside the `sourceWasFolder` / `isFolderPick` branches.
+
+### Tests
+
+- **+25 new tests** in `src/tests/matching-pass-reasons.test.ts` covering all four PASS bins + negative pins for trivial PASSes + source-inspection pins for the four non-comparator items (#3/#4/#5/#6/#7).
+- **−2 tests** from deleted `src/tests/ui/review-queue-panel.test.tsx`.
+- **Net: 723 → 746 passing across 75 test files.**
+
+### Apex §15 completion gates (validated)
+
+- `npm test` — 746 / 746 ✓
+- `npm run typecheck` — clean ✓
+- `npm run lint` — clean ✓
+- `npm run build` — green ✓
+- No bench required — items #1–#7 do not change the verdict bucket of any record (PASS reasoning is a string-only addition on already-PASSed records; cost-data is an envelope addition; #3–#7 are UI / dead-code / state-ordering fixes).
+
+---
+
 ## [Wave 33: deep-audit bug fixes + drift cleanup] — 2026-05-17
 
 ### Bug fixes (9 items surfaced by Apex §12.3 hypercritical code-review)

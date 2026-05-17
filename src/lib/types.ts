@@ -97,6 +97,18 @@ export interface VerifyResponse {
   /** Model that produced the extraction; surfaced only in /api/debug/last. */
   modelId: string;
   modelVersion: string;
+  /**
+   * Approximate per-call USD cost — sourced from the server-side
+   * `src/lib/vision/cost.ts` lookup keyed on `modelId`. Optional
+   * because (a) older cached responses or test stubs may omit it,
+   * (b) unknown model ids legitimately return `null` and we serialise
+   * that as undefined. The UI degrades gracefully when absent.
+   *
+   * Added wave-35 Track 1 #2 so the cost table lives in exactly one
+   * place (the server). Previously the client had its own copy that
+   * drifted whenever the model rotation shifted.
+   */
+  costUsd?: number;
   /** Stable internal marker for the single production verification path. */
   modeUsed: "default" | string;
   /**
