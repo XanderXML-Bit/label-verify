@@ -28,8 +28,16 @@ export const DeclaredFieldsSchema = z.object({
    * Producer / importer. The applicant may submit a single freeform line
    * (legacy) or a structured object (preferred). The validator accepts
    * either and normalizes internally.
+   *
+   * Nullish (wave-34 audit fix #13): the GUI used to submit an empty
+   * string when the producer field was blank, which downstream
+   * compared empty-vs-empty and silently PASSED — masking the case
+   * where the applicant genuinely forgot to fill it (a TTB-required
+   * field per 27 CFR §4.32 / §5.32). Accepting null / undefined here
+   * lets the form submit "not declared" honestly, and the comparator
+   * routes to REVIEW so a human confirms before approval.
    */
-  producer: z.union([ProducerAddressSchema, z.string()]),
+  producer: z.union([ProducerAddressSchema, z.string()]).nullish(),
   /**
    * Country of origin. Nullish (accepts null and undefined) because
    * TTB only requires country marking on imports (27 CFR §4.39 /

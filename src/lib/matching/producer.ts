@@ -110,10 +110,32 @@ function countryStatus(
 }
 
 export function compareProducer(
-  declared: ProducerAddress | string,
+  declared: ProducerAddress | string | null | undefined,
   extracted: ProducerAddress | null,
   extractedConfidence: number,
 ): FieldComparison {
+  // Wave-34 audit fix #13: when the applicant did not declare a
+  // producer at all (form submitted blank), route to REVIEW rather
+  // than the previous silent PASS (empty-vs-empty fuzzy match) or
+  // hard FAIL (empty-vs-anything). Producer is a TTB-required field
+  // on COLA applications per 27 CFR §4.32 / §5.32, so a missing
+  // declaration is a regulatory signal the operator must confirm —
+  // it isn't a "the label matches the application" question, it's
+  // a "the application is incomplete" one.
+  const declaredIsMissing =
+    declared == null ||
+    (typeof declared === "string" && declared.trim() === "");
+  if (declaredIsMissing) {
+    return {
+      field: "producer",
+      status: "review",
+      expected: null,
+      actual: extracted,
+      confidence: 0.4,
+      reason:
+        "Application did not declare a producer / importer. TTB requires this field on COLA applications (27 CFR §4.32 / §5.32) — confirm whether the applicant intended to leave it blank, or fill it in and re-verify.",
+    };
+  }
   if (!extracted) {
     return {
       field: "producer",

@@ -27,7 +27,10 @@ interface HealthResponse {
 
 export function ApiStatusBanner() {
   const [state, setState] = useState<
-    { kind: "loading" } | { kind: "ok" } | { kind: "warn"; notes: string[] }
+    | { kind: "loading" }
+    | { kind: "ok" }
+    | { kind: "warn"; notes: string[] }
+    | { kind: "offline" }
   >({ kind: "loading" });
 
   useEffect(() => {
@@ -43,16 +46,41 @@ export function ApiStatusBanner() {
         }
       })
       .catch(() => {
-        // Network failure — don't show a banner. The user will see a
-        // proper error if they actually try to verify.
-        if (!cancelled) setState({ kind: "ok" });
+        // Wave-34 audit fix #16: previously the catch silently
+        // resolved to "ok" and a reviewer on a dropped network
+        // filled the entire form before discovering the failure
+        // at submit time. Now we surface a focused "offline"
+        // notice so the reviewer knows up front. The check fires
+        // only on the cheap /api/health probe — a real server
+        // configuration issue still routes through the .then()
+        // branch above.
+        if (!cancelled) setState({ kind: "offline" });
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (state.kind !== "warn") return null;
+  if (state.kind === "loading" || state.kind === "ok") return null;
+
+  if (state.kind === "offline") {
+    return (
+      <div
+        role="alert"
+        className="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-200"
+      >
+        <p className="font-semibold">
+          <span aria-hidden className="mr-1">⚠</span>
+          We can&apos;t reach the verifier
+        </p>
+        <p className="mt-1">
+          Check your network connection — if you&apos;re on a VPN or
+          corporate network, the request may be blocked. The verify
+          button will still work once the connection comes back.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

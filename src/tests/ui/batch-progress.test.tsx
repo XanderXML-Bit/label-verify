@@ -52,17 +52,25 @@ describe("BatchProgress", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows verifying phase with concurrency", () => {
+  it("shows verifying phase with the SERVER's effective concurrency (wave-34 fix)", () => {
+    // The component used to hardcode `concurrency 2` — stale from
+    // wave-12, off by 6× after the server bumped to 12. Now the
+    // value flows from the API response and is clamped to the batch
+    // size. The copy reads "N in parallel" instead of "concurrency N"
+    // because that's more reviewer-friendly.
     render(
       <BatchProgress
         phase="verifying"
         imageCount={6}
         appCount={1}
         elapsedMs={5000}
+        concurrency={12}
       />,
     );
+    // 6 items, concurrency cap 12 → effective 6 (the server clamps
+    // via Math.min(MAX_INLINE_CONCURRENCY, job.items.length)).
     expect(
-      screen.getByText(/Verifying 6 images \(concurrency 2\)…/i),
+      screen.getByText(/Verifying 6 images \(6 in parallel\)/i),
     ).toBeInTheDocument();
   });
 

@@ -142,3 +142,65 @@ html[data-mode="simple"] .detailed-only {
 html[data-mode="detailed"] .simple-only {
   display: none !important;
 }
+
+/*
+ * Print stylesheet for the "Save case file (PDF)" affordance on
+ * SingleResult. Triggered by `window.print()`; the browser's native
+ * print dialog includes a "Save as PDF" target that produces a
+ * portable, regulator-defensible case file artifact.
+ *
+ * Goals on the printed page:
+ *   - One coherent case-file document: the label image, verdict,
+ *     per-field comparator results, government-warning subscores,
+ *     and the audit-trail expandable (forced open).
+ *   - No prototype chrome: hide the upload zone, sample affordance,
+ *     application-upload widget, "Verify another" / export buttons,
+ *     header toggles, footer.
+ *   - Black-on-white: dark-mode colours invert poorly to paper.
+ *   - Force the `.detailed-only` audit-trail block to show even
+ *     when the operator's mode is "simple" — the PDF must always
+ *     carry the audit details, regardless of the on-screen mode.
+ */
+@media print {
+  /* Reset dark-mode + container chrome to a paper-friendly palette. */
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+  header, footer {
+    display: none !important;
+  }
+  /* Chrome we don't want in the printed case file. */
+  [role="region"][aria-label*="upload"],
+  [role="region"][aria-label*="Add more"],
+  details > summary {
+    display: none !important;
+  }
+  /* Force-open all <details> so audit-trail and other collapsibles
+     render their full content in the PDF. The CSS-only "open"
+     behaviour is well-supported in WebKit / Chromium / Firefox. */
+  details {
+    display: block !important;
+  }
+  details > * {
+    display: block !important;
+  }
+  /* The verify-another + export buttons row is reviewer-action chrome;
+     the PDF is the artifact, not the action. Hide the button row. */
+  section[aria-labelledby="results-heading"] button {
+    display: none !important;
+  }
+  /* Override .detailed-only so the audit-trail block always prints. */
+  html[data-mode="simple"] .detailed-only,
+  html[data-mode="detailed"] .simple-only {
+    display: block !important;
+  }
+  /* Image: keep on the same printed page as the verdict where
+     possible, and cap the height so it doesn't take a full sheet. */
+  img {
+    max-height: 4in !important;
+    page-break-inside: avoid;
+  }
+  /* Tighter spacing so the case file fits one or two pages. */
+  section { margin-bottom: 0.5rem; }
+}

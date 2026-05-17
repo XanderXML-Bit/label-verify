@@ -179,6 +179,34 @@ export interface SingleJsonExport {
   exportedAt: string;
   filename: string;
   result: VerifyResponse;
+  /**
+   * Wave-34 audit-trail fields (#22 + #29). Stamp the JSON export with
+   * regulator-defensible provenance so a 6-month-later case-file
+   * lookup can answer "who ran this verification, when, against which
+   * model" without going back to server logs.
+   *
+   *   - `reviewer`: operator-set identifier (initials, employee id,
+   *     email — whatever the operator's audit policy requires). Pulled
+   *     from `ReviewerBadge` localStorage. Optional; empty when the
+   *     reviewer hasn't set the badge.
+   *   - `verifiedAtIso`: timestamp captured at first paint of the
+   *     result panel — i.e. when the verifier returned, not when
+   *     the user happens to be looking at the result later.
+   */
+  audit?: {
+    reviewer?: string;
+    verifiedAtIso: string;
+  };
+}
+
+/**
+ * Wave-34 (audit-trail fields #22 + #29). Optional metadata stamped
+ * into the JSON export envelope. The result envelope is what an
+ * integrator or auditor opens to reconstruct what happened.
+ */
+export interface SingleJsonExportOptions {
+  reviewer?: string;
+  verifiedAtIso?: string;
 }
 
 export interface BatchJsonExport {
@@ -201,12 +229,20 @@ export interface BatchJsonExport {
 export function singleResultToJson(
   filename: string,
   result: VerifyResponse,
+  options?: SingleJsonExportOptions,
 ): string {
   const out: SingleJsonExport = {
     schema: "labelverify.v1.single",
     exportedAt: new Date().toISOString(),
     filename,
     result,
+    audit:
+      options?.reviewer || options?.verifiedAtIso
+        ? {
+            reviewer: options.reviewer,
+            verifiedAtIso: options.verifiedAtIso ?? new Date().toISOString(),
+          }
+        : undefined,
   };
   return JSON.stringify(out, null, 2);
 }

@@ -346,7 +346,7 @@ export function UploadZone({
             </div>
             {iosHinted ? (
               <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
-                On iPhone or iPad? Use <span className="font-semibold">Choose photos</span> to multi-select from Camera Roll, or tap <span className="font-semibold">Add more files</span> once per app document (PDF, JSON, CSV) — every selection adds to the staged set.
+                On iPhone or iPad: tap <span className="font-semibold">Add photos</span> to multi-select label photos from Camera Roll. Use <span className="font-semibold">Add document</span> once per PDF / JSON / CSV.
               </div>
             ) : null}
           </>
@@ -363,7 +363,7 @@ export function UploadZone({
             </div>
             {iosHinted ? (
               <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
-                On iPhone or iPad? Use <span className="font-semibold">Choose photos</span> for the Camera Roll multi-select picker — it lets you pick all your label photos in one tap. Use <span className="font-semibold">Choose files</span> for PDFs or other application documents.
+                On iPhone or iPad: <span className="font-semibold">Choose photos</span> is the multi-select Camera Roll picker — use it for label photos. <span className="font-semibold">Choose document</span> handles PDFs / JSONs / CSVs one at a time.
               </div>
             ) : null}
           </>
@@ -373,42 +373,81 @@ export function UploadZone({
             isAppend ? "mt-3" : "mt-5"
           }`}
         >
-          <button
-            type="button"
-            aria-label={
-              isAppend
-                ? "Add more files: open picker or drag and drop"
-                : "Upload label images: drag and drop, or press Enter to browse"
-            }
-            className={`min-h-[44px] rounded-md text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${
-              isAppend
-                ? "bg-slate-700 px-4 py-2 hover:bg-slate-600 dark:bg-blue-700 dark:hover:bg-blue-600"
-                : "bg-slate-900 px-5 py-2.5 hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
-            }`}
-            disabled={disabled}
-            onClick={() => inputRef.current?.click()}
-          >
-            {isAppend ? "Add more files" : "Choose files"}
-          </button>
-          {/* iOS-only secondary button: an images-only picker that
-              opens the Photos app's multi-select sheet on iOS 14+.
-              Hidden on desktop/Android — those users have the
-              main picker which already handles images. */}
+          {/* iOS-PRIMARY PHOTOS BUTTON (wave-34).
+              Production bug reported 2026-05-17: an iPhone user dropped
+              5 label photos and only 1 came through. Root cause: the
+              UNIFIED primary input has `accept` listing both image and
+              application MIMEs (PDF, JSON, CSV, DOCX). iOS Safari sees
+              the mixed types and opens the Files-app picker, which is
+              SINGLE-SELECT only — the Photos-app multi-select picker
+              is only reachable from an image-only `accept`. The user
+              tapped the prominent "Choose files" CTA, got Files
+              picker, picked 1 photo, and got dropped into single-pending
+              (not batch). The "Choose photos (multi-select)" secondary
+              button existed but was visually deprioritised — the user
+              never saw it.
+              Fix: on iOS, swap the order. Photos picker is the
+              PRIMARY CTA (matches the 95% case on phones — pick a
+              label photo). Documents picker becomes the secondary.
+              Desktop / Android behaviour unchanged (unified picker
+              there handles multi-select natively, so it stays
+              primary). */}
           {iosHinted ? (
             <button
               type="button"
-              aria-label="Choose photos from Camera Roll (multi-select)"
-              className={`min-h-[44px] rounded-md border text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
+              aria-label={
                 isAppend
-                  ? "border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                  : "border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  ? "Add photos from Camera Roll (multi-select)"
+                  : "Choose photos from Camera Roll: multi-select supported"
+              }
+              className={`min-h-[44px] rounded-md text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+                isAppend
+                  ? "bg-slate-700 px-4 py-2 hover:bg-slate-600 dark:bg-blue-700 dark:hover:bg-blue-600"
+                  : "bg-slate-900 px-5 py-2.5 hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
               }`}
               disabled={disabled}
               onClick={() => photoInputRef.current?.click()}
             >
-              Choose photos (multi-select)
+              {isAppend ? "Add photos" : "Choose photos"}
             </button>
           ) : null}
+          <button
+            type="button"
+            aria-label={
+              iosHinted
+                ? isAppend
+                  ? "Add a PDF or other application document"
+                  : "Choose a PDF or other application document (single file)"
+                : isAppend
+                  ? "Add more files: open picker or drag and drop"
+                  : "Upload label images: drag and drop, or press Enter to browse"
+            }
+            className={`min-h-[44px] rounded-md text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
+              iosHinted
+                ? // On iOS the unified button is the SECONDARY action
+                  // (white/border styling) because Photos picker took
+                  // the primary slot. The button still opens the
+                  // unified input so the user can hand-pick a PDF /
+                  // JSON / CSV from Files-app.
+                  isAppend
+                    ? "border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                    : "border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                : // Desktop / Android: unified picker IS the primary.
+                  isAppend
+                  ? "bg-slate-700 px-4 py-2 text-white hover:bg-slate-600 dark:bg-blue-700 dark:hover:bg-blue-600"
+                  : "bg-slate-900 px-5 py-2.5 text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
+            }`}
+            disabled={disabled}
+            onClick={() => inputRef.current?.click()}
+          >
+            {iosHinted
+              ? isAppend
+                ? "Add document"
+                : "Choose document"
+              : isAppend
+                ? "Add more files"
+                : "Choose files"}
+          </button>
           {/* Tertiary button: folder picker. The browser flattens the
               selected folder into a FileList for us (each entry gets a
               `webkitRelativePath`), so the same handleSelect handles

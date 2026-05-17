@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { VerifyResponse } from "@/lib/types";
 import type { FieldComparison } from "@/lib/matching";
 import { VerdictChip, QualityChip } from "./StatusChip";
 import { ImageZoom } from "./ImageZoom";
+import { getStoredReviewer } from "./ReviewerBadge";
 import {
   safeStem,
   singleResultToCsv,
@@ -69,6 +70,21 @@ export function SingleResult({
   // emphasis on FAIL rows comes from `FieldRow` below.
   const fields = useMemo(() => orderedFields(result), [result]);
   const gov = result.governmentWarning;
+  // Audit-trail metadata (wave-34). The reviewer id is read from
+  // localStorage (set in the header by ReviewerBadge); the timestamp
+  // is captured at first paint of this result panel — so the audit
+  // entry reflects when the verifier ran, not when the user happens
+  // to be looking at it. The component intentionally does NOT
+  // re-read the reviewer on every render, so a reviewer who changes
+  // their ID mid-result-view doesn't retroactively stamp the
+  // existing card.
+  const [reviewerAtVerifyTime, setReviewerAtVerifyTime] = useState<string>("");
+  const [verifiedAtIso] = useState<string>(() => new Date().toISOString());
+  useEffect(() => {
+    setReviewerAtVerifyTime(getStoredReviewer());
+    // Intentionally only run on mount — see above for why.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section aria-labelledby="results-heading" className="space-y-6">
@@ -375,6 +391,97 @@ export function SingleResult({
             </div>
           </div>
 
+          {/* Audit-trail expandable (wave-34 audit fix #22 + #29).
+              Surfaces the regulator-defensible provenance for the
+              verdict: reviewer (if set), timestamp, model id /
+              version, mode, fallback, second-opinion model, and the
+              full per-phase timing breakdown. Collapsed by default
+              so it doesn't crowd the verdict surface, but always
+              available for the audit case file. Included in the
+              JSON export and printable for the PDF export. */}
+          <details className="detailed-only rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <summary className="cursor-pointer font-semibold text-slate-700 dark:text-slate-200">
+              Audit details
+            </summary>
+            <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-2">
+              <div className="flex justify-between gap-3">
+                <dt className="font-medium text-slate-500 dark:text-slate-400">Reviewer</dt>
+                <dd className="font-mono">
+                  {reviewerAtVerifyTime || (
+                    <span className="text-slate-400 dark:text-slate-500">
+                      (not set — use the header badge)
+                    </span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="font-medium text-slate-500 dark:text-slate-400">Timestamp (UTC)</dt>
+                <dd className="font-mono">{verifiedAtIso}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="font-medium text-slate-500 dark:text-slate-400">Primary model</dt>
+                <dd className="font-mono break-all text-right">
+                  {result.modelId}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="font-medium text-slate-500 dark:text-slate-400">Model version</dt>
+                <dd className="font-mono break-all text-right">
+                  {result.modelVersion}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="font-medium text-slate-500 dark:text-slate-400">Mode</dt>
+                <dd className="font-mono">{result.modeUsed}</dd>
+              </div>
+              {result.fallbackUsed ? (
+                <div className="flex justify-between gap-3">
+                  <dt className="font-medium text-slate-500 dark:text-slate-400">
+                    Fallback model
+                  </dt>
+                  <dd className="font-mono break-all text-right">
+                    {result.fallbackUsed}
+                  </dd>
+                </div>
+              ) : null}
+              {result.secondOpinion ? (
+                <div className="flex justify-between gap-3">
+                  <dt className="font-medium text-slate-500 dark:text-slate-400">
+                    Second opinion model
+                  </dt>
+                  <dd className="font-mono break-all text-right">
+                    {result.secondOpinion.modelId}
+                  </dd>
+                </div>
+              ) : null}
+              <div className="flex justify-between gap-3">
+                <dt className="font-medium text-slate-500 dark:text-slate-400">
+                  Latency (preprocess / ocr / vision / matching / total)
+                </dt>
+                <dd className="font-mono text-right">
+                  {result.timings.preprocess} /{" "}
+                  {result.timings.ocr ?? "—"} / {result.timings.vision} /{" "}
+                  {result.timings.matching} / {result.timings.total} ms
+                </dd>
+              </div>
+              {filename ? (
+                <div className="flex justify-between gap-3">
+                  <dt className="font-medium text-slate-500 dark:text-slate-400">
+                    Source filename
+                  </dt>
+                  <dd className="font-mono break-all text-right">{filename}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+              Use <span className="font-semibold">Save case file (PDF)</span>{" "}
+              below or <span className="font-semibold">Download JSON</span> to
+              archive this entry. JSON contains the full extractor output,
+              per-field comparator results, and the same audit metadata
+              shown above.
+            </p>
+          </details>
+
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -382,6 +489,37 @@ export function SingleResult({
               className="min-h-[44px] rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
             >
               Verify another label
+            </button>
+            {/* Save case file (PDF) — wave-34 audit fix #23. Uses
+                window.print() with a dedicated `@media print`
+                stylesheet (globals.css) so the browser's native
+                "Save as PDF" produces a clean one-page case file
+                with the image, verdict, fields, audit detail, and
+                reviewer + timestamp at the foot. Available in both
+                simple and detailed mode because a regulator-defensible
+                case file is the whole point of the prototype. */}
+            <button
+              type="button"
+              onClick={() => {
+                // Stamp the document title so the printed PDF gets
+                // a meaningful filename in Chrome/Safari/Edge.
+                const stem = safeStem(filename ?? "label-verify-result");
+                const prev = document.title;
+                document.title = `${stem}-case-file`;
+                try {
+                  window.print();
+                } finally {
+                  // Restore after a tick so the print dialog has
+                  // captured the title.
+                  setTimeout(() => {
+                    document.title = prev;
+                  }, 500);
+                }
+              }}
+              aria-label="Save this verification result as a printable PDF case file"
+              className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              Save case file (PDF)
             </button>
             {/* Export buttons live in detailed mode only.
                 Simple mode keeps the verdict + the one re-upload affordance
@@ -394,7 +532,10 @@ export function SingleResult({
                 const stem = safeStem(filename ?? "label-verify-result");
                 triggerDownload(
                   `${stem}-result.json`,
-                  singleResultToJson(filename ?? stem, result),
+                  singleResultToJson(filename ?? stem, result, {
+                    reviewer: reviewerAtVerifyTime || undefined,
+                    verifiedAtIso,
+                  }),
                   "application/json",
                 );
               }}
@@ -418,6 +559,14 @@ export function SingleResult({
             >
               Download CSV
             </button>
+          </div>
+
+          {/* Visible only when printed: bottom-of-page audit footer. */}
+          <div className="hidden print:block mt-6 border-t border-slate-300 pt-2 text-[10px] text-slate-600">
+            Label Verify — TTB COLA verification case file ·{" "}
+            Reviewer: {reviewerAtVerifyTime || "(not set)"} ·{" "}
+            Verified at (UTC): {verifiedAtIso} · Primary model:{" "}
+            {result.modelId} {result.modelVersion}
           </div>
         </div>
       </div>

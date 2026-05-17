@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { ModeToggle } from "./components/ModeToggle";
+import { ReviewerBadge } from "./components/ReviewerBadge";
 
 export const metadata: Metadata = {
   title: "Label Verify",
@@ -122,7 +123,8 @@ export default function RootLayout({
                 TTB COLA prototype
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <ReviewerBadge />
               <ModeToggle />
               <ThemeToggle />
             </div>
