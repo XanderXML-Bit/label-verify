@@ -11,6 +11,17 @@ import { test, expect } from "@playwright/test";
 test("PASS sample 500 → 'Retry this sample' → succeeds on second attempt", async ({
   page,
 }) => {
+  // The "Try the pass sample" button lives inside `.detailed-only`,
+  // so the production default of simple mode hides it. Seed the
+  // persisted preference to "detailed" so layout.tsx's pre-paint
+  // script un-hides the sample affordance before React mounts.
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem("labelverify:mode", "detailed");
+    } catch {
+      /* ignore */
+    }
+  });
   let callCount = 0;
   await page.route("**/api/verify", async (route) => {
     callCount++;

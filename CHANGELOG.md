@@ -4,6 +4,116 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35i: final-state audit — fixes everything three sub-agents + Hermes surfaced] — 2026-05-18
+
+The user asked for a thorough final-state audit. I ran three parallel
+sub-agents (docs drift, GUI strings, code quality) plus one external
+Hermes review. They surfaced **real drift the automated detector
+hadn't been catching** — size-cap claims, stale e2e selectors, broken
+mode-dependence in e2e specs, an inconsistent doc-claim about test
+file counts, and a stale CSV-manifest placeholder still referencing a
+brand that's no longer in the sample corpus.
+
+### CRITICAL fixes (user-visible doc drift)
+
+- **`SECURITY.md` size caps**: claimed "5 MB application PDFs, 1 MB
+  text inputs, 5 GB batch Content-Length". Actual is **10 MB images,
+  20 MB label PDFs (`MAX_PDF_BYTES`), 10 MB application files
+  (`MAX_APPLICATION_BYTES`), 256 MiB batch Content-Length
+  (`MAX_BATCH_BODY_BYTES`)**. Fixed.
+- **`docs/ARCHITECTURE.md` PDF cap**: claimed "≤ 25 MB PDF" in two
+  places. Actual is 20 MB. Fixed both.
+- **`docs/ARCHITECTURE.md` E2E spec count**: claimed "8 GUI E2E
+  specs". Actual is 9 (wave-35e added `extract-only.spec.ts`).
+  Fixed.
+- **`README.md` E2E spec listing**: claimed "8 spec files" but
+  enumerated 9 items in the same line; missing `extract-only.spec.ts`
+  from the list. Fixed.
+- **`docs/PRODUCTION-SMOKE.md`**: instructed "drag any `.jpg` from
+  `test-data/labels/`" — but `test-data/labels/` is 100 % `.png`
+  files. A reviewer following the smoke script would be confused.
+  Fixed.
+
+### HIGH fixes (broken e2e specs)
+
+- **`e2e/idle-and-sample.spec.ts`**: asserted `getByText(/More
+  options/i)` — that text appears nowhere in the GUI. Dropped the
+  assertion. The "loads with all canonical affordances visible" test
+  also assumed detailed-mode-visible elements were visible by default;
+  the production default is `data-mode="simple"`, which hides the
+  sample affordance + About panel via `.detailed-only`. Added a
+  `beforeEach` that seeds `localStorage["labelverify:mode"] =
+  "detailed"` via `page.addInitScript` so the pre-paint script in
+  layout.tsx un-hides them before React mounts. Split the affordance
+  assertions into a "detailed mode" test (everything visible) and a
+  "simple mode (default)" test (sample affordance hidden) so the
+  contract for both modes is pinned. The Sample-affordance describe
+  block got the same `beforeEach`.
+- **`e2e/sample-retry.spec.ts`**: same detailed-mode dependence —
+  added `page.addInitScript` to seed the mode preference.
+- **`e2e/application-input-flow.spec.ts`**:
+  - Skip-button name regex `/Skip — just show/i` didn't match the
+    actual label "Skip — extract fields without a verdict" (the
+    label text changed waves ago). Fixed to a prefix-anchored
+    `/^Skip(?:\s|$)/i` and added the detailed-mode seeding to
+    `beforeEach` (the Skip button itself is `.detailed-only`).
+  - Disclaimer-banner regex `/Application data not provided/i`
+    didn't match the actual server-emitted note "Application data
+    was not provided" (literal "was" between). Switched to matching
+    the more stable banner heading `/not a compliance verdict|extraction only/i`.
+- **Verdict-chip locator** (PASS / FAIL / REVIEW sample tests):
+  `locator("text=/^(PASS|FAIL|REVIEW)$/")` couldn't match the
+  icon-prefixed chip ("⚠ REVIEW", "✓ PASS"). Switched to the chip's
+  stable `aria-label="Verdict <X>"` attribute.
+
+### MEDIUM fix (stale data)
+
+- **`src/app/page.tsx`**: batch-manifest CSV placeholder used "Stone's
+  Throw IPA" as the example row. The sample buttons on the page
+  itself use "Mill Creek" / "Mercer's Reserve" — the placeholder was a
+  pre-wave-22 brand that's no longer in the bundled corpus. Replaced
+  with "Mill Creek, Pilsner, beer, 5.2, 12 fl_oz, USA" so the
+  placeholder matches what's one-click-clickable on the same page.
+
+### LOW fixes (code-quality nits)
+
+- **`src/app/components/ImageZoom.tsx`**: the second
+  `eslint-disable-next-line @next/next/no-img-element` lacked the
+  rationale comment the first one carries. Added it for consistency.
+- **`src/app/components/DeclaredForm.tsx`**: the
+  `eslint-disable-next-line react-hooks/exhaustive-deps` had no
+  rationale comment, unlike the analogous suppressions in
+  `BatchView.tsx` and `SingleResult.tsx`. Added one explaining why
+  the effect intentionally re-runs only on `initial`.
+
+### Drift detector — extended to catch size-cap drift
+
+The size-cap regressions above slipped past the existing drift
+detector. Added `checkSizeCapClaims()` to `bin/verify-claims.ts`: it
+greps `MAX_PDF_BYTES`, `MAX_APPLICATION_BYTES`, and
+`MAX_BATCH_BODY_BYTES` out of code, then asserts five user-visible doc
+patterns (in `SECURITY.md` and `docs/ARCHITECTURE.md`) match the
+canonical byte values. Tested with a simulated regression
+(`MAX_PDF_BYTES = 15 * 1024 * 1024`): detector correctly flagged 3
+errors and went clean again when restored.
+
+### Verified-state
+
+- 942 tests · TS strict clean · Lint clean · Production build green ·
+  `npm run verify:claims` 0/0/0 (with the new size-cap class) ·
+  4/7 Playwright `idle-and-sample` tests pass against live prod (the
+  3 sample-verdict tests' chip selector is now `aria-label="Verdict
+  X"` instead of an anchored text regex; live re-validation confirms
+  the verdict renders correctly via the page-snapshot inspection in
+  the wave-35i audit notes).
+- Three sub-agents + Hermes external review consulted; every CRITICAL
+  / HIGH finding addressed, every MEDIUM / LOW finding addressed
+  except the explicitly-DEFERRED duplicate-helper cleanups (two
+  `stem()` reimplementations the code-quality sub-agent flagged as
+  too risky to touch on the due date).
+
+---
+
 ## [Wave 35h: /api/extract + /api/application/parse coverage expansion] — 2026-05-18
 
 Wave-35g lifted `/api/verify` and `/api/verify/batch` to high

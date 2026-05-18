@@ -453,6 +453,144 @@ function checkEnvVarDocs(): void {
   }
 }
 
+// ─── Assertion: size-cap claims in docs vs constants in code ───────────────
+//
+// Wave-35i: the sub-agent docs-drift audit caught SECURITY.md and
+// ARCHITECTURE.md claiming wrong PDF / batch caps (5 MB / 5 GB / 25 MB
+// vs the actual 20 MB / 256 MiB / 20 MB). The drift detector hadn't
+// been checking this class of claim. This check pins the three caps
+// that ship in user-visible docs against the constants in code so a
+// future bump can't silently leave stale numbers in SECURITY.md.
+
+interface SizeCapClaim {
+  category: string;
+  file: string;
+  // Regex that captures the numeric value + unit from the doc prose.
+  // Group 1 is the value, group 2 is the unit (MB / MiB / GB).
+  pattern: RegExp;
+  // The actual cap in bytes (resolved from code).
+  actualBytes: number;
+  // Human-readable expected string for the error message.
+  expected: string;
+}
+
+function bytes(value: number, unit: "B" | "MB" | "MiB" | "GB"): number {
+  // In this codebase, "MB" in prose maps to 1024² bytes (binary megs)
+  // because every code constant is written as `N * 1024 * 1024`. Both
+  // "10 MB" and "10 MiB" therefore convert to 10_485_760 — this matches
+  // the actual byte values the runtime checks against. Pedantic SI
+  // would use 1_000_000 for "MB" but that would force every doc to be
+  // edited even though no behavior changes.
+  const mult = { B: 1, MB: 1024 * 1024, MiB: 1024 * 1024, GB: 1024 * 1024 * 1024 };
+  return value * mult[unit];
+}
+
+function checkSizeCapClaims(): void {
+  // Source-of-truth resolution. We grep the constant out of code
+  // rather than importing — the verify-claims script must stay free of
+  // runtime dependencies on the project's import graph (CJS-deprecation
+  // warnings, sharp's WASM init, etc.).
+  function readConst(file: string, name: string): number | null {
+    const src = readIfExists(file);
+    if (!src) return null;
+    const m = src.match(new RegExp(`${name}\\s*=\\s*([\\d_]+(?:\\s*\\*\\s*[\\d_]+)*)`));
+    if (!m) return null;
+    // Evaluate the multiplication expression (e.g. "20 * 1024 * 1024").
+    try {
+      const parts = m[1]!.split("*").map((p) => Number(p.replace(/_/g, "").trim()));
+      return parts.reduce((a, b) => a * b, 1);
+    } catch {
+      return null;
+    }
+  }
+  const maxPdfBytes = readConst("src/lib/pdf.ts", "MAX_PDF_BYTES");
+  const maxAppBytes = readConst("src/lib/application/parse.ts", "MAX_APPLICATION_BYTES");
+  const maxBatchBytes = readConst("src/lib/batch-capacity.ts", "MAX_BATCH_BODY_BYTES");
+
+  // Per-cap claims. Each entry says: in this doc file, find prose
+  // matching this pattern; assert the captured number+unit converts to
+  // exactly `actualBytes`. We deliberately list ONE pattern per
+  // (file, cap) pair — adding more lines requires explicit changes
+  // here, so a copy-paste of a stale "10 MB" elsewhere shows up in
+  // the audit rather than silently aliasing onto a real assertion.
+  const claims: SizeCapClaim[] = [];
+  if (maxPdfBytes != null) {
+    claims.push(
+      {
+        category: "size-cap",
+        file: "docs/ARCHITECTURE.md",
+        pattern: /≤\s*(\d+)\s*(MB|MiB)\s*PDF/,
+        actualBytes: maxPdfBytes,
+        expected: `${maxPdfBytes / (1024 * 1024)} MB (MAX_PDF_BYTES)`,
+      },
+      {
+        category: "size-cap",
+        file: "docs/ARCHITECTURE.md",
+        pattern: /(\d+)\s*(MB|MiB)\s*per\s*PDF/,
+        actualBytes: maxPdfBytes,
+        expected: `${maxPdfBytes / (1024 * 1024)} MB (MAX_PDF_BYTES)`,
+      },
+      {
+        category: "size-cap",
+        file: "SECURITY.md",
+        pattern: /\*\*(\d+)\s*MB\*\*\s*label\s*PDFs/,
+        actualBytes: maxPdfBytes,
+        expected: `${maxPdfBytes / (1024 * 1024)} MB (MAX_PDF_BYTES)`,
+      },
+    );
+  }
+  if (maxAppBytes != null) {
+    claims.push({
+      category: "size-cap",
+      file: "SECURITY.md",
+      pattern: /\*\*(\d+)\s*MB\*\*\s*application\s*files/,
+      actualBytes: maxAppBytes,
+      expected: `${maxAppBytes / (1024 * 1024)} MB (MAX_APPLICATION_BYTES)`,
+    });
+  }
+  if (maxBatchBytes != null) {
+    claims.push(
+      {
+        category: "size-cap",
+        file: "SECURITY.md",
+        pattern: /\*\*(\d+)\s*MiB\*\*\s*Content-Length/,
+        actualBytes: maxBatchBytes,
+        expected: `${maxBatchBytes / (1024 * 1024)} MiB (MAX_BATCH_BODY_BYTES)`,
+      },
+      {
+        category: "size-cap",
+        file: "docs/ARCHITECTURE.md",
+        pattern: /(\d+)\s*MiB\s*aggregate\s*cap\s*on\s*batch/,
+        actualBytes: maxBatchBytes,
+        expected: `${maxBatchBytes / (1024 * 1024)} MiB (MAX_BATCH_BODY_BYTES)`,
+      },
+    );
+  }
+
+  for (const c of claims) {
+    const src = readIfExists(c.file);
+    if (!src) continue;
+    const m = src.match(c.pattern);
+    if (!m) {
+      // Pattern not present — surface as warning so additions/removals
+      // are reviewed rather than silently dropping the assertion.
+      warn(c.category, c.file, `expected pattern ${c.pattern.source} not found`, c.expected);
+      continue;
+    }
+    const value = Number(m[1]);
+    const unit = (m[2] ?? "MiB") as "MB" | "MiB" | "GB";
+    const claimed = bytes(value, unit);
+    if (claimed !== c.actualBytes) {
+      err(
+        c.category,
+        c.file,
+        `claims ${value} ${unit} (${claimed.toLocaleString()} bytes)`,
+        c.expected,
+      );
+    }
+  }
+}
+
 // ─── Run + report ──────────────────────────────────────────────────────────
 
 function main(): void {
@@ -462,6 +600,7 @@ function main(): void {
   checkGuiStringClaims();
   checkChangelogWaveChain();
   checkEnvVarDocs();
+  checkSizeCapClaims();
 
   const errors = findings.filter((f) => f.severity === "error");
   const warnings = findings.filter((f) => f.severity === "warning");

@@ -75,8 +75,9 @@ If any step fails, the deployment is **not** ready to ship. See
 ## Check 3 — Single-image verify (90 seconds)
 
 1. Back on the home page, drag-and-drop one sample image from
-   `test-data/labels/` onto the upload zone (any `.jpg` works; pick
-   one you know the ground truth for).
+   `test-data/labels/` onto the upload zone (any `.png` works; pick
+   one you know the ground truth for — the `test-data/labels/`
+   corpus is PNGs, paired with per-image `*-truth.json`).
 2. The "Declared values" form should appear. Fill in the brand name and
    ABV that match the ground-truth JSON for that image.
 3. Click **Verify**.

@@ -1368,7 +1368,7 @@ export default function Home() {
                   onChange={(e) => setManifestText(e.target.value)}
                   aria-label="Batch manifest override (CSV or JSON)"
                   className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
-                  placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Stone's Throw IPA,India Pale Ale,beer,6.4,12 fl_oz,USA`}
+                  placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Mill Creek,Pilsner,beer,5.2,12 fl_oz,USA`}
                 />
                 {manifestText.trim() && (
                   <button
@@ -1442,7 +1442,7 @@ export default function Home() {
                 onChange={(e) => setManifestText(e.target.value)}
                 aria-label="Batch manifest (CSV or JSON)"
                 className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400"
-                placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Stone's Throw IPA,India Pale Ale,beer,6.4,12 fl_oz,USA`}
+                placeholder={`filename,brand_name,class_type,class_category,abv_percent,net_contents,country_of_origin\nlabel-001.png,Mill Creek,Pilsner,beer,5.2,12 fl_oz,USA`}
               />
               {manifestText.trim() && (
                 <button

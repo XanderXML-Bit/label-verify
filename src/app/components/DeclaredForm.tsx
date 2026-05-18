@@ -106,7 +106,7 @@ export function DeclaredForm({
     if (!touched.country && initial.country_of_origin) {
       setCountry(initial.country_of_origin);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- this effect intentionally watches only `initial`. The `touched.*` and `set*` refs are stable across renders and including them would re-run the prefill on every keystroke, undoing the user's edits.
   }, [initial]);
 
   const [errors, setErrors] = useState<string[]>([]);
