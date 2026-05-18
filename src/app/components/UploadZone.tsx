@@ -99,10 +99,71 @@ export function UploadZone({
   // even some iOS variants. The probe is cheaper to maintain than a
   // per-OS-version compatibility table.
   const [folderSupported, setFolderSupported] = useState(false);
+  // Wave-35l: the "iOS picker chooser" popover state. The page shows
+  // ONE visible "Choose files" button across all platforms. On
+  // iPhone / iPad, tapping it opens this small in-page menu so the
+  // user can pick the Camera Roll multi-select Photos picker OR the
+  // single-select Files-app picker for a document. This restores
+  // the universal-button UI the user asked for while preserving
+  // iOS multi-select that wave-34 fixed.
+  const [iosChooserOpen, setIosChooserOpen] = useState(false);
+  // Refs for focus management when the popover opens / closes.
+  // The trigger gets focus when the menu closes; the first menu
+  // item gets focus when the menu opens.
+  const iosTriggerRef = useRef<HTMLButtonElement>(null);
+  const iosChooserPhotoBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (isLikelyIos()) setIosHinted(true);
     if (supportsFolderUpload()) setFolderSupported(true);
   }, []);
+  // Move focus into the menu when it opens. The trigger uses
+  // aria-haspopup + aria-expanded so a screen reader announces the
+  // state change at the same time.
+  useEffect(() => {
+    if (iosChooserOpen) {
+      iosChooserPhotoBtnRef.current?.focus();
+    } else {
+      // Returning focus to the trigger is the documented WAI-ARIA
+      // pattern for a menu button — important for keyboard users
+      // who tabbed in and would otherwise be dropped at the start
+      // of the document.
+      iosTriggerRef.current?.focus();
+    }
+  }, [iosChooserOpen]);
+  // Close-on-Escape + close-on-outside-click. Both registered only
+  // while the chooser is open; cleared when it closes so we don't
+  // hold global handlers indefinitely.
+  useEffect(() => {
+    if (!iosChooserOpen) return;
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setIosChooserOpen(false);
+      }
+    };
+    const onPointerDownOutside = (e: MouseEvent): void => {
+      const target = e.target as Node | null;
+      // Click inside the trigger button or inside the menu container
+      // doesn't close — the menu's own buttons close themselves
+      // explicitly after firing the picker.
+      const trigger = iosTriggerRef.current;
+      const menu = iosChooserPhotoBtnRef.current?.parentElement;
+      if (
+        target &&
+        ((trigger && trigger.contains(target)) ||
+          (menu && menu.contains(target)))
+      ) {
+        return;
+      }
+      setIosChooserOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("mousedown", onPointerDownOutside);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("mousedown", onPointerDownOutside);
+    };
+  }, [iosChooserOpen]);
   // Last-accepted file list — surfaced to assistive tech via aria-live so a
   // screen reader hears "3 files selected: a.png, b.png, c.png" the instant
   // the drop completes.
@@ -360,7 +421,7 @@ export function UploadZone({
             </div>
             {iosHinted ? (
               <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
-                On iPhone or iPad: tap <span className="font-semibold">Add photos</span> to multi-select label photos from Camera Roll. Use <span className="font-semibold">Add document</span> once per PDF / JSON / CSV.
+                On iPhone or iPad: tap <span className="font-semibold">Add more files</span> and pick <span className="font-semibold">Photos from Camera Roll</span> (multi-select) or <span className="font-semibold">Application document</span> (PDF / JSON / CSV).
               </div>
             ) : null}
           </>
@@ -377,91 +438,126 @@ export function UploadZone({
             </div>
             {iosHinted ? (
               <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
-                On iPhone or iPad: <span className="font-semibold">Choose photos</span> is the multi-select Camera Roll picker — use it for label photos. <span className="font-semibold">Choose document</span> handles PDFs / JSONs / CSVs one at a time.
+                On iPhone or iPad: <span className="font-semibold">Choose files</span> opens a picker chooser — pick <span className="font-semibold">Photos from Camera Roll</span> for multi-select label photos, or <span className="font-semibold">Application document</span> for a PDF / JSON / CSV.
               </div>
             ) : null}
           </>
         )}
         <div
-          className={`flex flex-wrap items-center justify-center gap-2 ${
+          className={`relative flex flex-wrap items-center justify-center gap-2 ${
             isAppend ? "mt-3" : "mt-5"
           }`}
         >
-          {/* iOS-PRIMARY PHOTOS BUTTON (wave-34).
-              Production bug reported 2026-05-17: an iPhone user dropped
-              5 label photos and only 1 came through. Root cause: the
-              UNIFIED primary input has `accept` listing both image and
-              application MIMEs (PDF, JSON, CSV, DOCX). iOS Safari sees
-              the mixed types and opens the Files-app picker, which is
-              SINGLE-SELECT only — the Photos-app multi-select picker
-              is only reachable from an image-only `accept`. The user
-              tapped the prominent "Choose files" CTA, got Files
-              picker, picked 1 photo, and got dropped into single-pending
-              (not batch). The "Choose photos (multi-select)" secondary
-              button existed but was visually deprioritised — the user
-              never saw it.
-              Fix: on iOS, swap the order. Photos picker is the
-              PRIMARY CTA (matches the 95% case on phones — pick a
-              label photo). Documents picker becomes the secondary.
-              Desktop / Android behaviour unchanged (unified picker
-              there handles multi-select natively, so it stays
-              primary). */}
-          {iosHinted ? (
-            <button
-              type="button"
-              aria-label={
-                isAppend
-                  ? "Add photos from Camera Roll (multi-select)"
-                  : "Choose photos from Camera Roll: multi-select supported"
-              }
-              className={`min-h-[44px] rounded-md text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${
-                isAppend
-                  ? "bg-slate-700 px-4 py-2 hover:bg-slate-600 dark:bg-blue-700 dark:hover:bg-blue-600"
-                  : "bg-slate-900 px-5 py-2.5 hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
-              }`}
-              disabled={disabled}
-              onClick={() => photoInputRef.current?.click()}
-            >
-              {isAppend ? "Add photos" : "Choose photos"}
-            </button>
-          ) : null}
+          {/* UNIVERSAL PRIMARY BUTTON (wave-35l).
+              ONE visible "Choose files" button across all platforms.
+              On desktop / Android, clicking it directly fires the
+              unified multi-MIME picker (multi-select works natively).
+              On iOS / iPadOS, clicking it opens a small in-page
+              chooser menu (`iosChooserOpen`) with two options:
+                • "Photos from Camera Roll" — fires the image-only
+                  input that opens the iOS Photos multi-select picker.
+                • "Application document" — fires the mixed-MIME input
+                  that opens the iOS Files single-select picker.
+              Wave-34 had previously split these into two SEPARATE
+              visible buttons; that solved the production "iPhone
+              multi-select silently degraded to single-select" bug
+              by giving the photos picker its own button. The user
+              asked (wave-35l) to consolidate back to one visible
+              button — the popover chooser preserves the iOS multi-
+              select that wave-34 fixed AND restores the unified UI.
+              Trigger has aria-haspopup="menu" + aria-expanded so
+              screen readers announce state. */}
           <button
+            ref={iosTriggerRef}
             type="button"
             aria-label={
-              iosHinted
-                ? isAppend
-                  ? "Add a PDF or other application document"
-                  : "Choose a PDF or other application document (single file)"
-                : isAppend
-                  ? "Add more files: open picker or drag and drop"
-                  : "Upload label images: drag and drop, or press Enter to browse"
+              isAppend
+                ? "Add more files: open picker or drag and drop"
+                : "Upload label images: drag and drop, or press Enter to browse"
             }
+            {...(iosHinted
+              ? {
+                  "aria-haspopup": "menu" as const,
+                  "aria-expanded": iosChooserOpen,
+                }
+              : {})}
             className={`min-h-[44px] rounded-md text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
-              iosHinted
-                ? // On iOS the unified button is the SECONDARY action
-                  // (white/border styling) because Photos picker took
-                  // the primary slot. The button still opens the
-                  // unified input so the user can hand-pick a PDF /
-                  // JSON / CSV from Files-app.
-                  isAppend
-                    ? "border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                    : "border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                : // Desktop / Android: unified picker IS the primary.
-                  isAppend
-                  ? "bg-slate-700 px-4 py-2 text-white hover:bg-slate-600 dark:bg-blue-700 dark:hover:bg-blue-600"
-                  : "bg-slate-900 px-5 py-2.5 text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
+              isAppend
+                ? "bg-slate-700 px-4 py-2 text-white hover:bg-slate-600 dark:bg-blue-700 dark:hover:bg-blue-600"
+                : "bg-slate-900 px-5 py-2.5 text-white hover:bg-slate-700 dark:bg-blue-600 dark:hover:bg-blue-500"
             }`}
             disabled={disabled}
-            onClick={() => inputRef.current?.click()}
+            onClick={() => {
+              if (iosHinted) {
+                setIosChooserOpen((v) => !v);
+              } else {
+                inputRef.current?.click();
+              }
+            }}
           >
-            {iosHinted
-              ? isAppend
-                ? "Add document"
-                : "Choose document"
-              : isAppend
-                ? "Add more files"
-                : "Choose files"}
+            {isAppend ? "Add more files" : "Choose files"}
           </button>
+          {/* iOS picker chooser popover. Renders only when the trigger
+              is iOS-detected AND open. role=menu so AT software groups
+              the two items as a single menu; each item is role=menuitem.
+              Positioned absolutely below the button on touch viewports
+              (mobile-first), or centred under the button on iPadOS.
+              Outside-click + Escape close it (see useEffect above). */}
+          {iosHinted && iosChooserOpen ? (
+            <div
+              role="menu"
+              aria-label="Pick a source for the upload"
+              className="absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+            >
+              <button
+                ref={iosChooserPhotoBtnRef}
+                role="menuitem"
+                type="button"
+                aria-label={
+                  isAppend
+                    ? "Add photos from Camera Roll (multi-select)"
+                    : "Choose photos from Camera Roll: multi-select supported"
+                }
+                className="block w-full rounded-md px-3 py-3 text-left text-sm text-slate-800 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:bg-slate-800"
+                disabled={disabled}
+                onClick={() => {
+                  setIosChooserOpen(false);
+                  // Defer the click to the next tick so the close-and-
+                  // refocus useEffect has fired before iOS opens the
+                  // native picker — keeps Safari from racing the
+                  // focus restoration.
+                  setTimeout(() => photoInputRef.current?.click(), 0);
+                }}
+              >
+                <span aria-hidden className="mr-2">📷</span>
+                {isAppend ? "Add photos from Camera Roll" : "Photos from Camera Roll"}
+                <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">
+                  (multi-select)
+                </span>
+              </button>
+              <button
+                role="menuitem"
+                type="button"
+                aria-label={
+                  isAppend
+                    ? "Add a PDF or other application document"
+                    : "Choose a PDF or other application document"
+                }
+                className="mt-1 block w-full rounded-md px-3 py-3 text-left text-sm text-slate-800 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:bg-slate-800"
+                disabled={disabled}
+                onClick={() => {
+                  setIosChooserOpen(false);
+                  setTimeout(() => inputRef.current?.click(), 0);
+                }}
+              >
+                <span aria-hidden className="mr-2">📄</span>
+                {isAppend ? "Add document" : "Application document"}
+                <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">
+                  (PDF, JSON, CSV, MD, TXT, DOCX)
+                </span>
+              </button>
+            </div>
+          ) : null}
           {/* Tertiary button: folder picker. The browser flattens the
               selected folder into a FileList for us (each entry gets a
               `webkitRelativePath`), so the same handleSelect handles

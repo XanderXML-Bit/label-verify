@@ -111,29 +111,72 @@ async function getHiddenInputByAccept(
   });
 }
 
-describe("Wave-34 iOS picker fix — primary CTA opens Photos multi-select", () => {
-  it("on iOS, renders 'Choose photos' as the PRIMARY action and 'Choose document' as secondary", async () => {
+describe("Wave-34 → 35l iOS picker fix — universal button opens chooser on iOS", () => {
+  // Wave-34 originally split the iOS visible buttons into a primary
+  // "Choose photos" and a secondary "Choose document". Wave-35l
+  // consolidated them back into ONE visible "Choose files" button
+  // (matching desktop UI) that opens an in-page chooser popover on
+  // iOS to preserve the multi-select Camera Roll picker reachability
+  // that wave-34 originally fixed.
+  it("on iOS, renders ONE primary 'Choose files' button that opens a chooser popover", async () => {
     const restore = stubIosNavigator();
     try {
+      const user = userEvent.setup();
       const { UploadZone } = await import("@/app/components/UploadZone");
       render(<UploadZone onFiles={() => undefined} />);
-      // 'Choose photos' should be present and have the primary
-      // styling (no `border` chrome — primary buttons are filled).
-      await waitFor(() => {
-        const photos = screen.getByRole("button", {
-          name: /Choose photos from Camera Roll/i,
+      // Single visible primary button (matches desktop) — no separate
+      // "Choose photos" button at the top level any more.
+      const trigger = await waitFor(() => {
+        return screen.getByRole("button", {
+          name: /Upload label images: drag and drop, or press Enter to browse/i,
         });
-        const docs = screen.getByRole("button", {
-          name: /Choose a PDF or other application document/i,
-        });
-        expect(photos).toBeInTheDocument();
-        expect(docs).toBeInTheDocument();
-        // Primary has the filled `bg-slate-900` / `bg-blue-600`
-        // class — secondary uses `border ...`. We assert structurally
-        // by comparing class lists rather than colour values.
-        expect(photos.className).toContain("bg-slate-900");
-        expect(docs.className).toContain("border");
       });
+      expect(trigger.textContent?.trim()).toBe("Choose files");
+      // Primary styling (filled, not bordered).
+      expect(trigger.className).toContain("bg-slate-900");
+      // iOS-only ARIA: the trigger advertises a menu popup.
+      expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
+      expect(trigger.getAttribute("aria-expanded")).toBe("false");
+      // Tapping it opens the chooser popover.
+      await user.click(trigger);
+      expect(trigger.getAttribute("aria-expanded")).toBe("true");
+      const menu = await screen.findByRole("menu", {
+        name: /Pick a source for the upload/i,
+      });
+      expect(menu).toBeInTheDocument();
+      const photoItem = screen.getByRole("menuitem", {
+        name: /Choose photos from Camera Roll/i,
+      });
+      const docItem = screen.getByRole("menuitem", {
+        name: /Choose a PDF or other application document/i,
+      });
+      expect(photoItem).toBeInTheDocument();
+      expect(docItem).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("on iOS, Escape closes the chooser and returns focus to the trigger", async () => {
+    const restore = stubIosNavigator();
+    try {
+      const user = userEvent.setup();
+      const { UploadZone } = await import("@/app/components/UploadZone");
+      render(<UploadZone onFiles={() => undefined} />);
+      const trigger = await waitFor(() =>
+        screen.getByRole("button", {
+          name: /Upload label images: drag and drop, or press Enter to browse/i,
+        }),
+      );
+      await user.click(trigger);
+      expect(trigger.getAttribute("aria-expanded")).toBe("true");
+      await user.keyboard("{Escape}");
+      // Escape closes the menu, restoring aria-expanded=false.
+      await waitFor(() =>
+        expect(trigger.getAttribute("aria-expanded")).toBe("false"),
+      );
+      // Menu unmounted.
+      expect(screen.queryByRole("menu")).toBeNull();
     } finally {
       restore();
     }
@@ -177,15 +220,23 @@ describe("Wave-34 iOS picker fix — primary CTA opens Photos multi-select", () 
     try {
       const { UploadZone } = await import("@/app/components/UploadZone");
       render(<UploadZone onFiles={() => undefined} />);
-      // 'Choose files' is the primary aria-label on desktop.
+      // 'Choose files' is the primary aria-label on desktop AND iOS
+      // since wave-35l, but on desktop it has NO aria-haspopup
+      // (clicking it fires the unified picker directly, not the
+      // iOS chooser popover).
+      const trigger = screen.getByRole("button", {
+        name: /Upload label images: drag and drop, or press Enter to browse/i,
+      });
+      expect(trigger).toBeInTheDocument();
+      expect(trigger.getAttribute("aria-haspopup")).toBeNull();
+      expect(trigger.getAttribute("aria-expanded")).toBeNull();
+      // The iOS popover chooser is NOT rendered on desktop.
       expect(
-        screen.getByRole("button", {
-          name: /Upload label images: drag and drop, or press Enter to browse/i,
-        }),
-      ).toBeInTheDocument();
-      // The iOS-only "Choose photos" button is NOT rendered on desktop.
+        screen.queryByRole("menu", { name: /Pick a source for the upload/i }),
+      ).toBeNull();
+      // No "Photos from Camera Roll" menuitem either.
       expect(
-        screen.queryByRole("button", { name: /Choose photos from Camera Roll/i }),
+        screen.queryByRole("menuitem", { name: /Choose photos from Camera Roll/i }),
       ).toBeNull();
     } finally {
       Object.defineProperty(globalThis, "navigator", {
