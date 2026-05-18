@@ -4,6 +4,62 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35 Track 2: supplemental zoomed-region crops — FALSIFIED] — 2026-05-17
+
+Apex §13.7 / §13.8a — both implementation variants tested, both
+falsified against the wave-31j baseline. No code change ships to
+`main`. Full writeup with hypothesis matrix, decision-rule eval,
+stratified bench results, and root-cause analysis at
+`docs/WAVE-35-SUPPLEMENTAL-CROPS-FALSIFIED.md`. Raw N=2 deterministic
+bench JSON pinned at `benchmarks/results/wave35-supplemental-crops/`.
+
+### Result table
+
+| Arm | Pass-rate | Δ vs baseline | P50 | Verdict |
+|---|---|---|---|---|
+| Baseline (wave-31j, main `84af228`) | 70.41% | — | 2.96–3.28 s | reference |
+| Variant A — Tesseract-driven crops | 69.23% | **−1.18 pp** | 4.45–4.67 s | ❌ FALSIFIED |
+| Variant B — model-driven zoom tool | 51.48% | **−18.93 pp** | 5.35–5.40 s | ❌ FALSIFIED |
+
+### Failing hard criteria
+
+Variant A failed three of six: `compliant.false-fail` 0 → +3 (over the
++1 budget), `adversarial.fp-on-correct` 3 → 5 (strict, no compliant
+uplift to trade against), pass-rate Δ −1.18 pp (required ≥ +1 pp).
+
+Variant B failed three of six and broke the project record for
+single-criterion violation severity: `compliant.false-fail` 0 → +18,
+pass-rate Δ −18.93 pp, P50 5.35 s (over the 5 s ceiling).
+
+### Root cause
+
+Wave-31j's Lanczos-2000 upscale already extracts everything useful
+from the corpus at the current Gemini Flash-Lite generation. Adding
+more pixels does not help; it actively confuses the extractor — most
+visibly in Variant B, where the function-calling API forces the
+client to drop `responseSchema`, causing extraction shape drift on
+compliant labels.
+
+### Engineering hours + API spend (actual)
+
+~7 engineering hours, ~$0.55 in Gemini API spend across 6 bench runs
+(2040 verifications). Under the 12–16 hr / $2 budget — falsification
+was clean enough to not need the full reserve.
+
+### What now
+
+The supplemental-crops hypothesis is closed for Gemini 3.1
+Flash-Lite. Future related experiments (stronger model, single
+crop, confidence-gated OCR-as-hint, domain-tuned text detector) are
+listed at the bottom of the writeup as candidates for a v2 axis.
+
+The branch `experiment/wave-35-supplemental-crops` is retained on
+origin as an audit-trail artifact (it carries the variant-gated
+implementation code that produced the bench results). After this
+docs PR has been merged for 30+ days the branch can be deleted.
+
+---
+
 ## [Wave 35 Track 1: GUI audit cleanup — 7 deferred items] — 2026-05-17
 
 Smaller items deferred from the wave-34 GUI audit. Each lands with a
