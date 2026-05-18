@@ -4,6 +4,117 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35c: client-side end-to-end timing + PASS reasoning expansion] — 2026-05-17
+
+User flagged two real gaps after Track 1 + Track 2:
+1. Existing docs claimed "verdict in ~3 seconds" but that was the
+   bench harness's server-side `result.timings.total` — production
+   reality measured on the live URL via Playwright is ~4.9–6.3 s
+   end-to-end on a warm function and ~8 s on a cold start.
+2. The wave-35-Track-1 PASS reasoning was over-scoped — it skipped
+   `compareClass` (parallel structure to brand), the Government
+   Warning aggregate (most regulator-scrutinised field), and the
+   structured-producer compound case (≥1 component fuzzy).
+
+This PR closes both.
+
+### Client-side end-to-end timing
+
+- Added `ClientTimings` type (`compressionMs / networkMs / totalMs`)
+  to `src/app/page.tsx`. Captured in `handleSample`, `submitSingle`,
+  `submitExtractOnly` around `performance.now()` checkpoints at
+  click → compression-done → fetch-resolved.
+- `SingleResult.tsx` and `ExtractionOnlyResult.tsx` accept an
+  optional `clientTimings` prop. When present, the header shows
+  the user-perceived total with the server-side total as a
+  parenthetical: `Verified in 5.0 s (server 3.1 s)`. When absent,
+  legacy behaviour (`result.timings.total` only) is preserved so
+  existing tests don't break.
+- Audit details panel (wave-34 #22) now has a dedicated
+  "Client-perceived end-to-end" row alongside the server-side
+  breakdown.
+- JSON export envelope (`src/lib/export-result.ts`
+  `SingleJsonExport.audit.clientTimings`) carries the same triple
+  so a case-file artifact records what the user actually waited.
+- README + Open Graph + Twitter description copy updated from
+  "in under 5 seconds" / "verdict returns in ~3 seconds" to the
+  honest "~4–6 seconds end-to-end on a warm function" with a
+  one-line breakdown of where the time goes.
+
+### PASS reasoning expansion (3 additional bins)
+
+Wave-35-Track-1 already emitted `passReason` on tolerance / fuzzy
+(brand) / implicit-USA / country-synonym / producer-string-fuzzy.
+This wave adds:
+
+- **`compareClass`** — `Class alias accepted: declared "India Pale Ale" and label "IPA" both canonicalise to "india pale ale"` (SAFE_ALIASES collapse); `Spelling-tolerant match accepted: declared "Chardonnay" vs printed "Chardonney" at similarity 0.94` (fuzzy r ≥ 0.85 but < 0.99).
+- **`compareProducer` structured path** — compound summary when
+  the field PASSed but ≥1 component required fuzzy tolerance OR
+  the country was inferred via the implicit-USA-from-state path:
+  `All producer components accepted — country implicit US-domestic (declared USA + extracted state NC corroborated by another component); 1 component fuzzy-matched (name).`
+- **Government Warning aggregate** (`GovernmentWarningCheck.passReason`) —
+  emitted on PASS when ANY of the four subscores came in below 0.95
+  confidence: `All four §16.21/§16.22 subscores accepted: text exact (1.00); caps PASS (1.00); bold PASS (0.85); size PASS (0.92).` All-high-confidence
+  PASSes still emit nothing (trivial, nothing to say).
+
+The expansion follows the same "non-trivial PASS only" rule
+established in Track 1 — trivial exact-match PASSes still emit
+no `passReason`, enforced by negative pin tests.
+
+### Tests added (+15)
+
+`src/tests/wave35c-pass-reason-expansion.test.ts`:
+- 4 tests pinning `compareClass` PASS reasoning bins (alias collapse,
+  spelling-tolerant, trivial-exact negative pin, FAIL untouched).
+- 3 tests pinning structured-producer compound passReason.
+- 1 source-inspection pin for the Government Warning
+  `passReason` emission block.
+- 1 type-level pin for `GovernmentWarningCheck.passReason`
+  optionality.
+- 6 source-inspection pins for the client-timing
+  instrumentation across `page.tsx` (3 verify paths capture
+  `tStart`), `SingleResult.tsx` (prop + header + audit row),
+  and `export-result.ts` (envelope field + integration check
+  via `singleResultToJson` round-trip).
+
+Net: 746 → **761 / 761** passing across 76 test files.
+
+### Production measurement methodology
+
+Playwright stopwatch on `https://label-verify-six.vercel.app`,
+desktop viewport (1440×900) and mobile viewport (390×844),
+clicking pre-bundled PASS/FAIL/REVIEW samples three runs each
+on each viewport. Real numbers (client-elapsed / server-total):
+
+| Viewport | Sample | Cold start | Run 2 (warm) | Run 3 (warm) |
+|---|---|---|---|---|
+| Desktop | PASS | 8.2 s / 5.9 s | 5.0 s / 4.3 s | 4.9 s / 4.2 s |
+| Mobile | PASS | 6.3 s / 5.4 s | — | — |
+| Mobile | FAIL | 5.1 s / 4.4 s | — | — |
+| Mobile | REVIEW | 4.2 s / 3.7 s | — | — |
+
+Server-side total (3.7–5.9 s) is itself higher than the bench
+harness's 3.0 s P50 because the bench runs at concurrency 4
+against a kept-warm function instance, whereas production
+samples hit either cold or partially-cold functions. The bench
+number is honest about what *the bench measured*; the docs
+were not honest about what it actually meant for users. Fixed.
+
+### Apex framework anchors
+
+- **§13.7 noise characterization** — production measurements are
+  N=3 per cell on desktop, single-shot per cell on mobile.
+  Sufficient to establish the gap; not claimed as a regression
+  bench (no comparison against a prior code state).
+- **§13.8a claim ledger** — the only NEW claim is "user-perceived
+  end-to-end is ~4–6 s warm / ~8 s cold." Old "verdict in ~3 s"
+  claim retracted from README + OG + Twitter copy.
+- **§15 completion gates** — 761/761 tests, lint clean,
+  typecheck clean, build green. No bench required — no
+  comparator or orchestrator change touches a verdict bucket.
+
+---
+
 ## [Wave 35 Track 2: supplemental zoomed-region crops — FALSIFIED] — 2026-05-17
 
 Apex §13.7 / §13.8a — both implementation variants tested, both

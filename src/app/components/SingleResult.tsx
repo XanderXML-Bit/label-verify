@@ -35,12 +35,32 @@ const FIELD_LABEL_FROM_KEY: Record<string, string> = {
 };
 
 
+/**
+ * Client-perceived end-to-end timing. Captured in `page.tsx` around
+ * the verify / sample fetch. Surfaced in the result panel header and
+ * the Audit details section so the user-visible time matches what
+ * the user actually waited — not just `result.timings.total` from
+ * the bench harness. Wave-35c.
+ */
+interface ClientTimings {
+  /** Image-compression time on the client. */
+  compressionMs: number;
+  /** Network round-trip + server total + response-parse time. */
+  networkMs: number;
+  /** Full user-perceived end-to-end: click → result visible. */
+  totalMs: number;
+}
+
 interface SingleResultProps {
   readonly result: VerifyResponse;
   readonly imagePreviewUrl: string;
   readonly onAnother: () => void;
   /** Original filename — used to name the JSON / CSV export files. */
   readonly filename?: string;
+  /** Wave-35c: client-perceived end-to-end timing. Optional so existing
+   *  test renders don't break. When present, surfaces in the header
+   *  and the Audit details panel. */
+  readonly clientTimings?: ClientTimings;
 }
 
 export function SingleResult({
@@ -48,6 +68,7 @@ export function SingleResult({
   imagePreviewUrl,
   onAnother,
   filename,
+  clientTimings,
 }: SingleResultProps) {
   // Sort fields: failures first, then review, then pass. The bordered
   // emphasis on FAIL rows comes from `FieldRow` below.
@@ -78,7 +99,22 @@ export function SingleResult({
         <span
           className="detailed-only text-sm text-slate-500 dark:text-slate-400"
         >
-          Verified in {(result.timings.total / 1000).toFixed(1)} s
+          {/* Wave-35c: show user-perceived end-to-end time when we
+              have it (captured around the fetch in page.tsx). Falls
+              back to server-side `timings.total` for legacy renders
+              (e.g. continueToVerification, where the result was
+              produced earlier and we don't know the user-side time).
+              The server-side breakdown is shown in Audit details
+              below as the canonical engineering metric. */}
+          Verified in {((clientTimings ? clientTimings.totalMs : result.timings.total) / 1000).toFixed(1)} s
+          {clientTimings && (
+            <>
+              {" "}
+              <span className="text-slate-400 dark:text-slate-500">
+                (server {(result.timings.total / 1000).toFixed(1)} s)
+              </span>
+            </>
+          )}
           {(() => {
             // Wave-35 Track 1 #2: read the server-stamped cost from
             // the response envelope (was: client-side table lookup).
@@ -186,6 +222,14 @@ export function SingleResult({
               {gov.reason && (
                 <p className="mt-1 text-slate-600 dark:text-slate-300">
                   {gov.reason}
+                </p>
+              )}
+              {/* Wave-35c: non-trivial GW PASS narration. Only fires
+                  when at least one subscore came in <0.95 confidence
+                  (the all-high-confidence case stays unnarrated). */}
+              {gov.status === "pass" && gov.passReason && (
+                <p className="detailed-only mt-1 text-xs italic text-slate-500 dark:text-slate-400">
+                  {gov.passReason}
                 </p>
               )}
             </div>
@@ -440,7 +484,7 @@ export function SingleResult({
               ) : null}
               <div className="flex justify-between gap-3">
                 <dt className="font-medium text-slate-500 dark:text-slate-400">
-                  Latency (preprocess / ocr / vision / matching / total)
+                  Server latency (preprocess / ocr / vision / matching / total)
                 </dt>
                 <dd className="font-mono text-right">
                   {result.timings.preprocess} /{" "}
@@ -448,6 +492,18 @@ export function SingleResult({
                   {result.timings.matching} / {result.timings.total} ms
                 </dd>
               </div>
+              {clientTimings && (
+                <div className="flex justify-between gap-3">
+                  <dt className="font-medium text-slate-500 dark:text-slate-400">
+                    Client-perceived end-to-end (compress / network+server / total)
+                  </dt>
+                  <dd className="font-mono text-right">
+                    {clientTimings.compressionMs} /{" "}
+                    {clientTimings.networkMs} /{" "}
+                    <strong>{clientTimings.totalMs}</strong> ms
+                  </dd>
+                </div>
+              )}
               {filename ? (
                 <div className="flex justify-between gap-3">
                   <dt className="font-medium text-slate-500 dark:text-slate-400">
@@ -519,6 +575,7 @@ export function SingleResult({
                   singleResultToJson(filename ?? stem, result, {
                     reviewer: reviewerAtVerifyTime || undefined,
                     verifiedAtIso,
+                    clientTimings,
                   }),
                   "application/json",
                 );
