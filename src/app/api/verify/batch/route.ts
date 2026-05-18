@@ -225,16 +225,44 @@ export async function POST(req: Request) {
       );
     }
 
-    // Collect images. The form may include several files all named "image"
-    // OR distinct field names per filename — accept either.
-    const fileMap = new Map<string, File>();
+    // Collect images. The form may include several files all named
+    // "image" OR distinct field names per filename — accept either.
+    //
+    // Wave-35k iOS bug fix: `fileMap` is a **multi-map** keyed by
+    // stem, value = array of uploaded Files with that stem in upload
+    // order. iOS Safari's Photos picker frequently delivers every
+    // multi-selected photo with the same `.name` (e.g. "image.jpg",
+    // or the same `IMG_NNNN.HEIC` from an iCloud-synced library where
+    // burst/screenshot metadata got normalised). The previous
+    // `Map<stem, File>` collapsed all 5 to one entry on the last
+    // `.set()`, silently dropping the user's earlier files. A
+    // manifest of 5 rows would then either pair all 5 rows to the
+    // SAME `File` reference (the last upload, silently wrong) — or
+    // in the inline-manifest detection path below the `matched-
+    // ImagesInThisManifest.has(img)` guard would correctly catch
+    // the collision but reject 4 of 5 rows as "already paired."
+    //
+    // Multi-map + shift-first-unused on each manifest-row match
+    // means N rows all referencing the same stem consume N upload
+    // files in upload order. Unique-name uploads still work
+    // identically (each stem maps to a 1-element queue, shift gives
+    // exactly the same File).
+    const fileMap = new Map<string, File[]>();
+    let totalUploadedFiles = 0;
     for (const [key, value] of form.entries()) {
       if (key === "manifest") continue;
       if (value instanceof File) {
-        fileMap.set(stem(value.name), value);
+        const k = stem(value.name);
+        const arr = fileMap.get(k);
+        if (arr) {
+          arr.push(value);
+        } else {
+          fileMap.set(k, [value]);
+        }
+        totalUploadedFiles++;
       }
     }
-    if (fileMap.size === 0) {
+    if (totalUploadedFiles === 0) {
       return NextResponse.json(
         { error: "No images provided." },
         { status: 400 },
@@ -249,7 +277,15 @@ export async function POST(req: Request) {
         pairingErrors.push(`Row ${i}: missing 'filename' column.`);
         continue;
       }
-      const file = fileMap.get(stem(filename));
+      // Multi-map consume: shift the next unused File for this stem.
+      // When uploads have unique names this is a single-element
+      // queue (identical to the old Map.get); when they collide
+      // (iOS Photos multi-pick) the manifest's row order maps onto
+      // the upload's form-entry order — exactly what a reviewer
+      // would expect after dropping 5 photos into the picker in
+      // the order their manifest lists them.
+      const queue = fileMap.get(stem(filename));
+      const file = queue?.shift();
       if (!file) {
         pairingErrors.push(`Row ${i}: no uploaded image matches "${filename}".`);
         continue;
@@ -363,7 +399,24 @@ export async function POST(req: Request) {
       }
       inlineManifestDidFire = true;
       // Pair each row to an image by filename stem.
-      const imagesByStem = new Map(candidateImages.map((img) => [pairingStem(img.name), img]));
+      //
+      // Wave-35k iOS bug fix: multi-map keyed by stem, value = array
+      // of Files in upload order. When iOS sends 5 photos all named
+      // "image.jpg" + a 5-row CSV roster that references "image.jpg"
+      // 5 times, the previous `Map<stem, File>` collapsed all 5
+      // uploads into 1 entry; the per-row `matchedImagesIn-
+      // ThisManifest.has(img)` guard then correctly caught the
+      // collision but rejected rows 2-5 as "already paired",
+      // leaving the user with 1 verdict instead of 5. Pairs are now
+      // consumed in upload order — row i gets the i-th uploaded
+      // file with the matching stem.
+      const imagesByStem = new Map<string, File[]>();
+      for (const img of candidateImages) {
+        const k = pairingStem(img.name);
+        const arr = imagesByStem.get(k);
+        if (arr) arr.push(img);
+        else imagesByStem.set(k, [img]);
+      }
       const matchedImagesInThisManifest = new Set<File>();
       for (let i = 0; i < shape.rows.length; i++) {
         const row = shape.rows[i]!;
@@ -374,16 +427,26 @@ export async function POST(req: Request) {
           );
           continue;
         }
-        const img = imagesByStem.get(pairingStem(rawFilename));
+        // Shift the next unused File for this stem out of the
+        // upload-order queue. With unique upload names this is
+        // exactly the old `Map.get` (single-element queue);
+        // duplicate-name iOS uploads now produce the right N-to-N
+        // pairing instead of collapsing.
+        const queue = imagesByStem.get(pairingStem(rawFilename));
+        const img = queue?.shift();
         if (!img) {
           orphanedManifestRows.push(
             `${appFile.name} row ${i + 1} (filename "${rawFilename}"): no matching image in this upload.`,
           );
           continue;
         }
+        // `matchedImagesInThisManifest` still tracks distinct File
+        // references to defend against an authored manifest that
+        // references the SAME upload twice (different rows pointing
+        // at the same file). The multi-map consume above means a
+        // false-positive collision (5 distinct iPhone photos with
+        // the same name) no longer reaches this guard.
         if (matchedImagesInThisManifest.has(img)) {
-          // Manifest references the same image twice — surface and
-          // keep the first match.
           orphanedManifestRows.push(
             `${appFile.name} row ${i + 1} (filename "${rawFilename}"): image already paired earlier in this manifest.`,
           );

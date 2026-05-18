@@ -4,6 +4,112 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35k: iOS-batch-shows-N-but-processes-1 bug — root cause + regression tests] — 2026-05-18
+
+User-reported production bug (2026-05-18 evening):
+
+> "Upload the files, they register. They show on the screen, on
+> the web app. It shows the application data and the images, and
+> yet still, it will report only one image being outputted, even
+> though there's five."
+
+User correctly suspected the wave-34 "iOS picker fix" was either
+incomplete or unrelated. Diagnosis: **wave-34 fixed a separate
+upstream bug** (the iOS Photos picker wasn't even getting invoked
+— the unified `accept` MIME list forced iOS into the Files-app
+single-select picker; wave-34 swapped the priority so iOS users
+get the multi-select Photos picker as the primary CTA). That fix
+is working — the user IS getting 5 files into the staging tray.
+
+The NEW bug was downstream of wave-34 and *latent the whole time*:
+
+### Root cause
+
+iOS Safari's Photos picker frequently emits multi-selected photos
+with the SAME `File.name` — `image.jpg`, or the same on-device
+`IMG_NNNN.HEIC` after iCloud-library normalisation. The client-
+side dedup in `mergeFilesForRestage` keys on
+`(webkitRelativePath, name, size, lastModified)` so distinct files
+keep their slots (the user sees 5 thumbnails) and the FormData
+upload also carries all 5 entries — but the server's batch route
+collapsed them at the pairing layer.
+
+Two collision sites — both `Map<stem, File>`:
+
+  1. `src/app/api/verify/batch/route.ts:230` — explicit-manifest
+     path: `fileMap.set(stem(value.name), value)`.
+     Overwrite-on-set semantics meant 5 uploads with the same
+     stem collapsed to **one entry holding the LAST file**. The
+     manifest's 5 rows then each pulled the *same* `File`
+     reference and the pipeline ran the same image 5× labelled
+     with 5 different manifest rows (silently wrong — the user
+     sees a "5/5 done" summary but 4 of 5 results are duplicates
+     of the last upload).
+
+  2. `src/app/api/verify/batch/route.ts:402` — inline-manifest
+     auto-detection: `imagesByStem = new Map(candidateImages.map(
+       (img) => [pairingStem(img.name), img]))`.
+     Same collapse, except the per-row `matchedImagesInThisManifest.has(img)`
+     guard then correctly caught the collision and rejected rows
+     2-5 as "image already paired earlier in this manifest." Net
+     result: 1 verdict, 4 orphans — the exact "five photos →
+     one outputted" symptom the user reported.
+
+### Fix
+
+Both sites changed from `Map<stem, File>` to `Map<stem, File[]>`
+(multi-map). When a manifest row matches stem `s`, the server
+shifts the next unused `File` off the upload-order queue.
+
+  - Unique-name uploads (every desktop / Android case) get a
+    1-element queue → `.shift()` returns exactly the same `File`
+    the old `Map.get` would have. Zero behaviour change.
+  - Duplicate-name iOS uploads now produce the right N-to-N
+    pairing: manifest row `i` consumes the `i`-th uploaded file
+    with the matching stem, in form-entry order. Reviewer drops
+    five photos in the order their manifest lists them → all
+    five verify correctly.
+
+The `matchedImagesInThisManifest` guard stays in the inline path
+to defend against the legitimate "manifest references the same
+upload twice" case (a user-authored mistake, not iOS noise).
+
+### Regression tests (`src/tests/ios-duplicate-filename-batch-bug.test.ts`)
+
+  1. **EXPLICIT MANIFEST**: 5 manifest rows + 5 iPhone files
+     (all named `image.jpg`, distinct size+mtime) → 5 distinct
+     pairs (was 5 pairs pointing at the same file).
+  2. **INLINE-MANIFEST CSV**: 5-row CSV roster + 5 iPhone files
+     (all `image.jpg`) → `count === 5` (was `count === 1`).
+  3. **AUTO-PAIR + BROADCAST**: 5 iPhone files (all `image.jpg`)
+     + 1 single-product JSON → 5 broadcast pairs (regression
+     guard for the third path — was already working but added so
+     a future regression there can't silently sneak through).
+  4. **MIXED**: 3 unique-named uploads + 2 iPhone duplicates → 5
+     correct pairs. Regression guard for the multi-map shift logic
+     across stems with different queue lengths.
+
+### Files touched
+
+- `src/app/api/verify/batch/route.ts`: both collision sites
+  converted to multi-map.
+- `src/tests/ios-duplicate-filename-batch-bug.test.ts` — NEW (4
+  tests).
+- README.md, CONTRIBUTING.md, docs/ARCHITECTURE.md,
+  docs/TEST-STRATEGY.md, docs/RETROSPECTIVE-2026-05-14.md: test
+  count 944/89 → **948/90**.
+
+### Verified-state
+
+- 948 tests · TS strict clean · Lint clean · Production build
+  green · `npm run verify:claims` 0/0/0 · all 5 gates green.
+- Post-deploy validation: the regression test failed
+  deterministically against the pre-fix code (`expected 5, got 1`)
+  and passes deterministically against the fix — the test would
+  have caught this iOS bug before it shipped if it had existed.
+
+---
+
 ## [Wave 35j: batch loading-bar accuracy + per-batch wall-clock speedup] — 2026-05-18
 
 User reported the batch progress bar wasn't matching reality and

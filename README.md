@@ -26,7 +26,7 @@
 | **What if Gemini is down?** | Cross-provider auto-fallback to GPT-5.4-nano (OpenAI) on primary failure, with a yellow "verified via backup" banner on the verdict. Separate from the second-opinion path. |
 | **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent second-opinion model (default **Gemini 2.5 Flash** since wave 22) re-reads the label. Agreement / disagreement is surfaced inline. Operator can route this to OpenAI instead via `SECOND_OPINION_PROVIDER=openai`. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
-| **Code review** | **944 / 944** vitest tests passing across **89 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
+| **Code review** | **948 / 948** vitest tests passing across **90 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, 0 production-dependency vulnerabilities. Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
 
 **How to read this report**
 
@@ -219,7 +219,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | Surface | State |
 |---|---|
 | **Live production** | <https://label-verify-six.vercel.app> · `/api/health` returns `{ ok: true, ready: true, notes: [] }` · all routes 200 · live manual browser walkthrough completed (PASS / FAIL / REVIEW samples all returned correct verdicts in 4.5–5.2 s with 0 console errors) |
-| **Tests** | **944 / 944** passing (`vitest`) · 89 test files (~10 s) |
+| **Tests** | **948 / 948** passing (`vitest`) · 90 test files (~10 s) |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
 | **Lint** | `next lint` clean (zero warnings) |
 | **Production build** | green |
@@ -230,7 +230,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | **Secrets audit** | `.gitignore` excludes `.env`/`.env.local`/`.env.*.local` · 50-commit git-history scan for key prefixes (AIzaSy/sk-/sk-ant-) is clean · no committed credentials |
 | **Production dependency advisories** | `npm audit --omit=dev`: **0 vulnerabilities** |
 | **Audit passes** | Hermes (GPT-5.5) · Codex CLI · sub-agent code review · sub-agent UX review · sub-agent fixture audit · sub-agent docs audit · sub-agent perf/accuracy audit · sub-agent production-readiness smoke — findings are catalogued in [`CHANGELOG.md`](CHANGELOG.md) |
-| **Docs ↔ code drift** | `npm run verify:claims` runs as a non-skippable CI gate (wave-35e) — every numeric / path / wave-name / env-var / **byte-cap** claim in docs and GUI is asserted against the canonical source. Subsequent gap-closing waves (wave-35f: orchestrator + privacy + vision helper; wave-35g: `/api/verify` + `/api/verify/batch`; wave-35h: `/api/extract` + `/api/application/parse`) added ~85 targeted tests and lifted statement coverage from 84.35 % to **90.72 %**. Wave-35i extended the detector to size-cap claims (three parallel sub-agent audits + Hermes external review caught wrong PDF / batch caps in `SECURITY.md` and `docs/ARCHITECTURE.md`) and fixed every CRITICAL / HIGH finding. Wave-35j re-anchored the batch progress bar against a fresh N=3 production latency probe (`PER_IMAGE_MS` 3000 → 4500 ms — the old value was the *vision-only* bench, not the full pipeline P50 of 4.67 s) and bumped server `INLINE_BATCH_CONCURRENCY` 12 → 16 with batch-function memory 1 GB → 2 GB for a ~21 % wall-clock cut on 100-image batches. |
+| **Docs ↔ code drift** | `npm run verify:claims` runs as a non-skippable CI gate (wave-35e) — every numeric / path / wave-name / env-var / **byte-cap** claim in docs and GUI is asserted against the canonical source. Subsequent gap-closing waves (wave-35f: orchestrator + privacy + vision helper; wave-35g: `/api/verify` + `/api/verify/batch`; wave-35h: `/api/extract` + `/api/application/parse`) added ~85 targeted tests and lifted statement coverage from 84.35 % to **90.72 %**. Wave-35i extended the detector to size-cap claims (three parallel sub-agent audits + Hermes external review caught wrong PDF / batch caps in `SECURITY.md` and `docs/ARCHITECTURE.md`) and fixed every CRITICAL / HIGH finding. Wave-35j re-anchored the batch progress bar against a fresh N=3 production latency probe (`PER_IMAGE_MS` 3000 → 4500 ms — the old value was the *vision-only* bench, not the full pipeline P50 of 4.67 s) and bumped server `INLINE_BATCH_CONCURRENCY` 12 → 16 with batch-function memory 1 GB → 2 GB for a ~21 % wall-clock cut on 100-image batches. Wave-35k fixed a latent **iOS batch bug** where 5 photos all named `image.jpg` (iOS Safari Photos picker default) collapsed at the server's `Map<stem, File>` pairing layer; converted both collision sites to upload-order multi-maps so manifest row `i` consumes the `i`-th uploaded file with the matching stem. 4 regression tests pin all paths (explicit-manifest / inline-CSV / broadcast / mixed). |
 | **Cost transparency** | per-call cost surfaced on every verify result · raw model id kept out of the user-visible tooltip |
 
 The independent audit passes catalogued in CHANGELOG cover code-review, security, fixture validation, documentation drift, performance, and production readiness. Findings are either applied to the code or documented as deliberate choices.
@@ -318,7 +318,7 @@ Reviewers reproducing the project locally can lean on any of these:
 ```bash
 npm run typecheck         # tsc --noEmit, zero output expected
 npm run lint              # next lint, zero warnings on a clean tree
-npm test                  # vitest, ~944 tests across 89 files (~10 s)
+npm test                  # vitest, ~948 tests across 90 files (~10 s)
 npm run build             # production Next.js build
 npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results/<iso>.md
 npm run bench:bakeoff     # full 16-variant tournament (~30 min, ~$0.30 in API calls)
