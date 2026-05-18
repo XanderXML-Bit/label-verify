@@ -4,6 +4,75 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35l: unified upload button + accessible iOS picker chooser popover] — 2026-05-18
+
+User asked to return to a single visible upload button "instead of
+two separate buttons." The two-button split shipped in wave-34
+because the universal `<input>` with mixed image+application
+`accept` forces iOS Safari into the **Files-app picker, which is
+single-select only**. Going back to a single button naively would
+regress that iOS multi-select bug.
+
+Approach: **single visible button across all platforms, with an
+in-page chooser popover on iOS only.** Desktop / Android click
+the button → native file picker fires immediately, multi-select
+works natively. iOS click the button → a small accessible menu
+opens with two options, "Photos from Camera Roll" (image-only
+`accept` → iOS Photos multi-select) or "Application document"
+(mixed `accept` → Files single-select). Multi-select on iOS
+Camera Roll is preserved.
+
+### Accessibility
+
+- Trigger button has `aria-haspopup="menu"` (iOS-only) +
+  `aria-expanded={iosChooserOpen}` so AT software announces the
+  state change.
+- Popover container is `role="menu"` with `aria-label`; each
+  inner button is `role="menuitem"`.
+- Focus moves to the first menu item on open; returns to the
+  trigger on close (the documented WAI-ARIA menu-button pattern).
+- Escape closes the menu.
+- Outside-click (mousedown on anything that isn't the trigger or
+  the menu) closes the menu — handlers registered only while
+  open, cleaned up on close.
+- 44 × 44 minimum touch-target on every interactive element
+  (existing project a11y floor; preserved).
+
+### Implementation note (iOS focus race)
+
+Each menu item's click handler closes the popover BEFORE firing
+the hidden input click via `setTimeout(() => ref.current?.click(), 0)`.
+This defers the picker open to the next tick, after React has
+processed the close-and-refocus useEffect — preventing iOS Safari
+from racing the focus restoration against the native picker
+opening.
+
+### Files touched
+
+- `src/app/components/UploadZone.tsx`: collapsed the dual visible
+  buttons into one universal "Choose files" trigger; added the
+  iOS-only popover chooser with focus management + Escape +
+  outside-click; updated iOS hint copy.
+- `src/tests/ui/wave34-upload-integration.test.tsx`: replaced the
+  legacy "iOS shows two buttons" assertion with the new "iOS opens
+  a chooser popover with two menu items" assertion; added a new
+  Escape-closes-and-restores-focus test; tightened the desktop
+  no-popover guard.
+
+### Tests
+
+- Before: 948 / 90 files (wave-35k).
+- After: **949 / 949** passing across **90** test files. (+1 net:
+  wave-35l added 2 new popover tests and retired 1 old dual-button
+  test that no longer reflects the UI.)
+
+### Verified-state
+
+- 949 tests · TS strict clean · Lint clean · Production build
+  green · `npm run verify:claims` 0/0/0 · all 5 gates pre-deploy.
+
+---
+
 ## [Wave 35k: iOS-batch-shows-N-but-processes-1 bug — root cause + regression tests] — 2026-05-18
 
 User-reported production bug (2026-05-18 evening):
