@@ -51,53 +51,112 @@ export interface BatchProgressProps {
   onCancel?: () => void;
 }
 
-// Rough per-image budget for the verification phase. 3 000 ms is the
-// measured P50 for a single verify. The server runs `concurrency`
-// images in parallel (default 12 since wave-15b, configurable via
-// INLINE_BATCH_CONCURRENCY). The bar uses this to estimate
-// completion percentage while the server is processing inline.
-const PER_IMAGE_MS = 3_000;
-const DEFAULT_CONCURRENCY = 12;
+// Per-image budget for the verification phase. **4 500 ms** is the
+// measured single-image P50 against production (N=3 probe wave-35j:
+// 5102/5185/7011 ms client, 4498/4667/5965 ms server — see
+// CHANGELOG wave-35j hypothesis matrix). The previous **3 000 ms**
+// was anchored on the bench's *vision-call-only* number, which
+// ignored preprocess + OCR + matching + Gov-Warning validation in
+// the full pipeline. The result was the bar racing to 100% well
+// before the server actually finished — exactly the accuracy bug
+// the user flagged.
+//
+// The server runs `concurrency` images in parallel (default 16
+// since wave-35j, was 12 since wave-15b, configurable via
+// `INLINE_BATCH_CONCURRENCY`).
+const PER_IMAGE_MS = 4_500;
+// Mirror the server's INLINE_CONCURRENCY_DEFAULT in
+// `src/app/api/verify/batch/route.ts`. Wave-35j bumped both from 12 → 16
+// (with the batch function memory increased to 2 GB; safe at ~80 MB
+// per worker).
+const DEFAULT_CONCURRENCY = 16;
+
+/**
+ * Concave easing for the verifying phase. Pulls the bar up faster
+ * during the first ~half of the elapsed budget so the user sees
+ * immediate movement, then tapers as completion approaches — the
+ * opposite of the linear-then-stuck-at-98% experience the previous
+ * implementation produced. Mathematically `x^0.7` over [0..1]
+ * (mild concavity): at t=0.25 elapsed we're at 36% of the phase
+ * instead of 25%; at t=0.75 we're at 81% instead of 75%; at t=1.0
+ * we're at 100% of the phase (no clamp surprise).
+ */
+function ease(t: number): number {
+  return Math.pow(Math.max(0, Math.min(1, t)), 0.7);
+}
 
 function estimatedFraction(props: BatchProgressProps): number {
   const { phase, imageCount, uploadFraction, elapsedMs } = props;
   const concurrency = props.concurrency ?? DEFAULT_CONCURRENCY;
   const verifyBudget = Math.max(
-    1_000,
-    (Math.ceil(imageCount / Math.max(1, concurrency)) * PER_IMAGE_MS),
+    1_500,
+    Math.ceil(imageCount / Math.max(1, concurrency)) * PER_IMAGE_MS,
   );
   switch (phase) {
     case "uploading": {
-      // Upload phase = 0..30 % of the total bar.
+      // Upload phase = 0..25 % of the total bar (was 0..30 % pre
+      // wave-35j; tightened because upload is a small fraction of
+      // total time on the typical batch — pairing + verifying
+      // dominate).
       const inner =
         uploadFraction !== undefined
           ? uploadFraction
           : Math.min(1, elapsedMs / 4_000);
-      return inner * 0.3;
+      return inner * 0.25;
     }
     case "pairing":
-      // Pairing phase = 30..50 % of the bar. Server-side, no real
-      // signal; estimate ~2 s of work + bounded.
-      return 0.3 + Math.min(1, elapsedMs / 6_000) * 0.2;
+      // Pairing phase = 25..50 % of the bar. Server-side, no real
+      // signal from the inline-batch path; estimate via a 6 s budget
+      // (content-pairing fingerprint extraction can take 3-5 s when
+      // it fires) with concave easing.
+      return 0.25 + ease(Math.min(1, elapsedMs / 6_000)) * 0.25;
     case "verifying":
-      // Verification = 50..98 %. Linear in time vs the per-image
-      // budget. Caps at 98 % so the bar doesn't sit at "100 %" while
-      // the server is still wrapping up.
-      return 0.5 + Math.min(1, elapsedMs / verifyBudget) * 0.48;
+      // Verification = 50..95 % of the bar. Concave easing so the
+      // bar moves visibly in the first half of the budget rather
+      // than crawling. Caps at 95 % (was 98 %) so the
+      // `finalising` transition has a visible 5-point jump — the
+      // previous 2-point jump was too small to register.
+      return 0.5 + ease(Math.min(1, elapsedMs / verifyBudget)) * 0.45;
     case "finalising":
-      return 0.98;
+      return 0.95;
     case "idle":
       return 0;
   }
 }
 
+/**
+ * Best-effort estimate of how many items have been verified by now,
+ * given the wall-clock elapsed time and the effective concurrency.
+ * Returns a number ≤ imageCount. Used in the status copy so the
+ * reviewer sees real-feeling progress ("Verifying ~7 of 12…") in
+ * addition to the percentage bar.
+ *
+ * Math: at concurrency C, a batch of N items takes ⌈N/C⌉ × PER_IMAGE_MS
+ * end-to-end (assuming linear scaling, which empirically holds at
+ * batches ≤ ~50 items). At time `elapsed`, we've completed
+ * approximately `elapsed / PER_IMAGE_MS × C` items in parallel.
+ */
+function estimatedCompletedCount(
+  imageCount: number,
+  effectiveConcurrency: number,
+  elapsedMs: number,
+): number {
+  if (imageCount <= 0 || effectiveConcurrency <= 0) return 0;
+  // Per-item wall-clock in this batch (clamped concurrency).
+  const itemsDone = (elapsedMs / PER_IMAGE_MS) * effectiveConcurrency;
+  // Never overshoot the batch size; never claim more than imageCount-1
+  // until the response actually lands (i.e. the phase flips to
+  // `finalising`). The caller flips to `imageCount` at finalising.
+  return Math.max(0, Math.min(imageCount - 1, Math.floor(itemsDone)));
+}
+
 function phaseLabel(props: BatchProgressProps): string {
-  const { phase, imageCount, appCount } = props;
+  const { phase, imageCount, appCount, elapsedMs } = props;
   // Surface the EFFECTIVE concurrency the server is using for this
   // batch (clamped to the batch size) so the copy can't lie about
   // throughput. The server clamps via `Math.min(MAX_INLINE_CONCURRENCY,
   // job.items.length)` so a 3-item batch shows "concurrency 3", not
-  // a nominal 12.
+  // a nominal 16.
   const effectiveConcurrency = Math.min(
     props.concurrency ?? DEFAULT_CONCURRENCY,
     Math.max(1, imageCount),
@@ -111,8 +170,27 @@ function phaseLabel(props: BatchProgressProps): string {
       }…`;
     case "pairing":
       return `Pairing on the server (inline-manifest → filename → content → broadcast, falls back as needed)…`;
-    case "verifying":
-      return `Verifying ${imageCount} ${imgWord} (${effectiveConcurrency} in parallel)…`;
+    case "verifying": {
+      // Wave-35j accuracy fix: surface an estimated "≈ X of N
+      // verified" count in addition to the concurrency badge. The
+      // count comes from `estimatedCompletedCount` (elapsed-time × C /
+      // PER_IMAGE_MS, clamped to imageCount-1) so the reviewer sees
+      // real-feeling progress instead of a bar racing across an
+      // opaque "verifying" phase. The "≈" prefix is deliberate —
+      // the inline-batch path doesn't stream per-item events, so
+      // the count is an estimate, not ground truth.
+      const done = estimatedCompletedCount(
+        imageCount,
+        effectiveConcurrency,
+        elapsedMs,
+      );
+      // For single-image batches the "≈ 0 of 1" copy is jarring;
+      // fall back to the simple form there.
+      if (imageCount <= 1) {
+        return `Verifying ${imageCount} ${imgWord}…`;
+      }
+      return `Verifying ${imageCount} ${imgWord} (${effectiveConcurrency} in parallel) — ≈ ${done} of ${imageCount} done…`;
+    }
     case "finalising":
       return `Finalising results…`;
     case "idle":

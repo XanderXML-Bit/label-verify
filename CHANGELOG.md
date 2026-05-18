@@ -4,6 +4,80 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35j: batch loading-bar accuracy + per-batch wall-clock speedup] — 2026-05-18
+
+User reported the batch progress bar wasn't matching reality and
+asked for parallelism / speed boosts where safe. Built an
+Apex §2.3 hypothesis matrix against a fresh N=3 production
+latency probe, shipped the changes that scored "no accuracy risk",
+held the ones that would have traded accuracy for speed.
+
+### Falsification: baseline N=3 production probe
+
+Single-image verify against `https://label-verify-six.vercel.app`,
+warm function, AI-generated sample `ai-label-0001.jpg`:
+
+| Run | Client (ms) | Server (ms) | Verdict |
+|---|---|---|---|
+| 1 (cold-start) | 7011 | 5965 | review |
+| 2 (warm) | 5102 | 4498 | review |
+| 3 (warm) | 5185 | 4667 | review |
+| **Median** | **5185** | **4667** | — |
+
+Hypothesis under test: `PER_IMAGE_MS = 3000` in the client progress
+bar is calibrated against the *vision-call-only* bench number
+(~2.5 – 4 s) and ignores preprocess + OCR + matching +
+Government-Warning validation in the full pipeline. **Falsified**
+— the real server P50 is **4.67 s**, 56 % higher than the bar's
+estimate. This is exactly why the bar races to 100 % before the
+server actually finishes.
+
+### Hypothesis matrix (shipped)
+
+| ID | Hypothesis | Expected | Shipped? |
+|---|---|---|---|
+| **P1** | `PER_IMAGE_MS` 3000 → **4500** ms (matches measured 4.67 s server P50) | Bar reaches 95 % near actual completion | ✓ |
+| **P2** | Concave easing (x^0.7) on verifying phase | Faster early ramp, slower tail — matches user perception | ✓ |
+| **P3** | Cap verifying at **95 %** (was 98 %) | Finalising phase has visible 5-point jump | ✓ |
+| **P4** | Status copy adds `≈ X of N done` estimate (elapsed × C / PER_IMAGE_MS, clamped) | Reviewer sees real-feeling progress, not just a % | ✓ |
+| **P5** | Upload phase tightened to 0..**25** % (was 0..30 %) | Upload is a small fraction of total wall-clock | ✓ |
+| **S1** | Batch route Vercel memory **1 GB → 2 GB** in `vercel.json` | Headroom for higher concurrency without OOM | ✓ |
+| **S2** | `INLINE_BATCH_CONCURRENCY` default **12 → 16** | ~21 % wall-clock reduction on 100-img batches (⌈100/16⌉ × 4.7 s = 33 s vs ⌈100/12⌉ × 4.7 s = 42 s) | ✓ (depends on S1) |
+
+### Held (Apex §13 — accuracy-affecting; would need a falsification bench)
+
+- **S3**: skip preprocess `.normalize()` when histogram bright. -30-50 ms / image but trades against marginal-light image quality. Deferred.
+- **S4**: skip OCR when vision self-reports `prefix_appears_bold` + `prefix_appears_caps` confidently. -1-1.5 s P50 but loses the pixel-level bold/size double-check. Deferred — would need a regression bench to falsify the accuracy assumption.
+
+### Files touched
+
+- `src/app/components/BatchProgress.tsx`: PER_IMAGE_MS 3000 → 4500, DEFAULT_CONCURRENCY 12 → 16, new `ease(t)` helper, new `estimatedCompletedCount()`, upload phase capped at 0..25 %, verifying capped at 95 %.
+- `src/app/page.tsx`: `batchConcurrency` initial state 12 → 16 (matches new server default).
+- `src/app/api/verify/batch/route.ts`: `INLINE_CONCURRENCY_DEFAULT` 12 → 16 with the math + memory derivation in the comment block.
+- `vercel.json`: batch route `memory` 1024 → 2048 MB.
+- `src/tests/ui/batch-progress.test.tsx`: updated assertions for upload-phase 13 % (was 15 %), new `≈ X of N done` copy, new `1-image batch` edge case, verifying ceiling pinned at 95 %, finalising pinned at 95 %. +2 new tests.
+- `src/tests/ui/wave34-upload-integration.test.tsx`: bumped concurrency expectations 12 → 16 + new copy regex.
+- `docs/ARCHITECTURE.md`, `README.md`: doc claims updated to match the new defaults.
+
+### Drift detector
+
+Clean (0/0/0) after the doc updates.
+
+### Test count
+
+- Before: 942 / 89 files (wave-35i).
+- After: **944 / 944** passing across **89** test files (+2 tests, no new files).
+
+### Verified-state
+
+- 944 tests · TS strict clean · Lint clean · Production build green ·
+  `npm run verify:claims` 0/0/0 · all 5 gates green pre-deploy.
+- Post-deploy validation N=3 probe planned to confirm the wall-clock
+  reduction and confirm no accuracy regression (verdict matches
+  pre-wave-35j on the canonical sample).
+
+---
+
 ## [Wave 35i: final-state audit — fixes everything three sub-agents + Hermes surfaced] — 2026-05-18
 
 The user asked for a thorough final-state audit. I ran three parallel

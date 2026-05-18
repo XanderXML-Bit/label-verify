@@ -639,10 +639,11 @@ export default function Home() {
   const [batchStartedAt, setBatchStartedAt] = useState<number | null>(null);
   // Server-reported concurrency for the in-flight batch — used by the
   // BatchProgress copy + ETA math so the two surfaces can never drift
-  // again. Default 12 matches the server's INLINE_CONCURRENCY_DEFAULT
-  // so the ETA estimate is right even before the server has responded
-  // (used during the upload + pairing phases).
-  const [batchConcurrency, setBatchConcurrency] = useState<number>(12);
+  // again. Default 16 matches the server's INLINE_CONCURRENCY_DEFAULT
+  // (wave-35j; was 12 since wave-15b) so the ETA estimate is right
+  // even before the server has responded (used during the upload +
+  // pairing phases).
+  const [batchConcurrency, setBatchConcurrency] = useState<number>(16);
   // One-shot completion toast for the batch (wave-34 audit #8). Cleared
   // on reset or when the user starts a new batch.
   const [batchCompletionToast, setBatchCompletionToast] = useState<

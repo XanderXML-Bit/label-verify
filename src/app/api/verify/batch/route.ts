@@ -804,23 +804,28 @@ export async function POST(req: Request) {
   //     ad-hoc batches the operator splits into 2-3 sequential
   //     batches OR boosts concurrency via the env override.
   //
-  // Why 12 by default:
-  //  - 12 × ~20 calls/min/worker = 240 calls/min. Comfortable
-  //    inside any paid Gemini tier (Tier 1 = 1000 RPM, Tier 2 =
-  //    2000+ RPM). At the FREE-tier (30 RPM) the operator should
-  //    lower via env (INLINE_BATCH_CONCURRENCY=2 or less); the
-  //    prototype isn't designed for free-tier use anyway.
-  //  - Memory: ~150 MB peak (12 × ~12 MB per request). Well inside
-  //    the 1 GB Vercel function memory limit.
-  //  - The CLI bench (bin/labelverify-bench.ts) has been running
-  //    at concurrency 4 throughout the day's experiments without
-  //    rate-limit errors. Concurrency 12 is a 3× bump for short
-  //    inline bursts — empirically inside the safe zone.
+  // Why 16 by default (wave-35j, was 12 since wave-15b):
+  //  - 16 × ~13 calls/min/worker = ~210 calls/min sustained.
+  //    Comfortable inside any paid Gemini tier (Tier 1 = 1000 RPM,
+  //    Tier 2 = 2000+ RPM). At the FREE-tier (30 RPM) the operator
+  //    should lower via env (INLINE_BATCH_CONCURRENCY=2 or less);
+  //    the prototype isn't designed for free-tier use anyway.
+  //  - Memory: ~16 × ~80 MB peak = ~1.3 GB. Wave-35j bumped
+  //    `src/app/api/verify/batch/route.ts` from 1 GB → 2 GB in
+  //    vercel.json so there's headroom for the bumped concurrency
+  //    (and a safety margin for the OCR worker spike). The old
+  //    1 GB limit was the bottleneck preventing this bump earlier.
+  //  - Empirical: with server P50 of ~4.7 s per image
+  //    (wave-35j N=3 probe), bumping C from 12 → 16 reduces
+  //    100-image batch wall-clock from ⌈100/12⌉ × 4.7 s = 42 s
+  //    to ⌈100/16⌉ × 4.7 s = 33 s, a ~21 % win. Smaller batches
+  //    (≤ 16 items) see no change since concurrency clamps to
+  //    `Math.min(MAX_INLINE_CONCURRENCY, job.items.length)`.
   //
   // Env-var override (`INLINE_BATCH_CONCURRENCY`) is the safety
-  // valve: paid Tier 1+ operators can push to 20-50 without
+  // valve: paid Tier 1+ operators can push to 24-50 without
   // redeploying; free-tier operators dial down.
-  const INLINE_CONCURRENCY_DEFAULT = 12;
+  const INLINE_CONCURRENCY_DEFAULT = 16;
   const envOverride = Number(process.env.INLINE_BATCH_CONCURRENCY);
   const MAX_INLINE_CONCURRENCY =
     Number.isInteger(envOverride) && envOverride > 0 && envOverride <= 200
