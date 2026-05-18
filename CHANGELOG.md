@@ -4,6 +4,72 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35f: additional coverage expansion on top-priority gaps from the audit] — 2026-05-18
+
+Wave-35e shipped the drift detector + the highest-value coverage
+gaps. This follow-on closes the remaining gaps the wave-35e
+code-audit had flagged, while the drift detector keeps the doc
+surface in lockstep.
+
+### NEW TESTS (+30 across 4 new files)
+
+- `src/tests/ocr-tesseract.test.ts` — **13 tests** with full
+  module-mock isolation. Pins the (x0,y0,x1,y1) → (x,y,w,h) bbox
+  conversion, defensive `is_bold` runtime check (boolean only —
+  non-boolean values like `0/1/"true"` map to `undefined` so we
+  never silently treat them as "bold"), abort-signal preflight,
+  worker reuse across calls, empty / missing words array handling.
+  Zero direct tests before — the bbox math was the kind of thing
+  a regression could silently corrupt the Gov-Warning bold + size
+  measurements.
+- `src/tests/wave35f-verify-integration-gaps.test.ts` — **3 tests**
+  closing the orchestrator integration gaps: (1) OCR-timeout-vs-
+  vision-race at the 8 s bound — verify completes inside ~9.5 s
+  total even when the OCR mock takes 10 s; (2) wave-25 §5b
+  image-quality safety net — low-confidence extractor across
+  every field routes verdict to REVIEW (not silent FAIL); (3)
+  clean-PASS regression sanity.
+- `src/tests/api-debug-last-redaction.test.ts` — **5 tests** for
+  the privacy-relevant `OCR_REDACTION_CAP = 1000` constant: cap
+  enforces truncation when ocrText > 1000 chars + `ocrTextTruncated:
+  true`; values ≤ 1000 unchanged + flag `false`; null pass-
+  through; boundary case (exactly 1000 chars) NOT truncated;
+  source-inspection pin on the constant.
+- `src/tests/application-parse-image.test.ts` — **9 tests** for
+  the previously-route-only-covered `parseApplicationImage`
+  helper. Mocks `@google/generative-ai` to exercise: happy-path
+  JSON parsing; inlineData base64 / MIME contract with the SDK;
+  custom model + timeoutMs overrides; error branches (malformed
+  JSON, network failure, timeout race); MIME normalisation;
+  response-envelope shape (always has `fields`, `warnings`,
+  `modelUsed`).
+
+### Test count
+
+- **Before this wave**: 857 / 81 files (wave-35e).
+- **After**: **887 / 887** passing across **85** test files.
+- Net: **+30 tests, +4 test files.**
+
+### Drift detector — 0 errors, 0 warnings
+
+The wave-35e claim-verification harness (`bin/verify-claims.ts`,
+gated in CI) caught the new test-count drift created by THIS
+wave's additions and forced the README + CONTRIBUTING +
+ARCHITECTURE + TEST-STRATEGY + RETROSPECTIVE all to update in
+lockstep. Working as designed.
+
+### Apex framework anchors
+
+- **§12.3 hypercritical review** — the wave-35e code-audit's
+  remaining recommendations addressed.
+- **§13.8a claim ledger** — every numeric / path claim updated
+  consistently across all surfaces via the drift detector.
+- **§15 completion gates** — all five clean before merge:
+  `npm run verify:claims` ✓, `npm test` (887/887) ✓, `npm run lint`
+  ✓, `npm run typecheck` ✓, `npm run build` ✓.
+
+---
+
 ## [Wave 35e: standardised drift detector + comprehensive doc cleanup + coverage expansion] — 2026-05-18
 
 User-direction: "make sure that all the GUI and everything there
