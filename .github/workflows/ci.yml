@@ -3,11 +3,13 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - '.gitignore'
-      - 'LICENSE'
+    # NOTE: docs are NO LONGER in paths-ignore. Wave-35e added
+    # `npm run verify:claims`, which asserts that user-visible
+    # numeric / path / wave-name claims in README + CHANGELOG +
+    # docs/* stay consistent with the canonical source. Letting
+    # docs-only pushes skip CI means a drift PR could land without
+    # the gate firing. Tradeoff: a tiny CI run on doc edits. Worth
+    # it.
   pull_request:
     branches: [main]
 
@@ -41,6 +43,14 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Verify-claims (drift detector)
+        # Wave-35e gate: catches stale numbers / broken doc paths /
+        # GUI strings that lie about server behaviour. See
+        # `bin/verify-claims.ts`. The gate is fast (<2 s) and runs
+        # before tests so a docs-only PR fails early with a clear
+        # diff. Apex §13.8a claim ledger enforcement.
+        run: npm run verify:claims
 
       - name: Test
         run: npm run test

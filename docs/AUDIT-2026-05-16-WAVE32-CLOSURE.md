@@ -1,5 +1,23 @@
 # Wave-32 closure audit (2026-05-16)
 
+> **SUPERSEDED — historical record only.** This doc captures the
+> state at the close of Wave 32. Subsequent waves moved several of
+> its anchor numbers:
+>
+> - **Tests**: 661 → 723 (Wave-33) → 746 (Wave-35 Track 1) → 761
+>   (Wave-35c). Live `npm test` is the source of truth.
+> - **Pass-rate**: 69.82 % → 70.41 % (Wave-33's deep-audit bug
+>   fixes shifted the wave-31j baseline up 0.59 pp). See
+>   `CHANGELOG.md` Wave-33 entry + `benchmarks/results/wave33-audit-regression/run3.json`.
+> - **Coverage**: 78.86 % statements baseline at the time of this
+>   doc → 81.24 % statements after Wave-35 Track 1.
+>
+> The Apex-framework methodology (three-surface audit) and the
+> per-finding resolution notes below are still accurate as
+> *historical record*; numbers are stale. For current numbers see
+> `README.md`'s "Verified state" section and `CHANGELOG.md`'s
+> topmost wave entry.
+
 > Comprehensive Apex-framework audit of the LabelVerify project on
 > `main`, executed across three independent surfaces:
 > (a) docs/code drift sub-agent, (b) test-coverage sub-agent, (c)

@@ -4,6 +4,138 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35e: standardised drift detector + comprehensive doc cleanup + coverage expansion] — 2026-05-18
+
+User-direction: "make sure that all the GUI and everything there
+also accurately reflects what we should have up to date... there is
+no references anywhere to outdated information." This wave is the
+"final-product pass": every user-visible numeric / path / wave-name
+claim across docs + code + GUI now matches reality, and the
+standardised system that enforces it is wired into CI so future
+drift breaks the build.
+
+### Drift-detector harness (Apex §13.8a)
+
+- New `bin/verify-claims.ts` — a fast (<2 s) checker that asserts
+  every numeric / path / wave-name claim in `README.md`,
+  `CHANGELOG.md`, `CONTRIBUTING.md`, `docs/*.md`, GUI strings
+  (`src/app/components/*.tsx`), and `package.json` is consistent
+  with the canonical source (live test count, latest bench JSON,
+  filesystem, code references). False-positive-pruned to allow
+  historical CHANGELOG records of deleted / renamed paths.
+- Wired as `npm run verify:claims` and added as a non-skippable
+  CI gate in `.github/workflows/ci.yml` (before the test step).
+- Removed `paths-ignore: docs/**` from the workflow so docs-only
+  PRs also run through the gate.
+
+### Doc drift fixes (16 sites across 9 files)
+
+Surfaced by a parallel sub-agent audit (Apex §12.3 hypercritical
+review). All resolved:
+
+- **Test count** corrected from `699 / 74 files` to `857 / 81 files`
+  in: `README.md` (3 sites), `CONTRIBUTING.md` (2), `docs/ARCHITECTURE.md`,
+  `docs/TEST-STRATEGY.md`, `docs/RETROSPECTIVE-2026-05-14.md`.
+- **Pass-rate** corrected from `69.8 %` to `70.41 %` in `README.md`
+  (At-a-glance + bench-numbers table). The 0.59 pp shift was already
+  in CHANGELOG (Wave-33 deep-audit) but never propagated to the
+  customer-facing surface.
+- **Latency claim** in `README.md`'s At-a-glance row rewritten from
+  "~3 s P50 end-to-end" (which was the bench number, not the
+  user-perceived number) to the wave-35c-honest "Server P50 ~3.0 s
+  / Client-perceived ~4.9–5.0 s warm / ~7–8 s cold." Same fix
+  applied in `docs/ARCHITECTURE.md`, `docs/PRODUCTION-SMOKE.md`,
+  `docs/DEPLOYMENT-CHECKLIST.md`.
+- **CONCURRENCY claim** corrected from `CONCURRENCY = 2` (wave-12
+  era) to `INLINE_BATCH_CONCURRENCY = 12` default (wave-15b) in
+  `README.md` (3 sites) + `docs/ARCHITECTURE.md`. Throughput math
+  refreshed: "ceiling ~30 images per submit" → "ceiling ~100 images
+  per submit."
+- **Stale GPT-5.4-nano second-opinion copy** in `SingleResult.tsx`
+  + `src/lib/types.ts` corrected to "Gemini 2.5 Flash (default
+  since wave-22)" — the actual SDK default; the inline JSX comment
+  documented the pre-wave-22 OpenAI default while the runtime
+  surfaced the correct value from `result.secondOpinion.modelId`.
+- **MODEL-SELECTION.md + benchmarks/README.md** candidate set
+  refreshed: T6 was listed as "Gemini 2.0 Flash" — updated to
+  "Gemini 3.1 Flash Lite (production primary since wave-27)".
+- **Stale historical doc** `docs/AUDIT-2026-05-16-WAVE32-CLOSURE.md`
+  got an explicit SUPERSEDED banner pointing to the current numbers
+  via `README.md` + `CHANGELOG.md`'s topmost entry.
+- **Stale "(future)" comment** in `ReviewerBadge.tsx` corrected —
+  the `/api/queue/[id]/resolve` route already accepts `resolvedBy`
+  (existing route, not future).
+- **Broken artifact reference** in CHANGELOG Wave-33 entry —
+  `docs/WAVE-33-DEEP-AUDIT.md` was listed but never created.
+  Replaced with an inline note ("this CHANGELOG entry IS the audit
+  record").
+
+### E2E spec drift closed
+
+- Added `e2e/extract-only.spec.ts`. README claimed 9 Playwright
+  specs across nine flows including "extract-only" but only 8
+  existed and extract-only had no E2E coverage despite being a
+  documented entry point in `page.tsx`'s `submitExtractOnly`.
+
+### NEW TESTS (+96 in five new files)
+
+Top-priority gaps surfaced by the wave-35e coverage sub-agent:
+
+- `src/tests/vision-prompt.test.ts` — **15 tests** pinning the
+  prompt-injection hardening (control-character stripping,
+  closing-tag rewrite, 4 KB cap), prompt-hash determinism, and
+  EXTRACTION_PROMPT content invariants. Previously zero direct
+  tests on the security boundary against label-text injection.
+- `src/tests/client-compress.test.ts` — **18 tests** on the
+  browser-side image compression helper: SSR / non-DOM bailouts,
+  MIME-type bailouts, decode-failure fallback, blob-URL cleanup,
+  `scaleToFit` aspect-preservation. Previously zero direct tests
+  despite handling every phone-photo upload.
+- `src/tests/application-row-to-declared.test.ts` — **49 tests**
+  exhaustively pinning every alias (brand, brand_name, brand name,
+  class/style/type, abv/abv%/alcohol, net_contents/volume/size,
+  producer / producer_name structured, country/origin) and the
+  parse fallbacks (comma decimal, % suffix, multi-unit net_contents
+  with `fl oz` / `fl_oz` / `ml` / `L` / `cl`).
+- `src/tests/wave35e-external-abort.test.ts` — **3 tests** for the
+  TOP-PRIORITY billing-risk path identified by the audit. Pins
+  the wave-33 SSE-client-disconnect → in-flight-vision-abort
+  cascade: extractor signal observes the abort when external
+  signal fires mid-flight, double-controller wiring (ctrl + ocrCtrl)
+  is preserved by source inspection, listener cleanup happens in
+  the finally block (no leaks on long-lived requests).
+- `src/tests/api-application-parse-happy.test.ts` — **11 tests**
+  for the previously-uncovered `/api/application/parse` happy
+  path: JSON / CSV / markdown / plain-text parsing, alias columns,
+  multi-row CSV with `imageFilename` hint, error branches (400
+  missing-file / 400 empty / 413 oversize), response envelope
+  shape pin. The route had only rate-limit-branch coverage; a
+  regression in the parse pipelines would have landed silently.
+
+### Test count
+
+- **Before this wave**: 761 / 76 files (wave-35c).
+- **After**: **857 / 857** passing across **81** test files.
+- Net: **+96 tests, +5 test files.**
+
+### Apex framework anchors
+
+- **§2.3 hypothesis matrix** — pre-registered before code change:
+  "the drift surface IS measurable; every claim should resolve
+  against a canonical source."
+- **§12.3 hypercritical review** — two parallel sub-agents (docs-
+  drift + code-stale + coverage-gaps) ran independently, surfaced
+  all findings actioned in this PR.
+- **§13.8a claim ledger** — `bin/verify-claims.ts` is the
+  enforcement layer for this principle. CI will now fail any PR
+  that introduces test-count drift, broken doc paths, GUI strings
+  contradicting code, or stale latency claims.
+- **§15 completion gates** — all five gates clean before merge:
+  `npm run verify:claims` ✓, `npm test` (857/857) ✓, `npm run lint`
+  ✓, `npm run typecheck` ✓, `npm run build` ✓.
+
+---
+
 ## [Wave 35d: eager parallel bold measurement — FALSIFIED on latency gate] — 2026-05-18
 
 Apex §13 pre-registered "no regression" gate violated. No code
@@ -424,8 +556,9 @@ completion gates below).
 
 ### Artifacts
 
-- `docs/WAVE-33-DEEP-AUDIT.md` — full audit findings + per-fix
-  rationale + test coverage decisions.
+- This CHANGELOG entry (the bullets above) is the canonical audit
+  record — the per-fix rationale + test-coverage decisions live
+  inline rather than in a separate WAVE-33 doc.
 - `benchmarks/results/wave33-audit-regression/run1.json` — regression
   bench pin.
 

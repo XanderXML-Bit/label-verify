@@ -123,8 +123,7 @@ Before touching DNS, prove the deploy works.
    404 or a "deployment failed" page, jump to Troubleshooting.
 3. Drag-and-drop one of the sample images from `test-data-combined/labels/` (any
    `.jpg` will do) onto the upload zone.
-4. Within ~5 seconds you should see a result screen with a verdict
-   (PASS / FAIL / REVIEW) and per-field rows.
+4. Within ~5 seconds on a warm function (or up to ~8 seconds on the first verify after a Vercel cold-start; the result panel shows `Verified in N s (server M s)` so the gap is visible) you should see a result screen with a verdict (PASS / FAIL / REVIEW) and per-field rows.
 5. If you see "REVIEW — model unavailable" on the first try, that is the
    cold-start fallback. Run a second time; it should now PASS.
 

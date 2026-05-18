@@ -80,7 +80,7 @@ If any step fails, the deployment is **not** ready to ship. See
 2. The "Declared values" form should appear. Fill in the brand name and
    ABV that match the ground-truth JSON for that image.
 3. Click **Verify**.
-4. **Expected:** Within ~5 seconds:
+4. **Expected:** Within ~5 seconds on a warm function, or up to ~8 seconds on the first verify after a Vercel cold-start (verified via Playwright stopwatch on prod, wave-35c):
    - A result screen appears with one of three verdicts: PASS, FAIL,
      or REVIEW.
    - Per-field rows show the declared vs. extracted values with green
