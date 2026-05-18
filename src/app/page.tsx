@@ -76,17 +76,48 @@ function friendlyError(raw: string, status?: number): string {
   return raw;
 }
 
+/**
+ * Client-perceived end-to-end timings, captured around each verify /
+ * extract / sample request. Surfaced in the result panel's Audit
+ * details section and stamped into JSON exports so the regulator-
+ * defensible audit trail records WHAT THE USER ACTUALLY WAITED, not
+ * just the server-side `result.timings.total`.
+ *
+ * Wave-35c motivation: the project's "verified in ~3 s" claim came
+ * from the bench harness, which measures `result.timings.total` only
+ * — that excludes cold-start, client-side image compression, network
+ * round-trip, and render time. Live production Playwright stopwatch
+ * (2026-05-17, desktop + mobile, 3 PASS samples each) showed real
+ * end-to-end of 4.9–6.3 s after warmup and ~8 s on cold start.
+ * Reality should be visible to the user, not buried in bench JSON.
+ */
+export interface ClientTimings {
+  /** Image-compression time on the client (sharp-equivalent JS path). */
+  compressionMs: number;
+  /** Network round-trip + server total + response-parse time. */
+  networkMs: number;
+  /** Full user-perceived end-to-end: click → result visible. */
+  totalMs: number;
+}
+
 type Stage =
   | { kind: "idle" }
   | { kind: "single-pending"; file: File; previewUrl: string }
   | { kind: "single-verifying"; file: File; previewUrl: string }
   | { kind: "single-extracting"; file: File; previewUrl: string }
-  | { kind: "single-done"; file: File; previewUrl: string; result: VerifyResponse }
+  | {
+      kind: "single-done";
+      file: File;
+      previewUrl: string;
+      result: VerifyResponse;
+      clientTimings: ClientTimings;
+    }
   | {
       kind: "single-extract-done";
       file: File;
       previewUrl: string;
       result: ExtractOnlyResponse;
+      clientTimings: ClientTimings;
     }
   | {
       kind: "single-error";
@@ -428,8 +459,15 @@ export default function Home() {
     setStage({ kind: "single-verifying", file, previewUrl: url });
     const ac = new AbortController();
     singleAbortRef.current = ac;
+    // Wave-35c — capture client-perceived end-to-end timing. tStart is
+    // the moment the user clicked; later milestones measure the gap
+    // the server-side `result.timings.total` doesn't see.
+    const tStart = performance.now();
+    let tCompressionDone = tStart;
+    let tFetchDone = tStart;
     try {
       const uploadFile = await compressImageInBrowser(file);
+      tCompressionDone = performance.now();
       const fd = new FormData();
       fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(sample.declared));
@@ -446,7 +484,13 @@ export default function Home() {
         return;
       }
       const result = (await res.json()) as VerifyResponse;
-      setStage({ kind: "single-done", file, previewUrl: url, result });
+      tFetchDone = performance.now();
+      const clientTimings: ClientTimings = {
+        compressionMs: Math.round(tCompressionDone - tStart),
+        networkMs: Math.round(tFetchDone - tCompressionDone),
+        totalMs: Math.round(tFetchDone - tStart),
+      };
+      setStage({ kind: "single-done", file, previewUrl: url, result, clientTimings });
     } catch (e) {
       setStage({
         kind: "single-error",
@@ -463,10 +507,15 @@ export default function Home() {
     setStage({ ...stage, kind: "single-verifying" });
     const ac = new AbortController();
     singleAbortRef.current = ac;
+    // Wave-35c — client-perceived end-to-end timing (see ClientTimings).
+    const tStart = performance.now();
+    let tCompressionDone = tStart;
+    let tFetchDone = tStart;
     try {
       // Compress in the browser before upload. Cuts a 4–8 MB phone photo
       // to ~250–500 KB and shaves multi-second uploads on cellular.
       const uploadFile = await compressImageInBrowser(stage.file);
+      tCompressionDone = performance.now();
       const fd = new FormData();
       fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(declared));
@@ -482,11 +531,18 @@ export default function Home() {
         return;
       }
       const result = (await res.json()) as VerifyResponse;
+      tFetchDone = performance.now();
+      const clientTimings: ClientTimings = {
+        compressionMs: Math.round(tCompressionDone - tStart),
+        networkMs: Math.round(tFetchDone - tCompressionDone),
+        totalMs: Math.round(tFetchDone - tStart),
+      };
       setStage({
         kind: "single-done",
         file: stage.file,
         previewUrl: stage.previewUrl,
         result,
+        clientTimings,
       });
     } catch (e) {
       setStage({
@@ -503,8 +559,13 @@ export default function Home() {
     setStage({ ...stage, kind: "single-extracting" });
     const ac = new AbortController();
     singleAbortRef.current = ac;
+    // Wave-35c — client-perceived end-to-end timing.
+    const tStart = performance.now();
+    let tCompressionDone = tStart;
+    let tFetchDone = tStart;
     try {
       const uploadFile = await compressImageInBrowser(stage.file);
+      tCompressionDone = performance.now();
       const fd = new FormData();
       fd.append("image", uploadFile);
       const res = await fetch("/api/extract", { method: "POST", body: fd, signal: ac.signal });
@@ -519,11 +580,18 @@ export default function Home() {
         return;
       }
       const result = (await res.json()) as ExtractOnlyResponse;
+      tFetchDone = performance.now();
+      const clientTimings: ClientTimings = {
+        compressionMs: Math.round(tCompressionDone - tStart),
+        networkMs: Math.round(tFetchDone - tCompressionDone),
+        totalMs: Math.round(tFetchDone - tStart),
+      };
       setStage({
         kind: "single-extract-done",
         file: stage.file,
         previewUrl: stage.previewUrl,
         result,
+        clientTimings,
       });
     } catch (e) {
       setStage({
@@ -1028,6 +1096,7 @@ export default function Home() {
           imagePreviewUrl={stage.previewUrl}
           onAnother={reset}
           filename={stage.file.name}
+          clientTimings={stage.clientTimings}
         />
       )}
 
@@ -1037,6 +1106,7 @@ export default function Home() {
           imagePreviewUrl={stage.previewUrl}
           onAnother={reset}
           onContinueToVerification={continueToVerification}
+          clientTimings={stage.clientTimings}
         />
       )}
 

@@ -125,11 +125,48 @@ export async function validateGovernmentWarning(input: {
     reason = `Government Warning subscores: ${failed.join(", ")}.`;
   }
 
+  // Wave-35c — non-trivial PASS reasoning for the Government Warning.
+  // The GW field is the most regulator-scrutinised on a TTB label
+  // (27 CFR §16.21 / §16.22) so when a PASS is non-trivial — at
+  // least one of the four subscores came in below 0.95 confidence,
+  // OR the bold check fell back to a non-classical-CV path — we
+  // surface a one-line summary describing WHICH signals corroborated
+  // the verdict. All-high-confidence PASSes (all four subscores
+  // ≥ 0.95 confidence) emit no passReason — there's nothing
+  // interesting to narrate.
+  let passReason: string | undefined;
+  if (status === "pass") {
+    const minSubConf = Math.min(
+      text.confidence,
+      caps.confidence,
+      bold.confidence,
+      size.confidence,
+    );
+    if (minSubConf < 0.95) {
+      const subParts: string[] = [];
+      subParts.push(
+        `text ${text.status === "pass" ? "exact" : text.status} (${text.confidence.toFixed(2)})`,
+      );
+      subParts.push(
+        `caps ${caps.status === "pass" ? "PASS" : caps.status} (${caps.confidence.toFixed(2)})`,
+      );
+      subParts.push(
+        `bold ${bold.status === "pass" ? "PASS" : bold.status} (${bold.confidence.toFixed(2)})`,
+      );
+      subParts.push(
+        `size ${size.status === "pass" ? "PASS" : size.status} (${size.confidence.toFixed(2)})`,
+      );
+      passReason =
+        `All four §16.21/§16.22 subscores accepted: ${subParts.join("; ")}.`;
+    }
+  }
+
   return {
     status,
     confidence,
     subscores: { text, caps, bold, size },
     reason,
+    ...(passReason ? { passReason } : {}),
   };
 }
 

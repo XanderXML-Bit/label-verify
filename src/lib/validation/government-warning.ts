@@ -128,6 +128,17 @@ export interface GovernmentWarningCheck {
   subscores: GovernmentWarningSubscores;
   /** Specific reason on FAIL or REVIEW. Empty on PASS. */
   reason?: string;
+  /**
+   * Wave-35c — non-trivial PASS reasoning. Emitted ONLY when status
+   * is PASS AND at least one subscore was borderline (e.g. bold
+   * detected at 0.85–0.95 confidence) or fallback path was used.
+   * A summary like "All 4 subscores PASS — text exact, caps PASS,
+   * bold confidence 0.92, size at 1.4× the §16.21 minimum." A
+   * regulator-audit answer to "why was this PASS?" without the
+   * reviewer having to inspect every subscore chip. Trivial all-
+   * high-confidence PASSes get no passReason.
+   */
+  passReason?: string;
 }
 
 // ─── Normalization helpers ──────────────────────────────────────────────────

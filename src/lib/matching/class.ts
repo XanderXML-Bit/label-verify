@@ -177,12 +177,24 @@ export function compareClass(
   const a = safeCanonical(declared);
   const b = safeCanonical(extracted);
   if (a === b) {
+    // Wave-35c PASS reasoning: when both sides canonicalise to the
+    // same alias bucket but their RAW forms differ, surface the
+    // canon so an auditor sees WHY "IPA" was accepted as a match for
+    // "India Pale Ale". Trivial exact-string PASSes (declared === extracted)
+    // emit no passReason — there's nothing to explain.
+    const dNorm = normalizeBrand(declared);
+    const eNorm = normalizeBrand(extracted);
+    const passReason: string | undefined =
+      dNorm !== eNorm
+        ? `Class alias accepted: declared "${declared}" and label "${extracted}" both canonicalise to "${a}" (per the SAFE_ALIASES table).`
+        : undefined;
     return {
       field: "class_type",
       status: "pass",
       expected: declared,
       actual: extracted,
       confidence: extractedConfidence,
+      ...(passReason ? { passReason } : {}),
     };
   }
   // Check ambiguous aliases — pilsner/lager, imperial stout/stout, etc.
@@ -310,6 +322,18 @@ export function compareClass(
       }
     }
   }
+  // Wave-35c PASS reasoning for the fuzzy-spelling-tolerant PASS bin
+  // (r ≥ 0.85). Emit when the match required tolerance (r < 0.99)
+  // so an auditor sees "we accepted at similarity 0.87, well above
+  // the 0.85 threshold, because the spelling was close." Trivial
+  // exact matches (already returned above when canon collapses)
+  // never reach this path; near-canon-matches with non-exact raw
+  // forms (r ≥ 0.99 but not collapsed by SAFE_ALIASES) emit
+  // nothing — also trivial.
+  const passReason: string | undefined =
+    pass && r < 0.99
+      ? `Spelling-tolerant match accepted: declared "${declared}" vs printed "${extracted}" at similarity ${r.toFixed(2)} (above the 0.85 threshold).`
+      : undefined;
   return {
     field: "class_type",
     status: pass ? "pass" : review ? "review" : "fail",
@@ -319,5 +343,6 @@ export function compareClass(
     reason: pass
       ? undefined
       : `Declared "${declared}" vs printed "${extracted}" (similarity ${r.toFixed(2)}).`,
+    ...(passReason ? { passReason } : {}),
   };
 }

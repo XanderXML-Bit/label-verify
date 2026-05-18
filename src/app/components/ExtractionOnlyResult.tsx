@@ -44,6 +44,15 @@ interface Props {
    * have to re-upload the image.
    */
   readonly onContinueToVerification?: () => void;
+  /**
+   * Wave-35c — client-perceived end-to-end timing. Optional so
+   * legacy renders (no timings captured) still work.
+   */
+  readonly clientTimings?: {
+    compressionMs: number;
+    networkMs: number;
+    totalMs: number;
+  };
 }
 
 export function ExtractionOnlyResult({
@@ -51,6 +60,7 @@ export function ExtractionOnlyResult({
   imagePreviewUrl,
   onAnother,
   onContinueToVerification,
+  clientTimings,
 }: Props) {
   const { extracted, governmentWarning: gov } = result;
   const formatField = (v: unknown): string => {
@@ -87,9 +97,19 @@ export function ExtractionOnlyResult({
         </h2>
         <span
           className="text-sm text-slate-500 dark:text-slate-400"
-          aria-live="polite"
         >
-          Extracted in {(result.timings.total / 1000).toFixed(1)} s
+          {/* Wave-35c — show user-perceived end-to-end when captured;
+              otherwise fall back to the server-side total. Same
+              treatment as SingleResult.tsx. */}
+          Extracted in {((clientTimings ? clientTimings.totalMs : result.timings.total) / 1000).toFixed(1)} s
+          {clientTimings && (
+            <>
+              {" "}
+              <span className="text-slate-400 dark:text-slate-500">
+                (server {(result.timings.total / 1000).toFixed(1)} s)
+              </span>
+            </>
+          )}
         </span>
       </header>
 

@@ -315,6 +315,62 @@ export function compareProducer(
           ? "review"
           : "fail";
 
+  // Wave-35c PASS reasoning for the structured-producer compound bin.
+  // Status PASS here means every component matched its respective
+  // threshold (statusFor uses COMPONENT_THRESHOLD = 0.86). When at
+  // least one component matched non-exactly (fuzzy ratio < 1.0) OR
+  // country was inferred via implicit-USA, surface a summary so an
+  // auditor sees WHICH components were exact and which required
+  // tolerance. Trivial all-exact PASSes (every component exact-string)
+  // get no passReason.
+  const componentSummary: string[] = [];
+  if (status === "pass") {
+    type SP = ProducerAddress;
+    const dExact = (k: keyof SP, raw: string | null) =>
+      ((declared as SP)[k] ?? "") === (raw ?? "");
+    const fields: Array<keyof SP> = [
+      "name",
+      "street",
+      "city",
+      "state",
+      "postal_code",
+    ];
+    const fuzzyNonExact: string[] = [];
+    for (const f of fields) {
+      const declVal = (declared as SP)[f] ?? "";
+      const extVal = extracted[f];
+      if (declVal && extVal && !dExact(f, extVal)) {
+        fuzzyNonExact.push(f.replace("_", " "));
+      }
+    }
+    // Country PASS reason — was it the standard match or the
+    // implicit-USA-from-state inference path? The inference fires
+    // when declared.country is USA AND extracted.country is null AND
+    // extracted.state is a US state AND a corroborating component
+    // matched.
+    const countryInferred =
+      isUsa(declared.country ?? "") &&
+      !extracted.country &&
+      !!extracted.state &&
+      US_STATE_ABBREVS.has(extracted.state.toUpperCase()) &&
+      corroborating;
+    if (countryInferred) {
+      componentSummary.push(
+        "country implicit US-domestic (declared USA + extracted state " +
+          extracted.state +
+          " corroborated by another component)",
+      );
+    }
+    if (fuzzyNonExact.length > 0) {
+      componentSummary.push(
+        `${fuzzyNonExact.length} component${fuzzyNonExact.length === 1 ? "" : "s"} fuzzy-matched (${fuzzyNonExact.join(", ")})`,
+      );
+    }
+  }
+  const passReason: string | undefined =
+    status === "pass" && componentSummary.length > 0
+      ? `All producer components accepted — ${componentSummary.join("; ")}.`
+      : undefined;
   return {
     field: "producer",
     status,
@@ -328,5 +384,6 @@ export function compareProducer(
         : components.country === "fail"
           ? `Country component disagrees (declared "${declared.country ?? "—"}" vs printed "${extracted.country ?? "—"}") — regulator-disqualifying regardless of other component matches.`
           : `${fails} producer component${fails === 1 ? "" : "s"} did not match.`,
+    ...(passReason ? { passReason } : {}),
   };
 }

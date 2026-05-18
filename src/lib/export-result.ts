@@ -196,6 +196,19 @@ export interface SingleJsonExport {
   audit?: {
     reviewer?: string;
     verifiedAtIso: string;
+    /**
+     * Wave-35c: client-perceived end-to-end timing in ms, captured
+     * around the verify fetch in `page.tsx`. Distinct from
+     * `result.timings.total` (server-side preprocess + ocr + vision
+     * + matching only). The end-to-end number is what the user
+     * actually waited; the audit trail should preserve it because
+     * "the user waited X seconds" is part of the case file.
+     */
+    clientTimings?: {
+      compressionMs: number;
+      networkMs: number;
+      totalMs: number;
+    };
   };
 }
 
@@ -207,6 +220,12 @@ export interface SingleJsonExport {
 export interface SingleJsonExportOptions {
   reviewer?: string;
   verifiedAtIso?: string;
+  /** Wave-35c — client-perceived end-to-end timing (ms). */
+  clientTimings?: {
+    compressionMs: number;
+    networkMs: number;
+    totalMs: number;
+  };
 }
 
 export interface BatchJsonExport {
@@ -237,10 +256,11 @@ export function singleResultToJson(
     filename,
     result,
     audit:
-      options?.reviewer || options?.verifiedAtIso
+      options?.reviewer || options?.verifiedAtIso || options?.clientTimings
         ? {
             reviewer: options.reviewer,
             verifiedAtIso: options.verifiedAtIso ?? new Date().toISOString(),
+            clientTimings: options.clientTimings,
           }
         : undefined,
   };
