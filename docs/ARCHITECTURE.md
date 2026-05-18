@@ -38,7 +38,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 | Field matching | Hand-written comparators in `src/lib/matching/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
 | Government-Warning validation | `src/lib/validation/` | Four subscores: text exact match (string predicate), all-caps prefix (string predicate), bold prefix (classical CV stroke-width transform on OCR-anchored pixels), size threshold (bbox dimensions vs declared net contents). |
 | Schemas | **Zod** | All inbound JSON validated at the route boundary. Same schemas reused by the CLI. |
-| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 923 in-process tests across 87 files, Playwright for the 8 GUI E2E specs. |
+| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 942 in-process tests across 89 files, Playwright for the 8 GUI E2E specs. |
 | Benchmarks | Custom harness in `benchmarks/` and `bin/labelverify-bench.ts` | The bake-off (`bench:bakeoff`) and the cross-pair benchmark (`bench:cross-pair`). |
 | Deploy | **Vercel** (Hobby plan) | Free, public URL, post-deploy smoke workflow validates `/api/health` on every push to `main`. |
 

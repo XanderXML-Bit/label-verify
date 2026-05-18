@@ -4,6 +4,60 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35h: /api/extract + /api/application/parse coverage expansion] — 2026-05-18
+
+Wave-35g lifted `/api/verify` and `/api/verify/batch` to high
+coverage; this follow-on does the same for the two remaining
+user-facing endpoints that were still under-tested.
+
+### NEW TESTS (+19 across 2 new files)
+
+- `src/tests/api-extract-error-branches.test.ts` — **11 tests**
+  for the still-uncovered error branches of `/api/extract`: JSON
+  body malformed → 400, UrlFetchError status propagation on the
+  JSON URL path, generic fetch failure → 502, multipart `url`
+  field path (3 sub-branches), PDF success path through
+  `extractPdfFirstPage`, PDF errors (`too-large` → 413,
+  `encrypted` → 400, non-PdfExtractError rethrow → handled by
+  Next.js as 500), empty-body content-type fallback → 400.
+- `src/tests/api-application-parse-error-branches.test.ts` —
+  **8 tests** for `/api/application/parse`: image-of-application
+  vision path (503 vision-unavailable without `GOOGLE_API_KEY`,
+  200 + `source='image-vision'` on success, 502 on
+  `parseApplicationImage` error), ApplicationParseError status
+  propagation (`too-large` → 413, `unsupported-mime` → 415),
+  generic throw → 500, malformed multipart body → 400 bad-request,
+  `imageFilename` form-field passthrough to `parseApplication`
+  (multi-row manifest row-picking).
+
+### Coverage gains
+
+| Surface | Before wave-35h | After wave-35h |
+|---|---|---|
+| Statements (overall) | 89.55% | **90.72%** |
+| Branches (overall) | 85.25% | **85.84%** |
+| `/api/extract/route.ts` | 68.5% | **99.3%** |
+| `/api/application/parse/route.ts` | 68.7% | **99.2%** |
+
+Both routes were the last two user-facing endpoints below 90% line
+coverage; both are now near-fully covered. The remaining gaps
+(75.4% on `/api/verify/batch`, 78.2% on the SSE stream, ~75% on
+the vision adapters and library helpers) are mostly defensive
+paths exercised by integration tests that mock the dependency.
+
+### Test count
+
+- **Before this wave**: 923 / 87 files (wave-35g).
+- **After**: **942 / 942** passing across **89** test files.
+- Net: **+19 tests, +2 test files.**
+
+### Verified-state
+
+- 942 tests · TS strict clean · Lint clean · Production build
+  green · `npm run verify:claims` 0 errors / 0 warnings.
+
+---
+
 ## [Wave 35g: API-route coverage expansion + README drift fix] — 2026-05-18
 
 Wave-35f closed the orchestrator / privacy-cap / vision-helper

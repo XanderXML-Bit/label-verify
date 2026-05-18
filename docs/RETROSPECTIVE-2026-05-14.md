@@ -8,7 +8,7 @@
 > `docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md` /
 > `docs/WAVE-32-GROUNDING-DINO-FALSIFIED.md`. Body claims preserved as audit
 > trail; numbers below (628 tests, "5 false-passes survive", "ai-label-0031/0050"
-> false-fails) are pre-wave-31j and now correctly reflected as 923 tests, 2
+> false-fails) are pre-wave-31j and now correctly reflected as 942 tests, 2
 > adversarial false-passes, and GT-corrected respectively.
 >
 > Honest post-mortem on the LabelVerify architecture, written after the project is functionally complete. Two sub-agent passes informed this — one on 2026-state-of-the-art VLM document-verification practice, one on the code-level fragility of what we shipped. Sources cited at bottom.
