@@ -4,6 +4,87 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35d: eager parallel bold measurement — FALSIFIED on latency gate] — 2026-05-18
+
+Apex §13 pre-registered "no regression" gate violated. No code
+change ships to `main`. The implementation code is preserved on
+the experiment branch `chore/wave-35d-parallel-bold-measurement`
+(pushed to origin) as an audit-trail artifact. Full writeup with
+hypothesis matrix, decision rule, results, and root-cause
+analysis at `docs/WAVE-35D-PARALLEL-BOLD-FALSIFIED.md`.
+
+### Hypothesis
+
+Firing `findPrefixWords` + `findBodyWords` + `measureRelativeBold`
+eagerly as soon as `ocrPromise` resolves (in parallel with the
+tail of the still-running vision call), then passing the pre-
+computed `BoldMeasurement` into `validateGovernmentWarning` via a
+new optional `ValidatorOcrContext.boldMeasurement` field, would
+shave the classical-CV bold-measurement pass (~50–150 ms) off the
+critical path of the median verify — where OCR finishes before
+vision (median: OCR ≈ 1.0 s vs vision ≈ 2.3 s).
+
+### Result
+
+N=2 deterministic bench at concurrency 4 (per BENCH-PROTOCOL.md):
+
+| Phase | Baseline | Wave-35d | Δ |
+|---|---:|---:|---:|
+| preprocess | 212 ms | 240 ms | +28 ms |
+| ocr | 1684 ms | 1905 ms | **+221 ms** |
+| vision | 2515 ms | 2423 ms | −92 ms |
+| matching | 416 ms | 457 ms | +41 ms |
+| **total** | **5691 ms** | **5838 ms** | **+147 ms** |
+
+- **Verdict-byte-identical: 0 / 340 record-level bucket diffs** vs
+  baseline. The deterministic-output prediction was correct — the
+  bold measurement IS a pure function of (image, prefix words,
+  body words), and verdicts cannot change. They didn't.
+- **Latency regressed: +147 ms mean total time, +125 ms paired-
+  per-record median** — opposite of the predicted direction.
+
+### Root cause
+
+CPU contention at bench concurrency 4. The eager sharp/SWT
+pipeline runs in parallel with concurrent Tesseract workers from
+other in-flight verifies on the same bench host. The combined CPU
+load slowed OCR by +221 ms mean, more than offsetting the +92 ms
+the change shaved off vision. In production (Vercel function
+concurrency 1 per instance) the contention story doesn't apply,
+but Apex §13 pre-registers the decision rule against the standard
+bench protocol — cherry-picking a bench config to favour a change
+is not allowed.
+
+### What was learned
+
+- The byte-identical-verdict prediction was correct → the
+  architectural intuition "you can move bold computation earlier
+  without losing accuracy" is validated for any future refactor.
+- The `ValidatorOcrContext.boldMeasurement` API extension is a
+  clean backwards-compatible enhancement; it would be safe to
+  ship just the API surface even though no caller uses it today.
+  Decision: don't ship dormant code. Reverted.
+
+### Engineering hours + API spend (actual)
+
+~2 engineering hours, ~$0.17 in Gemini API spend across 2 bench
+runs (680 verifications). Cheap falsification.
+
+### Apex framework anchors
+
+- **§2.3 hypothesis matrix** — pre-registered before code change.
+- **§13.7 noise characterization** — N=2 deterministic. σ_baseline
+  noise band ≈ 245 ms; the +147 ms mean delta is roughly 0.6 σ —
+  not "outside the noise band" on a strict 2σ rule. The per-
+  record paired median +125 ms is the stronger signal (paired
+  tests remove between-run noise).
+- **§13 pre-registered decision rule** — 5 of 6 hard criteria
+  pass; the failing one is the latency-no-regression gate.
+- **§13.8a claim ledger** — single claim: "experiment falsified
+  at bench concurrency 4; here is the data."
+
+---
+
 ## [Wave 35c: client-side end-to-end timing + PASS reasoning expansion] — 2026-05-17
 
 User flagged two real gaps after Track 1 + Track 2:
