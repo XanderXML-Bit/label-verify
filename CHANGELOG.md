@@ -4,6 +4,98 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35m: close the three remaining integration gaps named by the Apex audit] — 2026-05-18
+
+User asked: "is there any integration tests you don't have coverage
+for?" After cold coverage measurement I named three real gaps. User
+green-lit shipping them. Wave-35m adds those three integration
+tests — each one pins a contract that the existing coverage
+genuinely didn't cover.
+
+### NEW TESTS (+11 across 3 new files)
+
+- **`src/tests/heic-verify-integration.test.ts`** — **3 tests**
+  pinning the iPhone reviewer path:
+  - `image/heic` upload reaches `verifyLabel` exactly once with
+    a non-empty buffer (closes the gap that `ACCEPTED_MIME` listed
+    HEIC but no integration test walked an HEIC through the route).
+  - `image/heif` sibling MIME behaves identically.
+  - **Negative case**: `image/avif` (not in allowlist) is rejected
+    with **415** at the MIME gate, NOT silently routed to vision
+    where it'd fail with a more confusing downstream error.
+- **`src/tests/batch-mixed-verdict-summary.test.ts`** — **3 tests**
+  pinning the `summary.{passed,failed,review,errored}` aggregation
+  math that the UI's completion toast renders:
+  - Mixed `{pass, fail, review, throw}` 4-item batch → exact
+    `{1,1,1,1}` aggregation AND per-row verdicts line up with the
+    mock's per-call index (defends against an off-by-one in the
+    inline-batch loop).
+  - All-pass batch → `{N,0,0,0}` happy-path guard.
+  - All-error batch → `{0,0,0,N}` failure-path guard. The route
+    still 200s even when every row errors — partial failures
+    surface in per-row results, not as an HTTP error, which is
+    the documented contract.
+  - Run with `INLINE_BATCH_CONCURRENCY=1` to bypass the dynamic-
+    `await import()` mock race I documented in wave-35g (one of
+    the concurrent imports can race past `vi.mock` and resolve
+    to the real module, making the mock counter flaky).
+    Serialising the inline loop eliminates the race entirely.
+- **`src/tests/extract-to-verify-schema-contract.test.ts`** —
+  **5 tests** pinning the `continueToVerification` handoff:
+  - Clean ExtractedFields, mapped through the same field-by-field
+    transformation page.tsx uses, satisfies `DeclaredFieldsSchema`
+    once the user fills in `class_category`.
+  - Missing `class_category` correctly fails validation (documents
+    the asymmetry — every other field flows from the extractor's
+    label-read; `class_category` is a TTB taxonomy choice the user
+    makes).
+  - Null-producer / null-country case (TTB-domestic shorthand)
+    still validates — producer + country_of_origin are `nullish`
+    on the schema (wave-34 audit fix #13 reasoning preserved).
+  - String-form legacy producer (single freeform line) still
+    validates — the schema's union accepts both
+    `ProducerAddressSchema` and `z.string()`.
+  - Missing `net_contents.value` drops the field (rather than
+    corrupting it) and form-side blocks submit — defensive against
+    a downstream null-deref.
+
+### Why these three?
+
+Three coverage axes the prior waves didn't address:
+
+  1. **Format compatibility** — wave-35k fixed iOS *filename*
+     collisions but never proved iOS *file format* (HEIC) flows
+     through the route. Wave-35m closes that.
+  2. **Aggregation arithmetic** — every prior batch test asserted
+     pairing-layer outputs OR per-row verdicts in isolation, but
+     none asserted that the response's headline summary math is
+     correct. Wave-35m closes that.
+  3. **Cross-route contract** — every individual route is well-
+     tested, but the contract that the extractor's response shape
+     suffices to drive verify's input schema was never asserted.
+     Wave-35m closes that.
+
+The remaining sub-90% coverage (`@/lib/vision/anthropic.ts` 75%,
+the inline batch verifyLabel loop in `/api/verify/batch/route.ts`
+76%) is held — the uncovered lines are dependency-mock-fragile
+fallback paths, not user-facing risk.
+
+### Test count
+
+- Before: 949 / 90 files (wave-35l + dependabot #59, #60 merges).
+- After: **960 / 960** passing across **93** test files.
+- Net: **+11 tests, +3 test files.**
+
+### Verified-state
+
+- 960 tests · TS strict clean · Lint clean · Production build
+  green · `npm run verify:claims` 0/0/0 · all 5 gates pre-deploy
+  on `main` after both dependabot merges (#59 actions-major +
+  #60 npm-minor-and-patch, including the big @anthropic-ai/sdk
+  0.30 → 0.96 jump validated locally before merge).
+
+---
+
 ## [Wave 35l: unified upload button + accessible iOS picker chooser popover] — 2026-05-18
 
 User asked to return to a single visible upload button "instead of
