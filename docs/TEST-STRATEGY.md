@@ -6,7 +6,7 @@ How the project is tested, what corpus the benchmark runs against, what statisti
 
 | Surface | Count | Runtime | Purpose |
 |---|---:|---|---|
-| Vitest specs (unit + integration) | 923 across 87 files | ~10 s (`npm test`) | Pipeline correctness: matchers, validators, scorers, route handlers, schemas, CLI argument parsing. |
+| Vitest specs (unit + integration) | 942 across 89 files | ~10 s (`npm test`) | Pipeline correctness: matchers, validators, scorers, route handlers, schemas, CLI argument parsing. |
 | Playwright E2E specs | 9 spec files | ~30–60 s with `npm run dev` (`npm run test:e2e`) | Browser-driven user-flow validation. Covers idle screen + samples, application-input prefill, batch autopair, form validation, friendlyError mapping, upload rejection, sample retry, API status banner, extract-only. |
 | Benchmark harness | `benchmarks/run.ts` (T-variant tournament) + `bin/labelverify-bench.ts` (cross-pair) | ~5 min routine, ~30 min full bake-off, ~15 min cross-pair | Accuracy + latency measurement on the corpus. |
 | CLI smoke tests | 3 test files (`cli.test.ts`, `cli-web.test.ts`, `bench-cross-pair.test.ts`) | included in Vitest | Subprocess-level argument parsing, help, exit-code semantics for all three CLIs. |
