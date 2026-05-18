@@ -5,9 +5,29 @@ import { test, expect } from "@playwright/test";
 // Covers the two-affordance idle screen and the "Try the pass sample"
 // happy path through the verification pipeline. If this fails, the demo
 // is broken in a way every reviewer will see on first contact.
+//
+// View-mode bootstrap: the production layout defaults to
+// `data-mode="simple"` and hides `.detailed-only` elements (sample
+// affordance, About panel, "Try a sample" panel) with `display: none`.
+// Each test that needs those elements sets the persisted preference
+// to `detailed` via addInitScript BEFORE the first page.goto — the
+// pre-paint script in layout.tsx reads localStorage["labelverify:mode"]
+// and sets `data-mode` before React mounts. (The shared
+// `localStorage.setItem` step lives below so each test starts in a
+// known mode regardless of test ordering.)
 
 test.describe("Idle screen", () => {
-  test("loads with all the canonical affordances visible", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.setItem("labelverify:mode", "detailed");
+      } catch {
+        /* Storage may be denied in some browsers; tests fall back to simple. */
+      }
+    });
+  });
+
+  test("loads with the canonical idle-screen affordances visible (detailed mode)", async ({ page }) => {
     await page.goto("/");
     await expect(
       page.getByRole("heading", { name: /Verify a label against application data/i }),
@@ -16,8 +36,35 @@ test.describe("Idle screen", () => {
       page.getByRole("region", { name: /Label upload area/i }),
     ).toBeVisible();
     await expect(page.getByRole("region", { name: /Try a sample/i })).toBeVisible();
-    await expect(page.getByText(/More options/i)).toBeVisible();
+    // "About this prototype" expander is detailed-only; the
+    // beforeEach above primed detailed mode, so it should be visible.
     await expect(page.getByText(/About this prototype/i)).toBeVisible();
+  });
+
+  test("simple mode (default) hides the sample affordance and About panel", async ({ page }) => {
+    // Clear the detailed-mode preference set in beforeEach, so the
+    // page loads in the production default of simple mode.
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.removeItem("labelverify:mode");
+      } catch {
+        /* ignore */
+      }
+    });
+    await page.goto("/");
+    // Heading and upload zone are visible in every mode.
+    await expect(
+      page.getByRole("heading", { name: /Verify a label against application data/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: /Label upload area/i }),
+    ).toBeVisible();
+    // Sample affordance is .detailed-only — hidden via
+    // `display:none !important` in simple mode.
+    await expect(
+      page.getByRole("region", { name: /Try a sample/i }),
+    ).toBeHidden();
+    await expect(page.getByText(/About this prototype/i)).toBeHidden();
   });
 
   test("dark-mode toggle flips the data-theme attribute", async ({ page }) => {
@@ -54,6 +101,20 @@ test.describe("Sample affordance", () => {
   // sample and confirm the chip matches the button's "Expected: …"
   // label — this e2e suite enforces that contract against the live
   // deployment via .github/workflows/e2e-live.yml.
+  //
+  // The "Try the …" buttons live inside `.detailed-only`, so the
+  // production default of simple mode hides them. Seed the
+  // localStorage preference to "detailed" before page.goto so the
+  // pre-paint script in layout.tsx unhides them.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.setItem("labelverify:mode", "detailed");
+      } catch {
+        /* Storage denied — fall through; later assertion will fail loudly. */
+      }
+    });
+  });
 
   test("PASS sample reaches a PASS verdict", async ({ page }) => {
     await page.goto("/");
@@ -61,12 +122,15 @@ test.describe("Sample affordance", () => {
     await expect(
       page.getByRole("region", { name: /Verification result/i }),
     ).toBeVisible({ timeout: 30_000 });
-    // The header chip is the canonical verdict location.
-    const verdict = await page
-      .locator("text=/^(PASS|FAIL|REVIEW)$/")
+    // The verdict chip is the `aria-label="Verdict <X>"` span in the
+    // SingleResult header. Reading the aria-label is more stable than
+    // the inner text node, which lives inside an icon-prefixed span
+    // ("⚠ REVIEW") and isn't trivially matched by an anchored regex.
+    const chip = await page
+      .locator('[aria-label^="Verdict "]')
       .first()
-      .innerText();
-    expect(verdict).toBe("PASS");
+      .getAttribute("aria-label");
+    expect(chip).toBe("Verdict PASS");
   });
 
   test("FAIL sample reaches a FAIL verdict (title-case Gov-Warning prefix)", async ({
@@ -77,11 +141,11 @@ test.describe("Sample affordance", () => {
     await expect(
       page.getByRole("region", { name: /Verification result/i }),
     ).toBeVisible({ timeout: 30_000 });
-    const verdict = await page
-      .locator("text=/^(PASS|FAIL|REVIEW)$/")
+    const chip = await page
+      .locator('[aria-label^="Verdict "]')
       .first()
-      .innerText();
-    expect(verdict).toBe("FAIL");
+      .getAttribute("aria-label");
+    expect(chip).toBe("Verdict FAIL");
   });
 
   test("REVIEW sample reaches a REVIEW verdict (Lager vs Pilsner)", async ({
@@ -92,10 +156,10 @@ test.describe("Sample affordance", () => {
     await expect(
       page.getByRole("region", { name: /Verification result/i }),
     ).toBeVisible({ timeout: 30_000 });
-    const verdict = await page
-      .locator("text=/^(PASS|FAIL|REVIEW)$/")
+    const chip = await page
+      .locator('[aria-label^="Verdict "]')
       .first()
-      .innerText();
-    expect(verdict).toBe("REVIEW");
+      .getAttribute("aria-label");
+    expect(chip).toBe("Verdict REVIEW");
   });
 });

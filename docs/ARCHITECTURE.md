@@ -38,7 +38,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 | Field matching | Hand-written comparators in `src/lib/matching/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
 | Government-Warning validation | `src/lib/validation/` | Four subscores: text exact match (string predicate), all-caps prefix (string predicate), bold prefix (classical CV stroke-width transform on OCR-anchored pixels), size threshold (bbox dimensions vs declared net contents). |
 | Schemas | **Zod** | All inbound JSON validated at the route boundary. Same schemas reused by the CLI. |
-| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 942 in-process tests across 89 files, Playwright for the 8 GUI E2E specs. |
+| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 942 in-process tests across 89 files, Playwright for the 9 GUI E2E specs. |
 | Benchmarks | Custom harness in `benchmarks/` and `bin/labelverify-bench.ts` | The bake-off (`bench:bakeoff`) and the cross-pair benchmark (`bench:cross-pair`). |
 | Deploy | **Vercel** (Hobby plan) | Free, public URL, post-deploy smoke workflow validates `/api/health` on every push to `main`. |
 
@@ -46,7 +46,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 
 For one POST to `/api/verify`:
 
-1. **Receive**. Multipart upload (`image` + `declared` JSON) or JSON body (`{ url, declared }`). The route validates MIME (image: JPEG / PNG / WebP / HEIC / HEIF / PDF), size (≤ 10 MB image, ≤ 25 MB PDF), and the `declared` payload against `DeclaredFieldsSchema`. Per-IP rate limit applies.
+1. **Receive**. Multipart upload (`image` + `declared` JSON) or JSON body (`{ url, declared }`). The route validates MIME (image: JPEG / PNG / WebP / HEIC / HEIF / PDF), size (≤ 10 MB image, ≤ 20 MB PDF), and the `declared` payload against `DeclaredFieldsSchema`. Per-IP rate limit applies.
 2. **Preprocess** (`src/lib/preprocess.ts`). `sharp` performs EXIF auto-orient, then Lanczos-3 resize to a 2000-px long edge (wave-31j; aspect ratio preserved). Sub-target images are upscaled (the wave-28b default `withoutEnlargement: true` kept 1024×1536-class corpora at native size, which silently under-resolved subtle bold/size perturbations — see `WAVE-31j-UPSCALE-2000-SHIPPABLE.md`). The pipeline re-encodes JPEG at quality 82 with mozjpeg. PDFs render the first page via `pdfjs-dist` + `@napi-rs/canvas` before entering this step. Env overrides `LV_MAX_EDGE` and `LV_ENLARGE=0` are retained for research/benching.
 3. **Extract and OCR in parallel** (`src/lib/verify.ts:verifyLabel`).
    - The vision extractor (`src/lib/vision/gemini.ts`) issues a single structured-output JSON-schema call to Gemini 3.1 Flash Lite. The prompt requests all seven declared fields plus the Government-Warning block (`raw_text`, `prefix_text`, `prefix_bbox`, `prefix_appears_bold`, `prefix_appears_caps`).
@@ -131,7 +131,7 @@ Runtime environment variables (see `.env.example`):
 Full threat model: [`../SECURITY.md`](../SECURITY.md). High-level posture:
 
 - Strict MIME allow-list at every upload endpoint.
-- 256 MiB aggregate cap on batch requests; 10 MB per image; 25 MB per PDF.
+- 256 MiB aggregate cap on batch requests; 10 MB per image; 20 MB per PDF.
 - Per-IP rate limits on the single-image, batch, and application-parse endpoints.
 - SSRF guard on URL fetch (rejects RFC1918 + loopback + link-local + CGNAT + non-canonical IPv4 literals; manual redirect-following with re-validation).
 - CSV formula-injection mitigation on every export endpoint (cells beginning with `=`/`+`/`-`/`@`/tab/CR are prefixed with `'` per OWASP).

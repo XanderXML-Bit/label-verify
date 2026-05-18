@@ -51,3 +51,11 @@ benchmarks/results/aggregate-*.md
 # notes that are deleted before merge. Anything that survives lands
 # in `docs/REMAINING-IMPROVEMENTS.md` or a permanent docs file.
 .wave-*-plan.md
+
+# Playwright test-runner outputs — regenerated on every `test:e2e`
+# run; never useful to commit.
+playwright-report/
+test-results/
+
+# Personal / sensitive files that should not be tracked.
+XanderLopez*.pdf

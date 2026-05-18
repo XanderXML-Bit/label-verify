@@ -69,10 +69,12 @@ and the per-route handlers for the exact implementations.
     `image/heic`, `image/heif`. SVG/GIF/BMP rejected with 415.
   - Application routes: above + `application/pdf`,
     `application/json`, `text/csv`, `text/markdown`, `text/plain`.
-- Per-file size caps: 10 MB images, 5 MB application PDFs, 1 MB
-  text inputs. Batch route additionally enforces a 5 GB
-  Content-Length pre-check before buffering the multipart body
-  (DoS guard).
+- Per-file size caps: **10 MB** images (verify / extract / batch);
+  **20 MB** label PDFs on `/api/verify` and `/api/extract`
+  (`MAX_PDF_BYTES`); **10 MB** application files of any type on
+  `/api/application/parse` (`MAX_APPLICATION_BYTES`). Batch route
+  additionally enforces a **256 MiB** Content-Length pre-check
+  before buffering the multipart body (DoS guard).
 - PDF text is extracted via pdfjs-dist with a hard page cap; only
   the first page is rendered to an image for vision input.
 

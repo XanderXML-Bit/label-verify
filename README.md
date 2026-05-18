@@ -230,7 +230,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | **Secrets audit** | `.gitignore` excludes `.env`/`.env.local`/`.env.*.local` · 50-commit git-history scan for key prefixes (AIzaSy/sk-/sk-ant-) is clean · no committed credentials |
 | **Production dependency advisories** | `npm audit --omit=dev`: **0 vulnerabilities** |
 | **Audit passes** | Hermes (GPT-5.5) · Codex CLI · sub-agent code review · sub-agent UX review · sub-agent fixture audit · sub-agent docs audit · sub-agent perf/accuracy audit · sub-agent production-readiness smoke — findings are catalogued in [`CHANGELOG.md`](CHANGELOG.md) |
-| **Docs ↔ code drift** | `npm run verify:claims` runs as a non-skippable CI gate (wave-35e) — every numeric / path / wave-name / env-var claim in docs and GUI is asserted against the canonical source. Subsequent gap-closing waves (wave-35f: orchestrator + privacy + vision helper; wave-35g: `/api/verify` + `/api/verify/batch`; wave-35h: `/api/extract` + `/api/application/parse`) added ~85 targeted tests and lifted statement coverage from 84.35% to **90.72%**. |
+| **Docs ↔ code drift** | `npm run verify:claims` runs as a non-skippable CI gate (wave-35e) — every numeric / path / wave-name / env-var / **byte-cap** claim in docs and GUI is asserted against the canonical source. Subsequent gap-closing waves (wave-35f: orchestrator + privacy + vision helper; wave-35g: `/api/verify` + `/api/verify/batch`; wave-35h: `/api/extract` + `/api/application/parse`) added ~85 targeted tests and lifted statement coverage from 84.35 % to **90.72 %**. Wave-35i extended the detector to size-cap claims (after three parallel sub-agent audits + an external Hermes review caught `SECURITY.md` and `docs/ARCHITECTURE.md` stating wrong PDF / batch caps), fixed every CRITICAL / HIGH finding the audit surfaced (5 docs, 4 e2e specs, 2 code-quality nits), and validated end-to-end with **7/7 idle-and-sample Playwright tests passing against live production**. |
 | **Cost transparency** | per-call cost surfaced on every verify result · raw model id kept out of the user-visible tooltip |
 
 The independent audit passes catalogued in CHANGELOG cover code-review, security, fixture validation, documentation drift, performance, and production readiness. Findings are either applied to the code or documented as deliberate choices.
@@ -324,9 +324,10 @@ npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results
 npm run bench:bakeoff     # full 16-variant tournament (~30 min, ~$0.30 in API calls)
 npm run bench:cross-pair  # NEW: 170 images × {correct, wrong} declared, accuracy+timing (--limit N)
 npm run test:e2e:install  # one-time Playwright browser install
-npm run test:e2e          # Playwright headless E2E (8 spec files: idle, samples,
+npm run test:e2e          # Playwright headless E2E (9 spec files: idle, samples,
                           #   application-input, batch-autopair, form-validation,
-                          #   error-mapping, upload-rejection, sample-retry, api-status-banner)
+                          #   error-mapping, upload-rejection, sample-retry, api-status-banner,
+                          #   extract-only)
 ```
 
 ### Option D — Use the CLI

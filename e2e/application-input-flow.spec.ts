@@ -6,9 +6,24 @@ import { join } from "node:path";
 // Covers the two assignment-critical paths added late in the project:
 //   1. Upload a label, upload an application JSON, the form prefills,
 //      Verify produces a result.
-//   2. Upload a label, click "Skip — just show what's on the label",
+//   2. Upload a label, click "Skip — extract fields without a verdict",
 //      the extract-only result panel renders with the no-application
 //      disclaimer banner.
+//
+// The Skip button is `.detailed-only`; in simple mode it's replaced by
+// an inline "Extract fields from the label only →" link below the
+// form. Each test seeds the persisted preference to "detailed" so
+// layout.tsx's pre-paint script un-hides the Skip button before React
+// mounts.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem("labelverify:mode", "detailed");
+    } catch {
+      /* ignore — simple-mode fallback will surface a clearer fail */
+    }
+  });
+});
 
 const SAMPLE_LABEL = join(
   process.cwd(),
@@ -33,21 +48,23 @@ const SAMPLE_APP_JSON = JSON.stringify(
 
 test("label + application JSON → prefilled form → Verify", async ({ page }) => {
   await page.goto("/");
-  await page
-    .getByRole("button", { name: /Choose files/i })
-    .click({ trial: false });
-  const fileChooser = page.waitForEvent("filechooser");
-  // Use the upload zone's "Choose files" button (the only one on idle).
-  // The trial:false click above already fired the chooser, but Playwright
-  // expects us to actually await it after the click.
-  await page.setInputFiles('input[type="file"]', SAMPLE_LABEL).catch(() => {});
+  // Use the hidden <input type="file"> directly — setInputFiles
+  // bypasses the native picker entirely. The previous flow (click
+  // "Choose files" + waitForEvent("filechooser") + setInputFiles)
+  // was flaky against production because the button locator raced
+  // page hydration. Using the input directly is the documented
+  // Playwright pattern for testing file uploads.
+  await page.setInputFiles('input[type="file"]', SAMPLE_LABEL);
 
   // Wait for the form + application card to appear.
   await expect(
     page.getByText(/Application data \(optional\)/i),
   ).toBeVisible({ timeout: 10_000 });
+  // `exact: true` here so the regex doesn't strict-mode-collide with
+  // the page heading "Verify a label against application data" (the
+  // suffix substring would otherwise match both).
   await expect(
-    page.getByRole("heading", { name: /Application data$/i }),
+    page.getByRole("heading", { name: "Application data", exact: true }),
   ).toBeVisible();
 
   // Drop the application JSON into the application-upload picker via
@@ -72,8 +89,6 @@ test("label + application JSON → prefilled form → Verify", async ({ page }) 
   await expect(
     page.getByRole("region", { name: /Verification result/i }),
   ).toBeVisible({ timeout: 30_000 });
-
-  await fileChooser.catch(() => undefined);
 });
 
 test('"Skip — just show what\'s on the label" → ExtractionOnly panel', async ({
@@ -86,15 +101,23 @@ test('"Skip — just show what\'s on the label" → ExtractionOnly panel', async
     page.getByText(/Application data \(optional\)/i),
   ).toBeVisible({ timeout: 10_000 });
 
-  await page.getByRole("button", { name: /Skip — just show/i }).click();
+  // Button label is "Skip — extract fields without a verdict" in
+  // detailed mode and a shorter "Skip" affordance in simple mode;
+  // match either via the shared prefix.
+  await page.getByRole("button", { name: /^Skip(?:\s|$)/i }).first().click();
 
   await expect(
     page.getByRole("region", { name: /Extracted from label/i }),
   ).toBeVisible({ timeout: 30_000 });
 
   // The disclaimer banner must be present — that's the load-bearing
-  // safety contract for this flow.
-  await expect(page.getByText(/Application data not provided/i)).toBeVisible();
+  // safety contract for this flow. The banner heading literally reads
+  // "This is not a compliance verdict — extraction only"; the body
+  // paragraph repeats the server-provided note. Match the heading
+  // since it's the most stable surface.
+  await expect(
+    page.getByText(/not a compliance verdict|extraction only/i).first(),
+  ).toBeVisible();
 
   // Government Warning subscores should render (federal regulation check,
   // not application-derived).

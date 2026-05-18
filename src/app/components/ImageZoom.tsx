@@ -191,7 +191,7 @@ export function ImageZoom({
             </button>
           </div>
           <div className="flex flex-1 items-start justify-center overflow-auto p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- same blob: URL as the thumbnail above; next/image is for remote/static assets, not user-uploaded blobs */}
             <img
               src={src}
               alt={alt}
