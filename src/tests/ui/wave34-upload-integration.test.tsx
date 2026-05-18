@@ -357,17 +357,22 @@ describe("Wave-34 BatchProgress — surfaces SERVER concurrency, not a stale cli
         imageCount={20}
         appCount={1}
         elapsedMs={500}
-        concurrency={12}
+        // Wave-35j: server default bumped 12 → 16 (memory bumped to
+        // 2 GB in vercel.json to fit 16 × ~80 MB workers safely).
+        concurrency={16}
       />,
     );
+    // Wave-35j: the verifying copy now also surfaces an
+    // "≈ X of N done" estimate (the X is time-dependent so we match
+    // a loose regex rather than a hardcoded count).
     expect(
-      screen.getByText(/Verifying 20 images \(12 in parallel\)/i),
+      screen.getByText(/Verifying 20 images \(16 in parallel\) — ≈ \d+ of 20 done/i),
     ).toBeInTheDocument();
     // The bogus "(concurrency 2)" copy must NOT appear.
     expect(screen.queryByText(/concurrency 2\)/i)).toBeNull();
   });
 
-  it("clamps concurrency to the batch size (3-item batch shows 'concurrency 3')", async () => {
+  it("clamps concurrency to the batch size (3-item batch shows '3 in parallel')", async () => {
     const { BatchProgress } = await import("@/app/components/BatchProgress");
     render(
       <BatchProgress
@@ -375,11 +380,11 @@ describe("Wave-34 BatchProgress — surfaces SERVER concurrency, not a stale cli
         imageCount={3}
         appCount={0}
         elapsedMs={500}
-        concurrency={12}
+        concurrency={16}
       />,
     );
     expect(
-      screen.getByText(/Verifying 3 images \(3 in parallel\)/i),
+      screen.getByText(/Verifying 3 images \(3 in parallel\) — ≈ \d+ of 3 done/i),
     ).toBeInTheDocument();
   });
 
@@ -393,11 +398,12 @@ describe("Wave-34 BatchProgress — surfaces SERVER concurrency, not a stale cli
         elapsedMs={500}
       />,
     );
-    // Default is 12 (matches the server's INLINE_CONCURRENCY_DEFAULT)
-    // so the copy still reads accurately when the server response
-    // didn't carry the value (e.g. legacy SSE path).
+    // Default is 16 (matches the server's INLINE_CONCURRENCY_DEFAULT
+    // since wave-35j, was 12 since wave-15b) so the copy still reads
+    // accurately when the server response didn't carry the value
+    // (e.g. legacy SSE path).
     expect(
-      screen.getByText(/Verifying 20 images \(12 in parallel\)/i),
+      screen.getByText(/Verifying 20 images \(16 in parallel\) — ≈ \d+ of 20 done/i),
     ).toBeInTheDocument();
   });
 
@@ -411,7 +417,7 @@ describe("Wave-34 BatchProgress — surfaces SERVER concurrency, not a stale cli
         imageCount={20}
         appCount={1}
         elapsedMs={500}
-        concurrency={12}
+        concurrency={16}
         onCancel={onCancel}
       />,
     );
