@@ -4,6 +4,73 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35g: API-route coverage expansion + README drift fix] — 2026-05-18
+
+Wave-35f closed the orchestrator / privacy-cap / vision-helper
+gaps. This follow-on closes the two largest remaining
+**route-level** coverage gaps — `/api/verify/batch` and
+`/api/verify` — and clears the last warning the drift detector
+was flagging.
+
+### NEW TESTS (+36 across 2 new files)
+
+- `src/tests/api-batch-pairing-branches.test.ts` — **17 tests**
+  for the previously-uncovered pairing branches of
+  `/api/verify/batch`: empty-manifest 400; malformed-manifest 400
+  (JSON + CSV parse failures); missing-Content-Length 411;
+  invalid-Content-Length 400; no-images 400; no-files 400; per-row
+  pairing errors (missing filename column, image not uploaded,
+  invalid declared fields); JSON manifest happy-path mode='manifest';
+  CSV manifest via csv-parse fallback; **inline-manifest CSV**
+  auto-detection (CSV + .csv extension fallback when MIME is
+  `application/octet-stream`); orphaned-manifest-row surfacing;
+  **auto-stem pairing** (image + same-stem JSON); **auto-broadcast**
+  (1 app + N unrelated-stem images); no-pairs 400 with diagnostic.
+- `src/tests/api-verify-error-branches.test.ts` — **19 tests** for
+  `/api/verify` error branches: JSON-body URL-fetch failures
+  (UrlFetchError status propagation + generic 502); JSON-body
+  declared schema 400; multipart `url` field path (4 sub-branches
+  covering missing/malformed/invalid-schema declared + UrlFetchError
+  + generic 502); PDF processing errors (encrypted → 415, empty →
+  400, render-failed → 500, generic → 500); runVerify error
+  branches (AbortError → 504 + `aborted: true`, non-abort → 500);
+  X-Request-Id echo on both success AND error responses; the
+  requiresHumanReview path still returns 200 (review-queue is
+  best-effort and must not turn a successful verify into a 500);
+  empty-body content-type fallback.
+
+### Coverage gains
+
+| Surface | Before wave-35g | After wave-35g |
+|---|---|---|
+| Statements (overall) | 84.35% | **89.55%** |
+| Functions (overall) | 93.91% | **94.67%** |
+| Branches (overall) | 83.88% | **85.25%** |
+| `/api/verify/batch/route.ts` | 31.9% | **75.4%** |
+| `/api/verify/route.ts` | 54.5% | **98.9%** |
+
+### Test count
+
+- **Before this wave**: 887 / 85 files (wave-35f).
+- **After**: **923 / 923** passing across **87** test files.
+- Net: **+36 tests, +2 test files.**
+
+### Drift fix
+
+The drift detector was flagging one remaining warning: the
+README's verified-state section didn't acknowledge wave-35f. Added
+a "Docs ↔ code drift" row to the verified-state table that
+captures the drift detector's intent (wave-35e) AND the gap-closing
+wave (wave-35f). Drift detector now exits 0/0/0.
+
+### Verified-state
+
+- 923 tests · TS strict clean · Lint clean · Production build
+  green · `npm run verify:claims` 0 errors / 0 warnings · all CI
+  gates green on `main`.
+
+---
+
 ## [Wave 35f: additional coverage expansion on top-priority gaps from the audit] — 2026-05-18
 
 Wave-35e shipped the drift detector + the highest-value coverage
