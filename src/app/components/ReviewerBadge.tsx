@@ -16,7 +16,8 @@ const STORAGE_KEY = "labelverify:reviewer";
  * `localStorage` and is included in:
  *   • JSON / CSV / PDF result exports
  *   • the `Audit detail` expandable on result cards
- *   • the (future) /api/queue/[id]/resolve `resolvedBy` field
+ *   • the /api/queue/[id]/resolve `resolvedBy` field (existing route;
+ *     consumer wiring still in progress)
  *
  * The badge is a header-level affordance (next to the theme + mode
  * toggles) so it's discoverable from any screen without cluttering

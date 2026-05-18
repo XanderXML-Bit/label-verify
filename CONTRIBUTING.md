@@ -14,7 +14,7 @@ cp .env.example .env.local
 # Fill in at least GOOGLE_API_KEY. OPENAI_API_KEY enables the fallback.
 npm install
 npm run dev          # → http://localhost:3000
-npm run test         # full vitest suite (~699 tests across 74 files, ~10 s)
+npm run test         # full vitest suite (~857 tests across 81 files, ~10 s)
 ```
 
 If `npm install` fails on Windows due to native module compile, you
@@ -115,7 +115,7 @@ Every PR must pass:
 ```bash
 npm run typecheck    # tsc --noEmit, zero output expected
 npm run lint         # next lint, only pre-existing warnings allowed
-npm run test         # full vitest suite (~699 tests across 74 files, ~10 s)
+npm run test         # full vitest suite (~857 tests across 81 files, ~10 s)
 ```
 
 The `bench:routine` script runs in a separate workflow on demand

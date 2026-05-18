@@ -7,7 +7,7 @@ Picks the extractor that ships in production. Four contenders (per
 |----|-----------|------------|
 | T1 | Tesseract OCR baseline | Pure-OCR text extraction + regex/heuristic field parsing. No network. The honest baseline. |
 | T4 | GPT-4o-mini Vision | Hosted VLM via `src/lib/vision/openai.ts`. Requires `OPENAI_API_KEY`. |
-| T6 | Gemini 2.0 Flash Vision | Hosted VLM via `src/lib/vision/gemini.ts`. Requires `GOOGLE_API_KEY`. |
+| T6 | Gemini 3.1 Flash Lite Vision (production primary since wave-27) | Hosted VLM via `src/lib/vision/gemini.ts`. Requires `GOOGLE_API_KEY`. |
 | C1 | OCR + Vision combined | T1 OCR text fed into the T6 prompt via `ExtractorContext.ocrText`. Requires `GOOGLE_API_KEY`. |
 
 Out-of-scope candidates (Tesseract+ML classifier, AWS Textract, Claude Vision,

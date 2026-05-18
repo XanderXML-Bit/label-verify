@@ -32,9 +32,10 @@ Per [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) §2, the full bake-of
 | T4 | GPT-4o-mini | OpenAI | $0.15 / $0.60 |
 | T4b | GPT-4o (full) | OpenAI | $2.50 / $10.00 |
 | T5b | Claude Haiku 4.5 | Anthropic | $1.00 / $5.00 |
-| T6 | Gemini 2.0 Flash | Google | $0.075 / $0.30 |
-| T6b | Gemini 2.5 Flash | Google | $0.075 / $0.30 |
-| T6c | Gemini 2.5 Pro | Google | $1.25 / $5.00 |
+| T6 | Gemini 3.1 Flash Lite (production primary since wave-27) | Google | $0.25 / $1.50 |
+| T6b | Gemini 2.5 Flash (default second-opinion since wave-22) | Google | $0.075 / $0.30 |
+| T6c | Gemini 3.1 Pro Preview | Google | $1.25 / $5.00 |
+| T6d | Gemini 2.5 Pro (legacy) | Google | $1.25 / $5.00 |
 | C1 | OCR + Vision (Gemini Flash) | local + Google | ≈ T6 |
 
 Run them all with:

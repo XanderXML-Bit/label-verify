@@ -137,10 +137,14 @@ export interface VerifyResponse {
    * Set when the orchestrator fired an independent second-opinion
    * vision call on a borderline Government Warning (primary returned
    * REVIEW, or primary returned PASS at low confidence without OCR
-   * corroboration). The second-opinion model is cross-provider
-   * (typically GPT-5.4-nano) so the reviewer sees what an independent
-   * read of the same label says. Surfaced in the UI under the GW
-   * subscore panel. Omitted on confident-PASS / clear-FAIL verifications.
+   * corroboration). The second-opinion model defaults to Gemini 2.5
+   * Flash since wave-22 (same provider as the primary Flash-Lite —
+   * the bake-off found same-provider was the best Pareto under
+   * the current operator constraints); operator can route to OpenAI
+   * via `SECOND_OPINION_PROVIDER=openai`. The actual model that ran
+   * is recorded in `secondOpinion.modelId`. Surfaced in the UI
+   * under the GW subscore panel. Omitted on confident-PASS /
+   * clear-FAIL verifications.
    */
   secondOpinion?: SecondOpinion;
 }

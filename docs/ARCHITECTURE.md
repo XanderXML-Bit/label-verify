@@ -38,7 +38,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 | Field matching | Hand-written comparators in `src/lib/matching/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
 | Government-Warning validation | `src/lib/validation/` | Four subscores: text exact match (string predicate), all-caps prefix (string predicate), bold prefix (classical CV stroke-width transform on OCR-anchored pixels), size threshold (bbox dimensions vs declared net contents). |
 | Schemas | **Zod** | All inbound JSON validated at the route boundary. Same schemas reused by the CLI. |
-| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 699 in-process tests across 74 files, Playwright for the 9 GUI E2E specs. |
+| Tests | **Vitest** (unit/integration) + **Playwright** (E2E) | Vitest for the 857 in-process tests across 81 files, Playwright for the 8 GUI E2E specs. |
 | Benchmarks | Custom harness in `benchmarks/` and `bin/labelverify-bench.ts` | The bake-off (`bench:bakeoff`) and the cross-pair benchmark (`bench:cross-pair`). |
 | Deploy | **Vercel** (Hobby plan) | Free, public URL, post-deploy smoke workflow validates `/api/health` on every push to `main`. |
 
@@ -83,7 +83,8 @@ End-to-end target: ≤ 5 s. Warm-function, single-image measurements:
 | OCR (`tesseract.js`, parallel with vision) | ~800 ms | up to 8 000 ms cap | Off the critical path unless OCR is bound to the GW validator's 8-s race. |
 | Field matchers + GW validator | < 50 ms | < 100 ms | Pure CPU. |
 | Independent second opinion (~5–15 % of calls) | + ~2 500 ms | + ~7 000 ms | Fires only on borderline GW outcomes. Gemini 2.5 Flash (wave 22) is ~2× the per-call latency of the previous gpt-5.4-nano second-opinion. |
-| **Total (happy path)** | **~3.0 s** | **~4.1 s** | Critical path; second-opinion path adds ~2.5 s on the ~5–10 % of calls that fire it. |
+| **Server total (happy path)** | **~3.0 s** | **~4.1 s** | Server-side `result.timings.total`; second-opinion path adds ~2.5 s on the ~5–10 % of calls that fire it. |
+| **Client-perceived end-to-end** (wave-35c Playwright measurement) | **~4.9–5.0 s warm** | **~7–8 s cold** | What the user actually waits. Adds client-side JPEG compression, network round-trip, JSON parse, and React render on top of the server total. Cold-start tax (Vercel function spin-up + first Gemini connection handshake) is the dominant adder on the first verify after page load. The result panel surfaces both numbers — `Verified in 5.0 s (server 4.5 s)` — so the gap is always visible. |
 
 Cold start adds ~500–1 500 ms on the first request after idle. The `/api/warmup` route pre-warms `sharp`, the Tesseract worker, and the Gemini SDK; it is fired on page load.
 
@@ -102,7 +103,7 @@ Mitigations the orchestrator applies:
 3. **Content-based fallback** — for anything still unpaired, the route parses each unpaired application file's brand + class + ABV and runs a lightweight vision extraction on each unpaired image; greedy-matches by weighted similarity (brand 0.65, class 0.25, ABV 0.10) with a 0.55 threshold.
 4. **Single-application broadcast** — when ≥ 2 unpaired images remain alongside exactly 1 unpaired single-product application file, the parsed fields broadcast to every image with a warning surfaced for operator review.
 
-Per-pair verification runs inline in the POST handler with `CONCURRENCY = 2`. The response includes pairing metadata (`pairing.mode`, `pairing.pairs[]`, `pairing.unpairedImages[]`, `pairing.unpairedApplications[]`), per-row results, and an aggregate summary. The Vercel Hobby plan caps function duration at 60 s, which sets the practical interactive batch ceiling (~30 images per submit at the measured per-call latency).
+Per-pair verification runs inline in the POST handler with `INLINE_BATCH_CONCURRENCY = 12` by default (wave-15b; env-overridable, clamped to the batch size). The response includes pairing metadata (`pairing.mode`, `pairing.pairs[]`, `pairing.unpairedImages[]`, `pairing.unpairedApplications[]`), per-row results, an aggregate summary, and the effective `concurrency` value so the UI's progress bar can label "Verifying N images (M in parallel)" against the server-reported truth. The Vercel Hobby plan caps function duration at 60 s, which sets the practical interactive batch ceiling (~100 images per submit at the measured per-call latency).
 
 An SSE batch endpoint (`/api/verify/batch/[id]/stream`) exists for local-dev use where the in-process batch-store is shared across the POST and GET function invocations. In production (Vercel serverless), the POST handler returns terminal results inline and the UI's `BatchView` skips the SSE entirely — this avoids the instance-isolation race that would otherwise 404 the GET hop.
 

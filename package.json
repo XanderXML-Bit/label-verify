@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "test": "vitest run",
+    "verify:claims": "tsx bin/verify-claims.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "bench": "tsx benchmarks/run.ts",

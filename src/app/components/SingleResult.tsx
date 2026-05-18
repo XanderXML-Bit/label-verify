@@ -304,10 +304,15 @@ export function SingleResult({
             </div>
             {/* Second-opinion panel — fires only on borderline Gov-Warning
                 cases (REVIEW or no-OCR low-confidence PASS). An independent
-                cross-provider vision call (GPT-5.4-nano) re-reads the
-                label so the human reviewer sees what a different model
-                says. Agreement = strong signal; disagreement = explicit
-                "two models disagree, you decide" framing. */}
+                second-opinion vision call (default Gemini 2.5 Flash since
+                wave-22; operator-overridable to OpenAI via
+                SECOND_OPINION_PROVIDER=openai) re-reads the label so the
+                human reviewer sees what a different model says. The
+                actual model that ran is rendered below from
+                `result.secondOpinion.modelId` — this comment documents
+                the default; the panel surfaces the truth. Agreement =
+                strong signal; disagreement = explicit "two models
+                disagree, you decide" framing. */}
             {result.secondOpinion && (
               <div
                 role="region"
