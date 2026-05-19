@@ -1,0 +1,2757 @@
+{
+  "runAt": "2026-05-19T22:29:03.103Z",
+  "mode": "routine",
+  "corpusRoot": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined",
+  "techniques": [
+    {
+      "id": "T6",
+      "skipped": null,
+      "outcomes": [
+        {
+          "imageId": "syn-beer-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "class_type",
+          "correct": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        }
+      ],
+      "warningOutcomes": [
+        {
+          "imageId": "syn-beer-0001",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "truthCompliant": true,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "truthCompliant": true,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        }
+      ],
+      "trials": [
+        {
+          "imageId": "syn-beer-0001",
+          "trial": 0,
+          "latencyMs": 2545.1777,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 430,
+            "costUsd": 0.00025469999999999996
+          }
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "trial": 0,
+          "latencyMs": 2220.5605,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 424,
+            "costUsd": 0.0002529
+          }
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "trial": 0,
+          "latencyMs": 2221.661399999999,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 435,
+            "costUsd": 0.0002562
+          }
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "trial": 0,
+          "latencyMs": 1738.3738999999987,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 285,
+            "costUsd": 0.00021119999999999998
+          }
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "trial": 0,
+          "latencyMs": 2388.1826,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 431,
+            "costUsd": 0.000255
+          }
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "trial": 0,
+          "latencyMs": 2332.836300000001,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 430,
+            "costUsd": 0.00025469999999999996
+          }
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "trial": 0,
+          "latencyMs": 2146.8212999999996,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 431,
+            "costUsd": 0.000255
+          }
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "trial": 0,
+          "latencyMs": 2692.1072999999997,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 434,
+            "costUsd": 0.0002559
+          }
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "trial": 0,
+          "latencyMs": 2142.3624999999993,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 447,
+            "costUsd": 0.0002598
+          }
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "trial": 0,
+          "latencyMs": 3655.8348000000005,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1722,
+            "outputTokens": 434,
+            "costUsd": 0.00025935
+          }
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "trial": 0,
+          "latencyMs": 1915.2603000000017,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 433,
+            "costUsd": 0.0002556
+          }
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "trial": 0,
+          "latencyMs": 2564.941600000002,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 431,
+            "costUsd": 0.000255
+          }
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "trial": 0,
+          "latencyMs": 1989.0632000000041,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1714,
+            "outputTokens": 429,
+            "costUsd": 0.00025725
+          }
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "trial": 0,
+          "latencyMs": 2157.1938999999984,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 431,
+            "costUsd": 0.000255
+          }
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "trial": 0,
+          "latencyMs": 2085.126099999994,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 431,
+            "costUsd": 0.000255
+          }
+        }
+      ]
+    },
+    {
+      "id": "T13",
+      "skipped": null,
+      "outcomes": [
+        {
+          "imageId": "syn-beer-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0001",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "class_type",
+          "correct": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "field": "government_warning",
+          "correct": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "brand_name",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "class_type",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "abv_percent",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "net_contents",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "country_of_origin",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "producer",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "field": "government_warning",
+          "correct": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        }
+      ],
+      "warningOutcomes": [
+        {
+          "imageId": "syn-beer-0001",
+          "truthCompliant": true,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "truthCompliant": false,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "fortified_wine",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "truthCompliant": true,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "perspective"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "truthCompliant": true,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "lowlight"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "truthCompliant": true,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "occlusion"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "truthCompliant": false,
+          "predictedPass": false,
+          "strata": {
+            "beverage_type": "beer",
+            "condition": "curved"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "truthCompliant": true,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "spirits",
+            "condition": "clean"
+          },
+          "ood": false
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "truthCompliant": true,
+          "predictedPass": true,
+          "strata": {
+            "beverage_type": "wine",
+            "condition": "clean"
+          },
+          "ood": false
+        }
+      ],
+      "trials": [
+        {
+          "imageId": "syn-beer-0001",
+          "trial": 0,
+          "latencyMs": 8464.429100000001,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 430,
+            "costUsd": 0.00025469999999999996
+          }
+        },
+        {
+          "imageId": "syn-wine-0002",
+          "trial": 0,
+          "latencyMs": 7599.195500000002,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 430,
+            "costUsd": 0.00025469999999999996
+          }
+        },
+        {
+          "imageId": "syn-spirits-0001",
+          "trial": 0,
+          "latencyMs": 9607.255299999997,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 436,
+            "costUsd": 0.0002565
+          }
+        },
+        {
+          "imageId": "syn-beer-0019",
+          "trial": 0,
+          "latencyMs": 7757.944800000012,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 287,
+            "costUsd": 0.0002118
+          }
+        },
+        {
+          "imageId": "syn-beer-0007",
+          "trial": 0,
+          "latencyMs": 9378.009399999995,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 433,
+            "costUsd": 0.0002556
+          }
+        },
+        {
+          "imageId": "syn-spirits-0010",
+          "trial": 0,
+          "latencyMs": 9210.050899999987,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 433,
+            "costUsd": 0.0002556
+          }
+        },
+        {
+          "imageId": "syn-beer-0014",
+          "trial": 0,
+          "latencyMs": 8713.352400000003,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 431,
+            "costUsd": 0.000255
+          }
+        },
+        {
+          "imageId": "syn-beer-0017",
+          "trial": 0,
+          "latencyMs": 10766.118399999992,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 435,
+            "costUsd": 0.0002562
+          }
+        },
+        {
+          "imageId": "syn-fortified_wine-0006",
+          "trial": 0,
+          "latencyMs": 11004.4755,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 447,
+            "costUsd": 0.0002598
+          }
+        },
+        {
+          "imageId": "deg-beer-0002",
+          "trial": 0,
+          "latencyMs": 7997.232700000008,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1722,
+            "outputTokens": 437,
+            "costUsd": 0.00026024999999999996
+          }
+        },
+        {
+          "imageId": "deg-wine-0002",
+          "trial": 0,
+          "latencyMs": 9124.57740000001,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 434,
+            "costUsd": 0.0002559
+          }
+        },
+        {
+          "imageId": "deg-beer-0001",
+          "trial": 0,
+          "latencyMs": 9114.660799999983,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 396,
+            "costUsd": 0.0002445
+          }
+        },
+        {
+          "imageId": "deg-beer-0013",
+          "trial": 0,
+          "latencyMs": 9148.847600000008,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1714,
+            "outputTokens": 431,
+            "costUsd": 0.00025785
+          }
+        },
+        {
+          "imageId": "syn-spirits-0007",
+          "trial": 0,
+          "latencyMs": 7505.891000000003,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 431,
+            "costUsd": 0.000255
+          }
+        },
+        {
+          "imageId": "syn-wine-0001",
+          "trial": 0,
+          "latencyMs": 9382.189700000017,
+          "ok": true,
+          "cost": {
+            "inputTokens": 1676,
+            "outputTokens": 435,
+            "costUsd": 0.0002562
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1888 @@
+{
+  "summary": {
+    "corpus": "test-data-combined",
+    "runAt": "2026-05-19T22:35:03.731Z",
+    "images": 30,
+    "tasks": 60,
+    "completed": 60,
+    "errors": 0,
+    "passRateOnCorrect": 0.7666666666666667,
+    "failOrReviewRateOnWrong": 1,
+    "latencyMs": {
+      "p50_total": 3707,
+      "p95_total": 13515,
+      "p50_vision": 2558,
+      "p95_vision": 3453
+    },
+    "byCase": {
+      "C0": {
+        "passRateOnCorrect": 0.6666666666666666,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 18,
+        "n_wrong": 18
+      },
+      "X1_MISSING_WARNING": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 2,
+        "n_wrong": 2
+      },
+      "C1_PREFIX_TITLE_CASE": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      },
+      "T2_PREFIX_LOWERCASE": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 2,
+        "n_wrong": 2
+      },
+      "X3_WRONG_LANGUAGE": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      },
+      "Q2_GLARE_WARNING": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      },
+      "Q3_PARTIAL_OCCLUSION": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      },
+      "Q4_BLUR_LOW_LIGHT": {
+        "passRateOnCorrect": 0,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      },
+      "T1_PREFIX_TITLE_CASE": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      },
+      "Q5_STAIN": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      },
+      "Q4_LOW_LIGHT": {
+        "passRateOnCorrect": 1,
+        "failOrReviewRateOnWrong": 1,
+        "n_correct": 1,
+        "n_wrong": 1
+      }
+    }
+  },
+  "records": [
+    {
+      "image": "ai-label-0001.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 343,
+        "ocr": 1743,
+        "vision": 3098,
+        "matching": 317,
+        "total": 3759
+      },
+      "elapsedMs": 3766,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Northstar Trading",
+        "class_type": "Porter",
+        "class_category": "beer",
+        "abv_percent": 7.2,
+        "net_contents": {
+          "value": 24,
+          "unit": "fl_oz"
+        },
+        "producer": "Mill Creek Beverage Co., Asheville, NC",
+        "country_of_origin": "France"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0001.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0001.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 399,
+        "ocr": 3364,
+        "vision": 3329,
+        "matching": 385,
+        "total": 4114
+      },
+      "elapsedMs": 4119,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Mill Creek",
+        "class_type": "Pilsner",
+        "class_category": "beer",
+        "abv_percent": 5.2,
+        "net_contents": {
+          "value": 12,
+          "unit": "fl_oz"
+        },
+        "producer": "Mill Creek Beverage Co., Asheville, NC",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0001.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0002.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 374,
+        "ocr": 1656,
+        "vision": 2497,
+        "matching": 366,
+        "total": 3237
+      },
+      "elapsedMs": 3242,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Vespera",
+        "class_type": "Chardonnay",
+        "class_category": "wine",
+        "abv_percent": 13.2,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Vespera Beverage Co., Santa Rosa, CA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0002.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0002.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 335,
+        "ocr": 3056,
+        "vision": 2530,
+        "matching": 888,
+        "total": 3753
+      },
+      "elapsedMs": 3755,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Bramble & Vine",
+        "class_type": "Riesling",
+        "class_category": "wine",
+        "abv_percent": 15.2,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Vespera Beverage Co., Santa Rosa, CA",
+        "country_of_origin": "Scotland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0002.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0003.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 309,
+        "ocr": 1703,
+        "vision": 2586,
+        "matching": 325,
+        "total": 3220
+      },
+      "elapsedMs": 3223,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Six Foxes",
+        "class_type": "Bourbon Whiskey",
+        "class_category": "distilled_spirits",
+        "abv_percent": 45,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Six Foxes Beverage Co., Lexington, KY",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0003.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0003.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 321,
+        "ocr": 2291,
+        "vision": 2431,
+        "matching": 312,
+        "total": 3064
+      },
+      "elapsedMs": 3066,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Iron Harbor",
+        "class_type": "Vodka",
+        "class_category": "distilled_spirits",
+        "abv_percent": 47,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Six Foxes Beverage Co., Lexington, KY",
+        "country_of_origin": "Italy"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0003.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0004.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 314,
+        "ocr": 3671,
+        "vision": 2635,
+        "matching": 1037,
+        "total": 13515
+      },
+      "elapsedMs": 13518,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Hibiscus + Salt",
+        "class_type": "Vodka Soda",
+        "class_category": "beer",
+        "abv_percent": 5,
+        "net_contents": {
+          "value": 355,
+          "unit": "ml"
+        },
+        "producer": "Hibiscus Salt Beverage Co., Portland, ME",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0004.json",
+      "actual": "review",
+      "imageQuality": "good",
+      "bucket": "review-on-correct"
+    },
+    {
+      "image": "ai-label-0004.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 308,
+        "ocr": 6657,
+        "vision": 2190,
+        "matching": 4467,
+        "total": 15879
+      },
+      "elapsedMs": 15882,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Crowfoot Reserve",
+        "class_type": "Pilsner",
+        "class_category": "beer",
+        "abv_percent": 7,
+        "net_contents": {
+          "value": 710,
+          "unit": "ml"
+        },
+        "producer": "Hibiscus Salt Beverage Co., Portland, ME",
+        "country_of_origin": "Japan"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0004.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0005.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 270,
+        "ocr": 1742,
+        "vision": 2515,
+        "matching": 2,
+        "total": 12455
+      },
+      "elapsedMs": 12458,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Marbled Hills",
+        "class_type": "Pinot Noir",
+        "class_category": "wine",
+        "abv_percent": 14.1,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Marbled Hills Beverage Co., Walla Walla, WA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0005.json",
+      "actual": "review",
+      "imageQuality": "good",
+      "bucket": "review-on-correct"
+    },
+    {
+      "image": "ai-label-0005.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 275,
+        "ocr": 1881,
+        "vision": 2120,
+        "matching": 1,
+        "total": 11895
+      },
+      "elapsedMs": 11898,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Iron Harbor",
+        "class_type": "Riesling",
+        "class_category": "wine",
+        "abv_percent": 16.1,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Marbled Hills Beverage Co., Walla Walla, WA",
+        "country_of_origin": "Scotland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0005.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0006.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 274,
+        "ocr": 1246,
+        "vision": 2774,
+        "matching": 314,
+        "total": 3362
+      },
+      "elapsedMs": 3364,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Cold Iron",
+        "class_type": "Amber Ale",
+        "class_category": "beer",
+        "abv_percent": 7.2,
+        "net_contents": {
+          "value": 500,
+          "unit": "ml"
+        },
+        "producer": "Cold Iron Beverage Co., Lexington, KY",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0006.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0006.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 315,
+        "ocr": 1279,
+        "vision": 2188,
+        "matching": 260,
+        "total": 2763
+      },
+      "elapsedMs": 2766,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Saltwood Mill",
+        "class_type": "Stout",
+        "class_category": "beer",
+        "abv_percent": 9.2,
+        "net_contents": {
+          "value": 1000,
+          "unit": "ml"
+        },
+        "producer": "Cold Iron Beverage Co., Lexington, KY",
+        "country_of_origin": "Mexico"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0006.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0007.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 257,
+        "ocr": 2112,
+        "vision": 3101,
+        "matching": 1,
+        "total": 10868
+      },
+      "elapsedMs": 10870,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Solano Reach",
+        "class_type": "Tequila Blanco",
+        "class_category": "distilled_spirits",
+        "abv_percent": 40,
+        "net_contents": {
+          "value": 700,
+          "unit": "ml"
+        },
+        "producer": "Solano Reach Beverage Co., San Antonio, TX",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0007.json",
+      "actual": "review",
+      "imageQuality": "good",
+      "bucket": "review-on-correct"
+    },
+    {
+      "image": "ai-label-0007.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 253,
+        "ocr": 1733,
+        "vision": 2222,
+        "matching": 1,
+        "total": 9359
+      },
+      "elapsedMs": 9361,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Northstar Trading",
+        "class_type": "Gin",
+        "class_category": "distilled_spirits",
+        "abv_percent": 42,
+        "net_contents": {
+          "value": 1400,
+          "unit": "ml"
+        },
+        "producer": "Solano Reach Beverage Co., San Antonio, TX",
+        "country_of_origin": "Mexico"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0007.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0008.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 262,
+        "ocr": 1774,
+        "vision": 2747,
+        "matching": 1,
+        "total": 11876
+      },
+      "elapsedMs": 11879,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Stone's Throw",
+        "class_type": "Porter",
+        "class_category": "beer",
+        "abv_percent": 5.8,
+        "net_contents": {
+          "value": 355,
+          "unit": "ml"
+        },
+        "producer": "Stones Throw Beverage Co., Asheville, NC",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0008.json",
+      "actual": "review",
+      "imageQuality": "good",
+      "bucket": "review-on-correct"
+    },
+    {
+      "image": "ai-label-0008.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 281,
+        "ocr": 2944,
+        "vision": 2168,
+        "matching": 776,
+        "total": 11896
+      },
+      "elapsedMs": 11898,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Crowfoot Reserve",
+        "class_type": "IPA",
+        "class_category": "beer",
+        "abv_percent": 7.8,
+        "net_contents": {
+          "value": 710,
+          "unit": "ml"
+        },
+        "producer": "Stones Throw Beverage Co., Asheville, NC",
+        "country_of_origin": "France"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0008.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0009.jpg",
+      "condition": "correct",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 274,
+        "ocr": 931,
+        "vision": 2529,
+        "matching": 1,
+        "total": 2804
+      },
+      "elapsedMs": 2806,
+      "govWarningCase": "X1_MISSING_WARNING",
+      "declared": {
+        "brand_name": "Cote du Soir",
+        "class_type": "Rose",
+        "class_category": "wine",
+        "abv_percent": 12.6,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Cote du Soir Beverage Co., Sonoma, CA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0009.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-fail"
+    },
+    {
+      "image": "ai-label-0009.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 312,
+        "ocr": 1233,
+        "vision": 2397,
+        "matching": 0,
+        "total": 2709
+      },
+      "elapsedMs": 2712,
+      "govWarningCase": "X1_MISSING_WARNING",
+      "declared": {
+        "brand_name": "Iron Harbor",
+        "class_type": "Pinot Noir",
+        "class_category": "wine",
+        "abv_percent": 14.6,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Cote du Soir Beverage Co., Sonoma, CA",
+        "country_of_origin": "Scotland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0009.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0010.jpg",
+      "condition": "correct",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 281,
+        "ocr": 1535,
+        "vision": 2373,
+        "matching": 327,
+        "total": 2982
+      },
+      "elapsedMs": 2984,
+      "govWarningCase": "C1_PREFIX_TITLE_CASE",
+      "declared": {
+        "brand_name": "Mercer's Reserve",
+        "class_type": "Vodka",
+        "class_category": "distilled_spirits",
+        "abv_percent": 40,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Mercers Reserve Beverage Co., Denver, CO",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0010.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-fail"
+    },
+    {
+      "image": "ai-label-0010.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 298,
+        "ocr": 2815,
+        "vision": 2651,
+        "matching": 494,
+        "total": 3443
+      },
+      "elapsedMs": 3445,
+      "govWarningCase": "C1_PREFIX_TITLE_CASE",
+      "declared": {
+        "brand_name": "Iron Harbor",
+        "class_type": "Whisky",
+        "class_category": "distilled_spirits",
+        "abv_percent": 42,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Mercers Reserve Beverage Co., Denver, CO",
+        "country_of_origin": "France"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0010.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0011.jpg",
+      "condition": "correct",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 286,
+        "ocr": 2197,
+        "vision": 2558,
+        "matching": 0,
+        "total": 2844
+      },
+      "elapsedMs": 2847,
+      "govWarningCase": "T2_PREFIX_LOWERCASE",
+      "declared": {
+        "brand_name": "Tin Roof",
+        "class_type": "Saison",
+        "class_category": "beer",
+        "abv_percent": 6.1,
+        "net_contents": {
+          "value": 500,
+          "unit": "ml"
+        },
+        "producer": "Tin Roof Beverage Co., Burlington, VT",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0011.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-fail"
+    },
+    {
+      "image": "ai-label-0011.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 294,
+        "ocr": 3262,
+        "vision": 2245,
+        "matching": 1017,
+        "total": 3556
+      },
+      "elapsedMs": 3558,
+      "govWarningCase": "T2_PREFIX_LOWERCASE",
+      "declared": {
+        "brand_name": "Crowfoot Reserve",
+        "class_type": "Stout",
+        "class_category": "beer",
+        "abv_percent": 8.1,
+        "net_contents": {
+          "value": 1000,
+          "unit": "ml"
+        },
+        "producer": "Tin Roof Beverage Co., Burlington, VT",
+        "country_of_origin": "Ireland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0011.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0012.jpg",
+      "condition": "correct",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 320,
+        "ocr": 2488,
+        "vision": 2771,
+        "matching": 1,
+        "total": 3092
+      },
+      "elapsedMs": 3095,
+      "govWarningCase": "X3_WRONG_LANGUAGE",
+      "declared": {
+        "brand_name": "Solstice Vermouth",
+        "class_type": "Vermouth",
+        "class_category": "fortified_wine",
+        "abv_percent": 18,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Solstice Beverage Co., Walla Walla, WA",
+        "country_of_origin": "USA"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0012.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-fail"
+    },
+    {
+      "image": "ai-label-0012.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 292,
+        "ocr": 2520,
+        "vision": 2160,
+        "matching": 361,
+        "total": 2813
+      },
+      "elapsedMs": 2815,
+      "govWarningCase": "X3_WRONG_LANGUAGE",
+      "declared": {
+        "brand_name": "Northstar Trading",
+        "class_type": "Madeira",
+        "class_category": "fortified_wine",
+        "abv_percent": 20,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Solstice Beverage Co., Walla Walla, WA",
+        "country_of_origin": "Italy"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0012.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0013.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 284,
+        "ocr": 2063,
+        "vision": 3541,
+        "matching": 278,
+        "total": 4103
+      },
+      "elapsedMs": 4106,
+      "govWarningCase": "Q2_GLARE_WARNING",
+      "declared": {
+        "brand_name": "Five Sisters",
+        "class_type": "Riesling",
+        "class_category": "wine",
+        "abv_percent": 11.8,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Five Sisters Beverage Co., Traverse City, MI",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0013.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0013.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 277,
+        "ocr": 1867,
+        "vision": 2330,
+        "matching": 474,
+        "total": 3080
+      },
+      "elapsedMs": 3084,
+      "govWarningCase": "Q2_GLARE_WARNING",
+      "declared": {
+        "brand_name": "Crowfoot Reserve",
+        "class_type": "Chardonnay",
+        "class_category": "wine",
+        "abv_percent": 13.8,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Five Sisters Beverage Co., Traverse City, MI",
+        "country_of_origin": "Germany"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0013.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0014.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 279,
+        "ocr": 1136,
+        "vision": 2633,
+        "matching": 371,
+        "total": 3283
+      },
+      "elapsedMs": 3468,
+      "govWarningCase": "Q3_PARTIAL_OCCLUSION",
+      "declared": {
+        "brand_name": "Latitude Seven",
+        "class_type": "Hazy IPA",
+        "class_category": "beer",
+        "abv_percent": 6.8,
+        "net_contents": {
+          "value": 16,
+          "unit": "fl_oz"
+        },
+        "producer": "Latitude Seven Beverage Co., 320 In, Denver, CO",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0014.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0014.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 293,
+        "ocr": 2319,
+        "vision": 2956,
+        "matching": 435,
+        "total": 3685
+      },
+      "elapsedMs": 3686,
+      "govWarningCase": "Q3_PARTIAL_OCCLUSION",
+      "declared": {
+        "brand_name": "Copperline",
+        "class_type": "Pilsner",
+        "class_category": "beer",
+        "abv_percent": 8.8,
+        "net_contents": {
+          "value": 32,
+          "unit": "fl_oz"
+        },
+        "producer": "Latitude Seven Beverage Co., 320 In, Denver, CO",
+        "country_of_origin": "France"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0014.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0015.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 234,
+        "ocr": 2896,
+        "vision": 2303,
+        "matching": 754,
+        "total": 11147
+      },
+      "elapsedMs": 11150,
+      "govWarningCase": "Q4_BLUR_LOW_LIGHT",
+      "declared": {
+        "brand_name": "Crowfoot Reserve",
+        "class_type": "Gin",
+        "class_category": "distilled_spirits",
+        "abv_percent": 52,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Northmast Beverage Co., Portland, ME",
+        "country_of_origin": "Germany"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0015.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0015.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 263,
+        "ocr": 1710,
+        "vision": 2542,
+        "matching": 161,
+        "total": 12019
+      },
+      "elapsedMs": 12021,
+      "govWarningCase": "Q4_BLUR_LOW_LIGHT",
+      "declared": {
+        "brand_name": "Northmast",
+        "class_type": "Rye Whiskey",
+        "class_category": "distilled_spirits",
+        "abv_percent": 50,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Northmast Beverage Co., Portland, ME",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0015.json",
+      "actual": "review",
+      "imageQuality": "good",
+      "bucket": "review-on-correct"
+    },
+    {
+      "image": "ai-label-0016.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 225,
+        "ocr": 2250,
+        "vision": 3106,
+        "matching": 242,
+        "total": 14706
+      },
+      "elapsedMs": 14709,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Black Cardamom",
+        "class_type": "Mezcal",
+        "class_category": "distilled_spirits",
+        "abv_percent": 36,
+        "net_contents": {
+          "value": 50,
+          "unit": "ml"
+        },
+        "producer": "Black Cardamom Beverage Co., Walla Walla, WA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0016.json",
+      "actual": "review",
+      "imageQuality": "good",
+      "bucket": "review-on-correct"
+    },
+    {
+      "image": "ai-label-0016.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 249,
+        "ocr": 4026,
+        "vision": 2631,
+        "matching": 1657,
+        "total": 14787
+      },
+      "elapsedMs": 14789,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Iron Harbor",
+        "class_type": "Vodka",
+        "class_category": "distilled_spirits",
+        "abv_percent": 38,
+        "net_contents": {
+          "value": 100,
+          "unit": "ml"
+        },
+        "producer": "Black Cardamom Beverage Co., Walla Walla, WA",
+        "country_of_origin": "France"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0016.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0017.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 273,
+        "ocr": 1602,
+        "vision": 2790,
+        "matching": 286,
+        "total": 3349
+      },
+      "elapsedMs": 3350,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Otter Bay",
+        "class_type": "Pale Ale",
+        "class_category": "beer",
+        "abv_percent": 5.6,
+        "net_contents": {
+          "value": 12,
+          "unit": "fl_oz"
+        },
+        "producer": "Otter Bay Beverage Co., Portland, ME",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0017.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0017.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 323,
+        "ocr": 2906,
+        "vision": 2473,
+        "matching": 714,
+        "total": 3510
+      },
+      "elapsedMs": 3511,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Crowfoot Reserve",
+        "class_type": "IPA",
+        "class_category": "beer",
+        "abv_percent": 7.6,
+        "net_contents": {
+          "value": 24,
+          "unit": "fl_oz"
+        },
+        "producer": "Otter Bay Beverage Co., Portland, ME",
+        "country_of_origin": "Mexico"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0017.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0018.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 373,
+        "ocr": 1574,
+        "vision": 2739,
+        "matching": 230,
+        "total": 3343
+      },
+      "elapsedMs": 3345,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Roan & Stone",
+        "class_type": "Merlot",
+        "class_category": "wine",
+        "abv_percent": 13.8,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Roan and Stone Beverage Co., Santa Rosa, CA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0018.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0018.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 416,
+        "ocr": 2186,
+        "vision": 2220,
+        "matching": 304,
+        "total": 2941
+      },
+      "elapsedMs": 2943,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Northstar Trading",
+        "class_type": "Cabernet Sauvignon",
+        "class_category": "wine",
+        "abv_percent": 15.8,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Roan and Stone Beverage Co., Santa Rosa, CA",
+        "country_of_origin": "Italy"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0018.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0019.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 309,
+        "ocr": 2422,
+        "vision": 3428,
+        "matching": 285,
+        "total": 4022
+      },
+      "elapsedMs": 4024,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Saltwood Mill",
+        "class_type": "Gin",
+        "class_category": "distilled_spirits",
+        "abv_percent": 44,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Ashby Drake Beverage Co., Denver, CO",
+        "country_of_origin": "Ireland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0019.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0019.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 331,
+        "ocr": 1388,
+        "vision": 3711,
+        "matching": 506,
+        "total": 4549
+      },
+      "elapsedMs": 4551,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Ashby & Drake",
+        "class_type": "London Dry Gin",
+        "class_category": "distilled_spirits",
+        "abv_percent": 42,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Ashby Drake Beverage Co., Denver, CO",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0019.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0020.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 339,
+        "ocr": 2144,
+        "vision": 3124,
+        "matching": 363,
+        "total": 3826
+      },
+      "elapsedMs": 4057,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Garden Highball",
+        "class_type": "Vodka Soda",
+        "class_category": "beer",
+        "abv_percent": 4.8,
+        "net_contents": {
+          "value": 355,
+          "unit": "ml"
+        },
+        "producer": "Garden Highball Beverage Co., Burlington, VT",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0020.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0020.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 353,
+        "ocr": 4391,
+        "vision": 3453,
+        "matching": 1272,
+        "total": 5078
+      },
+      "elapsedMs": 5081,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Saltwood Mill",
+        "class_type": "Pilsner",
+        "class_category": "beer",
+        "abv_percent": 6.8,
+        "net_contents": {
+          "value": 710,
+          "unit": "ml"
+        },
+        "producer": "Garden Highball Beverage Co., Burlington, VT",
+        "country_of_origin": "Scotland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0020.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0021.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 325,
+        "ocr": 1987,
+        "vision": 2663,
+        "matching": 200,
+        "total": 3188
+      },
+      "elapsedMs": 3190,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Saltwood",
+        "class_type": "Cabernet Sauvignon",
+        "class_category": "wine",
+        "abv_percent": 14,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Saltwood Beverage Co., Traverse City, MI",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0021.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0021.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 313,
+        "ocr": 2159,
+        "vision": 2184,
+        "matching": 214,
+        "total": 2711
+      },
+      "elapsedMs": 2721,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Northstar Trading",
+        "class_type": "Chardonnay",
+        "class_category": "wine",
+        "abv_percent": 16,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Saltwood Beverage Co., Traverse City, MI",
+        "country_of_origin": "Italy"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0021.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0022.jpg",
+      "condition": "correct",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 403,
+        "ocr": 4819,
+        "vision": 2494,
+        "matching": 2324,
+        "total": 5222
+      },
+      "elapsedMs": 5224,
+      "govWarningCase": "X1_MISSING_WARNING",
+      "declared": {
+        "brand_name": "Half-Note",
+        "class_type": "Porter",
+        "class_category": "beer",
+        "abv_percent": 6.3,
+        "net_contents": {
+          "value": 12,
+          "unit": "fl_oz"
+        },
+        "producer": "Half Note Beverage Co., Asheville, NC",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0022.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-fail"
+    },
+    {
+      "image": "ai-label-0022.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 422,
+        "ocr": 8793,
+        "vision": 1868,
+        "matching": 6926,
+        "total": 9215
+      },
+      "elapsedMs": 9217,
+      "govWarningCase": "X1_MISSING_WARNING",
+      "declared": {
+        "brand_name": "Saltwood Mill",
+        "class_type": "Hefeweizen",
+        "class_category": "beer",
+        "abv_percent": 8.3,
+        "net_contents": {
+          "value": 24,
+          "unit": "fl_oz"
+        },
+        "producer": "Half Note Beverage Co., Asheville, NC",
+        "country_of_origin": "Italy"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0022.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0023.jpg",
+      "condition": "correct",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 368,
+        "ocr": 6739,
+        "vision": 3058,
+        "matching": 4069,
+        "total": 7496
+      },
+      "elapsedMs": 7499,
+      "govWarningCase": "T1_PREFIX_TITLE_CASE",
+      "declared": {
+        "brand_name": "Marrow & Bone",
+        "class_type": "Aged Rum",
+        "class_category": "distilled_spirits",
+        "abv_percent": 43.5,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Marrow Bone Beverage Co., New Orleans, LA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0023.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-fail"
+    },
+    {
+      "image": "ai-label-0023.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 339,
+        "ocr": 4359,
+        "vision": 2393,
+        "matching": 2336,
+        "total": 5068
+      },
+      "elapsedMs": 5070,
+      "govWarningCase": "T1_PREFIX_TITLE_CASE",
+      "declared": {
+        "brand_name": "Copperline",
+        "class_type": "Vodka",
+        "class_category": "distilled_spirits",
+        "abv_percent": 45.5,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Marrow Bone Beverage Co., New Orleans, LA",
+        "country_of_origin": "Japan"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0023.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0024.jpg",
+      "condition": "correct",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 318,
+        "ocr": 3384,
+        "vision": 2586,
+        "matching": 1109,
+        "total": 4013
+      },
+      "elapsedMs": 4014,
+      "govWarningCase": "T2_PREFIX_LOWERCASE",
+      "declared": {
+        "brand_name": "Quiet Bear",
+        "class_type": "Wheat Beer",
+        "class_category": "beer",
+        "abv_percent": 4.9,
+        "net_contents": {
+          "value": 12,
+          "unit": "fl_oz"
+        },
+        "producer": "Quiet Bear Beverage Co., 85 Meadow Lane, Asheville, NC 28801",
+        "country_of_origin": "USA"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0024.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-fail"
+    },
+    {
+      "image": "ai-label-0024.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 303,
+        "ocr": 2651,
+        "vision": 2757,
+        "matching": 309,
+        "total": 3369
+      },
+      "elapsedMs": 3371,
+      "govWarningCase": "T2_PREFIX_LOWERCASE",
+      "declared": {
+        "brand_name": "Bramble & Vine",
+        "class_type": "IPA",
+        "class_category": "beer",
+        "abv_percent": 6.9,
+        "net_contents": {
+          "value": 24,
+          "unit": "fl_oz"
+        },
+        "producer": "Quiet Bear Beverage Co., 85 Meadow Lane, Asheville, NC 28801",
+        "country_of_origin": "Scotland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0024.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0025.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 303,
+        "ocr": 1685,
+        "vision": 2476,
+        "matching": 336,
+        "total": 9654
+      },
+      "elapsedMs": 9656,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Copperline",
+        "class_type": "Porter",
+        "class_category": "beer",
+        "abv_percent": 8.9,
+        "net_contents": {
+          "value": 32,
+          "unit": "fl_oz"
+        },
+        "producer": "Wandering Coyote Beverage Co., Denver, CO",
+        "country_of_origin": "Mexico"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0025.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0025.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 294,
+        "ocr": 2225,
+        "vision": 2623,
+        "matching": 345,
+        "total": 13268
+      },
+      "elapsedMs": 13270,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Wandering Coyote",
+        "class_type": "Hazy IPA",
+        "class_category": "beer",
+        "abv_percent": 6.9,
+        "net_contents": {
+          "value": 16,
+          "unit": "fl_oz"
+        },
+        "producer": "Wandering Coyote Beverage Co., Denver, CO",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0025.json",
+      "actual": "review",
+      "imageQuality": "good",
+      "bucket": "review-on-correct"
+    },
+    {
+      "image": "ai-label-0026.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 312,
+        "ocr": 1461,
+        "vision": 2864,
+        "matching": 370,
+        "total": 3546
+      },
+      "elapsedMs": 3547,
+      "govWarningCase": "Q5_STAIN",
+      "declared": {
+        "brand_name": "Mira Vista",
+        "class_type": "Sauvignon Blanc",
+        "class_category": "wine",
+        "abv_percent": 12.9,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Mira Vista Beverage Co., Sonoma, CA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0026.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0026.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 353,
+        "ocr": 1508,
+        "vision": 2376,
+        "matching": 367,
+        "total": 3096
+      },
+      "elapsedMs": 3098,
+      "govWarningCase": "Q5_STAIN",
+      "declared": {
+        "brand_name": "Bramble & Vine",
+        "class_type": "Chardonnay",
+        "class_category": "wine",
+        "abv_percent": 14.9,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Mira Vista Beverage Co., Sonoma, CA",
+        "country_of_origin": "Japan"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0026.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0027.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 267,
+        "ocr": 1139,
+        "vision": 2947,
+        "matching": 259,
+        "total": 3474
+      },
+      "elapsedMs": 3475,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Argenton",
+        "class_type": "Riesling",
+        "class_category": "wine",
+        "abv_percent": 11.5,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Argenton Beverage Co., Walla Walla, WA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0027.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0027.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 241,
+        "ocr": 1118,
+        "vision": 2331,
+        "matching": 265,
+        "total": 2837
+      },
+      "elapsedMs": 2838,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Copperline",
+        "class_type": "Pinot Noir",
+        "class_category": "wine",
+        "abv_percent": 13.5,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Argenton Beverage Co., Walla Walla, WA",
+        "country_of_origin": "France"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0027.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0028.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 237,
+        "ocr": 1560,
+        "vision": 2161,
+        "matching": 245,
+        "total": 2642
+      },
+      "elapsedMs": 2644,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Saltwood Mill",
+        "class_type": "Pilsner",
+        "class_category": "beer",
+        "abv_percent": 7,
+        "net_contents": {
+          "value": 24,
+          "unit": "fl_oz"
+        },
+        "producer": "Citrus Range Beverage Co., Portland, ME",
+        "country_of_origin": "Ireland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0028.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0028.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 214,
+        "ocr": 1260,
+        "vision": 3973,
+        "matching": 262,
+        "total": 4448
+      },
+      "elapsedMs": 4450,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Citrus Range",
+        "class_type": "Hard Seltzer",
+        "class_category": "beer",
+        "abv_percent": 5,
+        "net_contents": {
+          "value": 12,
+          "unit": "fl_oz"
+        },
+        "producer": "Citrus Range Beverage Co., Portland, ME",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0028.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0029.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 289,
+        "ocr": 1645,
+        "vision": 3127,
+        "matching": 292,
+        "total": 3707
+      },
+      "elapsedMs": 3710,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Vagrant Tide",
+        "class_type": "White Rum",
+        "class_category": "distilled_spirits",
+        "abv_percent": 37.5,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Vagrant Tide Beverage Co., New Orleans, LA",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0029.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0029.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 316,
+        "ocr": 2233,
+        "vision": 2375,
+        "matching": 359,
+        "total": 3050
+      },
+      "elapsedMs": 3051,
+      "govWarningCase": "C0",
+      "declared": {
+        "brand_name": "Northstar Trading",
+        "class_type": "Vodka",
+        "class_category": "distilled_spirits",
+        "abv_percent": 39.5,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Vagrant Tide Beverage Co., New Orleans, LA",
+        "country_of_origin": "Scotland"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0029.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    },
+    {
+      "image": "ai-label-0030.jpg",
+      "condition": "correct",
+      "expected": "pass",
+      "timings": {
+        "preprocess": 242,
+        "ocr": 1684,
+        "vision": 2810,
+        "matching": 0,
+        "total": 11350
+      },
+      "elapsedMs": 11352,
+      "govWarningCase": "Q4_LOW_LIGHT",
+      "declared": {
+        "brand_name": "Cloister Hill",
+        "class_type": "Rye Whiskey",
+        "class_category": "distilled_spirits",
+        "abv_percent": 48,
+        "net_contents": {
+          "value": 750,
+          "unit": "ml"
+        },
+        "producer": "Cloister Hill Beverage Co., Burlington, VT",
+        "country_of_origin": null
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0030.json",
+      "actual": "pass",
+      "imageQuality": "good",
+      "bucket": "true-pass"
+    },
+    {
+      "image": "ai-label-0030.jpg",
+      "condition": "wrong",
+      "expected": "fail",
+      "timings": {
+        "preprocess": 222,
+        "ocr": 3158,
+        "vision": 2387,
+        "matching": 771,
+        "total": 13016
+      },
+      "elapsedMs": 13018,
+      "govWarningCase": "Q4_LOW_LIGHT",
+      "declared": {
+        "brand_name": "Copperline",
+        "class_type": "Tequila",
+        "class_category": "distilled_spirits",
+        "abv_percent": 50,
+        "net_contents": {
+          "value": 1500,
+          "unit": "ml"
+        },
+        "producer": "Cloister Hill Beverage Co., Burlington, VT",
+        "country_of_origin": "Mexico"
+      },
+      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0030.json",
+      "actual": "fail",
+      "imageQuality": "good",
+      "bucket": "true-reject"
+    }
+  ]
+}
