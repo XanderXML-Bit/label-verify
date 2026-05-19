@@ -1032,6 +1032,42 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
       return new VisionExtractorRunner("T12", extractor, false);
     },
   },
+  {
+    // T13 — Gemini 3.5 Flash (Google's just-released "next generation"
+    // Flash tier — 2026-05-19 release). User-requested bench candidate
+    // against T6 (production Gemini 3.1 Flash-Lite).
+    //
+    // Same wiring as T6 (direct Google AI Studio path via
+    // `@google/generative-ai`), differing only in `modelVersion`
+    // override. Apples-to-apples vs T6 — same prompt, same schema,
+    // same parsing path, same retry semantics. The only variable is
+    // the model id.
+    //
+    // Pricing note (Apex §13.8a sourcing): the GeminiFlashExtractor's
+    // internal cost-per-call uses `FLASH_PRICE_INPUT_PER_M = 0.075` /
+    // `FLASH_PRICE_OUTPUT_PER_M = 0.30` for the entire Flash tier
+    // (set in `src/lib/vision/gemini.ts:118-119`). If Google's
+    // published price for 3.5-flash is materially higher than that
+    // floor, the bench's reported USD column under-reports cost for
+    // T13. The bench-report writeup notes this caveat and falls back
+    // to token counts + Google's public pricing page as the
+    // authoritative cost source.
+    id: "T13",
+    networkRequired: true,
+    build: async () => {
+      const apiKey = process.env.GOOGLE_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "T13 requires GOOGLE_API_KEY (Gemini 3.5 Flash Vision). Set it in .env.local.",
+        );
+      }
+      const extractor = new GeminiFlashExtractor({
+        apiKey,
+        modelVersion: "gemini-3.5-flash",
+      });
+      return new VisionExtractorRunner("T13", extractor, false);
+    },
+  },
 ];
 
 export function findTechnique(id: string): TechniqueFactory | undefined {

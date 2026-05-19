@@ -4,6 +4,89 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35n: Gemini 3.5 Flash bake-off — HOLD on production primary] — 2026-05-19
+
+User-requested bench: Google released Gemini 3.5 Flash on 2026-05-19;
+should it replace the production primary `gemini-3.1-flash-lite`?
+
+**Decision: HOLD. Production stays on `gemini-3.1-flash-lite`.**
+
+Full report (Apex §13.8a sourced): [`benchmarks/results/wave-35n-gemini-3.5-flash-bakeoff.md`](benchmarks/results/wave-35n-gemini-3.5-flash-bakeoff.md).
+
+### Headline numbers (sourced from on-disk JSON)
+
+|                              | T6 (3.1 FL — prod) | T13 (3.5 F — candidate) |
+|---|---:|---:|
+| Routine bench acc (n=105)    | 93.33 %             | 95.24 %                  |
+| Wilson 95% CI                | [86.87, 96.73]      | [89.33, 97.95]           |
+| Routine P50 vision (rep 1)   | 2 737 ms            | 9 178 ms                 |
+| Routine P50 vision (rep 2)   | 2 221 ms            | 9 125 ms                 |
+| Cross-pair passRateOnCorrect | 76.67 %             | 80.00 %                  |
+| Cross-pair failOrReviewRateOnWrong | **100 %**     | **100 %**                |
+| Cross-pair P50 end-to-end    | 3 707 ms            | 11 169 ms                |
+| Cross-pair P95 end-to-end    | 13 515 ms           | 19 920 ms                |
+| Adversarial false-positives (n=30) | **0**         | **0**                    |
+
+### Apex hypothesis matrix — only 1 of 4 falsification gates passes
+
+| ID | Hypothesis | Result |
+|---|---|---|
+| H1 | T13 has higher field-level accuracy | partial — +1.9 pp but CIs overlap |
+| H2 | T13 ≤ T6 on adversarial false-positives | confirmed — 0/30 both |
+| H3 | T13 ≤ T6 on Gov-Warning false-neg rate | refuted on n=7 routine, neutralised on n=30 cross-pair |
+| H4 | T13 latency P50 within 1.5× T6 | **refuted — T13 is 3.01× T6 on cross-pair** |
+
+Decision rule: ship swap iff all 4 confirmed. H4 fails by a wide,
+deterministic margin (N=2 reps land within ±50 ms of each other).
+
+### Why H4 is the disqualifying gate
+
+3.01× latency penalty at `passRateOnCorrect = 80 %` vs 76.67 % is a
+bad trade. With wave-35j's `INLINE_BATCH_CONCURRENCY = 16` and Vercel's
+60 s function ceiling, swapping T6 → T13 would drop the interactive
+batch ceiling from ~100 images to ~80 images at P50, with P95 tail
+risk pushing some batches over 60 s outright. The wave-35j wall-clock
+win evaporates. Cost is comparable on our extractor's pricing
+constants (token counts identical at 1 682 in / 422 out → $0.000253
+per call for both), though Google's published `gemini-3.5-flash`
+rate should be verified — if it's on a higher tier, the
+recommendation only strengthens.
+
+### Code that landed
+
+- `benchmarks/techniques.ts:1036-1071`: new T13 entry wiring
+  `gemini-3.5-flash` through the existing `GeminiFlashExtractor`
+  with a `modelVersion` override. Same prompt, same schema, same
+  parse path — apples-to-apples vs T6. Retained so a future
+  re-bench (e.g. when `gemini-3.5-flash-lite` ships) is one
+  command away.
+- `benchmarks/results/wave-35n-T6-baseline.json` +
+  `wave-35n-T13-3.5flash.json` + 4 routine-bench JSONs +
+  `wave-35n-gemini-3.5-flash-bakeoff.md` — full evidence on disk,
+  referenced by SHA from this CHANGELOG entry for posterity.
+
+### No production code change ships from wave-35n
+
+The verify orchestrator's `MODEL_PRIMARY` env-var escape hatch
+(`src/lib/verify.ts:1141`) means an operator can swap to 3.5 Flash
+in production without a code change if a future condition makes
+the trade worthwhile (e.g. Google ships a 3.5 Flash sub-revision
+with materially better latency). Today's recommendation stands:
+production stays on `gemini-3.1-flash-lite`.
+
+### Open follow-ups (post-launch)
+
+1. Re-bench against `gemini-3.5-flash-lite` if/when Google ships it.
+2. Bench Gemini 3.5 Flash as a **second-opinion** candidate (current
+   default `gemini-2.5-flash`) — the borderline-GW path is more
+   tolerant of latency since the user is already in REVIEW mode.
+3. Investigate T13's confidence-calibration drift (`confidence: 1.00`
+   on every field in the single-call probe) — could indicate
+   miscalibration that the broad-perturbation cross-pair didn't
+   surface.
+
+---
+
 ## [Wave 35m: close the three remaining integration gaps named by the Apex audit] — 2026-05-18
 
 User asked: "is there any integration tests you don't have coverage
