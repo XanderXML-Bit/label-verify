@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 // ─── E2E: batch autopair happy path ────────────────────────────────────────
@@ -149,9 +150,22 @@ test("Drop 2 images + 2 stem-matched apps → batch-pending autopair → inline 
   // unified upload picker. The page's handleFiles infers batch mode
   // because there are ≥ 2 images, and autoPair=true because apps came
   // along too.
+  //
+  // Wave-35o: Playwright's `setInputFiles` API rejects mixed
+  // (path-string, buffer-shape) entries — "File paths cannot be
+  // mixed with buffers". Read the on-disk PNGs into buffers so
+  // every entry is the same shape.
   await page.setInputFiles('input[type="file"]', [
-    SAMPLE_LABEL_1,
-    SAMPLE_LABEL_2,
+    {
+      name: "syn-beer-0001.png",
+      mimeType: "image/png",
+      buffer: readFileSync(SAMPLE_LABEL_1),
+    },
+    {
+      name: "syn-wine-0002.png",
+      mimeType: "image/png",
+      buffer: readFileSync(SAMPLE_LABEL_2),
+    },
     {
       name: "syn-beer-0001.json",
       mimeType: "application/json",
@@ -164,10 +178,14 @@ test("Drop 2 images + 2 stem-matched apps → batch-pending autopair → inline 
     },
   ]);
 
-  // The batch-pending autoPair screen should show a "Detected" summary.
-  await expect(page.getByText(/Detected/i).first()).toBeVisible({
-    timeout: 10_000,
-  });
+  // The batch-pending autoPair screen renders a "Batch upload — N
+  // images + M application files" heading. The previous wording
+  // ("Detected: …") was retired; assert on the current copy.
+  await expect(
+    page.getByRole("heading", {
+      name: /Batch upload.*2 images.*2 application files/i,
+    }),
+  ).toBeVisible({ timeout: 10_000 });
 
   // Click "Verify batch" — uses the actual batch endpoint mock.
   await page

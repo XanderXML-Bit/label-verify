@@ -25,9 +25,15 @@ test("Missing-key /api/health note surfaces in the page-load banner", async ({
     }),
   );
   await page.goto("/");
-  await expect(
-    page.getByText(/missing a required API key|verification service/i),
-  ).toBeVisible({ timeout: 10_000 });
+  // Wave-35o: the banner renders the note inside a `<li>` nested in a
+  // `<div role="alert">` — Playwright's getByText with an OR-regex
+  // matched BOTH the wrapper div and the inner li (each containing
+  // the same substring), tripping strict-mode. Scope the lookup to
+  // the `<li>` directly via the alert role + then a per-note query.
+  const alert = page.getByRole("alert").filter({
+    hasText: /missing a required API key/i,
+  });
+  await expect(alert).toBeVisible({ timeout: 10_000 });
 });
 
 test("Healthy /api/health → no banner shown", async ({ page }) => {
@@ -44,8 +50,17 @@ test("Healthy /api/health → no banner shown", async ({ page }) => {
     }),
   );
   await page.goto("/");
-  // The banner's distinctive copy must NOT appear on a healthy load.
-  await page.waitForLoadState("networkidle");
+  // Wave-35o: drop the previous `waitForLoadState("networkidle")` —
+  // it hung past the test timeout on the live deployment because
+  // `/api/warmup` keeps a slow connection alive while Tesseract's
+  // WASM init resolves (~3–5 s after page load). The component-
+  // under-test renders the banner from the `/api/health` payload
+  // (mocked above) inside a `useEffect` that fires on mount, so
+  // waiting for that effect to commit + then asserting the banner
+  // is *not* in the DOM is the right shape.
+  await expect(
+    page.getByRole("heading", { name: /Verify a label against application data/i }),
+  ).toBeVisible({ timeout: 10_000 });
   await expect(
     page.getByText(/missing a required API key/i),
   ).toHaveCount(0);

@@ -17,6 +17,21 @@ import { test, expect } from "@playwright/test";
 // regression risk that this spec now closes.
 
 test.describe("Extract-only flow", () => {
+  // Wave-35o: the Skip button is `.detailed-only` (per
+  // src/app/components/DeclaredForm.tsx:386); in simple mode it's
+  // replaced by an inline text link. Seed the persisted view-mode
+  // preference to "detailed" via addInitScript so layout.tsx's
+  // pre-paint script un-hides the Skip button before React mounts.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.setItem("labelverify:mode", "detailed");
+      } catch {
+        /* storage denied — assertion below will fail loudly */
+      }
+    });
+  });
+
   test("PASS sample → open form → Skip-and-extract lands on the ExtractionOnlyResult panel", async ({
     page,
   }) => {
@@ -55,11 +70,12 @@ test.describe("Extract-only flow", () => {
       page.getByRole("form", { name: /Declared application data/i }),
     ).toBeVisible({ timeout: 10_000 });
 
-    // Click the Skip affordance. The button's accessible name matches
-    // /Skip — just show what's on the label/i (em-dash variant) OR
-    // /Skip.*just show what.s on the label/i (hyphen fallback).
+    // Click the Skip affordance. The button's current accessible name
+    // (post wave-35) is "Skip — extract fields without a verdict";
+    // an older variant was "Skip — just show what's on the label" —
+    // match either via a permissive prefix.
     const skipButton = page.getByRole("button", {
-      name: /Skip.*what.?s on the label/i,
+      name: /^Skip(?:\s|—)/i,
     });
     await expect(skipButton).toBeVisible();
     await skipButton.click();
@@ -76,11 +92,17 @@ test.describe("Extract-only flow", () => {
 
     // The panel has a non-dismissible yellow disclaimer banner about
     // the extract-only path NOT being a verified comparison —
-    // regulator-defensibility requirement, must remain visible.
+    // regulator-defensibility requirement, must remain visible. The
+    // current copy in `ExtractionOnlyResult.tsx:127` is "This is not
+    // a compliance verdict — extraction only"; older variants used
+    // "not been compared" / "no comparison". Match either, but use
+    // `.first()` because the alert region nests the heading and the
+    // server-emitted note (both contain matching substrings) and
+    // strict-mode would otherwise object.
     await expect(
-      page.getByText(
-        /not been compared|extract-only|no comparison|not a verified comparison/i,
-      ),
+      page
+        .getByText(/extraction only|not a compliance verdict|not been compared|no comparison/i)
+        .first(),
     ).toBeVisible();
 
     // The panel offers a "Continue to verification" affordance that

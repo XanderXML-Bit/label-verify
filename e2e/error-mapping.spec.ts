@@ -125,8 +125,13 @@ test.describe("friendlyError translates raw HTTP errors", () => {
     // Abort the request to simulate a network drop.
     await page.route("**/api/verify", (route) => route.abort("failed"));
     await uploadAndSubmit(page);
-    await expect(
-      page.getByText(/couldn'?t reach|cancelled|try again/i),
-    ).toBeVisible({ timeout: 10_000 });
+    // Wave-35o: the error UI's "Try again" button also matches a
+    // permissive `/try again/i` regex, so a bare getByText trips
+    // strict-mode (paragraph + button both match). Scope to the
+    // alert region and assert against the load-bearing copy only.
+    const alert = page.getByRole("alert").filter({
+      hasText: /couldn'?t reach the verifier/i,
+    });
+    await expect(alert).toBeVisible({ timeout: 10_000 });
   });
 });
