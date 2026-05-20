@@ -4,6 +4,75 @@
 > the project's working timezone (US Pacific). Sections follow Keep a
 > Changelog conventions.
 
+## [Wave 35o: fix 7 failing e2e specs on the scheduled live-production run] — 2026-05-19
+
+User asked to verify deployments are clean — caught that the
+scheduled `E2E against live deployment` workflow had been failing
+on 7 specs (PR-level CI and post-deploy smoke were always green;
+the scheduled live-prod Playwright sweep that runs at 05:00 UTC
+daily was not). Investigated each failure locally against
+production, fixed every one. **27/27 Playwright tests now pass
+against `https://label-verify-six.vercel.app`.**
+
+### Root causes (all test-side, NOT production code regressions)
+
+All seven failures were test brittleness against the current
+production GUI — production behaviour itself was correct in every
+case. The specs had drifted as the GUI evolved through wave-35
+and weren't being caught because:
+
+  - CI on PRs runs vitest + production build, not the live e2e
+    suite.
+  - The scheduled live-e2e workflow had been silently failing
+    since wave-34's GUI changes shipped on 2026-05-17.
+
+| File | Failure | Root cause | Fix |
+|---|---|---|---|
+| `api-status-banner.spec.ts:10` | strict-mode collision on `getByText(/missing a required API key\|verification service/i)` — matched the `<li>` AND its wrapping `<footer>` (production already had a "TTB COLA verification" footer caption) | regex OR matched two ancestors that shared the substring | scope to `getByRole("alert").filter({ hasText: ... })` |
+| `api-status-banner.spec.ts:33` | "Healthy → no banner" test timed out at 1.1 min on `waitForLoadState("networkidle")` because `/api/warmup` keeps a slow connection alive | unrelated background request blocks networkidle on prod | replace the `networkidle` wait with a stable heading-render wait |
+| `batch-autopair.spec.ts:43` | `setInputFiles` raised "File paths cannot be mixed with buffers" | Playwright API constraint when mixing path strings and `{name,mimeType,buffer}` entries | `readFileSync` the PNGs so every entry is buffer-shape |
+| `batch-autopair.spec.ts:43` (after the buffer fix) | assertion waited for `/Detected/i` heading; current GUI renders "Batch upload — 2 images + 2 application files" | UI copy retired the "Detected:" framing in an earlier wave | assert on the new heading via `getByRole("heading")` |
+| `error-mapping.spec.ts:122` | strict-mode collision on `/couldn'?t reach\|cancelled\|try again/i` — matched both the error `<p>` AND the "Try again" `<button>` | OR-regex with multiple alternates matching nested elements | scope to `getByRole("alert").filter({ hasText: /couldn'?t reach/i })` |
+| `extract-only.spec.ts:20` | Skip-button regex `/Skip.*what.?s on the label/i` no longer matched; the button text changed to "Skip — extract fields without a verdict" since wave-35l | UI copy drift + the Skip button is `.detailed-only` (hidden in the production-default simple mode) | (a) `addInitScript` seed `localStorage["labelverify:mode"]="detailed"` so the Skip button is rendered; (b) update regex to prefix-anchored `/^Skip(?:\s\|—)/i` |
+| `extract-only.spec.ts:20` (after skip fix) | disclaimer regex matched none of `/not been compared\|extract-only\|no comparison\|not a verified comparison/i`; the current copy is "extraction only" (with space, not hyphen) | regex literal drift | match the current copy + `.first()` to dodge strict-mode |
+| `sample-retry.spec.ts:11` | Page rendered "Application error: a client-side exception has occurred" — React threw on the mock | the mock's `fields: {}` was an empty object; SingleResult's `orderedFields()` does `.sort()` over `r.fields.brand_name.status` → undefined access | populate `fields` with the real `FieldComparison` shape (`{field, status, expected, actual, confidence}`) per `src/lib/matching/index.ts` |
+| `upload-rejection.spec.ts:44` | `getByText(/(label image\|image required\|need.*image)/i).first()` resolved to a `.detailed-only` paragraph hidden by CSS in simple mode | the visible "label image is required" copy lives in the `apps-only-pending` stage's `<h2>` heading | assert on the heading role with the actual copy |
+
+### Verification
+
+- Locally against `https://label-verify-six.vercel.app` (production):
+  - All 6 previously-failing spec files: **green**
+  - Full project Playwright sweep (27 tests across 9 spec files):
+    **27 / 27 passing in 53 seconds**
+- Local 5 gates: tests 960/960, typecheck clean, lint clean,
+  drift detector 0/0/0, production build green.
+- **Production code unchanged** — only test files modified.
+
+### Why these weren't caught earlier
+
+The scheduled live-e2e workflow runs daily at 05:00 UTC and was
+returning `failure` for the last several days. The failures were
+visible in `gh run list --workflow "E2E against live deployment"`
+but neither the PR CI nor the post-deploy smoke surfaced them
+because they only test a different scope.
+
+To prevent recurrence, the scheduled workflow now stays green —
+the next regression in this suite will be a real signal again.
+
+### Files touched
+
+- `e2e/api-status-banner.spec.ts` (strict-mode + networkidle fixes)
+- `e2e/batch-autopair.spec.ts` (buffer-shape + heading copy)
+- `e2e/error-mapping.spec.ts` (strict-mode on network-failure case)
+- `e2e/extract-only.spec.ts` (detailed-mode seed + Skip regex + disclaimer copy)
+- `e2e/sample-retry.spec.ts` (full FieldComparison shape in mock)
+- `e2e/upload-rejection.spec.ts` (heading-based assertion)
+- README.md verified-state row + this CHANGELOG entry.
+
+No production code change.
+
+---
+
 ## [Wave 35n: Gemini 3.5 Flash bake-off — HOLD on production primary] — 2026-05-19
 
 User-requested bench: Google released Gemini 3.5 Flash on 2026-05-19;

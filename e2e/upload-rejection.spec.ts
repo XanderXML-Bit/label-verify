@@ -55,10 +55,18 @@ test.describe("Upload rejection — non-image files", () => {
         JSON.stringify({ brand_name: "X", class_type: "IPA" }),
       ),
     });
-    // Either an inline error banner or an error-stage panel surfaces
-    // text indicating that a label image is needed.
+    // Wave-35o: the page renders the apps-only-pending stage with a
+    // dedicated heading ("We have your application data — please add
+    // a label image to verify"). Earlier the test matched any text
+    // containing "label image" and `.first()` resolved to a
+    // `.detailed-only` paragraph from the idle screen (hidden in
+    // simple mode) instead of the new heading. Anchor on the
+    // heading role so we're asserting against the visible
+    // apps-only-pending UI specifically.
     await expect(
-      page.getByText(/(label image|image required|need.*image)/i).first(),
+      page.getByRole("heading", {
+        name: /add a label image|label image is required|label image to verify/i,
+      }),
     ).toBeVisible({ timeout: 5_000 });
   });
 });

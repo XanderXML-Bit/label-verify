@@ -34,18 +34,46 @@ test("PASS sample 500 → 'Retry this sample' → succeeds on second attempt", a
       });
     } else {
       // Second call returns a synthetic PASS verdict.
-      // SingleResult unconditionally reads gov.subscores.{text,caps,bold,size}.status
-      // (see src/app/components/SingleResult.tsx:169-188). The mock must
-      // populate all four subscores or the component throws on render and
-      // the assertion below times out instead of failing-fast with a clear
-      // message. Caught by production-readiness audit 2026-05-13.
+      //
+      // SingleResult unconditionally reads:
+      //  - gov.subscores.{text,caps,bold,size}.status (covered)
+      //  - result.fields.{brand_name,class_type,abv_percent,
+      //                   net_contents,producer,country_of_origin}.status
+      //    via orderedFields() in SingleResult.tsx:625-630
+      //
+      // Wave-35o: the previous mock used `fields: {}` and the
+      // component's `.sort()` over `r.fields.brand_name.status`
+      // threw a client-side exception that the Playwright
+      // assertion timed out behind (the error UI replaces the
+      // result region, not the "Verification result" landmark).
+      // Provide a fully-populated `fields` shape so the component
+      // mounts.
+      // FieldComparison shape per src/lib/matching/index.ts:
+      //   { field, status, expected, actual, confidence, reason?, components? }
+      // SingleResult's orderedFields() does `.sort()` over `.status`
+      // and the field-list renderer dereferences `.field` and
+      // `.expected`/`.actual`. Use the real shape.
+      const passField = (name: string) => ({
+        field: name,
+        status: "pass",
+        expected: null,
+        actual: null,
+        confidence: 1,
+      });
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           verdict: "pass",
           imageQuality: "good",
-          fields: {},
+          fields: {
+            brand_name: passField("brand_name"),
+            class_type: passField("class_type"),
+            abv_percent: passField("abv_percent"),
+            net_contents: passField("net_contents"),
+            producer: passField("producer"),
+            country_of_origin: passField("country_of_origin"),
+          },
           governmentWarning: {
             status: "pass",
             confidence: 0.9,
