@@ -25,7 +25,7 @@
 
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 
 // ─── canvas / regulation constants ──────────────────────────────────────────
 
@@ -999,7 +999,7 @@ function makeSyntheticSpec(
 
 interface DegradationPlan {
   tags: string[];
-  apply: (img: sharp.Sharp) => Promise<sharp.Sharp>;
+  apply: (img: Sharp) => Promise<Sharp>;
 }
 
 function planDegradations(rng: () => number): DegradationPlan {
