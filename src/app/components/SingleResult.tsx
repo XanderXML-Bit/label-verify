@@ -110,7 +110,7 @@ export function SingleResult({
           {clientTimings && (
             <>
               {" "}
-              <span className="text-slate-400 dark:text-slate-500">
+              <span className="text-slate-600 dark:text-slate-400">
                 (server {(result.timings.total / 1000).toFixed(1)} s)
               </span>
             </>
@@ -169,7 +169,7 @@ export function SingleResult({
               alt="Submitted label preview"
             />
           ) : (
-            <div className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+            <div className="flex h-48 items-center justify-center text-sm text-slate-600 dark:text-slate-400">
               No preview
             </div>
           )}
@@ -441,7 +441,7 @@ export function SingleResult({
                 <dt className="font-medium text-slate-500 dark:text-slate-400">Reviewer</dt>
                 <dd className="font-mono">
                   {reviewerAtVerifyTime || (
-                    <span className="text-slate-400 dark:text-slate-500">
+                    <span className="text-slate-600 dark:text-slate-400">
                       (not set — use the header badge)
                     </span>
                   )}
@@ -714,7 +714,7 @@ function SubscoreRow({
             anyone debugging. Title attribute preserves the value for
             anyone who needs it on small screens. */}
         <span
-          className="hidden text-xs text-slate-400 dark:text-slate-500 sm:inline"
+          className="hidden text-xs text-slate-600 dark:text-slate-400 sm:inline"
           title={`Internal confidence: ${confidence.toFixed(2)}`}
         >
           conf {confidence.toFixed(2)}
@@ -806,7 +806,7 @@ function isProducerShape(v: unknown): v is Record<string, unknown> {
 }
 
 function ProducerBlock({ value }: { readonly value: unknown }) {
-  if (value == null) return <span className="text-slate-400 dark:text-slate-500">—</span>;
+  if (value == null) return <span className="text-slate-600 dark:text-slate-400">—</span>;
   if (typeof value === "string") {
     return <span className="break-words">{value}</span>;
   }
@@ -817,7 +817,7 @@ function ProducerBlock({ value }: { readonly value: unknown }) {
         const v = obj[k];
         if (v === undefined || v === null || v === "") {
           return (
-            <li key={k} className="text-slate-400 dark:text-slate-500">
+            <li key={k} className="text-slate-600 dark:text-slate-400">
               <span className="text-slate-500 dark:text-slate-400">{labelFor(k)}: </span>—
             </li>
           );

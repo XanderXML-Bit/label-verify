@@ -524,9 +524,9 @@ function Row({
         ) : row.status === "error" ? (
           <span className="text-xs text-red-600 dark:text-red-400">error</span>
         ) : row.status === "running" ? (
-          <span className="text-xs text-slate-400 dark:text-slate-500">…</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">…</span>
         ) : (
-          <span className="text-xs text-slate-400 dark:text-slate-500">queued</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">queued</span>
         )}
       </td>
       <td className="px-4 py-2">

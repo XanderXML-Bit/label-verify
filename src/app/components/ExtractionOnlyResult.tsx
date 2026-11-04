@@ -105,7 +105,7 @@ export function ExtractionOnlyResult({
           {clientTimings && (
             <>
               {" "}
-              <span className="text-slate-400 dark:text-slate-500">
+              <span className="text-slate-600 dark:text-slate-400">
                 (server {(result.timings.total / 1000).toFixed(1)} s)
               </span>
             </>
@@ -134,7 +134,7 @@ export function ExtractionOnlyResult({
           {imagePreviewUrl ? (
             <ImageZoom src={imagePreviewUrl} alt="Submitted label preview" />
           ) : (
-            <div className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+            <div className="flex h-48 items-center justify-center text-sm text-slate-600 dark:text-slate-400">
               No preview
             </div>
           )}
@@ -268,7 +268,7 @@ function SubscoreRow({
     <div className="flex items-center justify-between border-b border-slate-100 py-2 last:border-b-0 dark:border-slate-800">
       <span className="text-sm text-slate-800 dark:text-slate-100">{label}</span>
       <span className="flex items-center gap-2">
-        <span className="text-xs text-slate-400 dark:text-slate-500">
+        <span className="text-xs text-slate-600 dark:text-slate-400">
           conf {confidence.toFixed(2)}
         </span>
         <VerdictChip verdict={status} size="sm" />
@@ -290,7 +290,7 @@ function ExtractedRow({
     <div className="border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="font-medium text-slate-800 dark:text-slate-100">{name}</div>
-        <span className="text-xs text-slate-400 dark:text-slate-500">
+        <span className="text-xs text-slate-600 dark:text-slate-400">
           conf {confidence.toFixed(2)}
         </span>
       </div>

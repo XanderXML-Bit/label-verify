@@ -433,7 +433,7 @@ export function UploadZone({
             <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               or use the buttons below · images: JPEG, PNG, WebP, HEIC · applications: PDF, JSON, CSV, MD, TXT, DOCX · folders are scanned recursively
             </div>
-            <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+            <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
               Drop one image to verify single; image + matching application file to pre-fill the form; or N image/application pairs (or a folder of them) for batch. Files we don&apos;t recognise are ignored with a list.
             </div>
             {iosHinted ? (

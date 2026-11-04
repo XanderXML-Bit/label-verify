@@ -32,25 +32,29 @@
  */
 :root {
   color-scheme: light;
-  --bg: #f8fafc;
-  --fg: #0f172a;
-  --panel: #ffffff;
-  --border: #e2e8f0;
-  --muted: #64748b;
+  --bg: theme("colors.slate.50");
+  --fg: theme("colors.slate.900");
+  --panel: theme("colors.white");
+  --border: theme("colors.slate.200");
+  --muted: theme("colors.slate.500");
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f172a;
-  --fg: #f1f5f9;
-  --panel: #1e293b;
-  --border: #334155;
-  --muted: #94a3b8;
+  --bg: theme("colors.slate.950");
+  --fg: theme("colors.slate.100");
+  --panel: theme("colors.slate.900");
+  --border: theme("colors.slate.700");
+  --muted: theme("colors.slate.400");
 }
 
 html,
 body {
   font-size: 16px;
+  font-family: theme("fontFamily.sans");
+  /* Manrope's space glyph is 0.2em; at the 12 px footnote size that reads
+   * tight next to round letters. A small boost keeps word gaps clear. */
+  word-spacing: 0.06em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -74,7 +78,7 @@ body {
 
 /* Focus styles — visible enough for a reviewer who tabs through. */
 :focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 3px solid theme("colors.blue.600");
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -82,17 +86,17 @@ body {
 /* In dark mode the focus ring needs a lighter blue to stay visible against
  * the slate-950 background — slate-500-blue on slate-950 is too low-contrast. */
 [data-theme="dark"] :focus-visible {
-  outline-color: #60a5fa;
+  outline-color: theme("colors.blue.400");
 }
 
 /* Drop-zone shimmer (disabled under reduced-motion via the rule above). */
 @keyframes dropzone-pulse {
-  0%, 100% { background-color: rgba(59, 130, 246, 0.04); }
-  50%      { background-color: rgba(59, 130, 246, 0.10); }
+  0%, 100% { background-color: theme("colors.blue.500 / 4%"); }
+  50%      { background-color: theme("colors.blue.500 / 10%"); }
 }
 @keyframes dropzone-pulse-dark {
-  0%, 100% { background-color: rgba(96, 165, 250, 0.08); }
-  50%      { background-color: rgba(96, 165, 250, 0.18); }
+  0%, 100% { background-color: theme("colors.blue.400 / 8%"); }
+  50%      { background-color: theme("colors.blue.400 / 18%"); }
 }
 [data-theme="dark"] .dropzone-active {
   animation-name: dropzone-pulse-dark;
@@ -108,6 +112,13 @@ body {
   [role="button"] {
     min-height: 44px;
   }
+}
+
+/* Studio display face for headings. */
+h1,
+h2,
+h3 {
+  font-family: theme("fontFamily.display");
 }
 
 /* Mobile: shrink the largest headings a touch so they don't crowd 360 px
