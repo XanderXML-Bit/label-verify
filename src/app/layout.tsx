@@ -15,18 +15,33 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   // Open Graph + Twitter so a shared link previews cleanly in iMessage,
   // Slack, Outlook, etc. Reviewers are >50; many will share via email.
+  // Absolute share/canonical URLs resolve against the production alias —
+  // never a preview or team deployment URL. Single-route app, so the
+  // canonical is the site root.
+  metadataBase: new URL("https://label-verify-six.vercel.app"),
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Label Verify — TTB COLA prototype",
     description:
       "Verify alcohol label images against application data — ~4–6 seconds end-to-end on a warm function.",
     type: "website",
     siteName: "Label Verify",
+    url: "/",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Label Verify share card",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Label Verify — TTB COLA prototype",
     description:
       "Verify alcohol label images against application data — ~4–6 seconds end-to-end on a warm function.",
+    images: ["/og-image.png"],
   },
 };
 
