@@ -153,24 +153,41 @@ describe("Wave-35e — external abort behaviour in verifyLabel", () => {
     // listener (not from outside the promise's lifetime). The test
     // asserts: (a) the extractor's signal observed an abort event
     // before resolution, (b) the orchestrator rejected the verify.
+    //
+    // Deterministic by construction: the external abort is triggered
+    // from INSIDE the extractor once it is in flight, not by a wall-
+    // clock timer racing the image preprocessing. (The earlier 50 ms
+    // setTimeout could fire before the extractor was even called when
+    // the suite ran under load, so the abort listener never ran and the
+    // promise resolved instead of rejecting.)
     let abortObservedInExtractor = false;
+    let signalLiveAtCall = false;
+    const ac = new AbortController();
     const extractor: Extractor = {
       id: "mock:slow",
       networkRequired: false,
       extract: async (_buf, ctx) => {
-        // Subscribe to the abort event INSIDE the extractor — this
-        // is exactly how the Gemini SDK's underlying fetch works.
-        ctx?.signal?.addEventListener("abort", () => {
-          abortObservedInExtractor = true;
-        });
-        // Simulate a 250 ms vision call. If the signal aborts
-        // during the wait, throw AbortError (real SDK behaviour).
-        await new Promise<void>((resolve, reject) => {
-          const id = setTimeout(resolve, 250);
-          ctx?.signal?.addEventListener("abort", () => {
-            clearTimeout(id);
-            reject(new DOMException("aborted", "AbortError"));
-          });
+        const signal = ctx?.signal;
+        // Record (rather than assert in here: verifyLabel would swallow
+        // the assertion error as a rejection) that the orchestrator gave
+        // us a live signal, so this really tests the in-flight path.
+        signalLiveAtCall = !!signal && !signal.aborted;
+        if (!signal || signal.aborted) {
+          throw new DOMException("aborted", "AbortError");
+        }
+        // Simulate a vision call that only ends when the signal aborts
+        // (real SDK behaviour: the underlying fetch throws AbortError).
+        await new Promise<void>((_resolve, reject) => {
+          signal.addEventListener(
+            "abort",
+            () => {
+              abortObservedInExtractor = true;
+              reject(new DOMException("aborted", "AbortError"));
+            },
+            { once: true },
+          );
+          // The call is now in flight: fire the external abort.
+          ac.abort();
         });
         return {
           fields: COMPLIANT_FIELDS,
@@ -183,10 +200,6 @@ describe("Wave-35e — external abort behaviour in verifyLabel", () => {
         };
       },
     };
-    const ac = new AbortController();
-    // Trigger external abort 50 ms into the call — well before the
-    // 250 ms simulated vision-call completion.
-    setTimeout(() => ac.abort(), 50);
     await expect(
       verifyLabel(await tinyJpeg(), DECLARED, {
         extractor,
@@ -196,6 +209,7 @@ describe("Wave-35e — external abort behaviour in verifyLabel", () => {
     // The orchestrator-side listener (`onExternalAbort`) called
     // `ctrl.abort()` mid-flight, which propagated to the extractor's
     // ctx.signal — observed by the extractor's own listener.
+    expect(signalLiveAtCall).toBe(true);
     expect(abortObservedInExtractor).toBe(true);
   });
 

@@ -1053,7 +1053,7 @@ export default function Home() {
                 >
                   Replace image
                 </button>
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-slate-600 dark:text-slate-400">
                   or add more images below to verify them as a batch
                 </span>
               </div>

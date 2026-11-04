@@ -3,7 +3,7 @@
 [![CI](https://github.com/XanderXML-Bit/label-verify/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/XanderXML-Bit/label-verify/actions/workflows/ci.yml)
 [![Post-deploy smoke](https://github.com/XanderXML-Bit/label-verify/actions/workflows/post-deploy-smoke.yml/badge.svg?branch=main)](https://github.com/XanderXML-Bit/label-verify/actions/workflows/post-deploy-smoke.yml)
 [![Production](https://img.shields.io/badge/production-live-22c55e?logo=vercel&logoColor=white)](https://label-verify-six.vercel.app)
-[![License](https://img.shields.io/badge/license-prototype-blue)](#license)
+[![License](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey)](LICENSE)
 
 > Vision-LLM verification of beverage-label artwork against COLA application data, with explicit Government-Warning compliance subscores per 27 CFR §16.21 / §16.22. Prototype demonstrating AI-assisted COLA verification for TTB-regulated alcohol labels.
 
@@ -39,13 +39,20 @@
 
 ## Try it now
 
+![Local production build in Detailed mode, with the upload zone, sample cards, and a missing-key configuration notice](docs/screenshots/home-desktop.png)
+
+![Upload a bundled label and begin entering application fields](docs/screenshots/prepare-label.gif)
+
+This recording shows local upload preparation, not a verification result. Verification requires a valid server-side provider key.
+
 ```
 1. Open https://label-verify-six.vercel.app
-2. Click any of the three "Try a sample" cards (PASS / FAIL / REVIEW)
-3. Read the verdict + the 7-field breakdown + Gov-Warning subscores
+2. Select Detailed to reveal the sample cards.
+3. Select a sample card (PASS / FAIL / REVIEW).
+4. Read the verdict, field breakdown, and Government-Warning subscores.
 ```
 
-No install, no key, no signup. The samples ship matching COLA application data so reviewers can see end-to-end behaviour on first click.
+Visitors do not need an installation, personal API key, or account. The bundled samples include matching application data. The deployment needs valid provider credentials.
 
 **Or upload your own:** drop any beverage-label image (JPEG / PNG / WebP / HEIC) into the dropzone; the form opens for the seven declared fields. Verdict returns in **~4–6 seconds end-to-end** on a warm function (server-side P50 ~3 s; the remainder is client-side image compression, network round-trip, and React render). First request after a cold Vercel function spin-up adds another ~2–3 s. Per-call timings are surfaced on the result panel as `Verified in N s (server N s)` so the bench claim and the user-perceived reality are both visible.
 
@@ -258,6 +265,13 @@ Every `/api/*` response carries `X-Request-Id` — echoes the inbound `X-Request
 
 ---
 
+## Stack and brand
+
+- **Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Gemini vision (OpenAI fallback) · Tesseract.js OCR · Vitest · Playwright · Vercel.
+- **Brand:** Zendren Studio family. Accent `#6ba8ff` (Studio blue), secondary teal `#7bd2c2`, warm highlight `#e3a260` on deep navy. Sora (display), Manrope (body) and IBM Plex Mono. All tokens live in [`tailwind.config.ts`](tailwind.config.ts); logo files are in [`public/brand/`](public/brand/).
+
+---
+
 ## Install
 
 ### Option A — Just use the live demo
@@ -274,9 +288,14 @@ cp .env.example .env.local
 #   Open .env.local and set GOOGLE_API_KEY at minimum.
 #   Get a key at https://aistudio.google.com/app/apikey (free tier works).
 #   Optionally set OPENAI_API_KEY to enable the fallback path.
-npm install
+npm ci               # installs the exact versions in package-lock.json
 npm run dev          # → http://localhost:3000
+
+# Production build (what CI and Vercel run):
+npm run build && npm start
 ```
+
+`.nvmrc` pins Node 20 (the CI version); `package.json` `engines` requires Node ≥ 20.
 
 That's it — the dev server runs the same Next.js App Router build as production. The "Try a sample" affordance works locally with your key. Hot reload is on.
 
@@ -533,4 +552,6 @@ The repo is documentation-first because the *decisions* demonstrate engineering 
 
 ## License
 
-Prototype for TTB COLA verification. Not a production verification service. Source available for review under standard portfolio-review terms; not licensed for commercial redistribution. Contact <xandermlopez@gmail.com> for any other use.
+Copyright © 2026 Xander M. Lopez. **All rights reserved** — see [`LICENSE`](LICENSE). The source is public so it can be read and evaluated; it is not licensed for copying, redistribution or commercial use. Prototype for TTB COLA verification, not a production verification service. Contact <xandermlopez@gmail.com> for any other use.
+
+© 2026 Zendren · Built by [Xander M. Lopez](https://xandermlopez.com) · [zendren.net](https://zendren.net)
