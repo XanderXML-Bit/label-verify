@@ -4,7 +4,7 @@
 //   - JSON: full structured VerifyResponse with all comparator results,
 //     subscores, confidence, timings, model identifiers. The format an
 //     integrator wants for system-to-system handoff (e.g. dropping a
-//     verified-batch report into TTB's internal queue).
+//     verified-batch report into a downstream review queue).
 //   - CSV: flat one-row-per-item summary. Slot-stable column shape so
 //     spreadsheet imports never shift; missing/pending cells become "".
 //

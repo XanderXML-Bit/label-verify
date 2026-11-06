@@ -12,16 +12,15 @@
 
 Three hard requirements from the brief shape the alternatives ranking:
 
-- **R1 — ≤ 5 s end-to-end per label.** The prior vendor's 30-40 s was
-  rejected. Anything that doesn't fit a ~3-second extraction call plus
-  ~1-second pre/post-processing is out.
+- **R1 — ≤ 5 s end-to-end per label.** Anything that doesn't fit a
+  ~3-second extraction call plus ~1-second pre/post-processing is out.
 - **R3 — batch up to 200-300 labels.** Cost-per-1k matters; we cannot
   pick a per-call $0.05+ flagship and use it on every label.
 - **R4 — tolerant of imperfect photos.** Glare, angle, occlusion, low
   light. Templates and rigid OCR pipelines fail here.
 
-The submission is judged on correctness, code quality, UX, tech
-choices, and scope discipline. "Train your own model" without training
+The project's own criteria (brief §7) are correctness, code quality,
+UX, tech choices, and scope discipline. "Train your own model" without training
 data is scope-suicide.
 
 ## 2. Candidate landscape
