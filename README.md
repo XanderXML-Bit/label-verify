@@ -494,7 +494,7 @@ The deliberate choices, in plain terms:
 
 **Read in order:**
 
-1. [`docs/evaluation-brief.md`](docs/evaluation-brief.md) — the brief, verbatim.
+1. [`docs/evaluation-brief.md`](docs/evaluation-brief.md) — the project brief: this repo's own goals and targets.
 2. [`docs/MODEL-SELECTION.md`](docs/MODEL-SELECTION.md) — bake-off winner + justification (the headline report).
 3. [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md) — non-LLM methods considered.
 4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — orchestrator data flow.

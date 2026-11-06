@@ -3,6 +3,11 @@
 > **Status:** Bible document. Every design decision in this repo traces back to
 > a requirement on this page. If a feature does not map to something here, it
 > probably should not be built.
+>
+> **Provenance:** This brief records this repository's own goals and targets.
+> It is not an agency requirement, and a target here is not a measured result.
+> Measured numbers live in the README and the benchmark reports. The only
+> external source cited is the public federal regulation in §6.
 
 ## 1. Project Context
 
@@ -12,14 +17,13 @@
 
 ## 2. Problem Statement
 
-TTB processes roughly **150,000 Certificate of Label Approval (COLA)
-applications per year** with about **47 reviewing agents**. Each agent
-manually compares submitted label artwork against the application form, field
-by field, to confirm the printed label matches what the applicant declared.
+Checking a label by hand means comparing the submitted label artwork against
+the application form, field by field, to confirm the printed label matches
+what the applicant declared.
 
 This is slow, mechanical, and error-prone — exactly the kind of work AI
-should accelerate. A previous vendor attempt returned answers in **30–40
-seconds per label**, which was unusable in practice. The team needs sub-5s.
+should accelerate. This project sets itself a target of about **5 seconds per
+label**, so that a reviewer can keep working without waiting on the tool.
 
 ## 3. What We Are Building
 
@@ -33,16 +37,19 @@ self-contained demo of the verification engine and a usable UI on top of it.
 
 ## 4. Hard Requirements
 
+These are the project's own targets. The Source column says where each one
+comes from.
+
 | # | Requirement | Source |
 |---|-------------|--------|
-| R1 | End-to-end response in **~5 seconds** per label | Stated explicitly; prior vendor 30–40s was rejected |
-| R2 | UI usable by **non-technical reviewers** (team skews 50+) | Stated explicitly |
-| R3 | **Batch upload** of 200–300 labels | Importer workflow |
-| R4 | Tolerant of **imperfect images** (angles, glare, low light, partial occlusion) | Real-world submissions |
-| R5 | **Exact-match** Government Warning: literal text, all caps `GOVERNMENT WARNING:`, bold | Federal regulation; strict |
-| R6 | **Fuzzy** brand-name matching (`STONE'S THROW` ≡ `Stone's Throw`) | Stated explicitly |
-| R7 | **Standalone** — no COLA system integration | Stated explicitly |
-| R8 | **Deployed URL** + **public repo** | Submission format |
+| R1 | End-to-end response in **~5 seconds** per label | Project target |
+| R2 | UI usable by **non-technical reviewers** | Project target |
+| R3 | **Batch upload** of 200–300 labels | Project target (batch workflow) |
+| R4 | Tolerant of **imperfect images** (angles, glare, low light, partial occlusion) | Project target (real-world photos) |
+| R5 | **Exact-match** Government Warning: literal text, all caps `GOVERNMENT WARNING:`, bold | Federal regulation (27 CFR § 16.21, §6); strict |
+| R6 | **Fuzzy** brand-name matching (`STONE'S THROW` ≡ `Stone's Throw`) | Project target |
+| R7 | **Standalone** — no COLA system integration | Project scope |
+| R8 | **Deployed URL** + **public repo** | Project scope |
 
 ## 5. Regulated Fields to Verify
 
@@ -76,7 +83,7 @@ Validation rules:
 
 ## 7. Evaluation Criteria
 
-The prototype is judged on:
+The project holds itself to these criteria:
 
 1. **Correctness** — does it actually verify labels accurately?
 2. **Code quality** — clean, readable, idiomatic, tested.
@@ -105,7 +112,7 @@ attempt.** Scope discipline is itself part of the design.
 
 ## 10. Risks We Acknowledge Up-Front
 
-- **Network constraints at TTB** — government networks block many third-party
+- **Restricted networks** — some managed networks block third-party
   domains. Our deployment must work from a standard browser; our verification
   pipeline should degrade gracefully if a hosted model is unreachable. See
   `docs/archive/APPROACH.md` for the local-model fallback plan (the
