@@ -139,15 +139,15 @@ and the per-route handlers for the exact implementations.
   transitive `@xmldom/xmldom`, `postcss`, `nanoid`, `source-map-js`,
   `form-data` and `ws` (via `overrides`) cleared 8 of 11 production
   findings. The `sharp` libheif/librsvg advisories were reachable from
-  uploads; the `@xmldom/xmldom` parser DoS was reachable through DOCX
+  uploads. The `@xmldom/xmldom` parser DoS was reachable through DOCX
   parsing. `npm audit --omit=dev` still reports 3 findings, deferred
   because each needs a major upgrade and none is reachable today:
   - `csv-parse` 5 (GHSA-8cw4-87c7-c6xx, moderate): needs
     `group_columns_by_name: true`, which no call site sets.
   - `zod` 3 (GHSA-mrhx-c7xc-m3w5, high): needs an unbounded
-    `z.array`/`z.set`/`z.record` on untrusted input; production code
+    `z.array`/`z.set`/`z.record` on untrusted input. Production code
     uses object schemas only.
-  - `openai` 4 (high): flagged only through its `zod` peer; same
+  - `openai` 4 (high): flagged only through its `zod` peer, with the same
     precondition.
   Revisit if code starts using those features or a new advisory
   reaches a current path. The 2026-05-14 notes below are historical.
