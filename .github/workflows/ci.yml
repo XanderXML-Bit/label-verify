@@ -93,6 +93,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Verify default built metadata
+        run: |
+          node scripts/generate-share-image.mjs
+          git diff --exit-code -- public/share.png
+          node scripts/verify-built-metadata.mjs
+
+      - name: Verify configured metadata origin
+        run: |
+          SITE_URL=https://metadata.example.test npm run build
+          node scripts/verify-built-metadata.mjs https://metadata.example.test
+
+      - name: Restore default production artifact
+        run: npm run build
+
   bench-routine:
     # Routine subset: 15 curated labels covering every important axis (see
     # benchmarks/routine.ts and test-data-v2/routine-manifest.json). Cheaper

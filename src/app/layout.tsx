@@ -3,8 +3,11 @@ import "./globals.css";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { ModeToggle } from "./components/ModeToggle";
 import { ReviewerBadge } from "./components/ReviewerBadge";
+import { resolveMetadataOrigin } from "../lib/site-metadata";
 
 export const metadata: Metadata = {
+  metadataBase: resolveMetadataOrigin(process.env.SITE_URL),
+  alternates: { canonical: "/" },
   title: "Label Verify",
   description:
     "AI-powered TTB Certificate of Label Approval verification — prototype.",
@@ -21,9 +24,12 @@ export const metadata: Metadata = {
       "Verify alcohol label images against application data — ~4–6 seconds end-to-end on a warm function.",
     type: "website",
     siteName: "Label Verify",
+    url: "/",
+    images: [{ url: "/share.png", width: 1200, height: 630, alt: "Label Verify" }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
+    images: ["/share.png"],
     title: "Label Verify — TTB COLA prototype",
     description:
       "Verify alcohol label images against application data — ~4–6 seconds end-to-end on a warm function.",
