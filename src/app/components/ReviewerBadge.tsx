@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "labelverify:reviewer";
+const REVIEWER_HINT =
+  "Stamps verifications with your name / initials for the regulator audit trail. Stored in this browser only.";
 
 /**
  * Reviewer-id badge for regulator-defensible audit trails.
@@ -128,14 +130,14 @@ export function ReviewerBadge() {
           ? `Reviewer: ${value}. Click to change.`
           : "Reviewer: + set ID for the audit trail"
       }
-      title="Stamps verifications with your name / initials for the regulator audit trail. Stored in this browser only."
+      title={value ? `Reviewer: ${value}. ${REVIEWER_HINT}` : REVIEWER_HINT}
       className="min-h-[44px] min-w-[44px] rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
     >
       <span className="hidden sm:inline">Reviewer:&nbsp;</span>
       {value ? (
         // Cap the width so a long stored ID cannot wrap the header
-        // controls. The aria-label and title still carry the full value.
-        <span className="inline-block max-w-[9rem] truncate align-bottom font-mono">
+        // controls at 320 px or wider. The aria-label and title carry the full ID.
+        <span className="inline-block max-w-[3rem] truncate align-bottom font-mono min-[360px]:max-w-[4.5rem] sm:max-w-[9rem]">
           {value}
         </span>
       ) : (
