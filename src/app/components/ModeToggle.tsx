@@ -107,10 +107,10 @@ export function ModeToggle() {
         aria-pressed={isSimple}
         title="Show only the verdict and the basics (recommended for first-time use)"
         className={
-          "min-h-[44px] min-w-[44px] px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 " +
+          "relative min-h-[44px] min-w-[44px] px-3 py-2 transition-colors focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset " +
           (isSimple
-            ? "bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900"
-            : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700")
+            ? "bg-slate-900 text-white focus-visible:ring-sky-300 dark:bg-slate-200 dark:text-slate-900 dark:focus-visible:ring-blue-700"
+            : "text-slate-700 hover:bg-slate-100 focus-visible:ring-blue-700 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-300")
         }
       >
         Simple
@@ -121,10 +121,10 @@ export function ModeToggle() {
         aria-pressed={!isSimple}
         title="Show every check, subscore, confidence, and timing (recommended for operators)"
         className={
-          "min-h-[44px] min-w-[44px] border-l border-slate-300 px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-600 " +
+          "relative min-h-[44px] min-w-[44px] border-l border-slate-300 px-3 py-2 transition-colors focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset dark:border-slate-600 " +
           (!isSimple
-            ? "bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900"
-            : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700")
+            ? "bg-slate-900 text-white focus-visible:ring-sky-300 dark:bg-slate-200 dark:text-slate-900 dark:focus-visible:ring-blue-700"
+            : "text-slate-700 hover:bg-slate-100 focus-visible:ring-blue-700 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-300")
         }
       >
         Detailed
