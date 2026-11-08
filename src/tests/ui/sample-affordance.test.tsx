@@ -27,7 +27,7 @@ describe("SampleAffordance", () => {
   it("renders one button per sample with the expected-verdict label", () => {
     render(<SampleAffordance onPick={() => {}} />);
     for (const s of SAMPLES) {
-      const btn = screen.getByRole("button", { name: `Try the ${s.id} sample` });
+      const btn = screen.getByRole("button", { name: new RegExp(s.label) });
       expect(btn).toBeInTheDocument();
       expect(btn).toHaveTextContent(`Expected: ${s.expectedVerdict.toUpperCase()}`);
     }
@@ -40,7 +40,7 @@ describe("SampleAffordance", () => {
     render(<SampleAffordance onPick={onPick} />);
 
     const passSample = SAMPLES.find((s) => s.id === "pass")!;
-    await user.click(screen.getByRole("button", { name: "Try the pass sample" }));
+    await user.click(screen.getByRole("button", { name: /PASS sample/ }));
 
     expect(fetch).toHaveBeenCalledWith(passSample.imageUrl);
     expect(onPick).toHaveBeenCalledTimes(1);
@@ -55,7 +55,7 @@ describe("SampleAffordance", () => {
     const user = userEvent.setup();
     const onPick = vi.fn();
     render(<SampleAffordance onPick={onPick} disabled />);
-    const btn = screen.getByRole("button", { name: "Try the pass sample" });
+    const btn = screen.getByRole("button", { name: /PASS sample/ });
     expect(btn).toBeDisabled();
     // Clicking a disabled button is a no-op in the DOM, but verify the
     // guard inside `activate` would also short-circuit the fetch.

@@ -148,7 +148,7 @@ describe("Wave-34 → 35l iOS picker fix — universal button opens chooser on i
         name: /Choose photos from Camera Roll/i,
       });
       const docItem = screen.getByRole("menuitem", {
-        name: /Choose a PDF or other application document/i,
+        name: /^Application document/,
       });
       expect(photoItem).toBeInTheDocument();
       expect(docItem).toBeInTheDocument();
