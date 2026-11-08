@@ -60,14 +60,18 @@ export function ReviewerBadge() {
   }
 
   if (!hydrated) {
-    // SSR / pre-hydration: render a stable placeholder so layout
-    // doesn't shift after mount.
+    // SSR / pre-hydration: render the empty-state button's exact box,
+    // made invisible, so the header keeps its size after mount. A
+    // placeholder hidden below `sm` let the mobile header controls wrap
+    // to a second row on hydration (CLS 0.184 at a 412 px viewport).
     return (
       <span
         aria-hidden
-        className="hidden sm:inline-block min-h-[44px] min-w-[140px] rounded-md border border-slate-200 px-3 py-1.5 text-xs text-transparent dark:border-slate-700"
+        data-testid="reviewer-badge-placeholder"
+        className="invisible inline-flex min-h-[44px] min-w-[44px] items-center rounded-md border border-slate-200 px-2 py-1 text-xs dark:border-slate-700"
       >
-        Reviewer:
+        <span className="hidden sm:inline">Reviewer:&nbsp;</span>
+        <span>+ set ID</span>
       </span>
     );
   }
