@@ -85,8 +85,6 @@ export function SampleAffordance({ onPick, disabled }: SampleAffordanceProps) {
             // readable from the thumbnail without clicking.
             title={s.expectedNote}
             className={`group flex min-h-[88px] flex-col items-start gap-2 rounded-md border bg-slate-50 p-3 text-left transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700 ${verdictRing(s.expectedVerdict)}`}
-            aria-label={`Try the ${s.id} sample${isPending ? " (loading)" : ""}`}
-            aria-describedby={`sample-note-${s.id}`}
           >
             <span className="text-label font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Expected: <span className={verdictText(s.expectedVerdict)}>{s.expectedVerdict.toUpperCase()}</span>

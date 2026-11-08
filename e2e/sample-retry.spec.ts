@@ -11,7 +11,7 @@ import { test, expect } from "@playwright/test";
 test("PASS sample 500 → 'Retry this sample' → succeeds on second attempt", async ({
   page,
 }) => {
-  // The "Try the pass sample" button lives inside `.detailed-only`,
+  // The "PASS sample" button lives inside `.detailed-only`,
   // so the production default of simple mode hides it. Seed the
   // persisted preference to "detailed" so layout.tsx's pre-paint
   // script un-hides the sample affordance before React mounts.
@@ -97,7 +97,7 @@ test("PASS sample 500 → 'Retry this sample' → succeeds on second attempt", a
   });
 
   await page.goto("/");
-  await page.getByRole("button", { name: /Try the pass sample/i }).click();
+  await page.getByRole("button", { name: /PASS sample/ }).click();
 
   // First attempt fails — error banner with the friendly copy.
   await expect(page.getByText(/something went wrong/i)).toBeVisible({

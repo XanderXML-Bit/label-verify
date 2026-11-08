@@ -538,11 +538,6 @@ export function UploadZone({
               <button
                 role="menuitem"
                 type="button"
-                aria-label={
-                  isAppend
-                    ? "Add a PDF or other application document"
-                    : "Choose a PDF or other application document"
-                }
                 className="mt-1 block w-full rounded-md px-3 py-3 text-left text-sm text-slate-800 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:bg-slate-800"
                 disabled={disabled}
                 onClick={() => {

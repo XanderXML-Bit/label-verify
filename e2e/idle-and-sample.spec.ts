@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 // ─── E2E: idle screen + sample affordance ──────────────────────────────────
 //
-// Covers the two-affordance idle screen and the "Try the pass sample"
+// Covers the two-affordance idle screen and the "PASS sample"
 // happy path through the verification pipeline. If this fails, the demo
 // is broken in a way every reviewer will see on first contact.
 //
@@ -102,7 +102,7 @@ test.describe("Sample affordance", () => {
   // label — this e2e suite enforces that contract against the live
   // deployment via .github/workflows/e2e-live.yml.
   //
-  // The "Try the …" buttons live inside `.detailed-only`, so the
+  // The sample buttons live inside `.detailed-only`, so the
   // production default of simple mode hides them. Seed the
   // localStorage preference to "detailed" before page.goto so the
   // pre-paint script in layout.tsx unhides them.
@@ -118,7 +118,7 @@ test.describe("Sample affordance", () => {
 
   test("PASS sample reaches a PASS verdict", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Try the pass sample/i }).click();
+    await page.getByRole("button", { name: /PASS sample/ }).click();
     await expect(
       page.getByRole("region", { name: /Verification result/i }),
     ).toBeVisible({ timeout: 30_000 });
@@ -137,7 +137,7 @@ test.describe("Sample affordance", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Try the fail sample/i }).click();
+    await page.getByRole("button", { name: /FAIL sample/ }).click();
     await expect(
       page.getByRole("region", { name: /Verification result/i }),
     ).toBeVisible({ timeout: 30_000 });
@@ -152,7 +152,7 @@ test.describe("Sample affordance", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Try the review sample/i }).click();
+    await page.getByRole("button", { name: /REVIEW sample/ }).click();
     await expect(
       page.getByRole("region", { name: /Verification result/i }),
     ).toBeVisible({ timeout: 30_000 });
