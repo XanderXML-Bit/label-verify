@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "labelverify:reviewer";
+const REVIEWER_HINT =
+  "Stamps verifications with your name / initials for the regulator audit trail. Stored in this browser only.";
 
 /**
  * Reviewer-id badge for regulator-defensible audit trails.
@@ -60,14 +62,18 @@ export function ReviewerBadge() {
   }
 
   if (!hydrated) {
-    // SSR / pre-hydration: render a stable placeholder so layout
-    // doesn't shift after mount.
+    // SSR / pre-hydration: render the empty-state button's exact box,
+    // made invisible, so the header keeps its size after mount. A
+    // placeholder hidden below `sm` let the mobile header controls wrap
+    // to a second row on hydration (CLS 0.184 at a 412 px viewport).
     return (
       <span
         aria-hidden
-        className="hidden sm:inline-block min-h-[44px] min-w-[140px] rounded-md border border-slate-200 px-3 py-1.5 text-xs text-transparent dark:border-slate-700"
+        data-testid="reviewer-badge-placeholder"
+        className="invisible inline-flex min-h-[44px] min-w-[44px] items-center rounded-md border border-slate-200 px-2 py-1 text-xs dark:border-slate-700"
       >
-        Reviewer:
+        <span className="hidden sm:inline">Reviewer:&nbsp;</span>
+        <span>+ set ID</span>
       </span>
     );
   }
@@ -124,12 +130,16 @@ export function ReviewerBadge() {
           ? `Reviewer: ${value}. Click to change.`
           : "Reviewer: + set ID for the audit trail"
       }
-      title="Stamps verifications with your name / initials for the regulator audit trail. Stored in this browser only."
+      title={value ? `Reviewer: ${value}. ${REVIEWER_HINT}` : REVIEWER_HINT}
       className="min-h-[44px] min-w-[44px] rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
     >
       <span className="hidden sm:inline">Reviewer:&nbsp;</span>
       {value ? (
-        <span className="font-mono">{value}</span>
+        // Cap the width so a long stored ID cannot wrap the header
+        // controls at 320 px or wider. The aria-label and title carry the full ID.
+        <span className="inline-block max-w-[3rem] truncate align-bottom font-mono min-[360px]:max-w-[4.5rem] sm:max-w-[9rem]">
+          {value}
+        </span>
       ) : (
         <span className="text-slate-500 dark:text-slate-400">+ set ID</span>
       )}
