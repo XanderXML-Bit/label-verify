@@ -107,6 +107,18 @@ jobs:
       - name: Restore default production artifact
         run: npm run build
 
+      - name: Verify upload accessibility in Chromium
+        run: |
+          npx playwright install --with-deps chromium
+          npm run start -- --hostname 127.0.0.1 --port 3124 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3124/ > /dev/null; then break; fi
+            sleep 1
+          done
+          QA_OUTPUT=test-results/upload-accessibility node scripts/verify-upload-accessibility.mjs
+
   bench-routine:
     # Routine subset: 15 curated labels covering every important axis (see
     # benchmarks/routine.ts and test-data-v2/routine-manifest.json). Cheaper

@@ -50,7 +50,7 @@ beforeAll(() => {
 });
 
 const TRIGGER_LABEL =
-  "Upload label images: drag and drop, or press Enter to browse";
+  "Choose files: upload label images, drag and drop, or press Enter to browse";
 
 function getHiddenFileInput(container: HTMLElement): HTMLInputElement {
   const input = container.querySelector<HTMLInputElement>('input[type="file"]');
@@ -173,7 +173,7 @@ describe("UploadZone", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("button", {
-          name: /Choose a folder of label images and application files/i,
+          name: /Choose folder: label images and application files/i,
         }),
       ).toBeInTheDocument();
     });

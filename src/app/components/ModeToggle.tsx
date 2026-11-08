@@ -107,7 +107,7 @@ export function ModeToggle() {
         aria-pressed={isSimple}
         title="Show only the verdict and the basics (recommended for first-time use)"
         className={
-          "px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 " +
+          "min-h-[44px] min-w-[44px] px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 " +
           (isSimple
             ? "bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900"
             : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700")
@@ -121,7 +121,7 @@ export function ModeToggle() {
         aria-pressed={!isSimple}
         title="Show every check, subscore, confidence, and timing (recommended for operators)"
         className={
-          "border-l border-slate-300 px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-600 " +
+          "min-h-[44px] min-w-[44px] border-l border-slate-300 px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-600 " +
           (!isSimple
             ? "bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900"
             : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700")
