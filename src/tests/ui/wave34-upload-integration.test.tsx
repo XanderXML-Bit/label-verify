@@ -128,7 +128,7 @@ describe("Wave-34 → 35l iOS picker fix — universal button opens chooser on i
       // "Choose photos" button at the top level any more.
       const trigger = await waitFor(() => {
         return screen.getByRole("button", {
-          name: /Upload label images: drag and drop, or press Enter to browse/i,
+          name: /Choose files: upload label images, drag and drop, or press Enter to browse/i,
         });
       });
       expect(trigger.textContent?.trim()).toBe("Choose files");
@@ -165,7 +165,7 @@ describe("Wave-34 → 35l iOS picker fix — universal button opens chooser on i
       render(<UploadZone onFiles={() => undefined} />);
       const trigger = await waitFor(() =>
         screen.getByRole("button", {
-          name: /Upload label images: drag and drop, or press Enter to browse/i,
+          name: /Choose files: upload label images, drag and drop, or press Enter to browse/i,
         }),
       );
       await user.click(trigger);
@@ -225,7 +225,7 @@ describe("Wave-34 → 35l iOS picker fix — universal button opens chooser on i
       // (clicking it fires the unified picker directly, not the
       // iOS chooser popover).
       const trigger = screen.getByRole("button", {
-        name: /Upload label images: drag and drop, or press Enter to browse/i,
+        name: /Choose files: upload label images, drag and drop, or press Enter to browse/i,
       });
       expect(trigger).toBeInTheDocument();
       expect(trigger.getAttribute("aria-haspopup")).toBeNull();
@@ -322,7 +322,7 @@ describe("Wave-34 ReviewerBadge — persists via localStorage", () => {
     const { unmount } = render(<ReviewerBadge />);
     // The initial badge is a button with "+ set ID" copy.
     const trigger = await screen.findByRole("button", {
-      name: /Set reviewer ID/i,
+      name: /Reviewer: \+ set ID/i,
     });
     await user.click(trigger);
     // The input has both a sr-only <label> and an aria-label — match by

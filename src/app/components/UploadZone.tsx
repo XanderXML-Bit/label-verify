@@ -433,7 +433,7 @@ export function UploadZone({
             <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               or use the buttons below · images: JPEG, PNG, WebP, HEIC · applications: PDF, JSON, CSV, MD, TXT, DOCX · folders are scanned recursively
             </div>
-            <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+            <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
               Drop one image to verify single; image + matching application file to pre-fill the form; or N image/application pairs (or a folder of them) for batch. Files we don&apos;t recognise are ignored with a list.
             </div>
             {iosHinted ? (
@@ -473,7 +473,7 @@ export function UploadZone({
             aria-label={
               isAppend
                 ? "Add more files: open picker or drag and drop"
-                : "Upload label images: drag and drop, or press Enter to browse"
+                : "Choose files: upload label images, drag and drop, or press Enter to browse"
             }
             {...(iosHinted
               ? {
@@ -563,7 +563,7 @@ export function UploadZone({
           {folderSupported ? (
             <button
               type="button"
-              aria-label="Choose a folder of label images and application files"
+              aria-label="Choose folder: label images and application files"
               className={`min-h-[44px] rounded-md border text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
                 isAppend
                   ? "border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"

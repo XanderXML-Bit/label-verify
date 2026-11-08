@@ -145,14 +145,12 @@ export default function RootLayout({
             when `viewportFit: "cover"` is set on the viewport meta.
             UX audit P-9. The inset is 0 on devices that don't have one,
             so it's a no-op everywhere else. */}
-        <footer className="mx-auto max-w-5xl px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-xs text-slate-400 dark:text-slate-500">
+        <footer className="mx-auto max-w-5xl px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-xs text-slate-600 dark:text-slate-400">
           TTB COLA verification prototype. Not a production verification
           service. See{" "}
-          {/* Touch target ≥ 44 px tall on mobile (inline-block + py-2) so
-              tapping it on a phone meets WCAG 2.5.5 / Apple HIG guidance.
-              UI audit P-4. */}
+          {/* Keep the repository link at least 44 px tall at every width. */}
           <a
-            className="inline-block py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
+            className="relative inline-flex min-h-[44px] min-w-[44px] items-center py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
             href="https://github.com/XanderXML-Bit/label-verify"
             rel="noopener noreferrer"
             target="_blank"
