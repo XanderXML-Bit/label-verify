@@ -133,7 +133,11 @@ export function ReviewerBadge() {
     >
       <span className="hidden sm:inline">Reviewer:&nbsp;</span>
       {value ? (
-        <span className="font-mono">{value}</span>
+        // Cap the width so a long stored ID cannot wrap the header
+        // controls. The aria-label and title still carry the full value.
+        <span className="inline-block max-w-[9rem] truncate align-bottom font-mono">
+          {value}
+        </span>
       ) : (
         <span className="text-slate-500 dark:text-slate-400">+ set ID</span>
       )}
