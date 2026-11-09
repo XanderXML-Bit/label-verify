@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import {
   PdfExtractError,
@@ -105,6 +108,44 @@ describe("extractPdfText", () => {
     } catch (err) {
       expect((err as PdfExtractError).code).toBe("render-failed");
     }
+  });
+});
+
+const fixtures = path.join(process.cwd(), "src/tests/fixtures/pdf");
+
+describe("real PDF pages", () => {
+  it.each(["standard-fonts.pdf", "embedded-font.pdf", "scanned-image.pdf"])(
+    "renders visible content from %s without corrupting its input",
+    async (name) => {
+      const input = await readFile(path.join(fixtures, name));
+      const original = Buffer.from(input);
+      const result = await extractPdfFirstPage(input);
+      expect(input).toEqual(original);
+      expect(result.pageCount).toBe(1);
+      const { data, info } = await sharp(result.pngBuffer)
+        .flatten({ background: "white" })
+        .greyscale()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      expect(Math.max(info.width, info.height)).toBe(2000);
+      let darkPixels = 0;
+      // All fixtures place text above the vector or colored image block.
+      const textRegion = data.subarray(0, info.width * Math.floor(info.height * 0.4));
+      for (const pixel of textRegion) {
+        if (pixel < 100) darkPixels++;
+      }
+      // Blank glyphs must not pass because a vector rectangle renders.
+      expect(darkPixels).toBeGreaterThan(1000);
+    },
+  );
+
+  it.each([
+    ["embedded-font.pdf", "EMBEDDED LABEL 42"],
+    ["scanned-image.pdf", ""],
+  ])("extracts the text layer from %s", async (name, text) => {
+    const result = await extractPdfText(await readFile(path.join(fixtures, name)));
+    expect(result.pageCount).toBe(1);
+    expect(result.text).toBe(text);
   });
 });
 
