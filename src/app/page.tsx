@@ -25,6 +25,7 @@ import {
   type ApplicationParsePayload,
 } from "./components/ApplicationUpload";
 import type { Sample } from "@/lib/samples";
+import { OFFLINE_DEMO_MESSAGE } from "@/lib/demo-copy";
 import { compressImageInBrowser } from "@/lib/client-compress";
 import { classifyFile } from "@/lib/batch-pairing";
 import { mergeFilesForRestage } from "@/lib/upload-merge";
@@ -43,6 +44,8 @@ class HttpError extends Error {
 // reviewer can act on. The raw `HTTP 503` / `FUNCTION_INVOCATION_
 // TIMEOUT` strings are noise to a non-technical user.
 function friendlyError(raw: string, status?: number): string {
+  // Keyless public demo: the server explains itself; show it verbatim.
+  if (raw === OFFLINE_DEMO_MESSAGE) return raw;
   if (status === 429) {
     return "We've hit the per-minute request limit. Wait a moment and try again.";
   }
@@ -471,6 +474,8 @@ export default function Home() {
       const fd = new FormData();
       fd.append("image", uploadFile);
       fd.append("declared", JSON.stringify(sample.declared));
+      // Lets the keyless public demo answer with its offline sample path.
+      fd.append("sample", sample.id);
       const res = await fetch("/api/verify", { method: "POST", body: fd, signal: ac.signal });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -936,33 +941,42 @@ export default function Home() {
         </h2>
         {/* Long-form intro is detailed-only. Simple mode gets a one-line
             CTA so the upload zone is the dominant surface. */}
-        <p className="detailed-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+        <p className="demo-offline-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+          Pick one of the three samples below to see a full pass / fail /
+          review result.
+        </p>
+        <p className="demo-live-only detailed-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
           Upload a label image, then add the COLA application data (PDF,
           JSON, CSV, Markdown, text, or a photo of the form) — or fill
           the fields in manually. Returns a pass / fail / review verdict
           in seconds.
         </p>
-        <p className="simple-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+        <p className="demo-live-only simple-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
           Upload a label image to get a pass / fail / review verdict.
         </p>
         {/* The "extract-only" path is discoverable from a link below
             the form's primary Verify button. Surfacing it on idle adds
             two paragraphs to a screen the reviewer is trying to act on
             for the first time. Only surface it in detailed mode. */}
-        <p className="detailed-only mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+        <p className="demo-live-only detailed-only mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
           No application data? You can still extract what&apos;s on the label.
         </p>
       </header>
 
       {stage.kind === "idle" && (
-        <>
+        // Flex column (same 2rem rhythm as space-y-8) so the keyless
+        // public demo can move the samples above the upload zone with
+        // CSS `order`, decided server-side with no layout shift.
+        <div className="demo-idle flex flex-col gap-8">
           <UploadZone onFiles={handleFiles} />
           {/* Sample affordance is detailed-only. A non-technical
               reviewer landing on the idle screen should see one
               primary action (drop your label) — three "try a sample"
               buttons compete for attention. Power users in detailed
               mode still get the one-click demo path. */}
-          <div className="detailed-only">
+          {/* `demo-samples`: the keyless public demo also shows the
+              samples in simple mode (see globals.css). */}
+          <div className="detailed-only demo-samples">
             <SampleAffordance onPick={handleSample} />
           </div>
           {/* Review queue panel intentionally removed from the public
@@ -990,7 +1004,7 @@ export default function Home() {
               </p>
             </div>
           </details>
-        </>
+        </div>
       )}
 
       {stage.kind === "single-pending" && (

@@ -14,6 +14,12 @@ import "@testing-library/jest-dom/vitest";
 // behaviour. Production code (verifyLabel as called from real API
 // handlers) is unaffected — env is only set inside the vitest process.
 process.env.LV_ENLARGE = "0";
+
+// Keyless public demo (2026-11-08): production defaults to offline mode
+// and ignores provider keys unless LABEL_VERIFY_LIVE_MODELS=1. The
+// existing suites exercise the live pipeline with mocked providers, so
+// opt in here; the offline-demo suite deletes it per test.
+process.env.LABEL_VERIFY_LIVE_MODELS = "1";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 

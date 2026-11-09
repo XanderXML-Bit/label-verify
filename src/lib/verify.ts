@@ -55,6 +55,7 @@ import type {
   OcrWord,
 } from "./vision/types";
 import type { OcrResult } from "./ocr";
+import { providerKey, providerEnv } from "./demo-mode";
 
 interface VerifyOptions {
   extractor?: Extractor;
@@ -232,7 +233,7 @@ export async function verifyLabel(
       // the rest of the pipeline doesn't know the difference — except
       // for the `fallbackUsed` flag we surface on the response so the
       // UI can render a "verified via backup" banner.
-      const fallbackKey = process.env.OPENAI_API_KEY;
+      const fallbackKey = providerKey("OPENAI_API_KEY");
       const fallbackModel = process.env.MODEL_FALLBACK ?? "gpt-5.4-nano";
       if (!fallbackKey) {
         throw primaryErr;
@@ -666,7 +667,7 @@ export async function verifyLabel(
   if (
     govReviewBorderline &&
     !fallbackUsed &&
-    secondOpinionAvailable(process.env) &&
+    secondOpinionAvailable(providerEnv()) &&
     !externalAbort?.aborted
   ) {
     const soStart = performance.now();
@@ -684,7 +685,7 @@ export async function verifyLabel(
       // Wave-22: default to Gemini 2.5 Flash (smarter than primary
       // Flash-Lite, same price tier). Falls back to OpenAI nano if
       // SECOND_OPINION_PROVIDER=openai or GOOGLE_API_KEY is missing.
-      const soExtractor = await buildSecondOpinionExtractor(process.env);
+      const soExtractor = await buildSecondOpinionExtractor(providerEnv());
       if (!soExtractor) {
         // Shouldn't happen — secondOpinionAvailable() returned true above.
         // Defensive: skip the call rather than throw.
@@ -946,7 +947,7 @@ export async function extractOnly(
     try {
       extracted = await extractor.extract(pre.buffer, visionCtx);
     } catch (primaryErr) {
-      const fallbackKey = process.env.OPENAI_API_KEY;
+      const fallbackKey = providerKey("OPENAI_API_KEY");
       const fallbackModel = process.env.MODEL_FALLBACK ?? "gpt-5.4-nano";
       if (!fallbackKey) throw primaryErr;
       // Self-audit fix (wave-33 pass 2): mirror verifyLabel's
@@ -1132,7 +1133,7 @@ function round(n: number): number {
 let cachedExtractor: GeminiFlashExtractor | null = null;
 let cachedExtractorVersion: string | undefined;
 function buildDefaultExtractor(): GeminiFlashExtractor {
-  const apiKey = process.env.GOOGLE_API_KEY;
+  const apiKey = providerKey("GOOGLE_API_KEY");
   // Operations escape hatch: MODEL_PRIMARY overrides the adapter's
   // default `gemini-3.1-flash-lite` without a code change. Used by
   // wave-27 primary bake-off + any future operator-side A/B against

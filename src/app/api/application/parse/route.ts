@@ -7,6 +7,7 @@ import {
 } from "@/lib/application/parse";
 import { parseApplicationImage } from "@/lib/application/parse-image";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
+import { liveModelsEnabled, offlineDemoBody, providerKey } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -121,7 +122,11 @@ export async function POST(req: Request) {
   // `image/bmp`, etc., are 415'd rather than rewritten to JPEG and sent
   // upstream (per security code review 2026-05).
   if (ACCEPTED_IMAGE_MIME.has(mime)) {
-    const apiKey = process.env.GOOGLE_API_KEY ?? "";
+    // Keyless public demo: photo-of-application parsing needs a model call.
+    if (!liveModelsEnabled()) {
+      return NextResponse.json(offlineDemoBody(), { status: 503 });
+    }
+    const apiKey = providerKey("GOOGLE_API_KEY") ?? "";
     if (!apiKey) {
       return NextResponse.json(
         {
@@ -163,8 +168,8 @@ export async function POST(req: Request) {
       // fall back to vision OCR of the rendered first page instead
       // of failing closed. parseApplication ignores the key on
       // non-PDF paths.
-      ...(process.env.GOOGLE_API_KEY
-        ? { apiKey: process.env.GOOGLE_API_KEY }
+      ...(providerKey("GOOGLE_API_KEY")
+        ? { apiKey: providerKey("GOOGLE_API_KEY") }
         : {}),
       ...(imageFilename ? { imageFilename } : {}),
     });

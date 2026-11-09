@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { isOfflineDemo } from "./demo-mode";
 
 // ─── E2E: extract-only flow ─────────────────────────────────────────────────
 //
@@ -34,7 +35,9 @@ test.describe("Extract-only flow", () => {
 
   test("PASS sample → open form → Skip-and-extract lands on the ExtractionOnlyResult panel", async ({
     page,
+    request,
   }) => {
+    test.skip(await isOfflineDemo(request), "extract-only needs live models");
     // Pick the PASS sample to start. The sample skips the form and runs
     // a full verify; we then need to navigate back to a state where the
     // extract-only affordance is reachable. The cleanest path: click

@@ -149,6 +149,17 @@ export function SingleResult({
         </span>
       </header>
 
+      {result.offlineDemo && (
+        <div
+          role="note"
+          data-testid="offline-sample-note"
+          className="rounded-lg border-l-4 border-sky-600 bg-sky-50 p-3 text-sm text-sky-950 dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-100"
+        >
+          <strong>Offline sample result.</strong>{" "}
+          {result.offlineDemo.note.replace(/^Offline sample result\.\s*/, "")}
+        </div>
+      )}
+
       {result.fallbackUsed && (
         <div
           role="alert"

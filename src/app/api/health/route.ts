@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkDebugBearer } from "@/lib/debug-token";
+import { liveModelsEnabled, providerKey } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -23,12 +24,16 @@ export const runtime = "nodejs";
  * just needs `ready` + a generic `notes` list. 2026-05-12 audit #D12.
  */
 export async function GET(req: Request) {
-  const hasGoogle = Boolean(process.env.GOOGLE_API_KEY);
-  const hasOpenAi = Boolean(process.env.OPENAI_API_KEY);
-  const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
-  const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY);
+  const hasGoogle = Boolean(providerKey("GOOGLE_API_KEY"));
+  const hasOpenAi = Boolean(providerKey("OPENAI_API_KEY"));
+  const hasAnthropic = Boolean(providerKey("ANTHROPIC_API_KEY"));
+  const hasOpenRouter = Boolean(providerKey("OPENROUTER_API_KEY"));
   const hasDebugToken = Boolean(process.env.DEBUG_TOKEN);
-  const ready = hasGoogle;
+  // Keyless public demo: the offline sample path needs no key, so the
+  // service is ready. `mode` tells callers which path will run.
+  const live = liveModelsEnabled();
+  const mode = live ? "live" : "offline-demo";
+  const ready = live ? hasGoogle : true;
 
   const auth = req.headers.get("authorization") ?? "";
   const tokenOk = hasDebugToken
@@ -38,7 +43,7 @@ export async function GET(req: Request) {
   // Generic, vendor-free notes for the public surface. The banner
   // currently surfaces only the missing-key case; that's actionable
   // without leaking which provider drives the primary path.
-  const publicNotes = hasGoogle
+  const publicNotes = !live || hasGoogle
     ? []
     : [
         "The verification service is missing a required API key. The operator needs to add it before single-image verifies will run.",
@@ -48,6 +53,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       ok: true,
       service: "label-verify",
+      mode,
       ready,
       notes: publicNotes,
     });
@@ -82,8 +88,9 @@ export async function GET(req: Request) {
       openrouter: hasOpenRouter,
     },
     debugTokenEnabled: hasDebugToken,
+    mode,
     ready,
-    notes: hasGoogle
+    notes: !live || hasGoogle
       ? []
       : [
           "GOOGLE_API_KEY missing — /api/verify will 500 with a configuration error. Add it in Vercel Project → Settings → Environment Variables and redeploy.",

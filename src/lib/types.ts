@@ -147,6 +147,12 @@ export interface VerifyResponse {
    * clear-FAIL verifications.
    */
   secondOpinion?: SecondOpinion;
+  /**
+   * Set only by the keyless public demo (owner decision 2026-11-08).
+   * The extraction is a recorded sample, not a model call; the UI shows
+   * `note` as a clearly labelled "offline sample result" banner.
+   */
+  offlineDemo?: { sampleId: string; note: string };
 }
 
 export interface SecondOpinion {
