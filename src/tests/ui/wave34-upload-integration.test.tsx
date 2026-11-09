@@ -177,6 +177,8 @@ describe("Wave-34 → 35l iOS picker fix — universal button opens chooser on i
       );
       // Menu unmounted.
       expect(screen.queryByRole("menu")).toBeNull();
+      // Focus is back on the trigger (WAI-ARIA menu button pattern).
+      expect(document.activeElement).toBe(trigger);
     } finally {
       restore();
     }
