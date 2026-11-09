@@ -191,9 +191,14 @@ describe("Wave-35e — external abort behaviour in verifyLabel", () => {
       extractor,
       abortSignal: ac.signal,
     });
-    await entered;
+    await Promise.race([
+      entered,
+      p.then(() => { throw new Error("verifyLabel settled before extract was entered"); }),
+    ]);
     // Model an SSE client disconnect from outside the active extractor.
     ac.abort();
+    // Abort listeners propagate cancellation synchronously.
+    expect(abortObservedInExtractor).toBe(true);
     await expect(p).rejects.toThrow();
     // The orchestrator-side listener (`onExternalAbort`) called
     // `ctrl.abort()` mid-flight, which propagated to the extractor's
