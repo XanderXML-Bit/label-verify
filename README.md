@@ -45,6 +45,12 @@
 3. Read the verdict + the 7-field breakdown + Gov-Warning subscores
 ```
 
+| Desktop (1440 × 900), PASS sample result | Mobile (390 × 844), first screen |
+|---|---|
+| ![Label Verify desktop: PASS sample result in the offline demo](docs/screenshots/desktop.png) | ![Label Verify mobile: offline-demo notice and sample picker](docs/screenshots/mobile.png) |
+
+_Screenshots of the public offline demo, captured 2026-11-08._
+
 No install, no key, no signup. The samples ship matching COLA application data so reviewers can see end-to-end behaviour on first click.
 
 > **Public demo runs offline (since 2026-11-08).** The hosted demo makes no AI model calls and uses no API keys. The three samples run the real preprocessing, OCR, field comparators and Government Warning validator on a recorded sample extraction, and each result is labelled "Offline sample result". Uploaded label images are not verified there (the server only runs the bundled sample images); requests without a sample id, URL input, extract-only and batch answer HTTP 503 `offline-demo`. Everything described below works when you run the project yourself with live models enabled (see [Install](#install)).

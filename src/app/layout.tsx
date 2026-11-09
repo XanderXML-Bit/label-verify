@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Label Verify — TTB COLA prototype",
     description:
-      "Verify alcohol label images against application data — ~4–6 seconds end-to-end on a warm function.",
+      "Verify alcohol label images against application data. The public demo runs three recorded samples offline.",
     type: "website",
     siteName: "Label Verify",
     url: "/",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     images: ["/share.png"],
     title: "Label Verify — TTB COLA prototype",
     description:
-      "Verify alcohol label images against application data — ~4–6 seconds end-to-end on a warm function.",
+      "Verify alcohol label images against application data. The public demo runs three recorded samples offline.",
   },
 };
 
