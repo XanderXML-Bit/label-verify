@@ -25,7 +25,8 @@ npm run build
 node scripts/test-pdf-production.mjs
 ```
 
-The smoke script starts localhost-only standalone servers with all four provider keys removed.
+The smoke script starts localhost-only standalone servers with all four provider keys forced to empty strings.
+Empty values prevent Next.js from restoring keys through packaged dotenv files.
 Offline mode must return `503 offline-demo` before parsing uploads.
 Live mode must render each PDF before reaching the missing-provider-key guard.
 The expected downstream responses are `502` for extraction and `500` for verification.

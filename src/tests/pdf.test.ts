@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
@@ -146,6 +148,39 @@ describe("real PDF pages", () => {
     const result = await extractPdfText(await readFile(path.join(fixtures, name)));
     expect(result.pageCount).toBe(1);
     expect(result.text).toBe(text);
+  });
+});
+
+describe("PDF production smoke safety", () => {
+  it("keeps provider keys empty when Next.js loads packaged dotenv files", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "pdf-smoke-env-"));
+    const keys = ["GOOGLE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY"];
+    try {
+      const marker = keys.map((key) => `${key}=synthetic-dotenv-marker`).join("\n");
+      await writeFile(path.join(root, ".env.production"), marker);
+      const output = execFileSync(process.execPath, [
+        "--input-type=module", "-e", `
+          import { createRequire } from "node:module";
+          import { pathToFileURL } from "node:url";
+          import path from "node:path";
+          const require = createRequire(path.join(process.cwd(), "package.json"));
+          const { pdfSmokeEnv } = await import(pathToFileURL(path.join(process.cwd(), "scripts/pdf-smoke-env.mjs")));
+          const keys = ${JSON.stringify(keys)};
+          for (const key of keys) delete process.env[key];
+          const parent = { ...process.env };
+          Object.assign(process.env, pdfSmokeEnv(parent, 12345, "1"));
+          require("@next/env").loadEnvConfig(process.argv[1], false, { info() {}, error() {} }, true);
+          console.log(JSON.stringify(keys.map((key) => process.env[key])));
+        `, root,
+      ], {
+        encoding: "utf8",
+        timeout: 10_000,
+        env: { ...process.env, NODE_ENV: "production" },
+      });
+      expect(JSON.parse(output)).toEqual(keys.map(() => ""));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
 

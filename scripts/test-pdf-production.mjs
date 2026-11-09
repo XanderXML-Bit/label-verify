@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
 import { once } from "node:events";
+import { pdfSmokeEnv } from "./pdf-smoke-env.mjs";
 
 const root = path.resolve(process.argv[2] ?? ".next/standalone");
 const fixtures = path.resolve("src/tests/fixtures/pdf");
@@ -22,10 +23,7 @@ for (const mode of ["0", "1"]) {
   await once(reservation, "listening");
   const { port } = reservation.address();
   await new Promise((resolve) => reservation.close(resolve));
-  const env = { ...process.env, HOSTNAME: "127.0.0.1", PORT: String(port), LABEL_VERIFY_LIVE_MODELS: mode };
-  for (const key of ["GOOGLE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY"]) {
-    delete env[key];
-  }
+  const env = pdfSmokeEnv(process.env, port, mode);
   const child = spawn(process.execPath, [path.join(root, "server.js")], {
     cwd: root,
     env,
