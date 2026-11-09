@@ -149,33 +149,36 @@ describe("Wave-35e — external abort behaviour in verifyLabel", () => {
   });
 
   it("propagates an externalAbort that fires WHILE primary vision is in flight (no leak)", async () => {
-    // The extractor records the abort timestamp via its own
-    // listener (not from outside the promise's lifetime). The test
-    // asserts: (a) the extractor's signal observed an abort event
-    // before resolution, (b) the orchestrator rejected the verify.
+    // Wait for extractor entry before aborting so image preprocessing
+    // cannot race the cancellation. The extractor only settles on abort,
+    // so elapsed time cannot make the simulated vision call finish first.
+    let resolveEntered!: () => void;
+    const entered = new Promise<void>((resolve) => {
+      resolveEntered = resolve;
+    });
+    let signalLiveAtCall = false;
     let abortObservedInExtractor = false;
     const extractor: Extractor = {
       id: "mock:slow",
       networkRequired: false,
       extract: async (_buf, ctx) => {
-        // Subscribe to the abort event INSIDE the extractor — this
-        // is exactly how the Gemini SDK's underlying fetch works.
-        ctx?.signal?.addEventListener("abort", () => {
-          abortObservedInExtractor = true;
-        });
-        // Simulate a 250 ms vision call. If the signal aborts
-        // during the wait, throw AbortError (real SDK behaviour).
-        await new Promise<void>((resolve, reject) => {
-          const id = setTimeout(resolve, 250);
-          ctx?.signal?.addEventListener("abort", () => {
-            clearTimeout(id);
+        signalLiveAtCall = !!ctx?.signal && !ctx.signal.aborted;
+        resolveEntered();
+        const signal = ctx?.signal;
+        if (!signal || signal.aborted) {
+          throw new DOMException("aborted", "AbortError");
+        }
+        // Register synchronously before the test resumes from `entered`.
+        await new Promise<void>((_resolve, reject) => {
+          signal.addEventListener("abort", () => {
+            abortObservedInExtractor = true;
             reject(new DOMException("aborted", "AbortError"));
-          });
+          }, { once: true });
         });
         return {
           fields: COMPLIANT_FIELDS,
           rawOutput: COMPLIANT_FIELDS,
-          latencyMs: 250,
+          latencyMs: 0,
           modelId: "mock:slow",
           modelVersion: "v1",
           promptHash: "x",
@@ -184,18 +187,18 @@ describe("Wave-35e — external abort behaviour in verifyLabel", () => {
       },
     };
     const ac = new AbortController();
-    // Trigger external abort 50 ms into the call — well before the
-    // 250 ms simulated vision-call completion.
-    setTimeout(() => ac.abort(), 50);
-    await expect(
-      verifyLabel(await tinyJpeg(), DECLARED, {
-        extractor,
-        abortSignal: ac.signal,
-      }),
-    ).rejects.toThrow();
+    const p = verifyLabel(await tinyJpeg(), DECLARED, {
+      extractor,
+      abortSignal: ac.signal,
+    });
+    await entered;
+    // Model an SSE client disconnect from outside the active extractor.
+    ac.abort();
+    await expect(p).rejects.toThrow();
     // The orchestrator-side listener (`onExternalAbort`) called
     // `ctrl.abort()` mid-flight, which propagated to the extractor's
     // ctx.signal — observed by the extractor's own listener.
+    expect(signalLiveAtCall).toBe(true);
     expect(abortObservedInExtractor).toBe(true);
   });
 
