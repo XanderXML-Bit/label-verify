@@ -119,10 +119,16 @@ export function UploadZone({
   // Move focus into the menu when it opens. The trigger uses
   // aria-haspopup + aria-expanded so a screen reader announces the
   // state change at the same time.
+  // Only return focus after the menu was actually open. Running this on
+  // mount focused the trigger on every page load, which scrolled mobile
+  // visitors past the samples to the upload zone.
+  const iosChooserWasOpen = useRef(false);
   useEffect(() => {
     if (iosChooserOpen) {
+      iosChooserWasOpen.current = true;
       iosChooserPhotoBtnRef.current?.focus();
-    } else {
+    } else if (iosChooserWasOpen.current) {
+      iosChooserWasOpen.current = false;
       // Returning focus to the trigger is the documented WAI-ARIA
       // pattern for a menu button — important for keyboard users
       // who tabbed in and would otherwise be dropped at the start
