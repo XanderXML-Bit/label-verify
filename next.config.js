@@ -22,6 +22,9 @@ const nextConfig = {
       "./node_modules/tesseract.js-core/**/*.js",
       "./node_modules/tesseract.js/src/worker-script/node/**/*",
     ],
+    // Keyless public demo: the offline sample path reads the bundled
+    // sample images from disk instead of trusting uploaded bytes.
+    "/api/verify": ["./public/samples/*.jpg"],
   },
   // Vision API responses can be large; raise the upload-body limit on the
   // verify endpoint so per-item function calls don't reject mid-batch.

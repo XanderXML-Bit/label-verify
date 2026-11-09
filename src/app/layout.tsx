@@ -4,6 +4,8 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { ModeToggle } from "./components/ModeToggle";
 import { ReviewerBadge } from "./components/ReviewerBadge";
 import { resolveMetadataOrigin } from "../lib/site-metadata";
+import { liveModelsEnabled } from "@/lib/demo-mode";
+import { OFFLINE_DEMO_NOTICE } from "@/lib/demo-copy";
 
 export const metadata: Metadata = {
   metadataBase: resolveMetadataOrigin(process.env.SITE_URL),
@@ -92,11 +94,15 @@ export default function RootLayout({
 }: {
   readonly children: React.ReactNode;
 }) {
+  // Keyless public demo (owner decision 2026-11-08). Read on the server
+  // only; nothing about provider keys reaches the browser.
+  const offlineDemo = !liveModelsEnabled();
   return (
     <html
       lang="en"
       data-theme="light"
       data-mode="simple"
+      data-demo={offlineDemo ? "offline" : "live"}
       suppressHydrationWarning
     >
       <head>
@@ -137,6 +143,14 @@ export default function RootLayout({
           </div>
         </header>
         <main id="main" className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+          {offlineDemo && (
+            <p
+              data-testid="offline-demo-notice"
+              className="mb-6 rounded-lg border-l-4 border-sky-600 bg-sky-50 p-3 text-sm text-sky-950 dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-100"
+            >
+              <strong>Offline demo.</strong> {OFFLINE_DEMO_NOTICE}
+            </p>
+          )}
           {children}
         </main>
         {/* `pb-[env(safe-area-inset-bottom)]` adds breathing room below

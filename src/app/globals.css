@@ -142,6 +142,19 @@ html[data-mode="simple"] .detailed-only {
 html[data-mode="detailed"] .simple-only {
   display: none !important;
 }
+/* Keyless public demo (data-demo="offline", set server-side in
+ * layout.tsx): uploads are off, so the bundled samples are the primary
+ * action and stay visible in simple mode too. */
+html[data-mode="simple"][data-demo="offline"] .detailed-only.demo-samples {
+  display: block !important;
+}
+html[data-demo="offline"] .demo-samples {
+  order: -1;
+}
+html[data-demo="offline"] .demo-live-only,
+html:not([data-demo="offline"]) .demo-offline-only {
+  display: none !important;
+}
 
 /*
  * Print stylesheet for the "Save case file (PDF)" affordance on

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { liveModelsEnabled, offlineDemoBody } from "@/lib/demo-mode";
 import { extractOnly } from "@/lib/verify";
 import { UrlFetchError, fetchUrlImage } from "@/lib/input-handlers";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
@@ -34,6 +35,10 @@ const MAX_BYTES = 10 * 1024 * 1024;
 const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
 export async function POST(req: Request) {
+  // Keyless public demo: extract-only always needs a live model call.
+  if (!liveModelsEnabled()) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
   const key = callerKey(req.headers);
   const rl = rateLimit(`extract:${key}`, { perMinute: RATE_LIMIT_PER_MIN });
   if (!rl.allowed) {

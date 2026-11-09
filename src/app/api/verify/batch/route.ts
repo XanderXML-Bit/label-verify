@@ -33,6 +33,7 @@ import {
 } from "@/lib/batch-pairing";
 import { preprocessImage } from "@/lib/preprocess";
 import { GeminiFlashExtractor } from "@/lib/vision/gemini";
+import { liveModelsEnabled, offlineDemoBody, providerKey } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -91,6 +92,10 @@ export const MAX_BATCH_BYTES = MAX_BATCH_BODY_BYTES;
 type ParsedApplication = Awaited<ReturnType<typeof parseApplication>>;
 
 export async function POST(req: Request) {
+  // Keyless public demo: batch verification always needs live model calls.
+  if (!liveModelsEnabled()) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
   const parsedAppCache = new WeakMap<File, ParsedApplication>();
   // Wave-33 audit (Sub-agent A bugs #1/#9): defensive Buffer cache so
   // each File's bytes are read at most once per request. Previously
@@ -505,10 +510,10 @@ export async function POST(req: Request) {
     if (
       pairResult.unpairedImages.length > 0 &&
       pairResult.unpairedApplications.length > 0 &&
-      process.env.GOOGLE_API_KEY
+      providerKey("GOOGLE_API_KEY")
     ) {
       try {
-        const apiKey = process.env.GOOGLE_API_KEY;
+        const apiKey = providerKey("GOOGLE_API_KEY") ?? "";
         // Parse each unpaired app's fingerprint (brand_name +
         // class_type + abv_percent are enough to disambiguate). The
         // full parse is needed downstream anyway for the verify
@@ -642,8 +647,8 @@ export async function POST(req: Request) {
             buffer: await readFileBytes(broadcastApp),
             filename: broadcastApp.name,
             mime: broadcastApp.type,
-            ...(process.env.GOOGLE_API_KEY
-              ? { apiKey: process.env.GOOGLE_API_KEY }
+            ...(providerKey("GOOGLE_API_KEY")
+              ? { apiKey: providerKey("GOOGLE_API_KEY") }
               : {}),
           }));
         // Stash for reuse by the per-pair loop.
@@ -752,8 +757,8 @@ export async function POST(req: Request) {
               buffer: appBuf,
               filename: applicationFile.name,
               mime: applicationFile.type,
-              ...(process.env.GOOGLE_API_KEY
-                ? { apiKey: process.env.GOOGLE_API_KEY }
+              ...(providerKey("GOOGLE_API_KEY")
+                ? { apiKey: providerKey("GOOGLE_API_KEY") }
                 : {}),
             });
           } catch (err) {

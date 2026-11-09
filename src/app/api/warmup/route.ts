@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { warmupTesseract } from "@/lib/ocr/tesseract";
+import { liveModelsEnabled, providerKey } from "@/lib/demo-mode";
 
 export const runtime = "nodejs";
 
@@ -26,8 +27,10 @@ const WARMUP_BUDGET_MS = 8_000;
 // deliberately do NOT make a real network call here — the SDK auth
 // handshake happens lazily on first generateContent(), so warming it
 // would burn tokens for marginal gain.
-async function warmupGemini(): Promise<"ok" | "missing-key" | "failed"> {
-  const key = process.env.GOOGLE_API_KEY;
+async function warmupGemini(): Promise<"ok" | "missing-key" | "failed" | "offline-demo"> {
+  // Keyless public demo: never load or construct a provider client.
+  if (!liveModelsEnabled()) return "offline-demo";
+  const key = providerKey("GOOGLE_API_KEY");
   if (!key) return "missing-key";
   try {
     const mod = await import("@/lib/vision/gemini");

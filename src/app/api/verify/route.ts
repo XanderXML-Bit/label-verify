@@ -1,12 +1,17 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
 import { verifyLabel } from "@/lib/verify";
 import { DeclaredFieldsSchema } from "@/lib/types";
-import type { DeclaredFields } from "@/lib/types";
+import type { DeclaredFields, VerifyResponse } from "@/lib/types";
 import { UrlFetchError, fetchUrlImage } from "@/lib/input-handlers";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
 import type { RateLimitResult } from "@/lib/rate-limit";
 import { recordTrace } from "@/lib/debug-trace";
 import { enqueueForReview, makeReviewItemId } from "@/lib/review-queue";
+import { liveModelsEnabled, offlineDemoBody, OFFLINE_SAMPLE_NOTE } from "@/lib/demo-mode";
+import { SAMPLES } from "@/lib/samples";
+import { OfflineSampleExtractor } from "@/lib/vision/offline-sample";
 import {
   MAX_PDF_BYTES,
   PdfExtractError,
@@ -50,6 +55,12 @@ export async function POST(req: Request) {
         },
       },
     );
+  }
+
+  // Public demo (owner decision 2026-11-08): no model-provider keys and
+  // no model calls unless LABEL_VERIFY_LIVE_MODELS=1 is set server-side.
+  if (!liveModelsEnabled()) {
+    return runOfflineSample(req, rl, requestId);
   }
 
   const contentType = req.headers.get("content-type") ?? "";
@@ -313,6 +324,79 @@ async function runVerify(
         status: aborted ? 504 : 500,
         ...(requestId ? { headers: { "X-Request-Id": requestId } } : {}),
       },
+    );
+  }
+}
+
+/**
+ * Offline-demo path. Only the three bundled samples are accepted; the
+ * vision step uses a recorded sample extraction (no network, no key),
+ * and the declared data always comes from the bundled sample, never
+ * from the request. Everything else answers 503 `offline-demo`.
+ */
+async function runOfflineSample(
+  req: Request,
+  rl: RateLimitResult,
+  requestId?: string,
+) {
+  const contentType = req.headers.get("content-type") ?? "";
+  if (!contentType.includes("multipart/form-data")) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json(
+      { error: "Body must be multipart/form-data." },
+      { status: 400 },
+    );
+  }
+  const sampleId = formData.get("sample");
+  const sample = SAMPLES.find((s) => s.id === sampleId);
+  if (!sample) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
+  // Any uploaded bytes are ignored: the bundled sample image is read from
+  // disk, so an unrelated upload can never be shown with a sample verdict.
+  let buffer: Buffer;
+  try {
+    buffer = await readFile(
+      path.join(process.cwd(), "public", sample.imageUrl.replace(/^\//, "")),
+    );
+  } catch (err) {
+    // Log the detail server-side; never echo filesystem paths to callers.
+    console.warn(`[verify] offline sample image unreadable: ${(err as Error).message}`);
+    return NextResponse.json(
+      { error: "Offline sample image is unavailable on this deployment." },
+      { status: 500 },
+    );
+  }
+  try {
+    const result = await verifyLabel(buffer, sample.declared, {
+      recordTrace,
+      extractor: new OfflineSampleExtractor(
+        sample.id === "fail" ? "fail" : "pass",
+      ),
+    });
+    const body: VerifyResponse = {
+      ...result,
+      offlineDemo: { sampleId: sample.id, note: OFFLINE_SAMPLE_NOTE },
+    };
+    return NextResponse.json(body, {
+      headers: {
+        "X-RateLimit-Remaining": String(rl.remaining),
+        "X-Label-Verify-Mode": "offline-demo",
+        ...(requestId ? { "X-Request-Id": requestId } : {}),
+      },
+    });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error: `Offline sample verification failed: ${(err as Error).message}`,
+        ...(requestId ? { requestId } : {}),
+      },
+      { status: 500 },
     );
   }
 }

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { isOfflineDemo } from "./demo-mode";
 
 // ─── E2E: idle screen + sample affordance ──────────────────────────────────
 //
@@ -41,7 +42,8 @@ test.describe("Idle screen", () => {
     await expect(page.getByText(/About this prototype/i)).toBeVisible();
   });
 
-  test("simple mode (default) hides the sample affordance and About panel", async ({ page }) => {
+  test("simple mode (default) hides the sample affordance and About panel", async ({ page, request }) => {
+    const offline = await isOfflineDemo(request);
     // Clear the detailed-mode preference set in beforeEach, so the
     // page loads in the production default of simple mode.
     await page.addInitScript(() => {
@@ -61,9 +63,11 @@ test.describe("Idle screen", () => {
     ).toBeVisible();
     // Sample affordance is .detailed-only — hidden via
     // `display:none !important` in simple mode.
-    await expect(
-      page.getByRole("region", { name: /Try a sample/i }),
-    ).toBeHidden();
+    // Keyless public demo: uploads are off, so the samples stay visible
+    // in simple mode as the primary action.
+    const samples = page.getByRole("region", { name: /Try a sample/i });
+    if (offline) await expect(samples).toBeVisible();
+    else await expect(samples).toBeHidden();
     await expect(page.getByText(/About this prototype/i)).toBeHidden();
   });
 

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { isOfflineDemo } from "./demo-mode";
 import { join } from "node:path";
 
 // ─── E2E: application-input + label-only flows ─────────────────────────────
@@ -46,7 +47,8 @@ const SAMPLE_APP_JSON = JSON.stringify(
   2,
 );
 
-test("label + application JSON → prefilled form → Verify", async ({ page }) => {
+test("label + application JSON → prefilled form → Verify", async ({ page, request }) => {
+  test.skip(await isOfflineDemo(request), "uploads need live models; offline demo covered by offline-demo.spec.ts");
   await page.goto("/");
   // Use the hidden <input type="file"> directly — setInputFiles
   // bypasses the native picker entirely. The previous flow (click
@@ -93,7 +95,9 @@ test("label + application JSON → prefilled form → Verify", async ({ page }) 
 
 test('"Skip — just show what\'s on the label" → ExtractionOnly panel', async ({
   page,
+  request,
 }) => {
+  test.skip(await isOfflineDemo(request), "extract-only needs live models");
   await page.goto("/");
   await page.setInputFiles('input[type="file"]', SAMPLE_LABEL);
 
