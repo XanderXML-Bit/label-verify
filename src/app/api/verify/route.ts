@@ -365,8 +365,10 @@ async function runOfflineSample(
       path.join(process.cwd(), "public", sample.imageUrl.replace(/^\//, "")),
     );
   } catch (err) {
+    // Log the detail server-side; never echo filesystem paths to callers.
+    console.warn(`[verify] offline sample image unreadable: ${(err as Error).message}`);
     return NextResponse.json(
-      { error: `Offline sample image unavailable: ${(err as Error).message}` },
+      { error: "Offline sample image is unavailable on this deployment." },
       { status: 500 },
     );
   }
