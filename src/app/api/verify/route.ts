@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
 import { verifyLabel } from "@/lib/verify";
 import { DeclaredFieldsSchema } from "@/lib/types";
@@ -352,23 +354,22 @@ async function runOfflineSample(
   }
   const sampleId = formData.get("sample");
   const sample = SAMPLES.find((s) => s.id === sampleId);
-  const file = formData.get("image");
-  if (!sample || !(file instanceof File)) {
+  if (!sample) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
   }
-  if (file.size > MAX_BYTES) {
+  // Any uploaded bytes are ignored: the bundled sample image is read from
+  // disk, so an unrelated upload can never be shown with a sample verdict.
+  let buffer: Buffer;
+  try {
+    buffer = await readFile(
+      path.join(process.cwd(), "public", sample.imageUrl.replace(/^\//, "")),
+    );
+  } catch (err) {
     return NextResponse.json(
-      { error: `Image exceeds ${MAX_BYTES} bytes. Please compress first.` },
-      { status: 413 },
+      { error: `Offline sample image unavailable: ${(err as Error).message}` },
+      { status: 500 },
     );
   }
-  if (!ACCEPTED_MIME.has(file.type) || file.type === PDF_MIME) {
-    return NextResponse.json(
-      { error: `Unsupported MIME type "${file.type}". Use JPEG, PNG, or WebP.` },
-      { status: 415 },
-    );
-  }
-  const buffer = Buffer.from(await file.arrayBuffer());
   try {
     const result = await verifyLabel(buffer, sample.declared, {
       recordTrace,

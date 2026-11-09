@@ -26,7 +26,7 @@
 | **What if Gemini is down?** | Cross-provider auto-fallback to GPT-5.4-nano (OpenAI) on primary failure, with a yellow "verified via backup" banner on the verdict. Separate from the second-opinion path. |
 | **Second opinion?** | On borderline Gov-Warning (`REVIEW` or low-confidence PASS without OCR corroboration), an independent second-opinion model (default **Gemini 2.5 Flash** since wave 22) re-reads the label. Agreement / disagreement is surfaced inline. Operator can route this to OpenAI instead via `SECOND_OPINION_PROVIDER=openai`. |
 | **Can I try it now?** | Yes — the live URL has pre-populated PASS / FAIL / REVIEW samples; one click runs end-to-end against production. |
-| **Code review** | **984 / 984** vitest tests passing across **96 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, production-dependency audit status in the Status table below (not zero, see [`SECURITY.md`](SECURITY.md#dependency-posture)). Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
+| **Code review** | **985 / 985** vitest tests passing across **96 test files**, zero ESLint warnings, typecheck clean, production build green, branch protection on `main`, production-dependency audit status in the Status table below (not zero, see [`SECURITY.md`](SECURITY.md#dependency-posture)). Multiple independent audit passes (Hermes, Codex, sub-agent code review, sub-agent fixture audit, sub-agent docs audit, sub-agent perf/accuracy audit, sub-agent production-readiness smoke, sub-agent GUI-simplification audit, sub-agent wave-22-25 second-opinion swap + Gov-Warning case-fold + class-generic acceptance + null-extraction safety net, sub-agent wave-27 primary-model bake-off). |
 
 **How to read this report**
 
@@ -47,7 +47,7 @@
 
 No install, no key, no signup. The samples ship matching COLA application data so reviewers can see end-to-end behaviour on first click.
 
-> **Public demo runs offline (since 2026-11-08).** The hosted demo makes no AI model calls and uses no API keys. The three samples run the real preprocessing, OCR, field comparators and Government Warning validator on a recorded sample extraction, and each result is labelled "Offline sample result". Uploads, URL input, extract-only and batch answer HTTP 503 `offline-demo` there. Everything described below works when you run the project yourself with live models enabled (see [Install](#install)).
+> **Public demo runs offline (since 2026-11-08).** The hosted demo makes no AI model calls and uses no API keys. The three samples run the real preprocessing, OCR, field comparators and Government Warning validator on a recorded sample extraction, and each result is labelled "Offline sample result". Uploaded label images are not verified there (the server only runs the bundled sample images); uploads, URL input, extract-only and batch answer HTTP 503 `offline-demo`. Everything described below works when you run the project yourself with live models enabled (see [Install](#install)).
 
 **With live models (self-hosted), upload your own:** drop any beverage-label image (JPEG / PNG / WebP / HEIC) into the dropzone; the form opens for the seven declared fields. Verdict returns in **~4–6 seconds end-to-end** on a warm function (server-side P50 ~3 s; the remainder is client-side image compression, network round-trip, and React render). First request after a cold Vercel function spin-up adds another ~2–3 s. Per-call timings are surfaced on the result panel as `Verified in N s (server N s)` so the bench claim and the user-perceived reality are both visible.
 
@@ -221,7 +221,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | Surface | State |
 |---|---|
 | **Live production** | <https://label-verify-six.vercel.app> · offline-demo mode since 2026-11-08 (no API keys, no model calls) · `/api/health` returns `{ ok: true, mode: "offline-demo", ready: true, notes: [] }` · the PASS / FAIL / REVIEW samples return their expected verdicts on recorded sample extractions. The earlier live-model walkthrough (4.5–5.2 s per sample, 0 console errors) predates offline mode. |
-| **Tests** | **984 / 984** passing (`vitest`) · 96 test files (~10 s) |
+| **Tests** | **985 / 985** passing (`vitest`) · 96 test files (~10 s) |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
 | **Lint** | `next lint` clean (zero warnings) |
 | **Production build** | green |
@@ -295,7 +295,7 @@ That's it — the dev server runs the same Next.js App Router build as productio
 
 | Var | Required? | Purpose |
 |---|---|---|
-| `LABEL_VERIFY_LIVE_MODELS` | **yes, for live models** | Set to `1` to enable model calls. Unset (the default, and the public demo) means offline-demo mode: every provider key below is ignored and no model client is created. Server-side only; never use a `NEXT_PUBLIC_` variable for keys. |
+| `LABEL_VERIFY_LIVE_MODELS` | **yes, for live models** | Set to `1` to enable model calls. Unset (the default, and the public demo) means offline-demo mode: every provider key below is ignored and no model client is created. Server-side only; never use a `NEXT_PUBLIC_` variable for keys. The home page is prerendered, so redeploy after changing it. |
 | `GOOGLE_API_KEY` | **yes, for live models** | Primary vision (Gemini 3.1 Flash Lite) + default second-opinion (Gemini 2.5 Flash). |
 | `OPENAI_API_KEY` | recommended | Cross-provider primary-failure fallback (GPT-5.4-nano). Without it, Gemini failures surface as 5xx. NOT the second-opinion path. |
 | `OPENROUTER_API_KEY` | optional | Bake-off harness only (`npm run bench:bakeoff`). Not used at runtime. |

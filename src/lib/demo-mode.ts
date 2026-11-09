@@ -16,8 +16,14 @@
 // step is replaced by a recorded, clearly labelled sample extraction
 // (`src/lib/vision/offline-sample.ts`); preprocessing, OCR, the field
 // comparators and the Government Warning validator run for real.
-// Uploads, URL fetches, extract-only and batch return HTTP 503 with
-// `code: "offline-demo"`.
+// Uploaded images are ignored (the bundled sample image is read from
+// disk). Uploads without a sample id, URL fetches, extract-only, batch
+// and photo-of-application parsing return HTTP 503 `code: "offline-demo"`.
+//
+// The page is prerendered, so the UI mode is fixed at build time: change
+// LABEL_VERIFY_LIVE_MODELS and redeploy.
+
+import { OFFLINE_DEMO_CODE, OFFLINE_DEMO_MESSAGE } from "./demo-copy";
 
 export const LIVE_MODELS_ENV = "LABEL_VERIFY_LIVE_MODELS";
 
@@ -61,8 +67,6 @@ export function providerEnv(env: Env = process.env): Env {
   for (const name of PROVIDER_KEY_NAMES) delete copy[name];
   return copy;
 }
-
-import { OFFLINE_DEMO_CODE, OFFLINE_DEMO_MESSAGE } from "./demo-copy";
 
 export { OFFLINE_DEMO_CODE, OFFLINE_DEMO_MESSAGE, OFFLINE_SAMPLE_NOTE } from "./demo-copy";
 

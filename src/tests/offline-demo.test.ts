@@ -160,6 +160,23 @@ describe("offline demo /api/verify", () => {
     });
   }
 
+  it("ignores uploaded bytes and verifies the bundled sample image", async () => {
+    const garbage = new File([new Uint8Array([1, 2, 3, 4])], "other.jpg", { type: "image/jpeg" });
+    const withGarbage = new FormData();
+    withGarbage.append("image", garbage);
+    withGarbage.append("sample", "fail");
+    const noImage = new FormData();
+    noImage.append("sample", "fail");
+    for (const fd of [withGarbage, noImage]) {
+      const res = await verifyPOST(req("http://localhost/api/verify", fd));
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as VerifyResponse;
+      expect(body.verdict).toBe("fail");
+      // preprocess ran on the real bundled fail.jpg, not the 4-byte upload.
+      expect(body.imageQuality).not.toBe("bad");
+    }
+  });
+
   it("rejects an arbitrary upload with 503 offline-demo", async () => {
     const fd = new FormData();
     fd.append("image", sampleImage("/samples/pass.jpg"));
