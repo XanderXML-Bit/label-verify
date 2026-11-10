@@ -11,6 +11,12 @@
 //   - extractPdfText(buf): text-only extraction (application document path)
 
 import sharp from "sharp";
+import path from "node:path";
+
+// Next.js traces these assets into the same server-root layout.
+function standardFontDataUrl(): string {
+  return path.join(process.cwd(), "node_modules/pdfjs-dist/standard_fonts") + path.sep;
+}
 
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20 MB
 // Wave-33 audit (Sub-agent A bug #4): match the wave-31j preprocess
@@ -72,9 +78,9 @@ export async function extractPdfFirstPage(
       disableFontFace: true,
       useSystemFonts: false,
       isEvalSupported: false,
-      // Required so pdfjs uses the supplied canvasFactory rather than
-      // assuming browser globals.
-      canvasFactory: new NodeCanvasFactory(canvasMod),
+      standardFontDataUrl: standardFontDataUrl(),
+      // Use pdf.js's Node factory. The npm override keeps its native
+      // Path2D and ImageData classes identical to the render canvas's.
     });
     doc = (await loadingTask.promise) as PdfDocumentLike;
   } catch (err) {
@@ -244,6 +250,7 @@ export async function extractPdfText(buffer: Buffer): Promise<PdfTextResult> {
       disableFontFace: true,
       useSystemFonts: false,
       isEvalSupported: false,
+      standardFontDataUrl: standardFontDataUrl(),
     });
     doc = (await loadingTask.promise) as PdfDocumentLike;
   } catch (err) {

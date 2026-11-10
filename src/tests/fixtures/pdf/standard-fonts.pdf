@@ -1,0 +1,45 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 320 400] /Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 7 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+7 0 obj
+<< /Length 305 >>
+stream
+BT /F1 28 Tf 36 340 Td (GOVERNMENT WARNING:) Tj ET
+BT /F2 16 Tf 36 300 Td (Label Verify PDF raster check) Tj ET
+BT /F3 14 Tf 36 268 Td (ABV 12.5% - 750 mL) Tj ET
+0.15 0.35 0.6 rg 36 220 250 12 re f
+0 0 0 RG 2 w 36 200 m 286 200 l S
+0.6 0.1 0.1 rg 36 100 m 75 180 150 180 180 100 c 150 80 75 80 36 100 c f
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000261 00000 n 
+0000000336 00000 n 
+0000000408 00000 n 
+0000000476 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+831
+%%EOF
