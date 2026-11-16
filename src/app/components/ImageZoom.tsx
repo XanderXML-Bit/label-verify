@@ -127,7 +127,8 @@ export function ImageZoom({
         <img
           src={src}
           alt={alt}
-          loading="lazy"
+          // Not lazy: the result photo is on screen at once, and a
+          // lazy image not yet painted prints as an empty box.
           decoding="async"
           className="h-full max-h-96 w-full cursor-zoom-in rounded-md object-contain transition group-hover:opacity-90"
         />
@@ -151,7 +152,7 @@ export function ImageZoom({
               <button
                 type="button"
                 onClick={() => setScale((s) => Math.max(0.25, s / 1.25))}
-                className="rounded border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                className="min-h-[44px] min-w-[44px] rounded border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                 aria-label="Zoom out"
                 title="Zoom out (−)"
               >
@@ -163,7 +164,7 @@ export function ImageZoom({
               <button
                 type="button"
                 onClick={() => setScale((s) => Math.min(8, s * 1.25))}
-                className="rounded border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                className="min-h-[44px] min-w-[44px] rounded border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                 aria-label="Zoom in"
                 title="Zoom in (+)"
               >
@@ -172,7 +173,7 @@ export function ImageZoom({
               <button
                 type="button"
                 onClick={() => setScale(1)}
-                className="rounded border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                className="min-h-[44px] min-w-[44px] rounded border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                 aria-label="Reset zoom"
                 title="Reset zoom (0)"
               >
@@ -183,7 +184,7 @@ export function ImageZoom({
               ref={closeRef}
               type="button"
               onClick={close}
-              className="rounded border border-slate-700 px-3 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+              className="min-h-[44px] min-w-[44px] rounded border border-slate-700 px-3 py-1 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
               aria-label="Close larger view"
               title="Close (Esc)"
             >

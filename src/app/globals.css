@@ -136,11 +136,13 @@ body {
  * is reviewable in one place (this CSS block + a list of .detailed-only
  * call sites) and the React component code stays mode-agnostic.
  */
-html[data-mode="simple"] .detailed-only {
-  display: none !important;
-}
-html[data-mode="detailed"] .simple-only {
-  display: none !important;
+@media screen {
+  html[data-mode="simple"] .detailed-only {
+    display: none !important;
+  }
+  html[data-mode="detailed"] .simple-only {
+    display: none !important;
+  }
 }
 /* Keyless public demo (data-demo="offline", set server-side in
  * layout.tsx): uploads are off, so the bundled samples are the primary
@@ -148,8 +150,19 @@ html[data-mode="detailed"] .simple-only {
 html[data-mode="simple"][data-demo="offline"] .detailed-only.demo-samples {
   display: block !important;
 }
-html[data-demo="offline"] .demo-samples {
-  order: -1;
+/* The samples come first in the DOM (keyboard order for the public
+ * demo). The live build draws the upload zone first, as before. */
+html:not([data-demo="offline"]) .demo-samples {
+  order: 1;
+}
+html:not([data-demo="offline"]) .demo-about {
+  order: 2;
+}
+/* The result screen carries its own offline-sample note, so the
+ * page-wide "Offline demo." notice would repeat it (design audit
+ * 2026-11-13 P1-3). */
+main:has([data-testid="offline-sample-note"]) > [data-testid="offline-demo-notice"] {
+  display: none;
 }
 html[data-demo="offline"] .demo-live-only,
 html:not([data-demo="offline"]) .demo-offline-only {
@@ -167,15 +180,17 @@ html:not([data-demo="offline"]) .demo-offline-only {
  *     per-field comparator results, government-warning subscores,
  *     and the audit-trail expandable (forced open).
  *   - No prototype chrome: hide the upload zone, sample affordance,
- *     application-upload widget, "Verify another" / export buttons,
- *     header toggles, footer.
+ *     application-upload widget, the "Verify another" / export row
+ *     (`.print-hidden`), header toggles, footer.
  *   - Black-on-white: dark-mode colours invert poorly to paper.
- *   - Force the `.detailed-only` audit-trail block to show even
- *     when the operator's mode is "simple" — the PDF must always
- *     carry the audit details, regardless of the on-screen mode.
+ *   - Always print the detailed view (audit trail included), and only
+ *     once, whatever the on-screen mode.
+ *   - A title block (SingleResult `data-print-title`) heads the page.
  */
 @media print {
-  /* Reset dark-mode + container chrome to a paper-friendly palette. */
+  /* Reset container chrome to a paper-friendly palette. Dark-mode
+     utilities are switched off for printing by SingleResult, which
+     sets data-theme="light" on beforeprint and restores it after. */
   html, body {
     background: white !important;
     color: black !important;
@@ -186,27 +201,37 @@ html:not([data-demo="offline"]) .demo-offline-only {
   /* Chrome we don't want in the printed case file. */
   [role="region"][aria-label*="upload"],
   [role="region"][aria-label*="Add more"],
-  details > summary {
+  .print-hidden,
+  details:not(.print-hidden) > .print-hidden {
     display: none !important;
   }
   /* Force-open all <details> so audit-trail and other collapsibles
-     render their full content in the PDF. The CSS-only "open"
-     behaviour is well-supported in WebKit / Chromium / Firefox. */
-  details {
+     render their full content in the PDF; their summaries print as
+     section labels. `.print-hidden` details (the phone-only duplicate
+     of the subscore list) stay hidden. SingleResult also sets `open`
+     on beforeprint. */
+  details:not(.print-hidden) {
     display: block !important;
   }
-  details > * {
+  details:not(.print-hidden) > * {
     display: block !important;
   }
-  /* The verify-another + export buttons row is reviewer-action chrome;
-     the PDF is the artifact, not the action. Hide the button row. */
-  section[aria-labelledby="results-heading"] button {
+  /* The case file always prints the detailed view, once. The screen
+     mode rules above apply to screens only, so `.detailed-only` keeps
+     its own layout here; the simple-mode summaries would repeat it
+     (the Government Warning block printed twice). */
+  .simple-only {
     display: none !important;
   }
-  /* Override .detailed-only so the audit-trail block always prints. */
-  html[data-mode="simple"] .detailed-only,
-  html[data-mode="detailed"] .simple-only {
+  /* The label image sits inside the "Open larger view" button. Print
+     the image, not the control. */
+  section[aria-labelledby="results-heading"] button:has(img) {
     display: block !important;
+    /* On screen the button stretches to the column height and centres
+       the photo in it, which pushed the photo two pages down. */
+    height: auto !important;
+    border: 0 !important;
+    background: none !important;
   }
   /* Image: keep on the same printed page as the verdict where
      possible, and cap the height so it doesn't take a full sheet. */
@@ -216,4 +241,13 @@ html:not([data-demo="offline"]) .demo-offline-only {
   }
   /* Tighter spacing so the case file fits one or two pages. */
   section { margin-bottom: 0.5rem; }
+}
+/* Chromium 131+ hides closed <details> content through this
+ * pseudo-element, so `display` alone no longer opens it. Kept in its own
+ * block: browsers without it drop only this rule. */
+@media print {
+  details:not(.print-hidden)::details-content {
+    content-visibility: visible !important;
+    display: block !important;
+  }
 }

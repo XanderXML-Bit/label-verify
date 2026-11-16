@@ -55,7 +55,10 @@ export const SAMPLES: readonly Sample[] = [
   {
     // ai-label-0010 — Mercer's Reserve Vodka. Title-case "Government
     // Warning:" prefix instead of all-caps. Codex audit:
-    // "Title-case warning prefix defect confirmed."
+    // "Title-case warning prefix defect confirmed." The label prints
+    // "Produced by Mercers Reserve Beverage Co., Denver, CO" (no
+    // apostrophe), so the application declares that same producer and
+    // the warning prefix is the only failing check.
     id: "fail",
     label: "FAIL sample",
     shortDescription:
@@ -71,7 +74,7 @@ export const SAMPLES: readonly Sample[] = [
       abv_percent: 40.0,
       net_contents: { value: 750, unit: "ml" },
       producer: {
-        name: "Mercer's Reserve Distilling",
+        name: "Mercers Reserve Beverage Co.",
         street: null,
         city: "Denver",
         state: "CO",

@@ -252,12 +252,20 @@ export async function measureRelativeBold(
     };
   }
 
-  const prefixProxies = await Promise.all(
-    prefix.map((w) => strokeProxy(image, w, imgW, imgH)),
-  );
-  const bodyProxies = await Promise.all(
-    body.map((w) => strokeProxy(image, w, imgW, imgH)),
-  );
+  // Decode and binarise the image once, then measure every word from
+  // memory. The previous per-word path re-decoded the whole (~2000 px)
+  // JPEG once per OCR word: dozens of identical decodes per label and
+  // about 1 s of a ~4 s offline sample on the deployed function, for no
+  // extra signal (design audit 2026-11-13 P1-7). The per-word crop path
+  // stays as the fallback for multi-band rasters; the two give the same
+  // numbers (src/tests/bold-size-decode-once.test.ts).
+  const binary = await decodeBinary(image);
+  const proxy = (w: OcrWord): Promise<number | null> =>
+    binary && binary.width === imgW && binary.height === imgH
+      ? Promise.resolve(strokeProxyFromBinary(binary, w))
+      : strokeProxy(image, w, imgW, imgH);
+  const prefixProxies = await Promise.all(prefix.map(proxy));
+  const bodyProxies = await Promise.all(body.map(proxy));
 
   const prefixValid = prefixProxies.filter((p): p is number => p !== null);
   const bodyValid = bodyProxies.filter((p): p is number => p !== null);
@@ -302,6 +310,121 @@ export async function measureRelativeBold(
   };
 }
 
+/** Whole image as one greyscale band thresholded at 128 (0 or 255). */
+export interface BinaryImage {
+  readonly data: Uint8Array;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * Greyscale + threshold(128) of the whole image, the same per-pixel
+ * operations `strokeProxy` applies to each crop. Returns null when the
+ * result is not a single band (e.g. an alpha channel survives), so the
+ * caller keeps the per-crop path for those inputs.
+ */
+export async function decodeBinary(image: Buffer): Promise<BinaryImage | null> {
+  try {
+    const { data, info } = await sharp(image, { failOn: "none" })
+      .greyscale()
+      .threshold(128)
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    if (info.channels !== 1) return null;
+    return { data, width: info.width, height: info.height };
+  } catch {
+    return null;
+  }
+}
+
+/** Clamp a word bbox to the image, as `strokeProxy` does. */
+function clampBox(
+  word: OcrWord,
+  imgW: number,
+  imgH: number,
+): { x: number; y: number; w: number; h: number } | null {
+  // Clamp the crop to the image — sharp throws on out-of-bounds extracts.
+  const x = Math.max(0, Math.floor(word.bbox.x));
+  const y = Math.max(0, Math.floor(word.bbox.y));
+  const w = Math.min(imgW - x, Math.max(1, Math.floor(word.bbox.width)));
+  const h = Math.min(imgH - y, Math.max(1, Math.floor(word.bbox.height)));
+  if (w < 2 || h < 2) return null;
+  return { x, y, w, h };
+}
+
+/**
+ * Mean dark-run length per column, normalised by box height. Shared by
+ * both paths so they cannot drift. `at(cx, cy)` reads the binarised
+ * pixel at crop coordinates.
+ */
+function runProxy(
+  cols: number,
+  rows: number,
+  h: number,
+  at: (cx: number, cy: number) => number,
+): number | null {
+  if (cols === 0 || rows === 0) return null;
+  // For each column, enumerate ALL contiguous dark runs (each run is a
+  // stroke crossing). Sum total dark pixels and total run count across
+  // all columns; the ratio `darkPixels / runCount` is **mean stroke
+  // thickness** along the column axis — a true stroke-width proxy
+  // (NOT cap-height, which is what `longest-run-per-column` measures).
+  //
+  // For Regular weight at the same render size, a horizontal stroke
+  // crosses each column with a 1–2 px vertical run; for Bold, the same
+  // stroke crosses with a 2–4 px run. Ratio of mean-run-length between
+  // prefix and body cleanly separates the two weights.
+  let totalDark = 0;
+  let totalRuns = 0;
+  let columnsWithDark = 0;
+  for (let cx = 0; cx < cols; cx++) {
+    let inRun = false;
+    let columnHadDark = false;
+    for (let cy = 0; cy < rows; cy++) {
+      const dark = at(cx, cy) < 128;
+      if (dark) {
+        totalDark++;
+        columnHadDark = true;
+        if (!inRun) {
+          totalRuns++;
+          inRun = true;
+        }
+      } else {
+        inRun = false;
+      }
+    }
+    if (columnHadDark) columnsWithDark++;
+  }
+  if (columnsWithDark < 2 || totalRuns === 0) return null;
+  // Mean dark-run length along columns NORMALISED by bbox height.
+  //
+  // 2026-05-13 audit fix: the previous return `totalDark / totalRuns`
+  // (un-normalised mean run length) is confounded with glyph height.
+  // TTB warnings render the prefix at LARGER type than the body, so
+  // vertical-stroke-dominant letters in the prefix produce mean run
+  // lengths proportional to bbox height — not to stroke thickness.
+  // The resulting prefix-vs-body ratio spuriously crossed the 1.5
+  // PASS threshold on B1/B2/B3 test cases even when both prefix and
+  // body were the SAME font weight (4 of the 7 false-negatives on
+  // the 2026-05-12 bench traced to this exact confound).
+  //
+  // Dividing by bbox height removes the glyph-size dependence and
+  // preserves the stroke-weight signal that survives in horizontal-
+  // stroke contributions (where run length scales with stroke
+  // thickness, not glyph height). The ratio threshold (1.5×) and
+  // its caller `measureRelativeBold` are unaffected — we just emit
+  // an honest stroke-density measure now.
+  return totalDark / totalRuns / Math.max(1, h);
+}
+
+/** `strokeProxy` measured from an already-binarised whole image. */
+export function strokeProxyFromBinary(img: BinaryImage, word: OcrWord): number | null {
+  const box = clampBox(word, img.width, img.height);
+  if (!box) return null;
+  const { x, y, w, h } = box;
+  return runProxy(w, h, h, (cx, cy) => img.data[(y + cy) * img.width + (x + cx)]!);
+}
+
 /**
  * Crop the word bbox, threshold-binarize, and compute the per-column
  * average **vertical dark-run length** — a clean stroke-thickness proxy.
@@ -309,18 +432,15 @@ export async function measureRelativeBold(
  * Returns null on degenerate crops (zero area, all one color, or fewer
  * than 2 columns with dark coverage — not enough signal).
  */
-async function strokeProxy(
+export async function strokeProxy(
   image: Buffer,
   word: OcrWord,
   imgW: number,
   imgH: number,
 ): Promise<number | null> {
-  // Clamp the crop to the image — sharp throws on out-of-bounds extracts.
-  const x = Math.max(0, Math.floor(word.bbox.x));
-  const y = Math.max(0, Math.floor(word.bbox.y));
-  const w = Math.min(imgW - x, Math.max(1, Math.floor(word.bbox.width)));
-  const h = Math.min(imgH - y, Math.max(1, Math.floor(word.bbox.height)));
-  if (w < 2 || h < 2) return null;
+  const box = clampBox(word, imgW, imgH);
+  if (!box) return null;
+  const { x, y, w, h } = box;
 
   try {
     // Greyscale + fixed threshold at 128. (We intentionally skip
@@ -335,59 +455,7 @@ async function strokeProxy(
       .toBuffer({ resolveWithObject: true });
     const cols = info.width;
     const rows = info.height;
-    if (cols === 0 || rows === 0) return null;
-
-    // For each column, enumerate ALL contiguous dark runs (each run is a
-    // stroke crossing). Sum total dark pixels and total run count across
-    // all columns; the ratio `darkPixels / runCount` is **mean stroke
-    // thickness** along the column axis — a true stroke-width proxy
-    // (NOT cap-height, which is what `longest-run-per-column` measures).
-    //
-    // For Regular weight at the same render size, a horizontal stroke
-    // crosses each column with a 1–2 px vertical run; for Bold, the same
-    // stroke crosses with a 2–4 px run. Ratio of mean-run-length between
-    // prefix and body cleanly separates the two weights.
-    let totalDark = 0;
-    let totalRuns = 0;
-    let columnsWithDark = 0;
-    for (let cx = 0; cx < cols; cx++) {
-      let inRun = false;
-      let columnHadDark = false;
-      for (let cy = 0; cy < rows; cy++) {
-        const dark = data[cy * cols + cx]! < 128;
-        if (dark) {
-          totalDark++;
-          columnHadDark = true;
-          if (!inRun) {
-            totalRuns++;
-            inRun = true;
-          }
-        } else {
-          inRun = false;
-        }
-      }
-      if (columnHadDark) columnsWithDark++;
-    }
-    if (columnsWithDark < 2 || totalRuns === 0) return null;
-    // Mean dark-run length along columns NORMALISED by bbox height.
-    //
-    // 2026-05-13 audit fix: the previous return `totalDark / totalRuns`
-    // (un-normalised mean run length) is confounded with glyph height.
-    // TTB warnings render the prefix at LARGER type than the body, so
-    // vertical-stroke-dominant letters in the prefix produce mean run
-    // lengths proportional to bbox height — not to stroke thickness.
-    // The resulting prefix-vs-body ratio spuriously crossed the 1.5
-    // PASS threshold on B1/B2/B3 test cases even when both prefix and
-    // body were the SAME font weight (4 of the 7 false-negatives on
-    // the 2026-05-12 bench traced to this exact confound).
-    //
-    // Dividing by bbox height removes the glyph-size dependence and
-    // preserves the stroke-weight signal that survives in horizontal-
-    // stroke contributions (where run length scales with stroke
-    // thickness, not glyph height). The ratio threshold (1.5×) and
-    // its caller `measureRelativeBold` are unaffected — we just emit
-    // an honest stroke-density measure now.
-    return totalDark / totalRuns / Math.max(1, h);
+    return runProxy(cols, rows, h, (cx, cy) => data[cy * cols + cx]!);
   } catch {
     return null;
   }
