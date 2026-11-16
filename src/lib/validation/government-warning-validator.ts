@@ -127,19 +127,19 @@ export async function validateGovernmentWarning(input: {
       lines.push("The warning text could not be confirmed against the required wording; a person should check it.");
     }
     if (caps.status === "fail") {
-      lines.push('"GOVERNMENT WARNING" must be in capital letters (27 CFR §16.21), and this label does not print it that way.');
+      lines.push('"GOVERNMENT WARNING" must be in capital letters (27 CFR §16.22(a)(2)), and this label does not print it that way.');
     } else if (caps.status === "review") {
       lines.push('It could not be confirmed that "GOVERNMENT WARNING" is in capital letters; a person should check.');
     }
     if (bold.status === "fail") {
-      lines.push('"GOVERNMENT WARNING" must be in bold type (27 CFR §16.21), and on this label it does not look bold.');
+      lines.push('"GOVERNMENT WARNING" must be in bold type (27 CFR §16.22(a)(2)), and on this label it does not look bold.');
     } else if (bold.status === "review") {
       lines.push('It could not be confirmed that "GOVERNMENT WARNING" is in bold type; a person should check.');
     }
     if (size.status === "fail") {
-      lines.push("The warning type is smaller than the minimum size for this container (27 CFR §16.22).");
+      lines.push("The warning type is smaller than the minimum size for this container (27 CFR §16.22(b)).");
     } else if (size.status === "review") {
-      lines.push("It could not be confirmed that the warning type meets the minimum size (27 CFR §16.22); a person should check.");
+      lines.push("It could not be confirmed that the warning type meets the minimum size (27 CFR §16.22(b)); a person should check.");
     }
     reason = lines.join(" ");
   }

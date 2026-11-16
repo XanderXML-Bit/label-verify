@@ -220,7 +220,7 @@ export interface BoldMeasurement {
  *     and body is a clean weight-difference signal.
  *
  * The returned ratio is `mean(prefixProxy) / mean(bodyProxy)`, which is
- * the relative bold signal that 27 CFR § 16.21 demands.
+ * the relative bold signal that 27 CFR § 16.22(a)(2) demands.
  *
  * The image MUST be the same pixel buffer the OCR ran on, so the bboxes
  * are valid in the same coordinate space.

@@ -34,7 +34,7 @@ export const SAMPLES: readonly Sample[] = [
     imageUrl: "/samples/pass.jpg",
     expectedVerdict: "pass",
     expectedNote:
-      "All seven regulated fields match the declared application data; Government Warning is fully compliant under 27 CFR §16.21.",
+      "All seven regulated fields match the declared application data; Government Warning is fully compliant under 27 CFR §16.21 and §16.22.",
     declared: {
       brand_name: "Mill Creek",
       class_type: "Pilsner",
@@ -66,7 +66,7 @@ export const SAMPLES: readonly Sample[] = [
     imageUrl: "/samples/fail.jpg",
     expectedVerdict: "fail",
     expectedNote:
-      "The Government Warning prefix is rendered in title case ('Government Warning:'). 27 CFR §16.21 requires all caps; this is a strict regulatory failure.",
+      "The Government Warning prefix is rendered in title case ('Government Warning:'). 27 CFR §16.22(a)(2) requires all caps; this is a strict regulatory failure.",
     declared: {
       brand_name: "Mercer's Reserve",
       class_type: "Vodka",
