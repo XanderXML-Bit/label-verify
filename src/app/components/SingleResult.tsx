@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { VerifyResponse } from "@/lib/types";
 import type { FieldComparison } from "@/lib/matching";
 import { VerdictChip, QualityChip } from "./StatusChip";
@@ -27,7 +27,7 @@ import {
 const FIELD_LABEL_FROM_KEY: Record<string, string> = {
   brand_name: "Brand name",
   class_type: "Class / type",
-  abv_percent: "ABV",
+  abv_percent: "Alcohol by volume",
   net_contents: "Net contents",
   producer: "Producer",
   country_of_origin: "Country of origin",
@@ -90,8 +90,93 @@ export function SingleResult({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Move focus to the verdict when the result appears. On a phone the
+  // verdict sat ~1,200 px down an 844 px screen and nothing moved, so a
+  // visitor saw only banners and the photo (design audit 2026-11-13
+  // P0-1). Focusing it scrolls it into view and tells assistive tech
+  // where the result is; page.tsx also announces the verdict.
+  const verdictRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = verdictRef.current;
+    if (!el) return;
+    el.focus();
+    // The photo above the verdict (phone layout) often finishes loading
+    // after this, and grows from 0 px to ~380 px, pushing the verdict
+    // back off screen. Bring it back once, unless the visitor has moved
+    // on (focus left the verdict).
+    const img = sectionRef.current?.querySelector("img");
+    if (!img || img.complete) return;
+    const onLoad = (): void => {
+      if (document.activeElement !== el) return;
+      const r = el.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > window.innerHeight) el.scrollIntoView?.({ block: "start" });
+    };
+    img.addEventListener("load", onLoad, { once: true });
+    return () => img.removeEventListener("load", onLoad);
+  }, []);
+
+  // Print the case file on light paper whatever the screen theme:
+  // dark-mode cards kept their navy fill on white paper and dark text
+  // vanished into them. Restored after printing.
+  // Closed <details> are opened for the print too, and closed again.
+  useEffect(() => {
+    const root = document.documentElement;
+    let saved: string | null = null;
+    let opened: HTMLDetailsElement[] = [];
+    const before = (): void => {
+      saved = root.getAttribute("data-theme");
+      if (saved === "dark") root.setAttribute("data-theme", "light");
+      opened = Array.from(
+        sectionRef.current?.querySelectorAll<HTMLDetailsElement>("details:not([open])") ?? [],
+      );
+      for (const d of opened) d.open = true;
+    };
+    const after = (): void => {
+      if (saved === "dark") root.setAttribute("data-theme", "dark");
+      saved = null;
+      for (const d of opened) d.open = false;
+      opened = [];
+    };
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
+    return () => {
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
+    };
+  }, []);
+
+  const verdictWord =
+    result.verdict === "pass" ? "PASS" : result.verdict === "fail" ? "FAIL" : "REVIEW";
+  const showModelVersion = result.modelVersion && result.modelVersion !== result.modelId;
+
   return (
-    <section aria-labelledby="results-heading" className="space-y-6">
+    <section ref={sectionRef} aria-labelledby="results-heading" className="space-y-6">
+      {/* Printed case file only: a title block, since the screen
+          header is hidden in print. */}
+      <div data-print-title className="hidden print:block border-b border-slate-400 pb-2">
+        <p className="text-xl font-semibold text-black">Label Verify case file</p>
+        <dl className="mt-1 grid grid-cols-2 gap-x-6 text-sm text-black">
+          <div>
+            <dt className="inline font-semibold">Verdict: </dt>
+            <dd className="inline">{verdictWord}</dd>
+          </div>
+          {filename ? (
+            <div>
+              <dt className="inline font-semibold">Label file: </dt>
+              <dd className="inline break-all">{filename}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt className="inline font-semibold">Reviewer: </dt>
+            <dd className="inline">{reviewerAtVerifyTime || "(not set)"}</dd>
+          </div>
+          <div>
+            <dt className="inline font-semibold">Verified at (UTC): </dt>
+            <dd className="inline">{verifiedAtIso}</dd>
+          </div>
+        </dl>
+      </div>
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="results-heading" className="text-xl font-semibold text-slate-800 dark:text-slate-100">
           Verification result
@@ -110,7 +195,7 @@ export function SingleResult({
           {clientTimings && (
             <>
               {" "}
-              <span className="text-slate-400 dark:text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">
                 (server {(result.timings.total / 1000).toFixed(1)} s)
               </span>
             </>
@@ -180,13 +265,20 @@ export function SingleResult({
               alt="Submitted label preview"
             />
           ) : (
-            <div className="flex h-48 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+            <div className="flex h-48 items-center justify-center text-sm text-slate-500 dark:text-slate-400">
               No preview
             </div>
           )}
         </div>
         <div className="space-y-4 md:col-span-2">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <div
+            ref={verdictRef}
+            tabIndex={-1}
+            role="group"
+            aria-label={`Verdict: ${verdictWord}`}
+            data-testid="verdict-card"
+            className="scroll-mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+          >
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-3">
                 <span className="text-label font-medium text-slate-600 dark:text-slate-300">
@@ -276,10 +368,10 @@ export function SingleResult({
                   so reviewers don't have to scroll past 4 subscore rows on
                   every result page. Per REMAINING-IMPROVEMENTS.md U1. */}
               <details
-                className="sm:hidden"
+                className="print-hidden sm:hidden"
                 {...(gov.status !== "pass" ? { open: true } : {})}
               >
-                <summary className="cursor-pointer text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
+                <summary className="flex min-h-[44px] cursor-pointer items-center text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
                   4-part subscore breakdown
                 </summary>
                 <div className="mt-2">
@@ -444,7 +536,7 @@ export function SingleResult({
               available for the audit case file. Included in the
               JSON export and printable for the PDF export. */}
           <details className="detailed-only rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
-            <summary className="cursor-pointer font-semibold text-slate-700 dark:text-slate-200">
+            <summary className="flex min-h-[44px] cursor-pointer items-center font-semibold text-slate-700 dark:text-slate-200">
               Audit details
             </summary>
             <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-2">
@@ -452,7 +544,7 @@ export function SingleResult({
                 <dt className="font-medium text-slate-500 dark:text-slate-400">Reviewer</dt>
                 <dd className="font-mono">
                   {reviewerAtVerifyTime || (
-                    <span className="text-slate-400 dark:text-slate-500">
+                    <span className="text-slate-500 dark:text-slate-400">
                       (not set — use the header badge)
                     </span>
                   )}
@@ -468,12 +560,14 @@ export function SingleResult({
                   {result.modelId}
                 </dd>
               </div>
-              <div className="flex justify-between gap-3">
-                <dt className="font-medium text-slate-500 dark:text-slate-400">Model version</dt>
-                <dd className="font-mono break-all text-right">
-                  {result.modelVersion}
-                </dd>
-              </div>
+              {showModelVersion ? (
+                <div className="flex justify-between gap-3">
+                  <dt className="font-medium text-slate-500 dark:text-slate-400">Model version</dt>
+                  <dd className="font-mono break-all text-right">
+                    {result.modelVersion}
+                  </dd>
+                </div>
+              ) : null}
               <div className="flex justify-between gap-3">
                 <dt className="font-medium text-slate-500 dark:text-slate-400">Mode</dt>
                 <dd className="font-mono">{result.modeUsed}</dd>
@@ -500,12 +594,12 @@ export function SingleResult({
               ) : null}
               <div className="flex justify-between gap-3">
                 <dt className="font-medium text-slate-500 dark:text-slate-400">
-                  Server latency (preprocess / ocr / vision / matching / total)
+                  Server time, ms (preprocess / OCR / vision / checks / total; checks include waiting for OCR, which runs alongside vision)
                 </dt>
                 <dd className="font-mono text-right">
                   {result.timings.preprocess} /{" "}
                   {result.timings.ocr ?? "—"} / {result.timings.vision} /{" "}
-                  {result.timings.matching} / {result.timings.total} ms
+                  {result.timings.matching} / {result.timings.total}
                 </dd>
               </div>
               {clientTimings && (
@@ -529,16 +623,17 @@ export function SingleResult({
                 </div>
               ) : null}
             </dl>
-            <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-              Use <span className="font-semibold">Save case file (PDF)</span>{" "}
-              below or <span className="font-semibold">Download JSON</span> to
+            <p className="print-hidden mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+              Use <span className="font-semibold">Save case file (PDF)</span>,{" "}
+              <span className="font-semibold">Download JSON</span> or{" "}
+              <span className="font-semibold">Download CSV</span> below to
               archive this entry. JSON contains the full extractor output,
               per-field comparator results, and the same audit metadata
               shown above.
             </p>
           </details>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="print-hidden flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={onAnother}
@@ -623,7 +718,8 @@ export function SingleResult({
             Label Verify — TTB COLA verification case file ·{" "}
             Reviewer: {reviewerAtVerifyTime || "(not set)"} ·{" "}
             Verified at (UTC): {verifiedAtIso} · Primary model:{" "}
-            {result.modelId} {result.modelVersion}
+            {result.modelId}
+            {showModelVersion ? ` ${result.modelVersion}` : ""}
           </div>
         </div>
       </div>
@@ -654,12 +750,16 @@ function FieldRow({ cmp }: { readonly cmp: FieldComparison }) {
   return (
     <div className={`border-b border-slate-100 p-4 last:border-b-0 dark:border-slate-800 ${borderClass}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="font-medium capitalize text-slate-800 dark:text-slate-100">
-          {cmp.field.replace(/_/g, " ")}
+        <div className="font-medium text-slate-800 dark:text-slate-100">
+          {FIELD_LABEL_FROM_KEY[cmp.field] ?? cmp.field.replace(/_/g, " ")}
         </div>
         <VerdictChip verdict={cmp.status} size="sm" />
       </div>
-      <FieldValueComparison expected={cmp.expected} actual={cmp.actual} />
+      <FieldValueComparison
+        expected={cmp.expected}
+        actual={cmp.actual}
+        unit={cmp.field === "abv_percent" ? "%" : undefined}
+      />
       {cmp.reason && (
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{cmp.reason}</p>
       )}
@@ -684,14 +784,20 @@ function FieldRow({ cmp }: { readonly cmp: FieldComparison }) {
           className="mt-2 text-sm"
           {...(cmp.status !== "pass" ? { open: true } : {})}
         >
-          <summary className="cursor-pointer text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
+          <summary className="flex min-h-[44px] cursor-pointer items-center text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
             Per-component breakdown
           </summary>
           <ul className="mt-1 space-y-0.5 pl-4 text-slate-600 dark:text-slate-300">
             {Object.entries(cmp.components).map(([k, v]) => (
               <li key={k}>
-                <span className="capitalize">{k.replace(/_/g, " ")}</span>:{" "}
-                <span className={statusColor(v)}>{v}</span>
+                <span>{labelFor(k)}</span>:{" "}
+                {isBlank(componentOf(cmp.expected, k)) &&
+                isBlank(componentOf(cmp.actual, k)) ? (
+                  // Nothing was compared, so "pass" would overstate it.
+                  <span>blank on both</span>
+                ) : (
+                  <span className={statusColor(v)}>{statusWord(v)}</span>
+                )}
               </li>
             ))}
           </ul>
@@ -725,10 +831,10 @@ function SubscoreRow({
             anyone debugging. Title attribute preserves the value for
             anyone who needs it on small screens. */}
         <span
-          className="hidden text-xs text-slate-400 dark:text-slate-500 sm:inline"
-          title={`Internal confidence: ${confidence.toFixed(2)}`}
+          className="hidden text-xs text-slate-500 dark:text-slate-400 sm:inline"
+          title="How sure the checker is about this reading, from 0 to 100%. It does not change the result."
         >
-          conf {confidence.toFixed(2)}
+          {Math.round(confidence * 100)}% sure
         </span>
         <VerdictChip
           verdict={status}
@@ -738,6 +844,19 @@ function SubscoreRow({
       </span>
     </div>
   );
+}
+
+function statusWord(s: "pass" | "fail" | "review"): string {
+  return s === "pass" ? "Pass" : s === "fail" ? "Fail" : "Needs review";
+}
+
+function componentOf(v: unknown, k: string): unknown {
+  if (!v || typeof v !== "object") return undefined;
+  return (v as Record<string, unknown>)[k];
+}
+
+function isBlank(v: unknown): boolean {
+  return v === undefined || v === null || (typeof v === "string" && v.trim() === "");
 }
 
 function statusColor(s: "pass" | "fail" | "review"): string {
@@ -761,9 +880,12 @@ function statusColor(s: "pass" | "fail" | "review"): string {
 function FieldValueComparison({
   expected,
   actual,
+  unit,
 }: {
   readonly expected: unknown;
   readonly actual: unknown;
+  /** Suffix for plain numbers, e.g. "%" for ABV. */
+  readonly unit?: string;
 }) {
   const expectedIsProducer = isProducerShape(expected);
   const actualIsProducer = isProducerShape(actual);
@@ -791,11 +913,11 @@ function FieldValueComparison({
     <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
       <div className="min-w-0">
         <dt className="inline text-slate-500 dark:text-slate-400">Expected: </dt>
-        <dd className="inline break-all font-mono text-slate-800 dark:text-slate-200">{stringify(expected)}</dd>
+        <dd className="inline break-all font-mono text-slate-800 dark:text-slate-200">{stringify(expected, unit)}</dd>
       </div>
       <div className="min-w-0">
         <dt className="inline text-slate-500 dark:text-slate-400">Found: </dt>
-        <dd className="inline break-all font-mono text-slate-800 dark:text-slate-200">{stringify(actual)}</dd>
+        <dd className="inline break-all font-mono text-slate-800 dark:text-slate-200">{stringify(actual, unit)}</dd>
       </div>
     </dl>
   );
@@ -817,7 +939,7 @@ function isProducerShape(v: unknown): v is Record<string, unknown> {
 }
 
 function ProducerBlock({ value }: { readonly value: unknown }) {
-  if (value == null) return <span className="text-slate-400 dark:text-slate-500">—</span>;
+  if (value == null) return <span className="text-slate-500 dark:text-slate-400">—</span>;
   if (typeof value === "string") {
     return <span className="break-words">{value}</span>;
   }
@@ -828,7 +950,7 @@ function ProducerBlock({ value }: { readonly value: unknown }) {
         const v = obj[k];
         if (v === undefined || v === null || v === "") {
           return (
-            <li key={k} className="text-slate-400 dark:text-slate-500">
+            <li key={k} className="text-slate-500 dark:text-slate-400">
               <span className="text-slate-500 dark:text-slate-400">{labelFor(k)}: </span>—
             </li>
           );
@@ -863,10 +985,10 @@ function labelFor(k: string): string {
   }
 }
 
-function stringify(v: unknown): string {
+function stringify(v: unknown, unit?: string): string {
   if (v == null) return "—";
   if (typeof v === "string") return v;
-  if (typeof v === "number") return String(v);
+  if (typeof v === "number") return unit ? `${v}${unit}` : String(v);
   if (typeof v === "object") {
     // Render NetContents nicely.
     const o = v as Record<string, unknown>;

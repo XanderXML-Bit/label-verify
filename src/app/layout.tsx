@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   metadataBase: resolveMetadataOrigin(process.env.SITE_URL),
   alternates: { canonical: "/" },
   title: "Label Verify",
-  description:
-    "AI-powered TTB Certificate of Label Approval verification — prototype.",
+  // No "AI-powered": the public demo makes no model calls.
+  description: "TTB Certificate of Label Approval verification — prototype.",
   // PWA manifest — "Add to home screen" works on iOS Safari + Chrome,
   // useful for TTB ops reviewers who might pin this on a phone/tablet.
   // The icon points at /icon.svg (already present); manifest at
