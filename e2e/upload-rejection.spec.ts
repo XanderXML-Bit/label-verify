@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { isOfflineDemo } from "./demo-mode";
 
 // ─── E2E: upload rejection paths ───────────────────────────────────────────
 //
@@ -43,7 +44,9 @@ test.describe("Upload rejection — non-image files", () => {
 
   test("Drops only an application file (no image) → 'Label image required' guidance", async ({
     page,
+    request,
   }) => {
+    test.skip(await isOfflineDemo(request), "the offline demo does not upload; covered by offline-demo.spec.ts");
     await page.goto("/");
     // A JSON application without an image — the app should refuse to
     // proceed and tell the user a label image is required, not

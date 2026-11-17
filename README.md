@@ -53,7 +53,7 @@ _Screenshots of the public offline demo, captured 2026-11-08._
 
 No install, no key, no signup. The samples ship matching COLA application data so reviewers can see end-to-end behaviour on first click.
 
-> **Public demo runs offline (since 2026-11-08).** The hosted demo makes no AI model calls and uses no API keys. The three samples run the real preprocessing, OCR, field comparators and Government Warning validator on a recorded sample extraction, and each result is labelled "Offline sample result". Uploaded label images are not verified there (the server only runs the bundled sample images); requests without a sample id, URL input, extract-only and batch answer HTTP 503 `offline-demo`. Everything described below works when you run the project yourself with live models enabled (see [Install](#install)).
+> **Public demo runs offline (since 2026-11-08).** The hosted demo makes no AI model calls and uses no API keys. The three samples run the real preprocessing, OCR, field comparators and Government Warning validator on a recorded sample extraction, and each result is labelled "Offline sample result". The page does not send your own files there: choosing or dropping a label image or an application document shows "Your file was not uploaded." and makes no request. The server refuses uploads as well: `/api/application/parse`, extract-only and batch answer HTTP 503 `offline-demo` before reading the request body, and `/api/verify` reads at most 64 KiB (enough for a sample id and its declared fields), so an uploaded image is refused without being buffered. URL input also answers 503. Everything described below works when you run the project yourself with live models enabled (see [Install](#install)).
 
 **With live models (self-hosted), upload your own:** drop any beverage-label image (JPEG / PNG / WebP / HEIC) into the dropzone; the form opens for the seven declared fields. Verdict returns in **~4–6 seconds end-to-end** on a warm function (server-side P50 ~3 s; the remainder is client-side image compression, network round-trip, and React render). First request after a cold Vercel function spin-up adds another ~2–3 s. Per-call timings are surfaced on the result panel as `Verified in N s (server N s)` so the bench claim and the user-perceived reality are both visible.
 
@@ -475,7 +475,11 @@ Full threat model: [`SECURITY.md`](SECURITY.md). Last review 2026-05-14 (multi-a
 **Authentication:**
 - The `/api/debug/last` ring buffer is gated by `DEBUG_TOKEN` (Bearer header, `crypto.timingSafeEqual` compare with length-spoof dummy so a wrong token can't be length-distinguished). Every other endpoint is unauthenticated by design — this is a prototype per brief §9.
 
-No persistent storage. No PII collection. The review queue is in-process; the batch store is in-process.
+No persistent storage: the review queue and the batch store are in-process memory only. What is kept, and where:
+
+- **In the browser.** The theme, the view mode and the reviewer ID (any name, initials or ID the reviewer types) are kept in `localStorage`. The reviewer ID is never sent to the server; it is written into the PDF, JSON and CSV exports the reviewer downloads.
+- **On the server.** A per-IP rate-limit key is held in memory (`src/lib/rate-limit.ts`) and discarded with the function instance.
+- **At the host.** Vercel receives the IP address and request data of every visit and keeps its own request logs under its own retention (see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
 
 ---
 
