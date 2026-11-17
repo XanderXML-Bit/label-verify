@@ -41,6 +41,41 @@ test.describe("Offline demo", () => {
     expect(providerRequests).toEqual([]);
   });
 
+  test("a visitor's own image or document is never sent", async ({ page }) => {
+    // Records every request with a body. A sample run sends only the
+    // sample id and declared JSON; a visitor's file must send nothing.
+    const posts: { url: string; bytes: number; hasFilePart: boolean }[] = [];
+    page.on("request", (r) => {
+      const body = r.postDataBuffer();
+      if (!body) return;
+      posts.push({
+        url: r.url(),
+        bytes: body.byteLength,
+        hasFilePart: /filename="/.test(body.toString("latin1")),
+      });
+    });
+    await page.goto("/");
+    const input = page.locator('input[type="file"]:not([webkitdirectory])').first();
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    );
+    await input.setInputFiles([
+      { name: "my-label.png", mimeType: "image/png", buffer: png },
+      {
+        name: "my-label.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify({ brand_name: "Visitor Brand" })),
+      },
+    ]);
+    await expect(page.getByTestId("offline-upload-blocked")).toContainText(
+      "Your file was not uploaded.",
+    );
+    await page.waitForTimeout(1_000);
+    expect(posts.filter((p) => p.hasFilePart)).toEqual([]);
+    expect(posts.filter((p) => /\/api\/(verify|extract|application\/parse)/.test(p.url))).toEqual([]);
+  });
+
   test("API answers uploads with the offline-demo explanation", async ({ request }) => {
     const res = await request.post("/api/verify", {
       multipart: {

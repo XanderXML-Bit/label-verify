@@ -5,7 +5,7 @@ import { ModeToggle } from "./components/ModeToggle";
 import { ReviewerBadge } from "./components/ReviewerBadge";
 import { resolveMetadataOrigin } from "../lib/site-metadata";
 import { liveModelsEnabled } from "@/lib/demo-mode";
-import { OFFLINE_DEMO_NOTICE } from "@/lib/demo-copy";
+import { OFFLINE_DEMO_NOTICE, PRIVACY_NOTICE } from "@/lib/demo-copy";
 
 export const metadata: Metadata = {
   metadataBase: resolveMetadataOrigin(process.env.SITE_URL),
@@ -172,6 +172,20 @@ export default function RootLayout({
             github.com/XanderXML-Bit/label-verify
           </a>
           .
+          {offlineDemo && (
+            <p data-testid="privacy-notice" className="mt-2">
+              <strong>Privacy.</strong> {PRIVACY_NOTICE}{" "}
+              <a
+                className="underline hover:text-slate-600 dark:hover:text-slate-300"
+                href="https://github.com/XanderXML-Bit/label-verify/issues"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Contact: open an issue on GitHub
+              </a>
+              .
+            </p>
+          )}
         </footer>
       </body>
     </html>

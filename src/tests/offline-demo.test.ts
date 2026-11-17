@@ -131,8 +131,9 @@ describe("demo-mode helpers", () => {
 describe("offline demo /api/verify", () => {
   for (const sample of SAMPLES) {
     it(`${sample.id} sample returns its expected verdict with no model call`, async () => {
+      // The page sends no image bytes for a sample in this mode (see
+      // src/app/page.tsx handleSample); the server reads the bundled file.
       const fd = new FormData();
-      fd.append("image", sampleImage(sample.imageUrl));
       // Declared data from the client is ignored; the bundled sample wins.
       fd.append("declared", JSON.stringify({ brand_name: "Tampered" }));
       fd.append("sample", sample.id);
@@ -187,6 +188,36 @@ describe("offline demo /api/verify", () => {
     expect(sdkCalls).toEqual([]);
   });
 
+  it("refuses a sample request that carries a full image, without reading it", async () => {
+    const fd = new FormData();
+    fd.append("image", sampleImage("/samples/pass.jpg"));
+    fd.append("sample", "pass");
+    const request = req("http://localhost/api/verify", fd);
+    const res = await verifyPOST(request);
+    expect(res.status).toBe(503);
+    expect(((await res.json()) as { code: string }).code).toBe(OFFLINE_DEMO_CODE);
+  });
+
+  it("refuses an image upload by declared length before reading the body", async () => {
+    const fd = new FormData();
+    fd.append("image", sampleImage("/samples/pass.jpg"));
+    fd.append("sample", "pass");
+    const encoded = new Request("http://localhost/x", { method: "POST", body: fd });
+    const bytes = new Uint8Array(await encoded.arrayBuffer());
+    const request = new Request("http://localhost/api/verify", {
+      method: "POST",
+      body: bytes,
+      headers: {
+        "content-type": encoded.headers.get("content-type") ?? "",
+        "content-length": String(bytes.byteLength),
+        "x-forwarded-for": "10.9.1.1",
+      },
+    });
+    const res = await verifyPOST(request);
+    expect(res.status).toBe(503);
+    expect(request.bodyUsed).toBe(false);
+  });
+
   it("rejects URL verification with 503 and never fetches", async () => {
     const res = await verifyPOST(
       req(
@@ -214,6 +245,21 @@ describe("offline demo: other model-backed routes", () => {
     fd.append("images", sampleImage("/samples/pass.jpg"));
     const res = await batchPOST(req("http://localhost/api/verify/batch", fd));
     expect(res.status).toBe(503);
+  });
+
+  it("application document parsing returns 503 without reading the body", async () => {
+    const fd = new FormData();
+    fd.append(
+      "file",
+      new File([JSON.stringify({ brand_name: "Visitor Brand" })], "app.json", {
+        type: "application/json",
+      }),
+    );
+    const request = req("http://localhost/api/application/parse", fd);
+    const res = await appParsePOST(request);
+    expect(res.status).toBe(503);
+    expect(((await res.json()) as { code: string }).code).toBe(OFFLINE_DEMO_CODE);
+    expect(request.bodyUsed).toBe(false);
   });
 
   it("photo-of-application parsing returns 503", async () => {

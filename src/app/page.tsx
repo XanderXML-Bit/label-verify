@@ -25,7 +25,11 @@ import {
   type ApplicationParsePayload,
 } from "./components/ApplicationUpload";
 import type { Sample } from "@/lib/samples";
-import { OFFLINE_DEMO_MESSAGE } from "@/lib/demo-copy";
+import {
+  OFFLINE_DEMO_MESSAGE,
+  OFFLINE_UPLOAD_BLOCKED,
+  isOfflineDemoPage,
+} from "@/lib/demo-copy";
 import { compressImageInBrowser } from "@/lib/client-compress";
 import { classifyFile } from "@/lib/batch-pairing";
 import { mergeFilesForRestage } from "@/lib/upload-merge";
@@ -207,6 +211,9 @@ export default function Home() {
   // console.warn; now we surface it visibly next to the form so the
   // reviewer knows their second file wasn't silently lost.
   const [ignoredApps, setIgnoredApps] = useState<readonly string[]>([]);
+  // Offline demo: set when a visitor picks or drops a file of their
+  // own. The file is not read or sent; the idle screen says so.
+  const [offlineUploadBlocked, setOfflineUploadBlocked] = useState(false);
 
   // Warm the function + Tesseract worker on page load (DEPLOYMENT.md §6).
   // The AbortController prevents stacked warmups across the
@@ -297,6 +304,17 @@ export default function Home() {
   function handleFiles(files: File[]) {
     revokeIfPreview(stage);
     if (files.length === 0) return;
+
+    // Offline demo: the server cannot verify a visitor's own files, so
+    // the page must not send them. Stop here, before any staging,
+    // parsing or request, and tell the visitor. The samples use
+    // handleSample, which never uploads image bytes in this mode.
+    if (isOfflineDemoPage()) {
+      setStage({ kind: "idle" });
+      setOfflineUploadBlocked(true);
+      setAnnouncement(OFFLINE_UPLOAD_BLOCKED);
+      return;
+    }
 
     // Intent inference: classify dropped files into images vs
     // application documents (PDF / JSON / CSV / MD / TXT) and branch.
@@ -451,6 +469,7 @@ export default function Home() {
    *  column manifest instead of treating the whole file as a single
    *  record. */
   async function parseAppInBackground(file: File, imageFilename?: string) {
+    if (isOfflineDemoPage()) return; // never upload in the offline demo
     setBgAppParse({ kind: "parsing", filename: file.name });
     try {
       const fd = new FormData();
@@ -495,6 +514,7 @@ export default function Home() {
     // Sample affordance: skip the form and verify immediately so the
     // reviewer sees an end-to-end result in one click (UI-SPEC.md §4).
     revokeIfPreview(stage);
+    setOfflineUploadBlocked(false);
     const url = URL.createObjectURL(file);
     setStage({ kind: "single-verifying", file, previewUrl: url, sample });
     setAnnouncement("");
@@ -562,6 +582,7 @@ export default function Home() {
 
   async function submitSingle(declared: DeclaredFields) {
     if (stage.kind !== "single-pending") return;
+    if (isOfflineDemoPage()) return blockOfflineUpload();
     setStage({ ...stage, kind: "single-verifying" });
     const ac = new AbortController();
     singleAbortRef.current = ac;
@@ -618,6 +639,7 @@ export default function Home() {
 
   async function submitExtractOnly() {
     if (stage.kind !== "single-pending") return;
+    if (isOfflineDemoPage()) return blockOfflineUpload();
     setStage({ ...stage, kind: "single-extracting" });
     const ac = new AbortController();
     singleAbortRef.current = ac;
@@ -737,6 +759,7 @@ export default function Home() {
   // Pass `""` explicitly to force the auto-pair path.
   async function submitBatch(manifestOverride?: string) {
     if (stage.kind !== "batch-pending") return;
+    if (isOfflineDemoPage()) return blockOfflineUpload();
     const manifest = manifestOverride ?? manifestText;
     setBatchSubmitting(true);
     setBatchPhase("uploading");
@@ -976,7 +999,16 @@ export default function Home() {
     setBatchPhase("idle");
   }
 
+  /** Offline demo: drop any staged file and say it was not uploaded. */
+  function blockOfflineUpload(): void {
+    revokeIfPreview(stage);
+    setStage({ kind: "idle" });
+    setOfflineUploadBlocked(true);
+    setAnnouncement(OFFLINE_UPLOAD_BLOCKED);
+  }
+
   function reset() {
+    setOfflineUploadBlocked(false);
     revokeIfPreview(stage);
     focusHeadingOnIdleRef.current = true;
     // Revoke batch preview blob: URLs so the browser can free the
@@ -1073,6 +1105,15 @@ export default function Home() {
           <div className="detailed-only demo-samples">
             <SampleAffordance onPick={handleSample} />
           </div>
+          {offlineUploadBlocked && (
+            <p
+              role="status"
+              data-testid="offline-upload-blocked"
+              className="rounded-lg border-l-4 border-sky-600 bg-sky-50 p-3 text-sm text-sky-950 dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-100"
+            >
+              {OFFLINE_UPLOAD_BLOCKED}
+            </p>
+          )}
           <UploadZone onFiles={handleFiles} />
           {/* Review queue panel intentionally removed from the public
               idle screen — it required a DEBUG_TOKEN access code that

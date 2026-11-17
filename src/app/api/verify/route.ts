@@ -328,6 +328,40 @@ async function runVerify(
   }
 }
 
+/** Largest body the offline sample path will read (64 KiB). */
+const OFFLINE_SAMPLE_MAX_BYTES = 64 * 1024;
+
+/**
+ * Read the request body up to `max` bytes. Returns null, and cancels
+ * the stream, as soon as the body is larger than `max`.
+ */
+async function readBodyCapped(
+  req: Request,
+  max: number,
+): Promise<Uint8Array<ArrayBuffer> | null> {
+  if (!req.body) return new Uint8Array(new ArrayBuffer(0));
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(new ArrayBuffer(total));
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.byteLength;
+  }
+  return out;
+}
+
 /**
  * Offline-demo path. Only the three bundled samples are accepted; the
  * vision step uses a recorded sample extraction (no network, no key),
@@ -343,9 +377,23 @@ async function runOfflineSample(
   if (!contentType.includes("multipart/form-data")) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
   }
+  // A sample request carries only the sample id and the declared JSON,
+  // well under the cap. Anything larger is a file upload: refuse it
+  // without buffering it, first on the declared length, then while
+  // reading, so an uploaded image is never held or parsed here.
+  const declaredLength = Number(req.headers.get("content-length") ?? "");
+  if (Number.isFinite(declaredLength) && declaredLength > OFFLINE_SAMPLE_MAX_BYTES) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
+  const raw = await readBodyCapped(req, OFFLINE_SAMPLE_MAX_BYTES);
+  if (raw === null) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
   let formData: FormData;
   try {
-    formData = await req.formData();
+    formData = await new Response(raw, {
+      headers: { "content-type": contentType },
+    }).formData();
   } catch {
     return NextResponse.json(
       { error: "Body must be multipart/form-data." },

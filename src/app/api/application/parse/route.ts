@@ -52,6 +52,12 @@ const ACCEPTED_IMAGE_MIME = new Set([
  * /api/verify like any manual entry would.
  */
 export async function POST(req: Request) {
+  // Keyless public demo: refuse before the body is read, so no uploaded
+  // application document is buffered or parsed on the server. The page
+  // does not send documents in this mode (src/app/page.tsx handleFiles).
+  if (!liveModelsEnabled()) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
   const key = callerKey(req.headers);
   const rl = rateLimit(`app-parse:${key}`, { perMinute: RATE_LIMIT_PER_MIN });
   if (!rl.allowed) {

@@ -5,6 +5,27 @@ treats security as a first-class concern because TTB-regulated label
 data could plausibly contain personally identifying information (the
 producer field is a brewer/distiller and may name an individual).
 
+## Public demo (offline)
+
+The public deployment at https://label-verify-six.vercel.app runs as an
+offline demo (since 2026-11-08). It sets no model-provider keys and
+makes no AI model calls: `LABEL_VERIFY_LIVE_MODELS` is unset, so
+`src/lib/demo-mode.ts` hands no key to any provider client. The three
+bundled samples run the real comparison and Government Warning checks
+on recorded sample extractions.
+
+A visitor's own files are not uploaded. The page stops before any
+request when a visitor chooses or drops a label image or an application
+document (`src/app/page.tsx`, `handleFiles`). The server refuses such
+uploads too: `/api/application/parse`, `/api/extract` and
+`/api/verify/batch` answer 503 `offline-demo` before reading the body,
+and `/api/verify` reads at most 64 KiB, enough for a sample request.
+Vercel, the host, still receives the IP address and request data of
+every visit.
+
+The rest of this document also covers a self-hosted deployment with
+live models enabled (`LABEL_VERIFY_LIVE_MODELS=1`).
+
 ## Reporting a vulnerability
 
 For security-relevant issues, **please don't open a public GitHub
@@ -26,11 +47,14 @@ The prototype runs as a Vercel-hosted Next.js app:
 - **Untrusted inputs:** label images (uploaded or URL-fetched),
   application files (PDF/CSV/JSON/MD/TXT/image), declared-fields JSON.
   All inputs can be attacker-controlled.
-- **Trusted operators:** the API keys for Gemini, OpenAI, OpenRouter,
-  set in Vercel's environment variables. The prototype does not
-  authenticate end users.
-- **Data lifecycle:** all uploads are processed in-memory inside the
-  serverless function and never persisted. There is no database, no
+- **Trusted operators:** whoever runs the server. The public demo holds
+  no model-provider keys. A self-hosted deployment with live models
+  keeps its Gemini, OpenAI or Anthropic keys in server-side environment
+  variables (never `NEXT_PUBLIC_`). The prototype does not authenticate
+  end users.
+- **Data lifecycle:** the public demo does not accept uploads (see
+  above). With live models, all uploads are processed in-memory inside
+  the serverless function and never persisted. There is no database, no
   S3 bucket, no log archive that retains uploaded images.
 - **No authentication / authorization.** Every visitor can hit the
   same endpoints; rate-limiting prevents abuse but doesn't gate
@@ -196,19 +220,26 @@ This is a prototype, so we acknowledge:
 
 ## Vendor data handling
 
+- **Public demo:** sends nothing to any model provider. No provider
+  client is constructed while `LABEL_VERIFY_LIVE_MODELS` is unset.
+
+The notes below apply only to a self-hosted deployment with live models
+enabled:
+
 - **Gemini (Google AI Studio):** Per Google's API policy, AI Studio
-  free-tier inputs may be used for model improvement. The deployed
-  demo runs on AI Studio for cost reasons; a TTB-deployable fork
-  should switch to Vertex AI (no data retention for paid usage).
+  free-tier inputs may be used for model improvement. A deployment
+  that must avoid that should use a paid tier or Vertex AI.
 - **OpenAI:** Production tier (`gpt-5.4-nano`) is contractually
   not used for training (per OpenAI's API DPA). Fallback only —
   not the primary path.
 - **OpenRouter:** Used only by the bake-off harness, not the
-  deployed verify endpoint. Different keys, different scope.
+  verify endpoint. Different keys, different scope.
 
 ## Audit trail
 
 All security-relevant changes are tagged `Security:` in
 `CHANGELOG.md` and have commit messages explaining the threat
-they address. Last security audit pass: 2026-05-14 (multi-agent
-docs+code audit + npm-audit re-verification).
+they address. Last full security audit pass: 2026-05-14 (multi-agent
+docs+code audit + npm-audit re-verification). Later targeted changes:
+the 2026-11-05 dependency audit (see Dependency posture) and, on
+2026-11-17, the offline demo stopped sending visitor files.
