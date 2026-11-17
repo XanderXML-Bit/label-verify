@@ -27,6 +27,7 @@ import {
 import type { Sample } from "@/lib/samples";
 import {
   OFFLINE_DEMO_MESSAGE,
+  INDEPENDENCE_LINE,
   OFFLINE_UPLOAD_BLOCKED,
   isOfflineDemoPage,
 } from "@/lib/demo-copy";
@@ -1128,10 +1129,11 @@ export default function Home() {
             </summary>
             <div className="mt-2 space-y-2 text-slate-600 dark:text-slate-300">
               <p>
-                Verifies seven regulated fields per 27 CFR §16.21 / §16.22
-                (Government Warning text, prefix all-caps, prefix bold,
-                type-size minimum) and the COLA-declared fields (brand,
-                class/type, ABV, net contents, producer, country).
+                Checks the Government Warning against 27 CFR §16.21 /
+                §16.22 (text, prefix all-caps, prefix bold, type-size
+                minimum) and compares the COLA-declared fields (brand,
+                class/type, ABV, net contents, producer, country) with
+                the label. {INDEPENDENCE_LINE}
               </p>
               <p>
                 The Image Quality and Verdict columns are independent: a

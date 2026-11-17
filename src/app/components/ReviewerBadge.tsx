@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "labelverify:reviewer";
 const REVIEWER_HINT =
-  "Stamps verifications with your name / initials for the regulator audit trail. Stored in this browser only.";
+  "Adds your name or initials to the results you export. Stored in this browser only.";
 
 /**
  * Reviewer-id badge for regulator-defensible audit trails.
@@ -99,7 +99,7 @@ export function ReviewerBadge() {
           defaultValue={value}
           placeholder="Name or initials"
           maxLength={64}
-          aria-label="Reviewer ID — name, initials, or employee ID"
+          aria-label="Reviewer ID — name or initials"
           className="min-h-[44px] min-w-[44px] w-44 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
         <button
@@ -128,7 +128,7 @@ export function ReviewerBadge() {
       aria-label={
         value
           ? `Reviewer: ${value}. Click to change.`
-          : "Reviewer: + set ID for the audit trail"
+          : "Reviewer: + set ID for your exports"
       }
       title={value ? `Reviewer: ${value}. ${REVIEWER_HINT}` : REVIEWER_HINT}
       className="min-h-[44px] min-w-[44px] rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"

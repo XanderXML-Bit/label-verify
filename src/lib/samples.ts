@@ -30,11 +30,11 @@ export const SAMPLES: readonly Sample[] = [
     // confirmed visually."
     id: "pass",
     label: "PASS sample",
-    shortDescription: "Compliant beer label — every field should match.",
+    shortDescription: "Clean beer label — every field should match.",
     imageUrl: "/samples/pass.jpg",
     expectedVerdict: "pass",
     expectedNote:
-      "All seven regulated fields match the declared application data; Government Warning is fully compliant under 27 CFR §16.21 and §16.22.",
+      "All seven fields match the declared application data, and the Government Warning passes this tool's checks for 27 CFR §16.21 and §16.22.",
     declared: {
       brand_name: "Mill Creek",
       class_type: "Pilsner",
@@ -100,11 +100,11 @@ export const SAMPLES: readonly Sample[] = [
     id: "review",
     label: "REVIEW sample",
     shortDescription:
-      "Label reads 'Pilsner', application declares 'Lager' — distinct TTB class designations, surfaced for human confirmation.",
+      "Label reads 'Pilsner', application declares 'Lager' — this tool treats them as distinct class designations and asks a human to confirm.",
     imageUrl: "/samples/pass.jpg",
     expectedVerdict: "review",
     expectedNote:
-      "The label prints 'Pilsner' but the COLA application declares 'Lager'. These styles are used interchangeably on real labels but are distinct class designations under TTB rules — the comparator defers to a human reviewer rather than silently treating them as identical.",
+      "The label prints 'Pilsner' but the COLA application declares 'Lager'. These styles are used interchangeably on real labels, but this tool treats them as distinct class designations — the comparator defers to a human reviewer rather than silently treating them as identical.",
     declared: {
       brand_name: "Mill Creek",
       class_type: "Lager",

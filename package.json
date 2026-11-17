@@ -2,7 +2,7 @@
   "name": "label-verify",
   "version": "0.1.0",
   "private": true,
-  "description": "TTB label verification prototype. The public demo runs offline on three bundled samples and makes no AI model calls.",
+  "description": "Independent prototype that checks beverage labels against TTB labeling rules. Not an official U.S. government website. The public demo runs offline on three bundled samples and makes no AI model calls.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

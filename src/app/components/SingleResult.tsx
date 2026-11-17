@@ -6,6 +6,7 @@ import type { FieldComparison } from "@/lib/matching";
 import { VerdictChip, QualityChip } from "./StatusChip";
 import { ImageZoom } from "./ImageZoom";
 import { getStoredReviewer } from "./ReviewerBadge";
+import { INDEPENDENCE_LINE } from "@/lib/demo-copy";
 import {
   safeStem,
   singleResultToCsv,
@@ -155,7 +156,8 @@ export function SingleResult({
       {/* Printed case file only: a title block, since the screen
           header is hidden in print. */}
       <div data-print-title className="hidden print:block border-b border-slate-400 pb-2">
-        <p className="text-xl font-semibold text-black">Label Verify case file</p>
+        <p className="text-xl font-semibold text-black">Label Verify result (prototype)</p>
+        <p className="text-xs text-black">{INDEPENDENCE_LINE}</p>
         <dl className="mt-1 grid grid-cols-2 gap-x-6 text-sm text-black">
           <div>
             <dt className="inline font-semibold">Verdict: </dt>
@@ -624,7 +626,7 @@ export function SingleResult({
               ) : null}
             </dl>
             <p className="print-hidden mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-              Use <span className="font-semibold">Save case file (PDF)</span>,{" "}
+              Use <span className="font-semibold">Save as PDF</span>,{" "}
               <span className="font-semibold">Download JSON</span> or{" "}
               <span className="font-semibold">Download CSV</span> below to
               archive this entry. JSON contains the full extractor output,
@@ -667,10 +669,10 @@ export function SingleResult({
                   }, 500);
                 }
               }}
-              aria-label="Save this verification result as a printable PDF case file"
+              aria-label="Save this result as a printable PDF"
               className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
             >
-              Save case file (PDF)
+              Save as PDF
             </button>
             {/* Export buttons live in detailed mode only.
                 Simple mode keeps the verdict + the one re-upload affordance
@@ -715,7 +717,7 @@ export function SingleResult({
 
           {/* Visible only when printed: bottom-of-page audit footer. */}
           <div className="hidden print:block mt-6 border-t border-slate-300 pt-2 text-[10px] text-slate-600">
-            Label Verify — TTB COLA verification case file ·{" "}
+            Label Verify prototype result · {INDEPENDENCE_LINE} ·{" "}
             Reviewer: {reviewerAtVerifyTime || "(not set)"} ·{" "}
             Verified at (UTC): {verifiedAtIso} · Primary model:{" "}
             {result.modelId}

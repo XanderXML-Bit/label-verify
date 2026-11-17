@@ -13,6 +13,13 @@ export const OFFLINE_SAMPLE_NOTE =
 export const OFFLINE_DEMO_NOTICE =
   "This public build makes no AI model calls and uses no API keys. The three samples run the real comparison and Government Warning checks on recorded sample extractions. Your own label images and application files can't be verified here, and the page does not upload them.";
 
+/** Independence statement. The first two sentences reuse the wording
+ *  already published on the author's own site; the third says what a
+ *  result is not. Shown in the footer, the README and the printed
+ *  case file. */
+export const INDEPENDENCE_LINE =
+  "Not an official U.S. government website. Independent projects do not imply federal endorsement. Results are not compliance determinations.";
+
 /** Footer privacy notice for the offline demo. Each sentence maps to
  *  code: localStorage keys in ThemeToggle, ModeToggle and ReviewerBadge;
  *  the upload stop in page.tsx handleFiles; no cookie or analytics code

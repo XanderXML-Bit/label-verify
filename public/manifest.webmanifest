@@ -1,7 +1,7 @@
 {
-  "name": "LabelVerify — TTB COLA prototype",
+  "name": "LabelVerify — label checks against TTB rules",
   "short_name": "LabelVerify",
-  "description": "Verification of beverage-label artwork against COLA application data. TTB Certificate of Label Approval prototype.",
+  "description": "Independent prototype that checks beverage-label artwork against application data and TTB labeling rules. Not an official U.S. government website. Results are not compliance determinations.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
@@ -10,7 +10,7 @@
   "lang": "en-US",
   "categories": [
     "productivity",
-    "government"
+    "utilities"
   ],
   "icons": [
     {
