@@ -484,7 +484,7 @@ The application has no persistent server storage. The review queue and batch sto
 The deliberate choices, in plain terms:
 
 - **Vision-only extractor.** OCR runs in parallel with the vision call but is not fed into the vision prompt. The hypothesis that OCR-as-hint improves accuracy was tested in the bake-off and rejected for this corpus. OCR's role in production is the classical-CV stroke-width measurement for the Government-Warning bold and size subscores, where a pixel-level measurement is more reliable than a model-self-reported boolean.
-- **The benchmark counts `REVIEW` as incorrect.** In the app, `REVIEW` asks a person to check the result. If the application declares U.S. origin and the label omits it, the country field starts at `REVIEW`. The field returns `PASS` if the printed producer address corroborates the country in the application's producer record, as in the bundled PASS sample.
+- **The cross-pair benchmark's exact-match metric counts a `REVIEW` verdict as incorrect on unperturbed inputs.** In the app, `REVIEW` asks a person to check the result. If the application declares U.S. origin and the label omits it, the country field starts at `REVIEW`. The field returns `PASS` if the printed producer address corroborates the country in the application's producer record, as in the bundled PASS sample.
 - **Independent second opinion only on borderline Government-Warning.** A confident PASS or clear FAIL does not fire a second vision call. Only `REVIEW` cases (roughly 5–15 % of volume) get an independent same-provider read (Gemini 2.5 Flash by default since wave 22; switchable to OpenAI for cross-provider diversity); the reviewer sees both verdicts when they disagree.
 
 ### Limits worth naming
