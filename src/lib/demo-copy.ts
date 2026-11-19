@@ -14,7 +14,7 @@ export const OFFLINE_DEMO_NOTICE =
   "This public build makes no AI model calls and uses no API keys. The three samples run the real comparison and Government Warning checks on recorded sample extractions. The demo keeps your label images and application files on your device.";
 
 export const PRIVACY_NOTICE =
-  "This demo stores your theme, view mode, and reviewer ID in this browser. Clear this site's data to remove them. The reviewer ID appears in exports. Vercel receives your IP address and request data for each visit.";
+  "This demo stores your theme, view mode, and reviewer ID in this browser. Clear this site's data to remove them. The reviewer ID appears in the result's JSON export and printed PDF. Vercel receives your IP address and request data for each visit.";
 
 /** Shown when a visitor picks or drops a file of their own in the
  *  offline demo. The page stops before any request is made. */

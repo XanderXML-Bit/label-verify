@@ -13,9 +13,10 @@ Warning checks on three bundled samples.
 
 The browser sends only the sample ID for a sample check. It keeps
 visitor files on the device. In offline mode, `/api/application/parse`,
-`/api/extract`, `/api/verify`, and `/api/verify/batch` refuse uploads
-with HTTP 503 `offline-demo` before reading the body. Vercel receives
-the IP address and request data for each visit.
+`/api/extract`, `/api/verify`, and `/api/verify/batch` return HTTP 503
+`offline-demo` before reading upload bodies. Vercel receives the IP
+address and request data for each visit and may receive request bytes
+before the app responds.
 
 The rest of this document also covers a self-hosted deployment with
 live models enabled (`LABEL_VERIFY_LIVE_MODELS=1`).

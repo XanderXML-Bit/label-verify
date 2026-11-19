@@ -10,6 +10,7 @@ import type { RateLimitResult } from "@/lib/rate-limit";
 import { recordTrace } from "@/lib/debug-trace";
 import { enqueueForReview, makeReviewItemId } from "@/lib/review-queue";
 import { liveModelsEnabled, offlineDemoBody, OFFLINE_SAMPLE_NOTE } from "@/lib/demo-mode";
+import { withRequestId } from "@/lib/request-id";
 import { SAMPLES } from "@/lib/samples";
 import { OfflineSampleExtractor } from "@/lib/vision/offline-sample";
 import {
@@ -36,10 +37,11 @@ const ACCEPTED_MIME = new Set([
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB (image upload ceiling)
 const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
-export async function POST(req: Request) {
-  // Middleware sets X-Request-Id on every inbound /api/* request — pick
-  // it up here so log lines and error responses are correlatable.
-  const requestId = req.headers.get("x-request-id") ?? undefined;
+export const POST = withRequestId(async (req, requestId) => {
+  const live = liveModelsEnabled();
+  if (!live && hasUploadBody(req)) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
 
   // ─── Rate limit ──────────────────────────────────────────────────────────
   const key = callerKey(req.headers);
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
 
   // Public demo (owner decision 2026-11-08): no model-provider keys and
   // no model calls unless LABEL_VERIFY_LIVE_MODELS=1 is set server-side.
-  if (!liveModelsEnabled()) {
+  if (!live) {
     return runOfflineSample(req, rl, requestId);
   }
 
@@ -241,7 +243,7 @@ export async function POST(req: Request) {
     buffer = raw;
   }
   return runVerify(buffer, parsed.data, rl, file.name, requestId);
-}
+});
 
 function pdfErrorStatus(code: PdfExtractError["code"]): number {
   switch (code) {
@@ -266,8 +268,8 @@ async function runVerify(
   buffer: Buffer,
   declared: DeclaredFields,
   rl: RateLimitResult,
-  filename?: string,
-  requestId?: string,
+  filename: string | undefined,
+  requestId: string,
 ) {
   // The route used to thread a `mode` parameter through to the
   // orchestrator. The model picker was retired (single production
@@ -300,7 +302,6 @@ async function runVerify(
     return NextResponse.json(result, {
       headers: {
         "X-RateLimit-Remaining": String(rl.remaining),
-        ...(requestId ? { "X-Request-Id": requestId } : {}),
       },
     });
   } catch (err) {
@@ -309,47 +310,40 @@ async function runVerify(
     // Include the request id in the error body too — users reporting a
     // failure can copy it out of the toast / error panel without having
     // to inspect response headers (R2).
-    if (requestId) {
-      console.warn(`[verify] requestId=${requestId} failed: ${e.message}`);
-    }
+    console.warn(`[verify] requestId=${requestId} failed: ${e.message}`);
     return NextResponse.json(
       {
         error: aborted
           ? "Vision call exceeded its time budget. The model may be cold-starting — try again in a few seconds."
           : `Verification failed: ${e.message}`,
         aborted,
-        ...(requestId ? { requestId } : {}),
+        requestId,
       },
       {
         status: aborted ? 504 : 500,
-        ...(requestId ? { headers: { "X-Request-Id": requestId } } : {}),
       },
     );
   }
 }
 
-/**
- * Offline-demo path. Only the three bundled samples are accepted; the
- * vision step uses a recorded sample extraction (no network, no key),
- * and the declared data always comes from the bundled sample, never
- * from the request. Everything else answers 503 `offline-demo`.
- */
-async function runOfflineSample(
-  req: Request,
-  rl: RateLimitResult,
-  requestId?: string,
-) {
+function hasUploadBody(req: Request): boolean {
   // Next's Node adapter exposes a stream even for Content-Length: 0.
   // A sample POST has no payload. Refuse upload requests without reading it.
   const length = req.headers.get("content-length");
-  if (
+  return (
     req.headers.has("content-type") ||
     req.headers.has("transfer-encoding") ||
     (length !== null && length !== "0") ||
     (length === null && req.body !== null)
-  ) {
-    return NextResponse.json(offlineDemoBody(), { status: 503 });
-  }
+  );
+}
+
+/** Run a bundled image, declared fields, and recorded extraction. */
+async function runOfflineSample(
+  req: Request,
+  rl: RateLimitResult,
+  requestId: string,
+) {
   const sampleId = new URL(req.url).searchParams.get("sample");
   const sample = SAMPLES.find((s) => s.id === sampleId);
   if (!sample) {
@@ -383,14 +377,13 @@ async function runOfflineSample(
       headers: {
         "X-RateLimit-Remaining": String(rl.remaining),
         "X-Label-Verify-Mode": "offline-demo",
-        ...(requestId ? { "X-Request-Id": requestId } : {}),
       },
     });
   } catch (err) {
     return NextResponse.json(
       {
         error: `Offline sample verification failed: ${(err as Error).message}`,
-        ...(requestId ? { requestId } : {}),
+        requestId,
       },
       { status: 500 },
     );

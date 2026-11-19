@@ -8,6 +8,7 @@ import {
 import { parseApplicationImage } from "@/lib/application/parse-image";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { liveModelsEnabled, offlineDemoBody, providerKey } from "@/lib/demo-mode";
+import { withRequestId } from "@/lib/request-id";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -51,7 +52,7 @@ const ACCEPTED_IMAGE_MIME = new Set([
  * parsed fields, lets the reviewer confirm/edit, then POSTs to
  * /api/verify like any manual entry would.
  */
-export async function POST(req: Request) {
+export const POST = withRequestId(async (req) => {
   // Refuse offline uploads before reading the request body.
   if (!liveModelsEnabled()) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
@@ -191,4 +192,4 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
-}
+});
