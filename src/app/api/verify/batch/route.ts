@@ -34,6 +34,16 @@ import {
 import { preprocessImage } from "@/lib/preprocess";
 import { GeminiFlashExtractor } from "@/lib/vision/gemini";
 import { liveModelsEnabled, offlineDemoBody, providerKey } from "@/lib/demo-mode";
+import { withRequestId } from "@/lib/request-id";
+
+export {
+  uploadMethodNotAllowed as DELETE,
+  uploadMethodNotAllowed as GET,
+  uploadMethodNotAllowed as HEAD,
+  uploadMethodNotAllowed as PATCH,
+  uploadMethodNotAllowed as PUT,
+  uploadOptions as OPTIONS,
+} from "@/lib/request-id";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -91,7 +101,7 @@ export const MAX_BATCH_BYTES = MAX_BATCH_BODY_BYTES;
 // 2026-05-13.
 type ParsedApplication = Awaited<ReturnType<typeof parseApplication>>;
 
-export async function POST(req: Request) {
+export const POST = withRequestId(async (req) => {
   // Keyless public demo: batch verification always needs live model calls.
   if (!liveModelsEnabled()) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
@@ -965,7 +975,7 @@ export async function POST(req: Request) {
     // job.items.length)` above).
     concurrency: CONCURRENCY,
   });
-}
+});
 
 // Lazy import to keep the module graph shallow on cold-start.
 async function verifyLabelInline(

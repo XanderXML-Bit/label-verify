@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { requestIdFor } from "./lib/request-id";
 
 // Per REMAINING-IMPROVEMENTS.md R2 — every request gets an X-Request-Id
 // (UUID v4) on its way in and the same value echoed back in the response
@@ -21,11 +22,8 @@ import { NextResponse, type NextRequest } from "next/server";
 // decision. Bearer-gated routes still check Authorization regardless
 // of what id the client supplied.
 
-const SAFE_ID_RE = /^[A-Za-z0-9_-]{8,128}$/;
-
 export function middleware(req: NextRequest): NextResponse {
-  const inbound = req.headers.get("x-request-id");
-  const id = inbound && SAFE_ID_RE.test(inbound) ? inbound : crypto.randomUUID();
+  const id = requestIdFor(req.headers);
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-request-id", id);
@@ -36,8 +34,16 @@ export function middleware(req: NextRequest): NextResponse {
 }
 
 export const config = {
-  // Apply to API routes only — page renders don't need a per-request id
-  // (and middleware on every static asset is unnecessary cost). Bake-off
-  // scripts and the Tesseract WASM worker don't go through this path.
-  matcher: ["/api/:path*"],
+  matcher: [
+    "/api/((?!(?:verify(?:/batch)?|extract|application/parse)/?$).*)",
+    {
+      // Next.js buffers bodies for middleware matches. Let these routes
+      // handle uploads and set response IDs without cloning the stream.
+      source: "/api/:upload(verify(?:/batch)?|extract|application/parse)",
+      missing: [
+        { type: "header", key: "content-length", value: "0*[1-9][0-9]*" },
+        { type: "header", key: "transfer-encoding" },
+      ],
+    },
+  ],
 };

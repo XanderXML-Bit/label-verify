@@ -6,6 +6,7 @@ import type {
   ApplicationConfidence,
   ApplicationParserSource,
 } from "@/lib/application/types";
+import { OFFLINE_UPLOAD_BLOCKED, isOfflineDemoPage } from "@/lib/demo-copy";
 
 // ─── ApplicationUpload ──────────────────────────────────────────────────────
 //
@@ -80,6 +81,13 @@ export function ApplicationUpload({ onParsed, disabled, imageFilename }: Props) 
   >({ kind: "idle" });
 
   async function handleFile(file: File): Promise<void> {
+    // Offline demo: never send the document. The page normally cannot
+    // reach this component in that mode (handleFiles stops first); this
+    // keeps the component safe on its own.
+    if (isOfflineDemoPage()) {
+      setStatus({ kind: "error", message: OFFLINE_UPLOAD_BLOCKED });
+      return;
+    }
     const lowerName = file.name.toLowerCase();
     if (
       REJECTED_HEIC_TYPES.has(file.type) ||

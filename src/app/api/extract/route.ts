@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { liveModelsEnabled, offlineDemoBody } from "@/lib/demo-mode";
+import { withRequestId } from "@/lib/request-id";
 import { extractOnly } from "@/lib/verify";
 import { UrlFetchError, fetchUrlImage } from "@/lib/input-handlers";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
@@ -8,6 +9,15 @@ import {
   PdfExtractError,
   extractPdfFirstPage,
 } from "@/lib/pdf";
+
+export {
+  uploadMethodNotAllowed as DELETE,
+  uploadMethodNotAllowed as GET,
+  uploadMethodNotAllowed as HEAD,
+  uploadMethodNotAllowed as PATCH,
+  uploadMethodNotAllowed as PUT,
+  uploadOptions as OPTIONS,
+} from "@/lib/request-id";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -34,7 +44,7 @@ const ACCEPTED_MIME = new Set([
 const MAX_BYTES = 10 * 1024 * 1024;
 const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
-export async function POST(req: Request) {
+export const POST = withRequestId(async (req) => {
   // Keyless public demo: extract-only always needs a live model call.
   if (!liveModelsEnabled()) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
@@ -163,7 +173,7 @@ export async function POST(req: Request) {
     buffer = raw;
   }
   return runExtract(buffer);
-}
+});
 
 async function runExtract(buffer: Buffer) {
   try {

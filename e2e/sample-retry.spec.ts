@@ -23,7 +23,7 @@ test("PASS sample 500 → 'Retry this sample' → succeeds on second attempt", a
     }
   });
   let callCount = 0;
-  await page.route("**/api/verify", async (route) => {
+  await page.route(/\/api\/verify(?:\?sample=pass)?$/, async (route) => {
     callCount++;
     if (callCount === 1) {
       // First call fails.

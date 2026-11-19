@@ -41,6 +41,33 @@ test.describe("Offline demo", () => {
     expect(providerRequests).toEqual([]);
   });
 
+  for (const file of [
+    { name: "my-label.png", type: "image/png", content: "synthetic image" },
+    { name: "my-label.json", type: "application/json", content: '{"brand_name":"Visitor Brand"}' },
+  ]) {
+    test(`dropping ${file.name} sends no upload request`, async ({ page }) => {
+      const writes: string[] = [];
+      page.on("request", (request) => {
+        if (request.postDataBuffer() || !["GET", "HEAD"].includes(request.method())) {
+          writes.push(request.url());
+        }
+      });
+      await page.goto("/");
+      await expect(page.getByRole("button", { name: /^Reviewer:/ })).toBeVisible();
+      const dataTransfer = await page.evaluateHandle(({ name, type, content }) => {
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([content], name, { type }));
+        return transfer;
+      }, file);
+      const uploadArea = page.getByRole("region", { name: "Label upload area" });
+      await uploadArea.getByRole("button", { name: /^Choose files:/ }).dispatchEvent("drop", { dataTransfer });
+      await expect(page.getByTestId("offline-upload-blocked")).toHaveText(
+        "This demo runs on the three samples. Your file was not uploaded.",
+      );
+      expect(writes).toEqual([]);
+    });
+  }
+
   test("API answers uploads with the offline-demo explanation", async ({ request }) => {
     const res = await request.post("/api/verify", {
       multipart: {

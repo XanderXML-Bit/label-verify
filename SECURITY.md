@@ -5,6 +5,22 @@ treats security as a first-class concern because TTB-regulated label
 data could plausibly contain personally identifying information (the
 producer field is a brewer/distiller and may name an individual).
 
+## Public demo (offline)
+
+The [public demo](https://label-verify-six.vercel.app) makes no AI model
+calls. It uses recorded extractions to run the comparison and Government
+Warning checks on three bundled samples.
+
+The browser sends only the sample ID for a sample check. It keeps
+visitor files on the device. In offline mode, `/api/application/parse`,
+`/api/extract`, `/api/verify`, and `/api/verify/batch` return HTTP 503
+`offline-demo` before reading upload bodies. Vercel receives the IP
+address and request data for each visit and may receive request bytes
+before the app responds.
+
+The rest of this document also covers a self-hosted deployment with
+live models enabled (`LABEL_VERIFY_LIVE_MODELS=1`).
+
 ## Reporting a vulnerability
 
 For security-relevant issues, **please don't open a public GitHub
@@ -26,11 +42,14 @@ The prototype runs as a Vercel-hosted Next.js app:
 - **Untrusted inputs:** label images (uploaded or URL-fetched),
   application files (PDF/CSV/JSON/MD/TXT/image), declared-fields JSON.
   All inputs can be attacker-controlled.
-- **Trusted operators:** the API keys for Gemini, OpenAI, OpenRouter,
-  set in Vercel's environment variables. The prototype does not
-  authenticate end users.
-- **Data lifecycle:** all uploads are processed in-memory inside the
-  serverless function and never persisted. There is no database, no
+- **Trusted operators:** whoever runs the server. The public demo uses
+  no model-provider keys. A self-hosted deployment with live models
+  keeps its Gemini, OpenAI or Anthropic keys in server-side environment
+  variables (never `NEXT_PUBLIC_`). The prototype does not authenticate
+  end users.
+- **Data lifecycle:** the public demo does not accept uploads (see
+  above). With live models, all uploads are processed in-memory inside
+  the serverless function and never persisted. There is no database, no
   S3 bucket, no log archive that retains uploaded images.
 - **No authentication / authorization.** Every visitor can hit the
   same endpoints; rate-limiting prevents abuse but doesn't gate
@@ -184,8 +203,8 @@ and the per-route handlers for the exact implementations.
 
 This is a prototype, so we acknowledge:
 
-- **No CSRF tokens.** Endpoints accept multipart/form-data and JSON
-  from any origin (the CSP locks down `frame-ancestors` and the
+- **No CSRF tokens.** In live-model mode, endpoints accept multipart/form-data
+  and JSON from any origin (the CSP locks down `frame-ancestors` and the
   rate-limit + missing-cookie posture make this lower-risk for a
   no-auth app, but a production fork should add CSRF protection
   before introducing sessions).
@@ -196,19 +215,14 @@ This is a prototype, so we acknowledge:
 
 ## Vendor data handling
 
-- **Gemini (Google AI Studio):** Per Google's API policy, AI Studio
-  free-tier inputs may be used for model improvement. The deployed
-  demo runs on AI Studio for cost reasons; a TTB-deployable fork
-  should switch to Vertex AI (no data retention for paid usage).
-- **OpenAI:** Production tier (`gpt-5.4-nano`) is contractually
-  not used for training (per OpenAI's API DPA). Fallback only —
-  not the primary path.
-- **OpenRouter:** Used only by the bake-off harness, not the
-  deployed verify endpoint. Different keys, different scope.
+The public demo sends no data to model providers. Only a self-hosted
+deployment with `LABEL_VERIFY_LIVE_MODELS=1` can use configured model
+provider keys. In that mode, provider terms govern the data sent to each
+configured provider. The OpenRouter benchmark uses a separate key.
 
 ## Audit trail
 
 All security-relevant changes are tagged `Security:` in
 `CHANGELOG.md` and have commit messages explaining the threat
-they address. Last security audit pass: 2026-05-14 (multi-agent
-docs+code audit + npm-audit re-verification).
+they address. The full security audit ran on 2026-05-14.
+See [Dependency posture](#dependency-posture) for the 2026-11-05 dependency audit.

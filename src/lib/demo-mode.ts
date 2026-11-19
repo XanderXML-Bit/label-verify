@@ -16,9 +16,9 @@
 // step is replaced by a recorded, clearly labelled sample extraction
 // (`src/lib/vision/offline-sample.ts`); preprocessing, OCR, the field
 // comparators and the Government Warning validator run for real.
-// Uploaded images are ignored (the bundled sample image is read from
-// disk). Uploads without a sample id, URL fetches, extract-only, batch
-// and photo-of-application parsing return HTTP 503 `code: "offline-demo"`.
+// Only a bodyless sample request can run verification. Uploads, URL
+// verification, extraction, batch and application parsing return HTTP 503
+// with `code: "offline-demo"` before reading the body.
 //
 // The page is prerendered, so the UI mode is fixed at build time: change
 // LABEL_VERIFY_LIVE_MODELS and redeploy.
