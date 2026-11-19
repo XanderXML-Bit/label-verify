@@ -124,7 +124,7 @@ export function ExtractionOnlyResult({
           <span aria-hidden className="mr-1">
             ⚠
           </span>
-          This is not a compliance verdict — extraction only
+          Extraction only
         </p>
         <p className="mt-1">{result.note}</p>
       </div>
@@ -161,8 +161,7 @@ export function ExtractionOnlyResult({
               Government Warning (27 CFR §16.21)
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Self-contained check — federal regulation, doesn&apos;t need
-              the application.
+              The tool checks this warning using the label alone.
             </p>
             <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
               <SubscoreRow

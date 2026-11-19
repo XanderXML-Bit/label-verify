@@ -212,7 +212,7 @@ describe("verifyLabel (happy path)", () => {
     expect(result.imageQuality).toBe("bad");
     expect(result.verdict).toBe("review");
     // The first review reason should explain re-photograph rationale.
-    expect(result.reviewReasons[0]).toMatch(/re-photograph|image quality/i);
+    expect(result.reviewReasons[0]).toMatch(/could not reliably read the photo.*Take a sharper photo/i);
   });
 
   it("Image quality stays GOOD when the model reads cleanly but the declared values don't match", async () => {

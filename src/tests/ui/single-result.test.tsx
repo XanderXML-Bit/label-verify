@@ -160,7 +160,7 @@ describe("SingleResult", () => {
     );
     const card = screen.getByTestId("verdict-card");
     expect(document.activeElement).toBe(card);
-    expect(card).toHaveAttribute("aria-label", "Verdict: PASS");
+    expect(card).toHaveAttribute("aria-label", "Check result: PASS");
   });
 
   it("shows ABV with a percent sign and confidence in plain words", () => {

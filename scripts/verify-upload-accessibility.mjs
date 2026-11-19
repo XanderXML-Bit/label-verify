@@ -114,7 +114,7 @@ try {
           }
         }
         assert.equal(reached.size, expected, 'Every scoped control must be Tab-reachable');
-        await page.getByRole('button', { name: 'Reviewer: + set ID for the audit trail', exact: true }).click();
+        await page.getByRole('button', { name: 'Reviewer: + set ID for your exports', exact: true }).click();
         for (const control of await page.locator('body > header form input, body > header form button').all()) {
           const box = await control.boundingBox();
           assert.ok(box.width >= 44 && box.height >= 44, 'Reviewer editing targets must reach 44 px');

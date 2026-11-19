@@ -2,7 +2,7 @@
   "name": "label-verify",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-powered TTB label verification prototype.",
+  "description": "Independent prototype that checks beverage labels against TTB labeling rules.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

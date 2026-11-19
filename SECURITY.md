@@ -1,9 +1,8 @@
 # Security policy
 
-LabelVerify is a prototype, not a production system, but
-treats security as a first-class concern because TTB-regulated label
-data could plausibly contain personally identifying information (the
-producer field is a brewer/distiller and may name an individual).
+Label Verify is an independent label-checking prototype. The producer
+field can contain personally identifying information, such as the
+name of an individual brewer or distiller.
 
 ## Reporting a vulnerability
 
@@ -197,9 +196,8 @@ This is a prototype, so we acknowledge:
 ## Vendor data handling
 
 - **Gemini (Google AI Studio):** Per Google's API policy, AI Studio
-  free-tier inputs may be used for model improvement. The deployed
-  demo runs on AI Studio for cost reasons; a TTB-deployable fork
-  should switch to Vertex AI (no data retention for paid usage).
+  free-tier inputs may be used for model improvement when you enable
+  live models and configure AI Studio. The offline demo makes no model calls.
 - **OpenAI:** Production tier (`gpt-5.4-nano`) is contractually
   not used for training (per OpenAI's API DPA). Fallback only —
   not the primary path.

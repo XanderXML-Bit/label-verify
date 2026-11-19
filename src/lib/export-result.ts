@@ -180,15 +180,10 @@ export interface SingleJsonExport {
   filename: string;
   result: VerifyResponse;
   /**
-   * Wave-34 audit-trail fields (#22 + #29). Stamp the JSON export with
-   * regulator-defensible provenance so a 6-month-later case-file
-   * lookup can answer "who ran this verification, when, against which
-   * model" without going back to server logs.
+   * Optional run metadata for the exported result.
    *
-   *   - `reviewer`: operator-set identifier (initials, employee id,
-   *     email — whatever the operator's audit policy requires). Pulled
-   *     from `ReviewerBadge` localStorage. Optional; empty when the
-   *     reviewer hasn't set the badge.
+   *   - `reviewer`: name or initials read from ReviewerBadge storage,
+   *     when the user sets an ID.
    *   - `verifiedAtIso`: timestamp captured at first paint of the
    *     result panel — i.e. when the verifier returned, not when
    *     the user happens to be looking at the result later.
@@ -201,8 +196,7 @@ export interface SingleJsonExport {
      * around the verify fetch in `page.tsx`. Distinct from
      * `result.timings.total` (server-side preprocess + ocr + vision
      * + matching only). The end-to-end number is what the user
-     * actually waited; the audit trail should preserve it because
-     * "the user waited X seconds" is part of the case file.
+     * waited before seeing the result.
      */
     clientTimings?: {
       compressionMs: number;
@@ -213,9 +207,7 @@ export interface SingleJsonExport {
 }
 
 /**
- * Wave-34 (audit-trail fields #22 + #29). Optional metadata stamped
- * into the JSON export envelope. The result envelope is what an
- * integrator or auditor opens to reconstruct what happened.
+ * Optional run metadata included in the JSON export.
  */
 export interface SingleJsonExportOptions {
   reviewer?: string;

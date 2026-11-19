@@ -571,7 +571,7 @@ export async function verifyLabel(
   if (imageQuality === "bad" && verdict === "fail") {
     verdict = "review";
     reviewReasons.unshift(
-      `Image quality is too poor for a compliance determination (mean extractor confidence ${meanConf.toFixed(2)}, min ${minConf.toFixed(2)}). The label may be perfectly compliant — re-photograph in better light, at a sharper angle, and resubmit before treating this as non-compliance.`,
+      `The tool could not reliably read the photo (mean extractor confidence ${meanConf.toFixed(2)}, minimum ${minConf.toFixed(2)}). Take a sharper photo in better light and run the check again.`,
     );
   }
 
@@ -628,7 +628,7 @@ export async function verifyLabel(
         .map((cmp) => FIELD_LABEL[cmp.field] ?? cmp.field)
         .join(", ");
       reviewReasons.unshift(
-        `The extractor could not read ${labels} from the submitted image. The label may be perfectly compliant — re-photograph the obscured region(s) or confirm visually before treating this as non-compliance.`,
+        `The tool could not read ${labels} in this photo. Take another photo of the obscured area or check the label directly.`,
       );
     }
   }
@@ -1104,7 +1104,7 @@ export async function extractOnly(
     modelVersion: extracted.modelVersion,
     modeUsed,
     note:
-      "Application data was not provided. Extracted fields are shown for reference only — no PASS/FAIL/REVIEW verdict against declared values. The Government Warning subscore is still computed (federal regulation, not application-derived).",
+      "Application data was not provided. The tool shows the extracted fields and checks the Government Warning using the label alone.",
     ...(imageQualityReason ? { imageQualityReason } : {}),
     ...(fallbackUsed ? { fallbackUsed } : {}),
   };
