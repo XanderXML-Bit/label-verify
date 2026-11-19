@@ -9,7 +9,7 @@ const body = Buffer.from(
   `Content-Type: image/png\r\n\r\nsynthetic upload\r\n--${boundary}--\r\n`,
 );
 const routes = [
-  "/api/verify?sample=pass",
+  "/api/verify",
   "/api/extract",
   "/api/verify/batch",
   "/api/application/parse",
