@@ -11,7 +11,7 @@ import { recordTrace } from "@/lib/debug-trace";
 import { enqueueForReview, makeReviewItemId } from "@/lib/review-queue";
 import { liveModelsEnabled, offlineDemoBody, OFFLINE_SAMPLE_NOTE } from "@/lib/demo-mode";
 import { withRequestId } from "@/lib/request-id";
-import { SAMPLES } from "@/lib/samples";
+import { SAMPLES, type Sample } from "@/lib/samples";
 import { OfflineSampleExtractor } from "@/lib/vision/offline-sample";
 import {
   MAX_PDF_BYTES,
@@ -48,7 +48,10 @@ const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 60);
 
 export const POST = withRequestId(async (req, requestId) => {
   const live = liveModelsEnabled();
-  if (!live && hasUploadBody(req)) {
+  // Offline verification uses the bundled sample ID and ignores the body.
+  const sampleId = live ? null : new URL(req.url).searchParams.get("sample");
+  const sample = sampleId === null ? undefined : SAMPLES.find((s) => s.id === sampleId);
+  if (!live && !sample) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
   }
 
@@ -68,10 +71,8 @@ export const POST = withRequestId(async (req, requestId) => {
     );
   }
 
-  // Public demo (owner decision 2026-11-08): no model-provider keys and
-  // no model calls unless LABEL_VERIFY_LIVE_MODELS=1 is set server-side.
-  if (!live) {
-    return runOfflineSample(req, rl, requestId);
+  if (sample) {
+    return runOfflineSample(sample, rl, requestId);
   }
 
   const contentType = req.headers.get("content-type") ?? "";
@@ -335,29 +336,12 @@ async function runVerify(
   }
 }
 
-function hasUploadBody(req: Request): boolean {
-  // Next's Node adapter exposes a stream even for Content-Length: 0.
-  // A sample POST has no payload. Refuse upload requests without reading it.
-  const length = req.headers.get("content-length");
-  return (
-    req.headers.has("content-type") ||
-    req.headers.has("transfer-encoding") ||
-    (length !== null && length !== "0") ||
-    (length === null && req.body !== null)
-  );
-}
-
 /** Run a bundled image, declared fields, and recorded extraction. */
 async function runOfflineSample(
-  req: Request,
+  sample: Sample,
   rl: RateLimitResult,
   requestId: string,
 ) {
-  const sampleId = new URL(req.url).searchParams.get("sample");
-  const sample = SAMPLES.find((s) => s.id === sampleId);
-  if (!sample) {
-    return NextResponse.json(offlineDemoBody(), { status: 503 });
-  }
   let buffer: Buffer;
   try {
     buffer = await readFile(

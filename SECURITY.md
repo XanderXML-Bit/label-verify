@@ -12,10 +12,12 @@ calls. It uses recorded extractions to run the comparison and Government
 Warning checks on three bundled samples.
 
 The browser sends only the sample ID for a sample check. It keeps
-visitor files on the device. In offline mode, `/api/application/parse`,
-`/api/extract`, `/api/verify`, and `/api/verify/batch` return HTTP 503
-`offline-demo` before reading upload bodies. Vercel receives the IP
-address and request data for each visit and may receive request bytes
+visitor files on the device. In offline mode, `/api/verify` runs the bundled
+sample named in the `sample` query and ignores the request body. It returns
+HTTP 503 `offline-demo` for missing or unknown sample IDs. The
+`/api/application/parse`, `/api/extract`, and `/api/verify/batch` routes
+return the same error before reading the request body. Vercel receives the
+IP address and request data for each visit and may receive request bytes
 before the app responds.
 
 The rest of this document also covers a self-hosted deployment with
