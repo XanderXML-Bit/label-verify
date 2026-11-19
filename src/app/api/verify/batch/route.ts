@@ -36,6 +36,15 @@ import { GeminiFlashExtractor } from "@/lib/vision/gemini";
 import { liveModelsEnabled, offlineDemoBody, providerKey } from "@/lib/demo-mode";
 import { withRequestId } from "@/lib/request-id";
 
+export {
+  uploadMethodNotAllowed as DELETE,
+  uploadMethodNotAllowed as GET,
+  uploadMethodNotAllowed as HEAD,
+  uploadMethodNotAllowed as PATCH,
+  uploadMethodNotAllowed as PUT,
+  uploadOptions as OPTIONS,
+} from "@/lib/request-id";
+
 export const runtime = "nodejs";
 export const maxDuration = 60;
 

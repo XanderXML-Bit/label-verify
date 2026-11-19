@@ -19,6 +19,15 @@ import {
   extractPdfFirstPage,
 } from "@/lib/pdf";
 
+export {
+  uploadMethodNotAllowed as DELETE,
+  uploadMethodNotAllowed as GET,
+  uploadMethodNotAllowed as HEAD,
+  uploadMethodNotAllowed as PATCH,
+  uploadMethodNotAllowed as PUT,
+  uploadOptions as OPTIONS,
+} from "@/lib/request-id";
+
 export const runtime = "nodejs";
 // 60 s ceiling matches Vercel Hobby. The vision call has its own
 // per-mode budget in `verify.ts:timeoutForMode()` (15–60 s) — this

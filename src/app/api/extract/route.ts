@@ -10,6 +10,15 @@ import {
   extractPdfFirstPage,
 } from "@/lib/pdf";
 
+export {
+  uploadMethodNotAllowed as DELETE,
+  uploadMethodNotAllowed as GET,
+  uploadMethodNotAllowed as HEAD,
+  uploadMethodNotAllowed as PATCH,
+  uploadMethodNotAllowed as PUT,
+  uploadOptions as OPTIONS,
+} from "@/lib/request-id";
+
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
