@@ -475,7 +475,7 @@ Full threat model: [`SECURITY.md`](SECURITY.md). Last review 2026-05-14 (multi-a
 **Authentication:**
 - The `/api/debug/last` ring buffer is gated by `DEBUG_TOKEN` (Bearer header, `crypto.timingSafeEqual` compare with length-spoof dummy so a wrong token can't be length-distinguished). Every other endpoint is unauthenticated by design — this is a prototype per brief §9.
 
-No persistent storage. No PII collection. The review queue is in-process; the batch store is in-process.
+The application has no persistent server storage. The review queue and batch store use process memory. The browser keeps your reviewer ID in `localStorage` across reloads.
 
 ---
 
@@ -484,9 +484,8 @@ No persistent storage. No PII collection. The review queue is in-process; the ba
 The deliberate choices, in plain terms:
 
 - **Vision-only extractor.** OCR runs in parallel with the vision call but is not fed into the vision prompt. The hypothesis that OCR-as-hint improves accuracy was tested in the bake-off and rejected for this corpus. OCR's role in production is the classical-CV stroke-width measurement for the Government-Warning bold and size subscores, where a pixel-level measurement is more reliable than a model-self-reported boolean.
-- **Bench scorer treats `REVIEW` as not-correct.** Deliberately strict accuracy convention. In the production orchestrator, `REVIEW` is a routed-to-human verdict with a regulation-citing reason — not a refusal. As one example, US-domestic labels that print no country marking are routed to REVIEW on the `country_of_origin` field; the regulation (27 CFR §4.39 / §5.36) only mandates country marking on imports, so a person should confirm the producer's address. The headline metric counts these as not-correct; the orchestrator handles them sensibly.
+- **The benchmark counts `REVIEW` as incorrect.** In the app, `REVIEW` asks a person to check the result. If the application declares U.S. origin and the label omits it, the country field starts at `REVIEW`. The field returns `PASS` if the printed producer address corroborates the country in the application's producer record, as in the bundled PASS sample.
 - **Independent second opinion only on borderline Government-Warning.** A confident PASS or clear FAIL does not fire a second vision call. Only `REVIEW` cases (roughly 5–15 % of volume) get an independent same-provider read (Gemini 2.5 Flash by default since wave 22; switchable to OpenAI for cross-provider diversity); the reviewer sees both verdicts when they disagree.
-- **No persistent storage.** The prototype keeps the review queue and batch store in process memory.
 
 ### Limits worth naming
 
