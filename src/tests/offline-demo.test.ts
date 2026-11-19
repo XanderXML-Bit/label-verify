@@ -60,6 +60,7 @@ import {
 } from "@/lib/demo-mode";
 import { SAMPLES } from "@/lib/samples";
 import type { VerifyResponse } from "@/lib/types";
+import { tesseractEngine } from "@/lib/ocr/tesseract";
 
 const FAKE_KEYS = {
   GOOGLE_API_KEY: "test-google-key-not-real",
@@ -83,6 +84,8 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = realFetch;
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 afterAll(() => {
@@ -129,24 +132,60 @@ describe("demo-mode helpers", () => {
 });
 
 describe("offline demo /api/verify", () => {
+  // Recorded OCR word boxes from the shared PASS and REVIEW image.
+  const warningWords = ([
+    ["OVERNMENT", 253, 1374, 208, 86],
+    ["WARNING:", 475, 1395, 185, 41],
+    ["According", 731, 1399, 156, 43],
+    ["cE", 253, 1438, 104, 73],
+    ["women", 370, 1451, 106, 33],
+    ["should", 493, 1451, 109, 38],
+  ] as const).map(([text, x, y, width, height]) => ({
+    text,
+    bbox: { x, y, width, height },
+    confidence: 0.9,
+  }));
+  const framings: { name: string; headers: Record<string, string>; stream: boolean }[] = [
+    { name: "Content-Length: 0", headers: { "content-length": "0" }, stream: false },
+    { name: "a body stream with no Content-Length", headers: {}, stream: true },
+    { name: "Transfer-Encoding: chunked", headers: { "transfer-encoding": "chunked" }, stream: true },
+  ];
+
   for (const sample of SAMPLES) {
-    it(`${sample.id} sample returns its expected verdict with no model call`, async () => {
-      const fd = new FormData();
-      fd.append("image", sampleImage(sample.imageUrl));
-      // Declared data from the client is ignored; the bundled sample wins.
-      fd.append("declared", JSON.stringify({ brand_name: "Tampered" }));
-      fd.append("sample", sample.id);
-      const res = await verifyPOST(req("http://localhost/api/verify", fd));
+    it.each(framings)(`${sample.id} sample returns its verdict with $name`, async ({ headers, stream }) => {
+      if (sample.id !== "fail") {
+        vi.stubEnv("LV_ENLARGE", "1");
+        vi.stubEnv("LV_MAX_EDGE", "2000");
+        vi.spyOn(tesseractEngine, "run").mockResolvedValue({
+          text: "",
+          words: warningWords,
+          confidence: 0.9,
+          latencyMs: 0,
+          engine: "tesseract",
+        });
+      }
+      const pull = vi.fn((controller: ReadableStreamDefaultController<Uint8Array>) => {
+        controller.enqueue(new Uint8Array([1, 2, 3]));
+        controller.close();
+      });
+      const init: RequestInit & { duplex: "half" } = {
+        method: "POST",
+        headers,
+        body: stream ? new ReadableStream({ pull }, { highWaterMark: 0 }) : null,
+        duplex: "half",
+      };
+      const request = new Request(
+        `http://localhost/api/verify?sample=${sample.id}`,
+        init,
+      );
+      const res = await verifyPOST(request);
+      expect(request.bodyUsed).toBe(false);
+      expect(pull).not.toHaveBeenCalled();
       expect(res.status).toBe(200);
+      expect(res.headers.get("x-request-id")).toBeTruthy();
       expect(res.headers.get("x-label-verify-mode")).toBe("offline-demo");
       const body = (await res.json()) as VerifyResponse;
-      // OCR is mocked out here, so the Government Warning bold subscore
-      // falls back to the recorded self-report and the clean sample lands
-      // on REVIEW instead of PASS (no second opinion offline). With real
-      // Tesseract (next start) the three samples give PASS / FAIL / REVIEW;
-      // see the PR evidence. Field comparisons are exact either way.
-      const hermeticVerdict = { pass: "review", fail: "fail", review: "review" }[sample.id];
-      expect(body.verdict).toBe(hermeticVerdict);
+      expect(body.verdict).toBe(sample.expectedVerdict);
       const nonPass = Object.values(body.fields).filter((f) => f.status !== "pass").map((f) => f.field);
       expect(nonPass).toEqual(sample.id === "review" ? ["class_type"] : []);
       if (sample.id === "fail") expect(body.governmentWarning.subscores.caps.status).toBe("fail");
@@ -160,31 +199,36 @@ describe("offline demo /api/verify", () => {
     });
   }
 
-  it("ignores uploaded bytes and verifies the bundled sample image", async () => {
-    const garbage = new File([new Uint8Array([1, 2, 3, 4])], "other.jpg", { type: "image/jpeg" });
-    const withGarbage = new FormData();
-    withGarbage.append("image", garbage);
-    withGarbage.append("sample", "fail");
-    const noImage = new FormData();
-    noImage.append("sample", "fail");
-    for (const fd of [withGarbage, noImage]) {
-      const res = await verifyPOST(req("http://localhost/api/verify", fd));
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as VerifyResponse;
-      expect(body.verdict).toBe("fail");
-      // preprocess ran on the real bundled fail.jpg, not the 4-byte upload.
-      expect(body.imageQuality).not.toBe("bad");
-    }
-  });
-
-  it("rejects an arbitrary upload with 503 offline-demo", async () => {
+  it.each(["/api/verify", "/api/verify?sample=unknown"])("rejects an upload to %s without reading the body", async (route) => {
     const fd = new FormData();
     fd.append("image", sampleImage("/samples/pass.jpg"));
-    fd.append("declared", JSON.stringify(firstSample().declared));
-    const res = await verifyPOST(req("http://localhost/api/verify", fd));
+    const request = req(`http://localhost${route}`, fd);
+    const res = await verifyPOST(request);
     expect(res.status).toBe(503);
-    expect(((await res.json()) as { code: string }).code).toBe(OFFLINE_DEMO_CODE);
-    expect(sdkCalls).toEqual([]);
+    expect(res.headers.get("x-request-id")).toBeTruthy();
+    expect(await res.json()).toMatchObject({ code: OFFLINE_DEMO_CODE });
+    expect(request.bodyUsed).toBe(false);
+  });
+
+  it("runs the bundled sample without reading an attached file", async () => {
+    const fd = new FormData();
+    fd.append("image", new File(["tiny"], "label.png", { type: "image/png" }));
+    const request = req("http://localhost/api/verify?sample=fail", fd);
+    const res = await verifyPOST(request);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      verdict: "fail",
+      offlineDemo: { sampleId: "fail" },
+    });
+    expect(request.bodyUsed).toBe(false);
+  });
+
+  it("refuses an unknown sample without a body", async () => {
+    const request = new Request("http://localhost/api/verify?sample=unknown", {
+      method: "POST",
+    });
+    const res = await verifyPOST(request);
+    expect(res.status).toBe(503);
   });
 
   it("rejects URL verification with 503 and never fetches", async () => {
@@ -214,6 +258,21 @@ describe("offline demo: other model-backed routes", () => {
     fd.append("images", sampleImage("/samples/pass.jpg"));
     const res = await batchPOST(req("http://localhost/api/verify/batch", fd));
     expect(res.status).toBe(503);
+  });
+
+  it("application document parsing returns 503 without reading the body", async () => {
+    const fd = new FormData();
+    fd.append(
+      "file",
+      new File([JSON.stringify({ brand_name: "Visitor Brand" })], "app.json", {
+        type: "application/json",
+      }),
+    );
+    const request = req("http://localhost/api/application/parse", fd);
+    const res = await appParsePOST(request);
+    expect(res.status).toBe(503);
+    expect(((await res.json()) as { code: string }).code).toBe(OFFLINE_DEMO_CODE);
+    expect(request.bodyUsed).toBe(false);
   });
 
   it("photo-of-application parsing returns 503", async () => {

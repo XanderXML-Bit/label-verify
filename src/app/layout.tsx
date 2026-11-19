@@ -5,7 +5,7 @@ import { ModeToggle } from "./components/ModeToggle";
 import { ReviewerBadge } from "./components/ReviewerBadge";
 import { resolveMetadataOrigin } from "../lib/site-metadata";
 import { liveModelsEnabled } from "@/lib/demo-mode";
-import { OFFLINE_DEMO_NOTICE } from "@/lib/demo-copy";
+import { OFFLINE_DEMO_NOTICE, PRIVACY_NOTICE } from "@/lib/demo-copy";
 
 const SHARE_TITLE = "Label Verify — label checks against TTB rules (prototype)";
 
@@ -169,6 +169,19 @@ export default function RootLayout({
             github.com/XanderXML-Bit/label-verify
           </a>
           .
+          {offlineDemo && (
+            <div data-testid="privacy-notice" className="mt-2">
+              <p><strong>Privacy.</strong> {PRIVACY_NOTICE}</p>
+              <a
+                className="relative inline-flex min-h-[44px] items-center py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
+                href="https://github.com/XanderXML-Bit/label-verify/issues"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Ask a demo question on GitHub
+              </a>
+            </div>
+          )}
         </footer>
       </body>
     </html>

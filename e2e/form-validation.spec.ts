@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { isOfflineDemo } from "./demo-mode";
 import { join } from "node:path";
 
 // ─── E2E: DeclaredForm validation ──────────────────────────────────────────
@@ -25,6 +26,9 @@ async function uploadLabel(page: Awaited<ReturnType<typeof test.use>> extends ne
 }
 
 test.describe("Form validation reaches the user via the page flow", () => {
+  test.beforeEach(async ({ request }) => {
+    test.skip(await isOfflineDemo(request), "the offline demo does not open the upload form; covered by offline-demo.spec.ts");
+  });
   test("Submitting with empty brand surfaces an assertive error", async ({
     page,
   }) => {

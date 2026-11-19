@@ -2,7 +2,7 @@
   "name": "label-verify",
   "version": "0.1.0",
   "private": true,
-  "description": "Independent prototype that checks beverage labels against TTB labeling rules.",
+  "description": "Independent prototype that checks beverage labels against TTB labeling rules. The public demo runs offline on three bundled samples and makes no AI model calls.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -39,8 +39,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
     "@google/generative-ai": "^0.24.1",
-    "@napi-rs/canvas": "^1.1.0",
-    "@rollup/rollup-linux-x64-gnu": "^4.68.0",
+    "@napi-rs/canvas": "^1.1.1",
+    "@rollup/rollup-linux-x64-gnu": "^4.68.3",
     "csv-parse": "^5.5.6",
     "fast-fuzzy": "^1.12.0",
     "mammoth": "^1.13.0",
@@ -57,7 +57,7 @@
     "@playwright/test": "^1.65.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.8",
+    "@testing-library/user-event": "^14.6.10",
     "@types/node": "^22.14.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
