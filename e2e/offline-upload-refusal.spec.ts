@@ -59,7 +59,12 @@ function sendPausedUpload(url: URL, headers: Record<string, string>) {
   });
 }
 
-test.beforeEach(async ({ request }) => {
+test.beforeEach(async ({ baseURL, request }) => {
+  // A hosting proxy can buffer uploads before forwarding them to Next.js.
+  test.skip(
+    !baseURL || !["127.0.0.1", "localhost", "[::1]"].includes(new URL(baseURL).hostname),
+    "requires a local Next.js server",
+  );
   test.skip(!(await isOfflineDemo(request)), "server runs live models");
 });
 
