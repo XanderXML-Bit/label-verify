@@ -307,7 +307,7 @@ export function BatchView({
       >
         <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-700">
           <caption className="sr-only">
-            One row per uploaded label, with verdict, image quality, and timing.
+            Each row shows the check result, image quality, and timing for one label.
           </caption>
           <thead className="sticky top-0 bg-slate-50 text-left text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <tr>
@@ -524,9 +524,9 @@ function Row({
         ) : row.status === "error" ? (
           <span className="text-xs text-red-600 dark:text-red-400">error</span>
         ) : row.status === "running" ? (
-          <span className="text-xs text-slate-400 dark:text-slate-500">…</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">…</span>
         ) : (
-          <span className="text-xs text-slate-400 dark:text-slate-500">queued</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">queued</span>
         )}
       </td>
       <td className="px-4 py-2">

@@ -59,7 +59,7 @@ describe("normalizeForTextMatch", () => {
     expect(normalizeForTextMatch("“hi”")).toBe('"hi"');
   });
   it("case-folds to lowercase (wave-23, 2026-05-13)", () => {
-    // 27 CFR §16.21 requires the *prefix* in caps (enforced by
+    // 27 CFR §16.22(a)(2) requires the *prefix* in caps (enforced by
     // isPrefixAllCaps + scoreCaps), but the *body* has no case
     // requirement. Case-folding here lets all-caps body renderings
     // (compliant) match the canonical statement. The orthogonal caps
@@ -144,7 +144,7 @@ describe("validateGovernmentWarning", () => {
   });
 
   it("PASS when the entire warning is rendered ALL CAPS (wave-23, ai-label-0002-style)", async () => {
-    // 27 CFR §16.21 requires the prefix in caps + bold but says
+    // 27 CFR §16.22(a)(2) requires the prefix in caps + bold but says
     // nothing about the body's case. Real AI-photo labels in the
     // bench corpus (ai-label-0002/5/6/7/8/31/50) render the full
     // warning ALL CAPS — compliant, but the pre-wave-23 case-

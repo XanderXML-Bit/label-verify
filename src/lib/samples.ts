@@ -30,11 +30,11 @@ export const SAMPLES: readonly Sample[] = [
     // confirmed visually."
     id: "pass",
     label: "PASS sample",
-    shortDescription: "Compliant beer label — every field should match.",
+    shortDescription: "Beer label that matches the application and passes the warning checks.",
     imageUrl: "/samples/pass.jpg",
     expectedVerdict: "pass",
     expectedNote:
-      "All seven regulated fields match the declared application data; Government Warning is fully compliant under 27 CFR §16.21.",
+      "The label matches the declared fields. The Government Warning passes this tool's checks for 27 CFR §16.21 and §16.22.",
     declared: {
       brand_name: "Mill Creek",
       class_type: "Pilsner",
@@ -55,15 +55,18 @@ export const SAMPLES: readonly Sample[] = [
   {
     // ai-label-0010 — Mercer's Reserve Vodka. Title-case "Government
     // Warning:" prefix instead of all-caps. Codex audit:
-    // "Title-case warning prefix defect confirmed."
+    // "Title-case warning prefix defect confirmed." The label prints
+    // "Produced by Mercers Reserve Beverage Co., Denver, CO" (no
+    // apostrophe), so the application declares that same producer and
+    // the warning prefix is the only failing check.
     id: "fail",
     label: "FAIL sample",
     shortDescription:
-      "Spirits label with title-case 'Government Warning:' prefix — must fail (caps required).",
+      "The spirits label fails the check for an all-caps Government Warning prefix.",
     imageUrl: "/samples/fail.jpg",
     expectedVerdict: "fail",
     expectedNote:
-      "The Government Warning prefix is rendered in title case ('Government Warning:'). 27 CFR §16.21 requires all caps; this is a strict regulatory failure.",
+      "The prefix reads 'Government Warning:' in title case. It fails this tool's capitalization check for 27 CFR §16.22(a)(2).",
     declared: {
       brand_name: "Mercer's Reserve",
       class_type: "Vodka",
@@ -71,7 +74,7 @@ export const SAMPLES: readonly Sample[] = [
       abv_percent: 40.0,
       net_contents: { value: 750, unit: "ml" },
       producer: {
-        name: "Mercer's Reserve Distilling",
+        name: "Mercers Reserve Beverage Co.",
         street: null,
         city: "Denver",
         state: "CO",
@@ -84,9 +87,8 @@ export const SAMPLES: readonly Sample[] = [
   {
     // Reuses the PASS sample image (Mill Creek Pilsner). The
     // deferral is engineered by a class_type mismatch: label prints
-    // "Pilsner", application declares "Lager". TTB treats those as
-    // distinct class designations; the comparator's REVIEW_ALIASES
-    // bucket (matching/class.ts) routes such pairs to REVIEW. This
+    // "Pilsner", application declares "Lager". The comparator treats
+    // them as distinct class designations and routes the pair to REVIEW. This
     // is a real-production case — labels often use "Pilsner" and
     // "Lager" interchangeably even though they're not. Previous
     // sample (Latitude Seven IPA) used an image whose producer the
@@ -97,11 +99,11 @@ export const SAMPLES: readonly Sample[] = [
     id: "review",
     label: "REVIEW sample",
     shortDescription:
-      "Label reads 'Pilsner', application declares 'Lager' — distinct TTB class designations, surfaced for human confirmation.",
+      "The label says 'Pilsner' and the application says 'Lager'. The tool flags the difference for review.",
     imageUrl: "/samples/pass.jpg",
     expectedVerdict: "review",
     expectedNote:
-      "The label prints 'Pilsner' but the COLA application declares 'Lager'. These styles are used interchangeably on real labels but are distinct class designations under TTB rules — the comparator defers to a human reviewer rather than silently treating them as identical.",
+      "The label prints 'Pilsner' and the application declares 'Lager'. This tool treats them as distinct class designations and asks you to confirm the match.",
     declared: {
       brand_name: "Mill Creek",
       class_type: "Lager",

@@ -25,7 +25,11 @@ import {
   type ApplicationParsePayload,
 } from "./components/ApplicationUpload";
 import type { Sample } from "@/lib/samples";
-import { OFFLINE_DEMO_MESSAGE } from "@/lib/demo-copy";
+import {
+  OFFLINE_DEMO_MESSAGE,
+  OFFLINE_UPLOAD_BLOCKED,
+  isOfflineDemoPage,
+} from "@/lib/demo-copy";
 import { compressImageInBrowser } from "@/lib/client-compress";
 import { classifyFile } from "@/lib/batch-pairing";
 import { mergeFilesForRestage } from "@/lib/upload-merge";
@@ -79,11 +83,15 @@ function friendlyError(raw: string, status?: number): string {
   return raw;
 }
 
+/** Screen-reader line for a finished verification. */
+function verdictAnnouncement(r: VerifyResponse): string {
+  const word = r.verdict === "pass" ? "PASS" : r.verdict === "fail" ? "FAIL" : "REVIEW";
+  return `Check complete. Result: ${word}.`;
+}
+
 /**
  * Client-perceived end-to-end timings, captured around each verify /
- * extract / sample request. Surfaced in the result panel's Audit
- * details section and stamped into JSON exports so the regulator-
- * defensible audit trail records WHAT THE USER ACTUALLY WAITED, not
+ * extract / sample request. Surfaced in the Result details section and included in JSON exports to record the wait, not
  * just the server-side `result.timings.total`.
  *
  * Wave-35c motivation: the project's "verified in ~3 s" claim came
@@ -106,7 +114,14 @@ export interface ClientTimings {
 type Stage =
   | { kind: "idle" }
   | { kind: "single-pending"; file: File; previewUrl: string }
-  | { kind: "single-verifying"; file: File; previewUrl: string }
+  | {
+      kind: "single-verifying";
+      file: File;
+      previewUrl: string;
+      /** Set when the run came from a sample button, so Cancel can go
+       *  back to the sample picker instead of the upload form. */
+      sample?: Sample;
+    }
   | { kind: "single-extracting"; file: File; previewUrl: string }
   | {
       kind: "single-done";
@@ -194,17 +209,44 @@ export default function Home() {
   // console.warn; now we surface it visibly next to the form so the
   // reviewer knows their second file wasn't silently lost.
   const [ignoredApps, setIgnoredApps] = useState<readonly string[]>([]);
+  // Offline demo: set when a visitor picks or drops a file of their
+  // own. The file is not read or sent; the idle screen says so.
+  const [offlineUploadBlocked, setOfflineUploadBlocked] = useState(false);
 
   // Warm the function + Tesseract worker on page load (DEPLOYMENT.md §6).
   // The AbortController prevents stacked warmups across the
   // mount→unmount→remount lifecycle (e.g. fast tab close/reopen, React
   // StrictMode double-invoke in dev) — without it each remount fires a
   // fresh warmup that the previous mount can no longer act on. UX audit P-7.
+  //
+  // The response body must be consumed: Chromium keeps a fetch open
+  // until its body is read or cancelled, so an unread warmup left one
+  // request in flight forever and the page never reached network idle
+  // (design audit 2026-11-13). The body is tiny JSON; read and drop it.
   useEffect(() => {
     const ac = new AbortController();
-    fetch("/api/warmup", { signal: ac.signal }).catch(() => undefined);
+    fetch("/api/warmup", { signal: ac.signal })
+      .then((r) => r.text())
+      .catch(() => undefined);
     return () => ac.abort();
   }, []);
+
+  // Polite screen-reader announcements for state changes that move the
+  // page (result ready, check cancelled). The region stays mounted so
+  // assistive tech registers it before its text changes.
+  const [announcement, setAnnouncement] = useState("");
+  // Set before a transition back to idle that the user caused (Cancel,
+  // "Verify another label"), so focus lands on the page heading rather
+  // than on <body> deep down the page.
+  const focusHeadingOnIdleRef = useRef(false);
+  const pageHeadingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (stage.kind !== "idle" || !focusHeadingOnIdleRef.current) return;
+    focusHeadingOnIdleRef.current = false;
+    // Back to the top of the page, then onto the heading.
+    document.documentElement.scrollTop = 0;
+    pageHeadingRef.current?.focus({ preventScroll: true });
+  }, [stage.kind]);
 
   // While async work is in flight, mutate document.title so a reviewer
   // who tabs away to email can see "(Verifying…) Label Verify" in the
@@ -258,8 +300,9 @@ export default function Home() {
   }
 
   function handleFiles(files: File[]) {
-    revokeIfPreview(stage);
     if (files.length === 0) return;
+    if (isOfflineDemoPage()) return blockOfflineUpload();
+    revokeIfPreview(stage);
 
     // Intent inference: classify dropped files into images vs
     // application documents (PDF / JSON / CSV / MD / TXT) and branch.
@@ -414,6 +457,7 @@ export default function Home() {
    *  column manifest instead of treating the whole file as a single
    *  record. */
   async function parseAppInBackground(file: File, imageFilename?: string) {
+    if (isOfflineDemoPage()) return; // never upload in the offline demo
     setBgAppParse({ kind: "parsing", filename: file.name });
     try {
       const fd = new FormData();
@@ -458,8 +502,10 @@ export default function Home() {
     // Sample affordance: skip the form and verify immediately so the
     // reviewer sees an end-to-end result in one click (UI-SPEC.md §4).
     revokeIfPreview(stage);
+    setOfflineUploadBlocked(false);
     const url = URL.createObjectURL(file);
-    setStage({ kind: "single-verifying", file, previewUrl: url });
+    setStage({ kind: "single-verifying", file, previewUrl: url, sample });
+    setAnnouncement("");
     const ac = new AbortController();
     singleAbortRef.current = ac;
     // Wave-35c — capture client-perceived end-to-end timing. tStart is
@@ -469,16 +515,22 @@ export default function Home() {
     let tCompressionDone = tStart;
     let tFetchDone = tStart;
     try {
-      const uploadFile = await compressImageInBrowser(file);
+      let verifyUrl = "/api/verify";
+      let body: FormData | undefined;
+      if (isOfflineDemoPage()) {
+        // The server reads the bundled image and declared fields from disk.
+        verifyUrl += `?sample=${encodeURIComponent(sample.id)}`;
+      } else {
+        const uploadFile = await compressImageInBrowser(file);
+        body = new FormData();
+        body.append("image", uploadFile);
+        body.append("declared", JSON.stringify(sample.declared));
+      }
       tCompressionDone = performance.now();
-      const fd = new FormData();
-      fd.append("image", uploadFile);
-      fd.append("declared", JSON.stringify(sample.declared));
-      // Lets the keyless public demo answer with its offline sample path.
-      fd.append("sample", sample.id);
-      const res = await fetch("/api/verify", { method: "POST", body: fd, signal: ac.signal });
+      const res = await fetch(verifyUrl, { method: "POST", body, signal: ac.signal });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
+        if (ac.signal.aborted) return;
         setStage({
           kind: "single-error",
           file,
@@ -489,6 +541,7 @@ export default function Home() {
         return;
       }
       const result = (await res.json()) as VerifyResponse;
+      if (ac.signal.aborted) return;
       tFetchDone = performance.now();
       const clientTimings: ClientTimings = {
         compressionMs: Math.round(tCompressionDone - tStart),
@@ -496,7 +549,11 @@ export default function Home() {
         totalMs: Math.round(tFetchDone - tStart),
       };
       setStage({ kind: "single-done", file, previewUrl: url, result, clientTimings });
+      setAnnouncement(verdictAnnouncement(result));
     } catch (e) {
+      // Cancel already moved the page on; an aborted request is not a
+      // failure and must not overwrite that with an error panel.
+      if (ac.signal.aborted) return;
       setStage({
         kind: "single-error",
         file,
@@ -509,6 +566,7 @@ export default function Home() {
 
   async function submitSingle(declared: DeclaredFields) {
     if (stage.kind !== "single-pending") return;
+    if (isOfflineDemoPage()) return blockOfflineUpload();
     setStage({ ...stage, kind: "single-verifying" });
     const ac = new AbortController();
     singleAbortRef.current = ac;
@@ -527,6 +585,7 @@ export default function Home() {
       const res = await fetch("/api/verify", { method: "POST", body: fd, signal: ac.signal });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
+        if (ac.signal.aborted) return;
         setStage({
           kind: "single-error",
           file: stage.file,
@@ -536,6 +595,7 @@ export default function Home() {
         return;
       }
       const result = (await res.json()) as VerifyResponse;
+      if (ac.signal.aborted) return;
       tFetchDone = performance.now();
       const clientTimings: ClientTimings = {
         compressionMs: Math.round(tCompressionDone - tStart),
@@ -549,7 +609,9 @@ export default function Home() {
         result,
         clientTimings,
       });
+      setAnnouncement(verdictAnnouncement(result));
     } catch (e) {
+      if (ac.signal.aborted) return;
       setStage({
         kind: "single-error",
         file: stage.file,
@@ -561,6 +623,7 @@ export default function Home() {
 
   async function submitExtractOnly() {
     if (stage.kind !== "single-pending") return;
+    if (isOfflineDemoPage()) return blockOfflineUpload();
     setStage({ ...stage, kind: "single-extracting" });
     const ac = new AbortController();
     singleAbortRef.current = ac;
@@ -576,6 +639,7 @@ export default function Home() {
       const res = await fetch("/api/extract", { method: "POST", body: fd, signal: ac.signal });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
+        if (ac.signal.aborted) return;
         setStage({
           kind: "single-error",
           file: stage.file,
@@ -585,6 +649,7 @@ export default function Home() {
         return;
       }
       const result = (await res.json()) as ExtractOnlyResponse;
+      if (ac.signal.aborted) return;
       tFetchDone = performance.now();
       const clientTimings: ClientTimings = {
         compressionMs: Math.round(tCompressionDone - tStart),
@@ -598,7 +663,9 @@ export default function Home() {
         result,
         clientTimings,
       });
+      setAnnouncement("Extraction complete.");
     } catch (e) {
+      if (ac.signal.aborted) return;
       setStage({
         kind: "single-error",
         file: stage.file,
@@ -676,6 +743,7 @@ export default function Home() {
   // Pass `""` explicitly to force the auto-pair path.
   async function submitBatch(manifestOverride?: string) {
     if (stage.kind !== "batch-pending") return;
+    if (isOfflineDemoPage()) return blockOfflineUpload();
     const manifest = manifestOverride ?? manifestText;
     setBatchSubmitting(true);
     setBatchPhase("uploading");
@@ -874,6 +942,16 @@ export default function Home() {
   function cancelSingleInFlight() {
     singleAbortRef.current?.abort();
     singleAbortRef.current = null;
+    // A sample run goes back to the sample picker: there is no staged
+    // upload to return to, and cancelling is not a failure (design
+    // audit 2026-11-13 P1-8).
+    if (stage.kind === "single-verifying" && stage.sample) {
+      revokeIfPreview(stage);
+      focusHeadingOnIdleRef.current = true;
+      setStage({ kind: "idle" });
+      setAnnouncement("Check cancelled. Pick a sample to run it again.");
+      return;
+    }
     // Re-derive a sensible target stage. If we have a preview we go
     // back to single-pending (user keeps their staged image); else
     // we go fully idle.
@@ -881,6 +959,7 @@ export default function Home() {
       stage.kind === "single-verifying" ||
       stage.kind === "single-extracting"
     ) {
+      setAnnouncement("Check cancelled.");
       setStage({
         kind: "single-pending",
         file: stage.file,
@@ -904,8 +983,18 @@ export default function Home() {
     setBatchPhase("idle");
   }
 
-  function reset() {
+  /** Offline demo: drop any staged file and say it was not uploaded. */
+  function blockOfflineUpload(): void {
     revokeIfPreview(stage);
+    setStage({ kind: "idle" });
+    setOfflineUploadBlocked(true);
+    setAnnouncement("");
+  }
+
+  function reset() {
+    setOfflineUploadBlocked(false);
+    revokeIfPreview(stage);
+    focusHeadingOnIdleRef.current = true;
     // Revoke batch preview blob: URLs so the browser can free the
     // underlying image memory. Each was created in submitBatch and
     // held only while the batch view was on screen.
@@ -935,16 +1024,32 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <ApiStatusBanner />
+      <p
+        data-testid="page-announcer"
+        role="status"
+        aria-live="polite"
+        className="sr-only"
+      >
+        {announcement}
+      </p>
       <header>
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        <h2
+          id="page-heading"
+          ref={pageHeadingRef}
+          tabIndex={-1}
+          className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100"
+        >
           Verify a label against application data
         </h2>
         {/* Long-form intro is detailed-only. Simple mode gets a one-line
-            CTA so the upload zone is the dominant surface. */}
-        <p className="demo-offline-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
-          Pick one of the three samples below to see a full pass / fail /
-          review result.
-        </p>
+            CTA so the upload zone is the dominant surface. The sample
+            prompt only makes sense while the samples are on screen. */}
+        {stage.kind === "idle" && (
+          <p className="demo-offline-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+            Pick one of the three samples below to see a full pass / fail /
+            review result.
+          </p>
+        )}
         <p className="demo-live-only detailed-only mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
           Upload a label image, then add the COLA application data (PDF,
           JSON, CSV, Markdown, text, or a photo of the form) — or fill
@@ -967,8 +1072,13 @@ export default function Home() {
         // Flex column (same 2rem rhythm as space-y-8) so the keyless
         // public demo can move the samples above the upload zone with
         // CSS `order`, decided server-side with no layout shift.
+        //
+        // The samples come first in the DOM so keyboard focus order
+        // matches what the public demo draws (design audit 2026-11-13:
+        // Tab used to reach the upload buttons before the samples drawn
+        // above them). The live build puts the upload zone back on top
+        // with CSS `order` (globals.css).
         <div className="demo-idle flex flex-col gap-8">
-          <UploadZone onFiles={handleFiles} />
           {/* Sample affordance is detailed-only. A non-technical
               reviewer landing on the idle screen should see one
               primary action (drop your label) — three "try a sample"
@@ -979,6 +1089,16 @@ export default function Home() {
           <div className="detailed-only demo-samples">
             <SampleAffordance onPick={handleSample} />
           </div>
+          {offlineUploadBlocked && (
+            <p
+              role="status"
+              data-testid="offline-upload-blocked"
+              className="rounded-lg border-l-4 border-sky-600 bg-sky-50 p-3 text-sm text-sky-950 dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-100"
+            >
+              {OFFLINE_UPLOAD_BLOCKED}
+            </p>
+          )}
+          <UploadZone onFiles={handleFiles} />
           {/* Review queue panel intentionally removed from the public
               idle screen — it required a DEBUG_TOKEN access code that
               confused non-operator visitors. Operators with the token
@@ -986,21 +1106,20 @@ export default function Home() {
           {/* About-this-prototype is regulatory-detail text. Detailed
               mode only — simple mode keeps the idle screen to "upload
               a label" and nothing else. User direction 2026-05-14. */}
-          <details className="detailed-only rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
-            <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">
+          <details className="demo-about detailed-only rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <summary className="flex min-h-[44px] cursor-pointer items-center font-medium text-slate-700 dark:text-slate-200">
               About this prototype
             </summary>
             <div className="mt-2 space-y-2 text-slate-600 dark:text-slate-300">
               <p>
-                Verifies seven regulated fields per 27 CFR §16.21 / §16.22
-                (Government Warning text, prefix all-caps, prefix bold,
-                type-size minimum) and the COLA-declared fields (brand,
-                class/type, ABV, net contents, producer, country).
+                This tool checks the Government Warning against 27 CFR §16.21
+                and §16.22. It compares the declared brand, class or type,
+                alcohol by volume, net contents, producer, and country
+                with the label.
               </p>
               <p>
-                The Image Quality and Verdict columns are independent: a
-                FAIL on image quality does not count as a non-compliant
-                label.
+                Image quality describes how clearly the tool can read the photo.
+                The check result reports what the tool found.
               </p>
             </div>
           </details>
@@ -1067,7 +1186,7 @@ export default function Home() {
                 >
                   Replace image
                 </button>
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   or add more images below to verify them as a batch
                 </span>
               </div>

@@ -127,7 +127,7 @@ describe("matching — edge cases", () => {
       for (const [declared, extracted] of cases) {
         const r = compareClass(declared, extracted, 0.9);
         expect(r.status, `${declared} vs ${extracted}`).toBe("review");
-        expect(r.reason).toMatch(/meaningfully different|please confirm/i);
+        expect(r.reason).toMatch(/different class designations|should confirm/i);
       }
     });
 

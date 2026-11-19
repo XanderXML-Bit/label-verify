@@ -8,6 +8,16 @@ import {
 import { parseApplicationImage } from "@/lib/application/parse-image";
 import { callerKey, rateLimit } from "@/lib/rate-limit";
 import { liveModelsEnabled, offlineDemoBody, providerKey } from "@/lib/demo-mode";
+import { withRequestId } from "@/lib/request-id";
+
+export {
+  uploadMethodNotAllowed as DELETE,
+  uploadMethodNotAllowed as GET,
+  uploadMethodNotAllowed as HEAD,
+  uploadMethodNotAllowed as PATCH,
+  uploadMethodNotAllowed as PUT,
+  uploadOptions as OPTIONS,
+} from "@/lib/request-id";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -51,7 +61,11 @@ const ACCEPTED_IMAGE_MIME = new Set([
  * parsed fields, lets the reviewer confirm/edit, then POSTs to
  * /api/verify like any manual entry would.
  */
-export async function POST(req: Request) {
+export const POST = withRequestId(async (req) => {
+  // Refuse offline uploads before reading the request body.
+  if (!liveModelsEnabled()) {
+    return NextResponse.json(offlineDemoBody(), { status: 503 });
+  }
   const key = callerKey(req.headers);
   const rl = rateLimit(`app-parse:${key}`, { perMinute: RATE_LIMIT_PER_MIN });
   if (!rl.allowed) {
@@ -122,10 +136,6 @@ export async function POST(req: Request) {
   // `image/bmp`, etc., are 415'd rather than rewritten to JPEG and sent
   // upstream (per security code review 2026-05).
   if (ACCEPTED_IMAGE_MIME.has(mime)) {
-    // Keyless public demo: photo-of-application parsing needs a model call.
-    if (!liveModelsEnabled()) {
-      return NextResponse.json(offlineDemoBody(), { status: 503 });
-    }
     const apiKey = providerKey("GOOGLE_API_KEY") ?? "";
     if (!apiKey) {
       return NextResponse.json(
@@ -191,4 +201,4 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
-}
+});

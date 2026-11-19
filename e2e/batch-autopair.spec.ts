@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { isOfflineDemo } from "./demo-mode";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -43,7 +44,9 @@ function appJsonFor(brand: string, classType: string): Buffer {
 
 test("Drop 2 images + 2 stem-matched apps → batch-pending autopair → inline results", async ({
   page,
+  request,
 }) => {
+  test.skip(await isOfflineDemo(request), "the offline demo does not upload; covered by offline-demo.spec.ts");
   // Mock the batch endpoint to return inline terminal-state results
   // for both items. The real route fires verifyLabel under the hood;
   // we mock to avoid real vision API costs.

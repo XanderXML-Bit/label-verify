@@ -102,13 +102,15 @@ describe("SingleResult", () => {
     // and every passing government-warning subscore — there are many.
     expect(screen.getAllByLabelText("Verdict PASS").length).toBeGreaterThan(1);
     expect(screen.getByLabelText("Image quality Good")).toBeInTheDocument();
-    // Each of the six declared fields gets a row labelled with its name.
-    expect(screen.getByText("brand name")).toBeInTheDocument();
-    expect(screen.getByText("class type")).toBeInTheDocument();
-    expect(screen.getByText("abv percent")).toBeInTheDocument();
-    expect(screen.getByText("net contents")).toBeInTheDocument();
-    expect(screen.getByText("producer")).toBeInTheDocument();
-    expect(screen.getByText("country of origin")).toBeInTheDocument();
+    // Each of the six declared fields gets a row labelled with its plain
+    // name, never the internal key ("abv percent", "class type").
+    expect(screen.getByText("Brand name")).toBeInTheDocument();
+    expect(screen.getByText("Class / type")).toBeInTheDocument();
+    expect(screen.getByText("Alcohol by volume")).toBeInTheDocument();
+    expect(screen.getByText("Net contents")).toBeInTheDocument();
+    expect(screen.getByText("Producer")).toBeInTheDocument();
+    expect(screen.getByText("Country of origin")).toBeInTheDocument();
+    expect(screen.queryByText(/abv percent|class type/i)).toBeNull();
     // Image preview alt text.
     expect(screen.getByAltText("Submitted label preview")).toBeInTheDocument();
   });
@@ -148,5 +150,53 @@ describe("SingleResult", () => {
     );
     await user.click(screen.getByRole("button", { name: "Verify another label" }));
     expect(onAnother).toHaveBeenCalledTimes(1);
+  });
+
+  // Design audit 2026-11-13: the result must take focus (the verdict sat
+  // off the first screen on phones), and internal names must not leak.
+  it("moves focus to the verdict when the result appears", () => {
+    render(
+      <SingleResult result={passingResponse()} imagePreviewUrl="blob:fake" onAnother={() => {}} />,
+    );
+    const card = screen.getByTestId("verdict-card");
+    expect(document.activeElement).toBe(card);
+    expect(card).toHaveAttribute("aria-label", "Check result: PASS");
+  });
+
+  it("shows ABV with a percent sign and confidence in plain words", () => {
+    render(
+      <SingleResult result={passingResponse()} imagePreviewUrl="blob:fake" onAnother={() => {}} />,
+    );
+    expect(screen.getAllByText("6%").length).toBe(2);
+    expect(screen.queryByText(/conf \d/)).toBeNull();
+    expect(screen.getAllByText("99% sure").length).toBeGreaterThan(0);
+  });
+
+  it("says 'blank on both' instead of 'pass' for an address part neither side has", () => {
+    const base = passingResponse();
+    const result: VerifyResponse = {
+      ...base,
+      fields: {
+        ...base.fields,
+        producer: fc(
+          "producer",
+          "pass",
+          { name: "Mill Creek Beverage Co.", street: null, city: "Asheville", state: "NC", postal_code: null, country: "USA" },
+          { name: "Mill Creek Beverage Co.", street: null, city: "Asheville", state: "NC", postal_code: null, country: null },
+          { name: "pass", street: "pass", city: "pass", state: "pass", postal_code: "pass", country: "pass" },
+        ),
+      },
+    };
+    render(<SingleResult result={result} imagePreviewUrl="blob:fake" onAnother={() => {}} />);
+    const items = screen
+      .getByText("Per-component breakdown")
+      .closest("details")!
+      .querySelectorAll("li");
+    const text = Array.from(items).map((li) => li.textContent);
+    expect(text).toContain("Street: blank on both");
+    expect(text).toContain("Postal code: blank on both");
+    expect(text).toContain("Name: Pass");
+    // Country is on the application only; the pass is real (implied USA).
+    expect(text).toContain("Country: Pass");
   });
 });

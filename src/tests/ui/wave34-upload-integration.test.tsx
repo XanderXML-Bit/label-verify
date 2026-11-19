@@ -330,7 +330,7 @@ describe("Wave-34 ReviewerBadge — persists via localStorage", () => {
     // The input has both a sr-only <label> and an aria-label — match by
     // the more specific aria-label so we get exactly one hit.
     const input = await screen.findByLabelText(
-      /Reviewer ID — name, initials, or employee ID/i,
+      /Reviewer ID \(name or initials\)/i,
     );
     await user.type(input, "TTB-OPS-42");
     const save = screen.getByRole("button", { name: /Save reviewer ID/i });

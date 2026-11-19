@@ -5,23 +5,21 @@ import { ModeToggle } from "./components/ModeToggle";
 import { ReviewerBadge } from "./components/ReviewerBadge";
 import { resolveMetadataOrigin } from "../lib/site-metadata";
 import { liveModelsEnabled } from "@/lib/demo-mode";
-import { OFFLINE_DEMO_NOTICE } from "@/lib/demo-copy";
+import { OFFLINE_DEMO_NOTICE, PRIVACY_NOTICE } from "@/lib/demo-copy";
+
+const SHARE_TITLE = "Label Verify — label checks against TTB rules (prototype)";
 
 export const metadata: Metadata = {
   metadataBase: resolveMetadataOrigin(process.env.SITE_URL),
   alternates: { canonical: "/" },
   title: "Label Verify",
-  description:
-    "AI-powered TTB Certificate of Label Approval verification — prototype.",
-  // PWA manifest — "Add to home screen" works on iOS Safari + Chrome,
-  // useful for TTB ops reviewers who might pin this on a phone/tablet.
-  // The icon points at /icon.svg (already present); manifest at
-  // /public/manifest.webmanifest.
+  // No "AI-powered": the public demo makes no model calls.
+  description: "Independent prototype that checks beverage labels against TTB labeling rules.",
   manifest: "/manifest.webmanifest",
   // Open Graph + Twitter so a shared link previews cleanly in iMessage,
   // Slack, Outlook, etc. Reviewers are >50; many will share via email.
   openGraph: {
-    title: "Label Verify — TTB COLA prototype",
+    title: SHARE_TITLE,
     description:
       "Verify alcohol label images against application data. The public demo runs three recorded samples offline.",
     type: "website",
@@ -32,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/share.png"],
-    title: "Label Verify — TTB COLA prototype",
+    title: SHARE_TITLE,
     description:
       "Verify alcohol label images against application data. The public demo runs three recorded samples offline.",
   },
@@ -132,7 +130,7 @@ export default function RootLayout({
                 Label Verify
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                TTB COLA prototype
+                Checks labels against TTB labeling rules · prototype
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -160,8 +158,7 @@ export default function RootLayout({
             UX audit P-9. The inset is 0 on devices that don't have one,
             so it's a no-op everywhere else. */}
         <footer className="mx-auto max-w-5xl px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-xs text-slate-600 dark:text-slate-400">
-          TTB COLA verification prototype. Not a production verification
-          service. See{" "}
+          <p>Not an official U.S. government website.</p>
           {/* Keep the repository link at least 44 px tall at every width. */}
           <a
             className="relative inline-flex min-h-[44px] min-w-[44px] items-center py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
@@ -172,6 +169,19 @@ export default function RootLayout({
             github.com/XanderXML-Bit/label-verify
           </a>
           .
+          {offlineDemo && (
+            <div data-testid="privacy-notice" className="mt-2">
+              <p><strong>Privacy.</strong> {PRIVACY_NOTICE}</p>
+              <a
+                className="relative inline-flex min-h-[44px] items-center py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
+                href="https://github.com/XanderXML-Bit/label-verify/issues"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Ask a demo question on GitHub
+              </a>
+            </div>
+          )}
         </footer>
       </body>
     </html>

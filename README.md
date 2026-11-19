@@ -2,10 +2,10 @@
 
 [![CI](https://github.com/XanderXML-Bit/label-verify/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/XanderXML-Bit/label-verify/actions/workflows/ci.yml)
 [![Post-deploy smoke](https://github.com/XanderXML-Bit/label-verify/actions/workflows/post-deploy-smoke.yml/badge.svg?branch=main)](https://github.com/XanderXML-Bit/label-verify/actions/workflows/post-deploy-smoke.yml)
-[![Production](https://img.shields.io/badge/production-live-22c55e?logo=vercel&logoColor=white)](https://label-verify-six.vercel.app)
+[![Offline demo](https://img.shields.io/badge/demo-offline-22c55e?logo=vercel&logoColor=white)](https://label-verify-six.vercel.app)
 [![License](https://img.shields.io/badge/license-prototype-blue)](#license)
 
-> Vision-LLM verification of beverage-label artwork against COLA application data, with explicit Government-Warning compliance subscores per 27 CFR §16.21 / §16.22. Prototype demonstrating AI-assisted COLA verification for TTB-regulated alcohol labels.
+> Independent prototype that checks labels against TTB labeling rules. Label Verify compares beverage labels with Certificate of Label Approval (COLA) application data. The public demo runs three bundled samples without model calls or file uploads.
 
 **Live demo:** <https://label-verify-six.vercel.app> · **Repository:** <https://github.com/XanderXML-Bit/label-verify> · **API:** [`docs/openapi.yaml`](docs/openapi.yaml)
 
@@ -13,12 +13,14 @@
 
 ## At a glance
 
+Upload, model, latency, and cost details below describe the self-hosted live-model mode or its benchmarks.
+
 | Question | Answer |
 |---|---|
-| **What does it do?** | Drop a label image + COLA application data → get a `pass` / `fail` / `review` verdict on each of the 7 regulated fields plus the Government Warning subscore (27 CFR §16.21 / §16.22). |
-| **Latency** | **Server-side P50 ~3.0 s** on the cross-pair bench (warm function, single image, vision call is the dominant cost). **Client-perceived end-to-end** measured on production via Playwright stopwatch (wave-35c): **~4.9–5.0 s warm** desktop, **~7–8 s cold** on the first verify after a Vercel function spin-up. The result panel surfaces both numbers — `Verified in 5.0 s (server 4.5 s)` — so the bench claim and the user-perceived reality are both visible. |
-| **Field-level accuracy** | On the 170-image bench corpus (90 SVG-rendered synthetic + 80 photo-realistic AI-generated labels): the cross-pair benchmark (`npm run bench:cross-pair`) measures **70.41 % strict pass-rate on correct ground truth and 100 % fail-or-review on perturbed wrong ground truth**, with **0 deterministic compliant false-fails** and **2 deterministic adversarial.fp-on-correct** (wave-31j drove these 6→2 via Lanczos upscaling to 2000-px long edge; wave-33's deep-audit bug fixes nudged pass-rate 69.82 % → 70.41 % on the same corpus). The regulator-critical `compliant.false-pass-on-correct` metric on real-photo labels remains **zero across every wave since 22**. Bare-extractor field-level accuracy on the bake-off is ~96 % on synthetic and ~99 % on photo-realistic. The Government-Warning false-negative rate is **~5 %** (Wilson 95 % CI upper 10.2 %, n = 137 non-compliant labels). See [Headline measurement](#headline-measurement), `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the stratified criterion, `docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md` for the wave-31j rationale, and [Scope and limitations](#scope-and-limitations). |
-| **Cost** | **≈ $0.25 per 1,000 labels** on the deployed primary (Gemini 3.1 Flash Lite at the current Google rate card: $0.25 / 1M input, $1.50 / 1M output; a typical verify call uses ~700 input + ~250 output tokens). Same-provider second-opinion calls (Gemini 2.5 Flash, ~5–15 % of verifications, only when the Government-Warning subscore is borderline) add ~$0.001 each. |
+| **What does it do?** | Drop a label image + COLA application data → see the tool's `pass`, `fail`, or `review` result for each field and its Government Warning checks (27 CFR §16.21 and §16.22). |
+| **Latency** | **Server-side P50 ~3.0 s** on the cross-pair bench (warm function, single image, vision call is the dominant cost). **Client-perceived end-to-end** measured on the previous live-model deployment (wave-35c): **~4.9–5.0 s warm** desktop, **~7–8 s cold** on the first verify after a Vercel function spin-up. The result panel surfaces both numbers — `Verified in 5.0 s (server 4.5 s)` — so the bench claim and the user-perceived reality are both visible. |
+| **Field-level accuracy** | On the 170-image bench corpus (90 SVG-rendered synthetic + 80 photo-realistic AI-generated labels): the cross-pair benchmark (`npm run bench:cross-pair`) measures **70.41 % strict pass-rate on correct ground truth and 100 % fail-or-review on perturbed wrong ground truth**, with **0 deterministic compliant false-fails** and **2 deterministic adversarial.fp-on-correct** (wave-31j drove these 6→2 via Lanczos upscaling to 2000-px long edge; wave-33's deep-audit bug fixes nudged pass-rate 69.82 % → 70.41 % on the same corpus). The `compliant.false-pass-on-correct` metric on real-photo labels remains **zero across every wave since 22**. Bare-extractor field-level accuracy on the bake-off is ~96 % on synthetic and ~99 % on photo-realistic. The Government-Warning false-negative rate is **~5 %** (Wilson 95 % CI upper 10.2 %, n = 137 non-compliant labels). See [Headline measurement](#headline-measurement), `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the stratified criterion, `docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md` for the wave-31j rationale, and [Scope and limitations](#scope-and-limitations). |
+| **Cost** | One call per label costs **$1.04 per 1,000 labels** at 1,702 measured input tokens ($0.25/million) and 409 measured output tokens ($1.50/million). This estimate uses [Gemini 3.1 Flash-Lite standard rates](https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite). The [live-model benchmark](benchmarks/results/2026-05-12T17-10-53-642Z.md) estimated **$0.25 per 1,000 labels** using $0.075 per million input tokens and $0.30 per million output tokens. Same-provider second-opinion calls (Gemini 2.5 Flash, ~5–15 % of verifications, only when the Government-Warning subscore is borderline) add ~$0.001 each. |
 | **Auto-pair batches?** | Yes. **Four-stage pairing**: (1) inline-manifest detection (one dropped CSV/JSON with N rows + a `filename` column → N pairs; filename-keyed JSON object maps are also auto-detected), (2) filename stem matching (face-tag and app-tag aware), (3) content-based fallback (brand + class similarity from a lightweight vision extraction), (4) single-application broadcast (1 app file + N images → broadcast same fields to all, surfaced as a warning). Handles randomly-named files, partial coverage (5 images + 20-row manifest → 5 pairs + 15 orphan rows flagged), and one-CSV-covers-all (12 images + 1 12-row CSV → 12 pairs). The batch UI shows a determinate progress bar with the four stages labelled as it advances. |
 | **Single image + roster manifest?** | Yes. Drop one image + a multi-row manifest together (or upload the manifest after the image); the parser picks the row matching the image's filename. Multi-row CSV / JSON with a `filename` column and filename-keyed JSON object maps both work. |
 | **Simple or detailed view?** | A header toggle (next to dark mode) flips the result panel between **Simple** (verdict + Government-Warning status + only the failing/review fields with their reasons) and **Detailed** (full per-subscore breakdown, extractor confidences, second-opinion panel, per-call timing). Default = Simple. Choice persists per browser. |
@@ -45,15 +47,15 @@
 3. Read the verdict + the 7-field breakdown + Gov-Warning subscores
 ```
 
-| Desktop (1440 × 900), PASS sample result | Mobile (390 × 844), first screen |
+| Desktop (1280 × 900), PASS sample result | Mobile (390 × 844), first screen |
 |---|---|
 | ![Label Verify desktop: PASS sample result in the offline demo](docs/screenshots/desktop.png) | ![Label Verify mobile: offline-demo notice and sample picker](docs/screenshots/mobile.png) |
 
-_Screenshots of the public offline demo, captured 2026-11-08._
+_Screenshots of the offline demo from a local production build._
 
 No install, no key, no signup. The samples ship matching COLA application data so reviewers can see end-to-end behaviour on first click.
 
-> **Public demo runs offline (since 2026-11-08).** The hosted demo makes no AI model calls and uses no API keys. The three samples run the real preprocessing, OCR, field comparators and Government Warning validator on a recorded sample extraction, and each result is labelled "Offline sample result". Uploaded label images are not verified there (the server only runs the bundled sample images); requests without a sample id, URL input, extract-only and batch answer HTTP 503 `offline-demo`. Everything described below works when you run the project yourself with live models enabled (see [Install](#install)).
+> **Public demo.** The demo makes no AI model calls and uses no API keys. It checks three bundled samples using recorded extractions and labels each result “Offline sample result.” A sample check sends only the sample ID. Choosing or dropping your own label image or application document shows “Your file was not uploaded.” The server ignores request bodies on offline upload routes. It runs a bundled sample when `/api/verify` receives a valid `sample` query value and returns HTTP 503 `offline-demo` for other verification requests. The hosting platform may receive request bytes before the app responds. See [Install](#install) to run the upload workflows with live models.
 
 **With live models (self-hosted), upload your own:** drop any beverage-label image (JPEG / PNG / WebP / HEIC) into the dropzone; the form opens for the seven declared fields. Verdict returns in **~4–6 seconds end-to-end** on a warm function (server-side P50 ~3 s; the remainder is client-side image compression, network round-trip, and React render). First request after a cold Vercel function spin-up adds another ~2–3 s. Per-call timings are surfaced on the result panel as `Verified in N s (server N s)` so the bench claim and the user-perceived reality are both visible.
 
@@ -68,7 +70,7 @@ No install, no key, no signup. The samples ship matching COLA application data s
 
 The UI shows a "Detected N images + M application files" summary card before any vision call fires. The images-only batch screen embeds a second `UploadZone` so you can drop the application file there (no text-paste required). Explicit manifest paste is still accepted in a collapsed `<details>` override for power users. Results stream back over SSE; download as JSON or CSV.
 
-**Or skip the application data entirely:** the form's secondary "Skip — extract fields without a verdict" button runs the extractor and the Gov-Warning subscore (federal-regulation, independent of any application data) and returns extracted fields with a yellow "this is not a verification" banner — for the case where you just want to see what's on the label.
+**Or skip the application data entirely:** the form's secondary "Skip — extract fields without a verdict" button runs the extractor and checks the Government Warning on the label. The result page shows the extracted fields under an “Extraction only” banner.
 
 ---
 
@@ -105,12 +107,12 @@ The Government-Warning false-negative rate is the rate at which a non-compliant 
 | Pass-rate on correct ground truth | **70.41 %** (deterministic; wave-31j Lanczos upscale to 2000-px, +0.59 pp from wave-33's deep-audit bug-fix sweep) |
 | Fail-or-review-rate on perturbed wrong | **100 %** |
 | Deterministic compliant false-fails | **0** (wave-31j drove this 1→0; the 2 Q6 quality-stratum cases were GT-corrected to non-compliant on text grounds, see `docs/WAVE-31b-GT-NOISE-FINDING.md`) |
-| **`compliant.false-pass-on-correct` (regulator-critical)** | **0 across every wave since 22** |
+| **`compliant.false-pass-on-correct`** | **0 across every wave since 22** |
 | Deterministic adversarial.fp-on-correct | **2** (down from 6 pre-wave-31j: `deg-beer-0012` B1 and `syn-spirits-0013` S1 — the 4 caught are ai-label-0049 S2, syn-beer-0014/15/16 B1/B2/B3, syn-spirits-0014 S3) |
 | End-to-end P50 / P95 latency | **~3.0 s / ~13.0 s** (wave-31j; faster than the wave-28b baseline because the larger preprocessed image gives Tesseract enough resolution to find the prefix more often, reducing the 8s OCR-race timeout) |
 | Vision-call P50 / P95 latency | ~2.3 s / ~3.5 s |
 
-The strict pass-rate is bounded below by deliberate orchestrator deferrals (REVIEW): when the bold or size subscore lacks pixel-tight evidence, the orchestrator fires a same-provider second-opinion (Gemini 2.5 Flash since wave 22) and only restores PASS if the two models agree. The 2 residual `adversarial.fp-on-correct` cases (`deg-beer-0012` B1 and `syn-spirits-0013` S1) are both synthetic adversarial defects whose Tesseract recognition fails — root-caused in wave-32, queued for a wave-33+ narrow-second-opinion or learned-bold-classifier intervention (`docs/WAVE-32-GROUNDING-DINO-FALSIFIED.md`). The **regulator-critical metric — `compliant.false-pass-on-correct`** on real-photo and synthetic-compliant baselines — has been **zero across every wave since 22**. See `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the stratified criterion that makes this distinction operational, and `docs/SESSION-2026-05-13-OVERNIGHT.md` for the cumulative N=12 noise band and per-image trace. The bench's `--no-track`-aware best-known record at `benchmarks/.best-known.json` tracks per-metric champions so future runs flag regressions immediately.
+The strict pass-rate is bounded below by deliberate orchestrator deferrals (REVIEW): when the bold or size subscore lacks pixel-tight evidence, the orchestrator fires a same-provider second-opinion (Gemini 2.5 Flash since wave 22) and only restores PASS if the two models agree. The 2 residual `adversarial.fp-on-correct` cases (`deg-beer-0012` B1 and `syn-spirits-0013` S1) are both synthetic adversarial defects whose Tesseract recognition fails — root-caused in wave-32, queued for a wave-33+ narrow-second-opinion or learned-bold-classifier intervention (`docs/WAVE-32-GROUNDING-DINO-FALSIFIED.md`). The **`compliant.false-pass-on-correct` metric** on real-photo and synthetic-compliant baselines — has been **zero across every wave since 22**. See `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the stratified criterion that makes this distinction operational, and `docs/SESSION-2026-05-13-OVERNIGHT.md` for the cumulative N=12 noise band and per-image trace. The bench's `--no-track`-aware best-known record at `benchmarks/.best-known.json` tracks per-metric champions so future runs flag regressions immediately.
 
 ### Generalizability caveats
 
@@ -118,7 +120,7 @@ These numbers come from a stress benchmark constructed in-house, not from a samp
 
 - **Synthetic SVG labels are easy by construction.** Vector-rendered text is the regime that every vision model and OCR engine handles best. The ~96 % accuracy on that stratum is not predictive of behaviour on hand-styled, heavily-occluded, glare-affected real labels.
 - **Photo-realistic labels are model-generated.** The AI-generated portion of the corpus shares a foundation-model family with the extractor. Self-similarity bias is plausible and not measurable without a third-party photo set.
-- **The corpus was built and audited by the same team that built the extractor.** A federal deployment would require a third-party-adjudicated holdout of real COLA submissions before drawing conclusions from the headline number.
+- **The corpus was built and audited by the same team that built the extractor.** To estimate field performance, test on a separate set of real COLA submissions assessed by independent reviewers.
 - **n = 137 non-compliant warnings is below the size required to assert the ≤ 10 % Government-Warning FN-rate at 95 % confidence.** The point estimate clears the criterion; the upper Wilson bound does not. The fix is more non-compliant labels, not a different model.
 
 Treat the headline numbers as a calibrated upper bound on in-distribution behaviour, not a forecast for field performance. The same caveats are repeated in [Scope and limitations](#scope-and-limitations).
@@ -205,7 +207,7 @@ For each label, the verifier computes:
 6. **No-OCR Gov-Warning gate** — if OCR failed/timed out AND the Gov-Warning status is PASS at confidence below 0.55, route to REVIEW. The validator's bold/size subscores fell back to model-self-reported flags without pixel-tight measurement; a human should confirm.
 7. **Independent second opinion** — when the verdict lands on REVIEW because of the Gov-Warning (steps 5 or 6 above), the orchestrator fires a single vision call against the configured second-opinion model (default `gemini-2.5-flash` since wave 22; `SECOND_OPINION_PROVIDER=openai` switches to `MODEL_FALLBACK` for cross-provider diversity instead), re-validates the Gov-Warning from the second extractor's read, and attaches a `secondOpinion: { modelId, governmentWarning, agreesWithPrimary, ... }` block to the response. The UI renders either a 🔁 "both models agree" panel or a ⚖ "models disagree, you adjudicate" panel inline under the GW subscores. Cost: ~$0.001 per fired call; fires on ~5–15 % of verifications. The OpenAI `MODEL_FALLBACK` is independent of this path — it's the cross-provider safety net when the primary itself fails (5xx / timeout / abort).
 
-**REVIEW is a first-class verdict**, not a refusal. Every REVIEW row carries human-readable reasons — what disagreed, the comparator's confidence, the regulation cited. The review-queue panel surfaces those for adjudication. **Unreadable images route to REVIEW (not FAIL)** — a federal reviewer should know the difference between "this label fails compliance" and "we can't read this photo."
+A **REVIEW** result explains which checks need a closer look. The tool returns REVIEW when it cannot read the photo reliably.
 
 ---
 
@@ -213,7 +215,7 @@ For each label, the verifier computes:
 
 The scope statements below frame exactly what this prototype is and is not claiming, so the numbers above can be read precisely.
 
-- **Decision-support tool, not a regulatory decision system.** Output is intended to support a human adjudicator. The accuracy figures come from an in-house bench corpus, not a sample of real submitted COLA labels. The cross-pair benchmark (`npm run bench:cross-pair`) measures mismatch sensitivity (does the verdict flip when declared fields are perturbed?), which is distinct from regulatory acceptance accuracy on a sample of real COLA submissions.
+- **Scope of results.** Use the results to compare declared fields and review the Government Warning. The cross-pair benchmark (`npm run bench:cross-pair`) measures how the tool responds to changes in declared fields in its test corpus.
 - **Bench corpus composition.** 90 SVG-rendered synthetic labels + 80 photo-realistic model-generated labels = 170 images. The corpus is built to exercise the failure modes catalogued in [`docs/FAILURE-MODES.md`](docs/FAILURE-MODES.md). It does not include real submitted COLA labels; obtaining such a sample is the natural next-step before drawing field-deployment conclusions. The extractor and the photo-realistic half of the corpus share a foundation-model family, so a self-similarity component to the photo-realistic stratum is plausible.
 - **Government-Warning text matching is OCR-normalized.** The text-match subscore folds NBSP, narrow NBSP, smart quotes, em-dashes, zero-width spaces, BOM, and ellipsis variants before strict comparison, which prevents Canadian / European DTP exports from being flagged for visually-identical text. The typography subscores (caps, bold, size) are pixel/geometry heuristics. When the bold or size measurement degrades (OCR failure or low confidence), a model-self-reported PASS is downgraded to REVIEW rather than PASS. Case taxonomy: [`docs/government-warning-cases.md`](docs/government-warning-cases.md).
 - **The three CLIs are operator and reviewer tools, not public surfaces.** `bin/labelverify.ts`, `bin/labelverify-web.ts`, and `bin/labelverify-bench.ts` are for operators, automation, and reviewers reproducing measurements. The public user surface is the web UI (`/`), behind per-IP rate limits and the multipart upload contract enforced by the API routes. The `/api/queue/*` and `/api/debug/last` surfaces require a `DEBUG_TOKEN` bearer credential.
@@ -238,7 +240,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | **Secrets audit** | `.gitignore` excludes `.env`/`.env.local`/`.env.*.local` · 50-commit git-history scan for key prefixes (AIzaSy/sk-/sk-ant-) is clean · no committed credentials |
 | **Production dependency advisories** | `npm audit --omit=dev` on 2026-11-05 reports 3 advisories (`csv-parse` moderate, `zod` high, `openai` high through `zod`). Triage found none reachable from current code. Each fix needs a major upgrade. See [`SECURITY.md`](SECURITY.md#dependency-posture) |
 | **Audit passes** | Hermes (GPT-5.5) · Codex CLI · sub-agent code review · sub-agent UX review · sub-agent fixture audit · sub-agent docs audit · sub-agent perf/accuracy audit · sub-agent production-readiness smoke — findings are catalogued in [`CHANGELOG.md`](CHANGELOG.md) |
-| **Docs ↔ code drift** | `npm run verify:claims` runs as a non-skippable CI gate (wave-35e) — every numeric / path / wave-name / env-var / **byte-cap** claim in docs and GUI is asserted against the canonical source. Subsequent gap-closing waves (wave-35f: orchestrator + privacy + vision helper; wave-35g: `/api/verify` + `/api/verify/batch`; wave-35h: `/api/extract` + `/api/application/parse`) added ~85 targeted tests and lifted statement coverage from 84.35 % to **90.72 %**. Wave-35i extended the detector to size-cap claims (three parallel sub-agent audits + Hermes external review caught wrong PDF / batch caps in `SECURITY.md` and `docs/ARCHITECTURE.md`) and fixed every CRITICAL / HIGH finding. Wave-35j re-anchored the batch progress bar against a fresh N=3 production latency probe (`PER_IMAGE_MS` 3000 → 4500 ms — the old value was the *vision-only* bench, not the full pipeline P50 of 4.67 s) and bumped server `INLINE_BATCH_CONCURRENCY` 12 → 16 with batch-function memory 1 GB → 2 GB for a ~21 % wall-clock cut on 100-image batches. Wave-35k fixed a latent **iOS batch bug** where 5 photos all named `image.jpg` (iOS Safari Photos picker default) collapsed at the server's `Map<stem, File>` pairing layer; converted both collision sites to upload-order multi-maps so manifest row `i` consumes the `i`-th uploaded file with the matching stem. 4 regression tests pin all paths (explicit-manifest / inline-CSV / broadcast / mixed). Wave-35l consolidated the wave-34 iOS dual-button UI back into a **single universal "Choose files" button**; on iOS that button opens an accessible in-page chooser popover (`role="menu"`, focus-managed, Escape/outside-click close) so the multi-select Camera Roll picker stays reachable without the visual cost of two top-level buttons. Wave-35m closed the last three named integration gaps from the Apex audit: HEIC end-to-end through `/api/verify` (+ negative AVIF rejection), mixed-verdict batch summary aggregation math, and the `continueToVerification` extract → verify schema-contract handoff (5 cases incl. null-producer, legacy string-producer, missing net_contents). Wave-35n benched the just-released **Gemini 3.5 Flash** against the production `gemini-3.1-flash-lite` (N=2 routine + cross-pair). Decision: **hold** — 3.5 Flash is **3.01× slower** at near-equivalent accuracy (passRateOnCorrect 76.7 % → 80.0 % on n=30, Wilson CIs overlap; both at 100 % adversarial catch-rate). Full report at `benchmarks/results/wave-35n-gemini-3.5-flash-bakeoff.md`. The T13 technique entry stays in the bench harness so future re-benches (e.g. against a forthcoming `gemini-3.5-flash-lite`) are one command away. Wave-35o caught + fixed 7 stale e2e specs that had been silently failing on the scheduled live-production Playwright workflow since wave-34's GUI changes (all test-side drift, not production regressions): strict-mode regex collisions, `networkidle` race against `/api/warmup`, retired "Detected:" copy, Skip-button label drift, incomplete mock shape that crashed React. **27/27 Playwright tests now pass against live production.** |
+| **Docs ↔ code drift** | `npm run verify:claims` runs as a non-skippable CI gate (wave-35e) — every numeric / path / wave-name / env-var / **byte-cap** claim in docs and GUI is asserted against the canonical source. Subsequent gap-closing waves (wave-35f: orchestrator + privacy + vision helper; wave-35g: `/api/verify` + `/api/verify/batch`; wave-35h: `/api/extract` + `/api/application/parse`) added ~85 targeted tests and lifted statement coverage from 84.35 % to **90.72 %**. Wave-35i extended the detector to size-cap claims (three parallel sub-agent audits + Hermes external review caught wrong PDF / batch caps in `SECURITY.md` and `docs/ARCHITECTURE.md`) and fixed every CRITICAL / HIGH finding. Wave-35j re-anchored the batch progress bar against a fresh N=3 production latency probe (`PER_IMAGE_MS` 3000 → 4500 ms — the old value was the *vision-only* bench, not the full pipeline P50 of 4.67 s) and bumped server `INLINE_BATCH_CONCURRENCY` 12 → 16 with batch-function memory 1 GB → 2 GB for a ~21 % wall-clock cut on 100-image batches. Wave-35k fixed a latent **iOS batch bug** where 5 photos all named `image.jpg` (iOS Safari Photos picker default) collapsed at the server's `Map<stem, File>` pairing layer; converted both collision sites to upload-order multi-maps so manifest row `i` consumes the `i`-th uploaded file with the matching stem. 4 regression tests pin all paths (explicit-manifest / inline-CSV / broadcast / mixed). Wave-35l consolidated the wave-34 iOS dual-button UI back into a **single universal "Choose files" button**; on iOS that button opens an accessible in-page chooser popover (`role="menu"`, focus-managed, Escape/outside-click close) so the multi-select Camera Roll picker stays reachable without the visual cost of two top-level buttons. Wave-35m closed the last three named integration gaps from the Apex audit: HEIC end-to-end through `/api/verify` (+ negative AVIF rejection), mixed-verdict batch summary aggregation math, and the `continueToVerification` extract → verify schema-contract handoff (5 cases incl. null-producer, legacy string-producer, missing net_contents). Wave-35n benched the just-released **Gemini 3.5 Flash** against the production `gemini-3.1-flash-lite` (N=2 routine + cross-pair). Decision: **hold** — 3.5 Flash is **3.01× slower** at near-equivalent accuracy (passRateOnCorrect 76.7 % → 80.0 % on n=30, Wilson CIs overlap; both at 100 % adversarial catch-rate). Full report at `benchmarks/results/wave-35n-gemini-3.5-flash-bakeoff.md`. The T13 technique entry stays in the bench harness so future re-benches (e.g. against a forthcoming `gemini-3.5-flash-lite`) are one command away. Wave-35o caught + fixed 7 stale e2e specs that had been silently failing on the scheduled live-production Playwright workflow since wave-34's GUI changes (all test-side drift, not production regressions): strict-mode regex collisions, `networkidle` race against `/api/warmup`, retired "Detected:" copy, Skip-button label drift, incomplete mock shape that crashed React. **27/27 Playwright tests passed against the previous live-model deployment at that point.** |
 | **Cost transparency** | per-call cost surfaced on every verify result · raw model id kept out of the user-visible tooltip |
 
 The independent audit passes catalogued in CHANGELOG cover code-review, security, fixture validation, documentation drift, performance, and production readiness. Findings are either applied to the code or documented as deliberate choices.
@@ -287,7 +289,7 @@ npm install
 npm run dev          # → http://localhost:3000
 ```
 
-That's it — the dev server runs the same Next.js App Router build as production. The "Try a sample" affordance works locally with your key. Hot reload is on.
+That's it — the dev server runs the same Next.js App Router build as production. The "Try a sample" button also works locally in the default offline mode. Hot reload is on.
 
 ### Option C — Full Vercel deploy (15 minutes)
 
@@ -328,7 +330,7 @@ Reviewers reproducing the project locally can lean on any of these:
 ```bash
 npm run typecheck         # tsc --noEmit, zero output expected
 npm run lint              # next lint, zero warnings on a clean tree
-npm test                  # vitest, ~960 tests across 93 files (~10 s)
+npm test                  # vitest, ~960 tests across 100 files (~10 s)
 npm run build             # production Next.js build
 npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results/<iso>.md
 npm run bench:bakeoff     # full 16-variant tournament (~30 min, ~$0.30 in API calls)
@@ -382,7 +384,7 @@ Full decision trail in [`docs/ALTERNATIVES.md`](docs/ALTERNATIVES.md). Short ver
 | Hybrid (YOLO detection + PaddleOCR + small classifier + LLM glue) | High ceiling | Multi-component engineering effort; higher maintenance cost and a wider failure-mode surface than the single-call hosted-LLM approach. |
 | **Hosted LLM vision (Gemini 3.1 Flash Lite)** | **~96 % synthetic / ~99 % photo-realistic on the 170-image bench corpus** | **Chosen — Pareto-dominant on accuracy, latency, and cost. Single round-trip per verification; structured-output JSON schema is enforced provider-side.** |
 
-The brief explicitly permits cloud APIs (§8 Latitude: "free choice of model provider"). §10 asks for graceful degradation when the hosted model is unreachable — covered by the GPT-5.4-nano cross-provider fallback. There is no reviewer- or API-selectable model mode in production; every request uses the same primary path and only falls back on provider failure.
+The brief explicitly permits cloud APIs (§8 Latitude: "free choice of model provider"). §10 asks for graceful degradation when the hosted model is unreachable — covered by the GPT-5.4-nano cross-provider fallback. With live models enabled, verification starts with Gemini and can fall back to OpenAI on provider failure if you configure `OPENAI_API_KEY`.
 
 ### Models benchmarked
 
@@ -407,7 +409,7 @@ The **C1 hypothesis** (passing OCR text into the vision prompt as a hint improve
 
 ## Validation methodology
 
-The bench is a proxy benchmark, not a field validation. A federal deployment would supplement it with a human-adjudicated holdout of real submitted COLA labels. With that scope understood, the methodology is:
+The bench is a proxy benchmark, not a field validation. A field study could supplement it with a separate set of COLA submissions assessed by human reviewers. With that scope understood, the methodology is:
 
 - **Corpus.** 170 images. 90 SVG-rendered synthetic labels from deterministic templates, with the Government-Warning failure modes enumerated in [`docs/government-warning-cases.md`](docs/government-warning-cases.md). 80 photo-realistic labels rendered with Codex image-gen across two batches (50 + 30), targeting Government-Warning paraphrase, photo-quality degradations (perspective, glare, lowlight, occlusion, motion-blur, aged paper, shrink-wrap, curved substrate), bilingual EN/ES warnings, and novel beverage categories (hard cider, sake, hard kombucha, RTD cocktail, mead, malt seltzer).
 - **Ground truth.** Each image has a JSON ground-truth file with all seven declared fields and the four Government-Warning compliance booleans (`present`, `text_matches_regulation`, `prefix_all_caps`, `prefix_bold`, `meets_size_minimum`). The photo-realistic ground truth was cross-validated by an independent Gemini 3.1 Pro Preview oracle pass and a four-sub-agent visual audit (per-stratum audit summaries recorded internally during corpus build; the CHANGELOG entry for 2026-05-12 records the result).
@@ -467,7 +469,7 @@ Full threat model: [`SECURITY.md`](SECURITY.md). Last review 2026-05-14 (multi-a
 **Logic:**
 - Producer-comparator implicit-USA inference is gated on **strict-format** US state code AND **at least one other corroborating producer component** — so a hallucinated state code can't single-handedly pass an obviously-non-compliant country claim.
 - Auto-fallback uses a fresh `AbortController` + remaining-budget timer — won't reuse an already-aborted signal from the primary call.
-- Gov-Warning PASS at low confidence WITHOUT OCR corroboration routes to REVIEW (not PASS) so a no-OCR degraded run can't silently approve a non-compliant warning.
+- Gov-Warning PASS at low confidence WITHOUT OCR corroboration routes to REVIEW (not PASS) so the tool asks you to check warnings it could not corroborate.
 
 **Transport:**
 - Security headers in `vercel.json`: HSTS preload (`max-age=63072000; includeSubDomains; preload`), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()` (deny-list of four), `Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`.
@@ -475,7 +477,11 @@ Full threat model: [`SECURITY.md`](SECURITY.md). Last review 2026-05-14 (multi-a
 **Authentication:**
 - The `/api/debug/last` ring buffer is gated by `DEBUG_TOKEN` (Bearer header, `crypto.timingSafeEqual` compare with length-spoof dummy so a wrong token can't be length-distinguished). Every other endpoint is unauthenticated by design — this is a prototype per brief §9.
 
-No persistent storage. No PII collection. The review queue is in-process; the batch store is in-process.
+The application has no persistent server storage. The review queue and batch store use process memory.
+
+- **In the browser.** The demo keeps the theme, view mode, and reviewer ID in `localStorage`. The app includes the reviewer ID in the result's JSON export and printed PDF.
+- **On the server.** A per-IP rate-limit key is held in memory (`src/lib/rate-limit.ts`) and discarded with the function instance.
+- **At the host.** Vercel receives your IP address and request data for each visit and keeps request logs. See the [deployment notes](docs/DEPLOYMENT.md).
 
 ---
 
@@ -484,13 +490,12 @@ No persistent storage. No PII collection. The review queue is in-process; the ba
 The deliberate choices, in plain terms:
 
 - **Vision-only extractor.** OCR runs in parallel with the vision call but is not fed into the vision prompt. The hypothesis that OCR-as-hint improves accuracy was tested in the bake-off and rejected for this corpus. OCR's role in production is the classical-CV stroke-width measurement for the Government-Warning bold and size subscores, where a pixel-level measurement is more reliable than a model-self-reported boolean.
-- **Bench scorer treats `REVIEW` as not-correct.** Deliberately strict accuracy convention. In the production orchestrator, `REVIEW` is a routed-to-human verdict with a regulation-citing reason — not a refusal. As one example, US-domestic labels that print no country marking are routed to REVIEW on the `country_of_origin` field; the regulation (27 CFR §4.39 / §5.36) only mandates country marking on imports, so a human is the right adjudicator. The headline metric counts these as not-correct; the orchestrator handles them sensibly.
+- **The cross-pair benchmark's exact-match metric counts a `REVIEW` verdict as incorrect on unperturbed inputs.** In the app, `REVIEW` asks a person to check the result. If the application declares U.S. origin and the label omits it, the country field starts at `REVIEW`. The field returns `PASS` if the printed producer address corroborates the country in the application's producer record, as in the bundled PASS sample.
 - **Independent second opinion only on borderline Government-Warning.** A confident PASS or clear FAIL does not fire a second vision call. Only `REVIEW` cases (roughly 5–15 % of volume) get an independent same-provider read (Gemini 2.5 Flash by default since wave 22; switchable to OpenAI for cross-provider diversity); the reviewer sees both verdicts when they disagree.
-- **No persistent storage.** Review queue and batch store are in-process. The prototype is intentionally stateless; a federal deployment would add Postgres + Redis. Brief §9 explicitly waives persistence.
 
 ### Limits worth naming
 
-- **The corpus is an in-house bench, not field-validation.** A federal deployment would want a human-adjudicated holdout of real COLA submissions before drawing conclusions from the exact percentages here.
+- **The corpus is an in-house bench, not field-validation.** A field study needs a separate set of COLA submissions assessed by human reviewers.
 - **The Government-Warning false-negative Wilson CI upper at 10.2 %** indicates n = 137 non-compliant warnings is below the size required to assert ≤ 10 % at 95 % confidence. The point estimate clears the criterion; the upper bound does not. The fix is more non-compliant labels in the bench, not a different model.
 
 ### Things considered but deliberately not shipped
@@ -543,4 +548,4 @@ The repo is documentation-first because the *decisions* demonstrate engineering 
 
 ## License
 
-Prototype for TTB COLA verification. Not a production verification service. Source available for review under standard portfolio-review terms; not licensed for commercial redistribution. Contact <xandermlopez@gmail.com> for any other use.
+Independent prototype that checks labels against TTB labeling rules. Source available for review under standard portfolio-review terms; not licensed for commercial redistribution. Contact <xandermlopez@gmail.com> for any other use.

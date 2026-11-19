@@ -223,7 +223,7 @@ export function compareClass(
       expected: declared,
       actual: extracted,
       confidence: Math.min(0.7, extractedConfidence),
-      reason: `Declared "${declared}" and printed "${extracted}" are commonly used as synonyms but refer to meaningfully different styles — please confirm.`,
+      reason: `The application says "${declared}" but the label prints "${extracted}". This tool treats them as different class designations. Confirm which one the label represents.`,
     };
   }
   const r = ratio(a, b);
@@ -317,7 +317,7 @@ export function compareClass(
           expected: declared,
           actual: extracted,
           confidence: Math.min(0.65, extractedConfidence),
-          reason: `The label prints the generic class "${extracted}" while the application declares the specific subtype "${declared}". TTB regs allow either form, but the label alone cannot confirm the declared subtype — please confirm the bottle matches the application.`,
+          reason: `The label prints the generic class "${extracted}" while the application declares the specific subtype "${declared}". The tool cannot confirm the declared subtype from this label. Confirm that the bottle matches the application.`,
         };
       }
     }

@@ -1,6 +1,6 @@
 // Government Warning validator constants. The strictest field — implementation
-// in Phase 5. Federal regulations: 27 CFR § 16.21 (text + bold + caps) and
-// 27 CFR § 16.22 (type-size minimums).
+// in Phase 5. Federal regulations: 27 CFR § 16.21 (text) and
+// 27 CFR § 16.22 (caps + bold in (a)(2), type-size minimums in (b)).
 //
 // See docs/government-warning-cases.md for the enumerated non-compliance
 // taxonomy this validator is built to catch.
@@ -133,7 +133,7 @@ export interface GovernmentWarningCheck {
    * is PASS AND at least one subscore was borderline (e.g. bold
    * detected at 0.85–0.95 confidence) or fallback path was used.
    * A summary like "All 4 subscores PASS — text exact, caps PASS,
-   * bold confidence 0.92, size at 1.4× the §16.21 minimum." A
+   * bold confidence 0.92, size at 1.4× the §16.22(b) minimum." A
    * regulator-audit answer to "why was this PASS?" without the
    * reviewer having to inspect every subscore chip. Trivial all-
    * high-confidence PASSes get no passReason.
@@ -152,7 +152,7 @@ export interface GovernmentWarningCheck {
  * sensitive — it specifically checks that the prefix is uppercase. So
  * the regulation's actual case requirement (prefix in caps + bold)
  * is still enforced; we just stopped enforcing it on the body where
- * it was never required by 27 CFR §16.21.
+ * it was never required by 27 CFR §16.22(a)(2).
  *
  * Also folds non-printing space variants (NBSP U+00A0, narrow NBSP
  * U+202F, en/em spaces U+2002..U+2005, zero-width spaces U+200B/U+FEFF)
@@ -179,7 +179,7 @@ export function normalizeForTextMatch(input: string): string {
     .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\uFEFF]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    // Case-fold (wave-23, 2026-05-13). 27 CFR \u00A716.21 requires the
+    // Case-fold (wave-23, 2026-05-13). 27 CFR \u00A716.22(a)(2) requires the
     // *prefix* in caps + bold (enforced by the orthogonal scoreCaps
     // subscore); the body has no case requirement. All-caps body is
     // compliant \u2014 7 of the 12 deterministic false-fails on the cross-
