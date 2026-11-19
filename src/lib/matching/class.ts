@@ -223,7 +223,7 @@ export function compareClass(
       expected: declared,
       actual: extracted,
       confidence: Math.min(0.7, extractedConfidence),
-      reason: `Declared "${declared}" and printed "${extracted}" are commonly used as synonyms but refer to meaningfully different styles — please confirm.`,
+      reason: `The application says "${declared}" but the label prints "${extracted}". Labels often use the two interchangeably, but they are different class designations, so a person should confirm which is meant.`,
     };
   }
   const r = ratio(a, b);

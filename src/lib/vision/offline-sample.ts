@@ -3,10 +3,14 @@
 // Stands in for the vision model when live model calls are disabled
 // (see src/lib/demo-mode.ts). It never touches the network: it returns
 // a recorded extraction for one of the bundled sample images. The field
-// values come from the repo's own public ground truth for those images
-// (test-data/ai-generated/ground-truth-v2/ai-label-0001.json and
+// values are what each image actually prints, and they match the repo's
+// own public ground truth for those images
+// (test-data-combined/ground-truth/ai-label-0001.json and
 // ai-label-0010.json), so the demo shows what the pipeline does with a
-// correct read of each label. Everything downstream (field comparators,
+// correct read of each label. Neither label prints a country, so
+// country is null here (the address implies USA; see compareProducer).
+// src/tests/offline-sample-fixture.test.ts holds the image-to-fixture
+// check. Everything downstream (field comparators,
 // Government Warning validator with real OCR, verdict aggregation) runs
 // for real on the server.
 
@@ -42,11 +46,11 @@ const PASS_IMAGE_FIELDS: ExtractedFields = {
       city: "Asheville",
       state: "NC",
       postal_code: null,
-      country: "USA",
+      country: null,
     },
     confidence: CONF,
   },
-  country_of_origin: { value: "USA", confidence: CONF },
+  country_of_origin: { value: null, confidence: CONF },
 };
 
 const FAIL_IMAGE_FIELDS: ExtractedFields = {
@@ -66,16 +70,16 @@ const FAIL_IMAGE_FIELDS: ExtractedFields = {
   },
   producer: {
     value: {
-      name: "Mercer's Reserve Distilling",
+      name: "Mercers Reserve Beverage Co.",
       street: null,
       city: "Denver",
       state: "CO",
       postal_code: null,
-      country: "USA",
+      country: null,
     },
     confidence: CONF,
   },
-  country_of_origin: { value: "USA", confidence: CONF },
+  country_of_origin: { value: null, confidence: CONF },
 };
 
 export const OFFLINE_SAMPLE_FIELDS: Readonly<Record<OfflineSampleImage, ExtractedFields>> = {
