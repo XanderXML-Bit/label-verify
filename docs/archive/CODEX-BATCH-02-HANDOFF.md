@@ -9,8 +9,7 @@
 ---
 
 You are augmenting a TTB Certificate of Label Approval (COLA)
-verification prototype's test corpus. The repo is at
-github.com/XanderXML-Bit/label-verify.
+verification prototype's test corpus.
 
 CONTEXT — what already exists:
 The corpus has two halves today:

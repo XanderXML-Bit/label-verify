@@ -25,7 +25,7 @@ live models enabled (`LABEL_VERIFY_LIVE_MODELS=1`).
 ## Reporting a vulnerability
 
 For security-relevant issues, **please don't open a public GitHub
-issue**. Email <xandermlopez@gmail.com> with:
+issue**. Email <hello@zendren.net> with:
 
 - A description of the vulnerability,
 - A reproduction (curl / Playwright / steps),

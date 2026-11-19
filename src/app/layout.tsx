@@ -151,35 +151,11 @@ export default function RootLayout({
           )}
           {children}
         </main>
-        {/* `pb-[env(safe-area-inset-bottom)]` adds breathing room below
-            the GitHub link on iPhones with a home indicator — without
-            it the underline sits under the indicator on iOS Safari
-            when `viewportFit: "cover"` is set on the viewport meta.
-            UX audit P-9. The inset is 0 on devices that don't have one,
-            so it's a no-op everywhere else. */}
         <footer className="mx-auto max-w-5xl px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-xs text-slate-600 dark:text-slate-400">
           <p>Not an official U.S. government website.</p>
-          {/* Keep the repository link at least 44 px tall at every width. */}
-          <a
-            className="relative inline-flex min-h-[44px] min-w-[44px] items-center py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
-            href="https://github.com/XanderXML-Bit/label-verify"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            github.com/XanderXML-Bit/label-verify
-          </a>
-          .
           {offlineDemo && (
             <div data-testid="privacy-notice" className="mt-2">
               <p><strong>Privacy.</strong> {PRIVACY_NOTICE}</p>
-              <a
-                className="relative inline-flex min-h-[44px] items-center py-2 underline hover:text-slate-600 dark:hover:text-slate-300"
-                href="https://github.com/XanderXML-Bit/label-verify/issues"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Ask a demo question on GitHub
-              </a>
             </div>
           )}
         </footer>

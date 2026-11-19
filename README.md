@@ -7,7 +7,7 @@
 
 > Independent prototype that checks labels against TTB labeling rules. Label Verify compares beverage labels with Certificate of Label Approval (COLA) application data. The public demo runs three bundled samples without model calls or file uploads.
 
-**Live demo:** <https://label-verify-six.vercel.app> · **Repository:** <https://github.com/XanderXML-Bit/label-verify> · **API:** [`docs/openapi.yaml`](docs/openapi.yaml)
+**Live demo:** [Label Verify](https://label-verify-six.vercel.app) · **API:** [`docs/openapi.yaml`](docs/openapi.yaml)
 
 ---
 
@@ -548,4 +548,4 @@ The repo is documentation-first because the *decisions* demonstrate engineering 
 
 ## License
 
-Independent prototype that checks labels against TTB labeling rules. Source available for review under standard portfolio-review terms; not licensed for commercial redistribution. Contact <xandermlopez@gmail.com> for any other use.
+Independent prototype that checks labels against TTB labeling rules. Source is available for review under standard portfolio-review terms. Commercial redistribution is not permitted.

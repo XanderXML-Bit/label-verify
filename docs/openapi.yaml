@@ -14,7 +14,7 @@ info:
     reporting failures.
   contact:
     name: LabelVerify maintainer
-    email: xandermlopez@gmail.com
+    email: hello@zendren.net
 servers:
   - url: https://label-verify-six.vercel.app
     description: Production demo
