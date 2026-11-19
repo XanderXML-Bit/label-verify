@@ -1,4 +1,4 @@
-# TTB Label Verification — Project Brief
+# Label Verify project brief
 
 > **Status:** Bible document. Every design decision in this repo traces back to
 > a requirement on this page. If a feature does not map to something here, it

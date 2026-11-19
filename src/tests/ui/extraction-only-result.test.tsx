@@ -46,7 +46,7 @@ describe("ExtractionOnlyResult", () => {
       />,
     );
     expect(
-      screen.getByText(/This is not a compliance verdict/i),
+      screen.getByText(/Extraction only/i),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/Stone's Throw/).length).toBeGreaterThan(0);
   });

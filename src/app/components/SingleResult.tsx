@@ -38,7 +38,7 @@ const FIELD_LABEL_FROM_KEY: Record<string, string> = {
 /**
  * Client-perceived end-to-end timing. Captured in `page.tsx` around
  * the verify / sample fetch. Surfaced in the result panel header and
- * the Audit details section so the user-visible time matches what
+ * the Result details section so the user-visible time matches what
  * the user actually waited — not just `result.timings.total` from
  * the bench harness. Wave-35c.
  */
@@ -59,7 +59,7 @@ interface SingleResultProps {
   readonly filename?: string;
   /** Wave-35c: client-perceived end-to-end timing. Optional so existing
    *  test renders don't break. When present, surfaces in the header
-   *  and the Audit details panel. */
+   *  and the Result details panel. */
   readonly clientTimings?: ClientTimings;
 }
 
@@ -116,7 +116,7 @@ export function SingleResult({
     return () => img.removeEventListener("load", onLoad);
   }, []);
 
-  // Print the case file on light paper whatever the screen theme:
+  // Print the result on light paper whatever the screen theme:
   // dark-mode cards kept their navy fill on white paper and dark text
   // vanished into them. Restored after printing.
   // Closed <details> are opened for the print too, and closed again.
@@ -152,13 +152,13 @@ export function SingleResult({
 
   return (
     <section ref={sectionRef} aria-labelledby="results-heading" className="space-y-6">
-      {/* Printed case file only: a title block, since the screen
+      {/* Printed result only: a title block, since the screen
           header is hidden in print. */}
       <div data-print-title className="hidden print:block border-b border-slate-400 pb-2">
-        <p className="text-xl font-semibold text-black">Label Verify case file</p>
+        <p className="text-xl font-semibold text-black">Label Verify result (prototype)</p>
         <dl className="mt-1 grid grid-cols-2 gap-x-6 text-sm text-black">
           <div>
-            <dt className="inline font-semibold">Verdict: </dt>
+            <dt className="inline font-semibold">Check result: </dt>
             <dd className="inline">{verdictWord}</dd>
           </div>
           {filename ? (
@@ -189,7 +189,7 @@ export function SingleResult({
               back to server-side `timings.total` for legacy renders
               (e.g. continueToVerification, where the result was
               produced earlier and we don't know the user-side time).
-              The server-side breakdown is shown in Audit details
+              The server-side breakdown is shown in Result details
               below as the canonical engineering metric. */}
           Verified in {((clientTimings ? clientTimings.totalMs : result.timings.total) / 1000).toFixed(1)} s
           {clientTimings && (
@@ -214,9 +214,9 @@ export function SingleResult({
                 ? `≈ ${per1k < 100 ? `$${per1k.toFixed(2)}` : `$${per1k.toFixed(0)}`} per 1,000 labels`
                 : `≈ $${usd.toFixed(4)} per call`;
             // The tooltip used to expose the raw model id
-            // (`gemini:gemini-3.1-flash-lite`) to TTB reviewers — vendor
+            // (`gemini:gemini-3.1-flash-lite`) to reviewers — vendor
             // names + per-call economics read as procurement-deck stray
-            // copy on a compliance verdict page (UX audit P-6). Strip
+            // copy on a result page (UX audit P-6). Strip
             // the model id so the user-visible tooltip only restates
             // the per-1k figure in plain English. Telemetry still has
             // the model id via /api/health and the JSON export envelope.
@@ -275,7 +275,7 @@ export function SingleResult({
             ref={verdictRef}
             tabIndex={-1}
             role="group"
-            aria-label={`Verdict: ${verdictWord}`}
+            aria-label={`Check result: ${verdictWord}`}
             data-testid="verdict-card"
             className="scroll-mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
           >
@@ -288,17 +288,17 @@ export function SingleResult({
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-label font-medium text-slate-600 dark:text-slate-300">
-                  Verdict:
+                  Check result:
                 </span>
                 <VerdictChip verdict={result.verdict} size="lg" />
               </div>
             </div>
             {result.imageQuality !== "good" && (
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                <strong>Image quality is independent of compliance.</strong>{" "}
+                <strong>Image quality describes how clearly the tool can read the photo.</strong>{" "}
                 {result.imageQuality === "bad"
-                  ? "Re-photograph the label in better light and resubmit. This does not mean the label is non-compliant."
-                  : "Some fields had low extractor confidence; consider a better photo. The compliance verdict above is separate."}
+                  ? "Take another photo in better light and run the check again."
+                  : "Some fields were hard to read. A clearer photo may help."}
               </p>
             )}
           </div>
@@ -337,8 +337,8 @@ export function SingleResult({
               )}
             </div>
             <div className="detailed-only rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-              {/* Desktop (≥ sm): always-visible flat subscore list. */}
-              <div className="hidden sm:block">
+              {/* Keep the flat subscore list visible in print at any width. */}
+              <div className="hidden sm:block print:block">
                 <SubscoreRow
                   label="Exact text matches federal language?"
                   scoreName="Text"
@@ -457,8 +457,7 @@ export function SingleResult({
                     </span>
                   ) : (
                     <span>
-                      <strong>Models disagree</strong> — a human reviewer
-                      should adjudicate.
+                      <strong>Models disagree.</strong> Check the warning on the label.
                     </span>
                   )}
                 </p>
@@ -528,16 +527,16 @@ export function SingleResult({
           </div>
 
           {/* Audit-trail expandable (wave-34 audit fix #22 + #29).
-              Surfaces the regulator-defensible provenance for the
+              Records the inputs and timing for the
               verdict: reviewer (if set), timestamp, model id /
               version, mode, fallback, second-opinion model, and the
               full per-phase timing breakdown. Collapsed by default
               so it doesn't crowd the verdict surface, but always
-              available for the audit case file. Included in the
+              available for the printed result. Included in the
               JSON export and printable for the PDF export. */}
           <details className="detailed-only rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
             <summary className="flex min-h-[44px] cursor-pointer items-center font-semibold text-slate-700 dark:text-slate-200">
-              Audit details
+              Result details
             </summary>
             <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-2">
               <div className="flex justify-between gap-3">
@@ -624,7 +623,7 @@ export function SingleResult({
               ) : null}
             </dl>
             <p className="print-hidden mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-              Use <span className="font-semibold">Save case file (PDF)</span>,{" "}
+              Use <span className="font-semibold">Save as PDF</span>,{" "}
               <span className="font-semibold">Download JSON</span> or{" "}
               <span className="font-semibold">Download CSV</span> below to
               archive this entry. JSON contains the full extractor output,
@@ -641,14 +640,12 @@ export function SingleResult({
             >
               Verify another label
             </button>
-            {/* Save case file (PDF) — wave-34 audit fix #23. Uses
+            {/* Save as PDF — wave-34 audit fix #23. Uses
                 window.print() with a dedicated `@media print`
                 stylesheet (globals.css) so the browser's native
-                "Save as PDF" produces a clean one-page case file
-                with the image, verdict, fields, audit detail, and
-                reviewer + timestamp at the foot. Available in both
-                simple and detailed mode because a regulator-defensible
-                case file is the whole point of the prototype. */}
+                "Save as PDF" includes the image, check result, field
+                comparisons, and result details. Available in both
+                simple and detailed mode. */}
             <button
               type="button"
               onClick={() => {
@@ -656,7 +653,7 @@ export function SingleResult({
                 // a meaningful filename in Chrome/Safari/Edge.
                 const stem = safeStem(filename ?? "label-verify-result");
                 const prev = document.title;
-                document.title = `${stem}-case-file`;
+                document.title = `${stem}-result`;
                 try {
                   window.print();
                 } finally {
@@ -667,10 +664,10 @@ export function SingleResult({
                   }, 500);
                 }
               }}
-              aria-label="Save this verification result as a printable PDF case file"
+              aria-label="Save this result as a printable PDF"
               className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
             >
-              Save case file (PDF)
+              Save as PDF
             </button>
             {/* Export buttons live in detailed mode only.
                 Simple mode keeps the verdict + the one re-upload affordance
@@ -715,7 +712,7 @@ export function SingleResult({
 
           {/* Visible only when printed: bottom-of-page audit footer. */}
           <div className="hidden print:block mt-6 border-t border-slate-300 pt-2 text-[10px] text-slate-600">
-            Label Verify — TTB COLA verification case file ·{" "}
+            Label Verify prototype result ·{" "}
             Reviewer: {reviewerAtVerifyTime || "(not set)"} ·{" "}
             Verified at (UTC): {verifiedAtIso} · Primary model:{" "}
             {result.modelId}

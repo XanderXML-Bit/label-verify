@@ -382,7 +382,7 @@ export function compareProducer(
       status === "pass"
         ? undefined
         : components.country === "fail"
-          ? `Country component disagrees (declared "${declared.country ?? "—"}" vs printed "${extracted.country ?? "—"}") — regulator-disqualifying regardless of other component matches.`
+          ? `Country component disagrees (declared "${declared.country ?? "—"}" vs printed "${extracted.country ?? "—"}"). The tool flags that mismatch even when the other address components match.`
           : `${fails} producer component${fails === 1 ? "" : "s"} did not match.`,
     ...(passReason ? { passReason } : {}),
   };

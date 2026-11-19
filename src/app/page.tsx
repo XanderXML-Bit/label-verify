@@ -86,14 +86,12 @@ function friendlyError(raw: string, status?: number): string {
 /** Screen-reader line for a finished verification. */
 function verdictAnnouncement(r: VerifyResponse): string {
   const word = r.verdict === "pass" ? "PASS" : r.verdict === "fail" ? "FAIL" : "REVIEW";
-  return `Verification complete. Verdict: ${word}.`;
+  return `Check complete. Result: ${word}.`;
 }
 
 /**
  * Client-perceived end-to-end timings, captured around each verify /
- * extract / sample request. Surfaced in the result panel's Audit
- * details section and stamped into JSON exports so the regulator-
- * defensible audit trail records WHAT THE USER ACTUALLY WAITED, not
+ * extract / sample request. Surfaced in the Result details section and included in JSON exports to record the wait, not
  * just the server-side `result.timings.total`.
  *
  * Wave-35c motivation: the project's "verified in ~3 s" claim came
@@ -1114,15 +1112,14 @@ export default function Home() {
             </summary>
             <div className="mt-2 space-y-2 text-slate-600 dark:text-slate-300">
               <p>
-                Verifies seven regulated fields per 27 CFR §16.21 / §16.22
-                (Government Warning text, prefix all-caps, prefix bold,
-                type-size minimum) and the COLA-declared fields (brand,
-                class/type, ABV, net contents, producer, country).
+                This tool checks the Government Warning against 27 CFR §16.21
+                and §16.22. It compares the declared brand, class or type,
+                alcohol by volume, net contents, producer, and country
+                with the label.
               </p>
               <p>
-                The Image Quality and Verdict columns are independent: a
-                FAIL on image quality does not count as a non-compliant
-                label.
+                Image quality describes how clearly the tool can read the photo.
+                The check result reports what the tool found.
               </p>
             </div>
           </details>

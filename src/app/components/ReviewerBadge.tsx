@@ -4,28 +4,9 @@ import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "labelverify:reviewer";
 const REVIEWER_HINT =
-  "Stamps verifications with your name / initials for the regulator audit trail. Stored in this browser only.";
+  "Adds your name or initials to the results you export as JSON or PDF. Stored in this browser only.";
 
-/**
- * Reviewer-id badge for regulator-defensible audit trails.
- *
- * Wave-34 added a reviewer-identification slot so every verification
- * (single, batch row, queue resolve) can be stamped with WHO ran it.
- * Without this, a 6-month-later TTB audit of a PASS verdict has no
- * record of which operator's eyes were on the case. The field is
- * intentionally optional (the prototype must keep its zero-friction
- * "drop a label, see a verdict" path) — but when set, it sticks in
- * `localStorage` and is included in:
- *   • JSON / CSV / PDF result exports
- *   • the `Audit detail` expandable on result cards
- *   • the /api/queue/[id]/resolve `resolvedBy` field (existing route;
- *     consumer wiring still in progress)
- *
- * The badge is a header-level affordance (next to the theme + mode
- * toggles) so it's discoverable from any screen without cluttering
- * the per-verification form. Storage is the same pattern used by
- * ThemeToggle + ModeToggle so the UX is consistent.
- */
+/** Read the optional reviewer ID stored by the header badge. */
 export function getStoredReviewer(): string {
   if (typeof window === "undefined") return "";
   try {
@@ -99,7 +80,7 @@ export function ReviewerBadge() {
           defaultValue={value}
           placeholder="Name or initials"
           maxLength={64}
-          aria-label="Reviewer ID — name, initials, or employee ID"
+          aria-label="Reviewer ID (name or initials)"
           className="min-h-[44px] min-w-[44px] w-44 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
         <button
@@ -127,8 +108,8 @@ export function ReviewerBadge() {
       onClick={() => setEditing(true)}
       aria-label={
         value
-          ? `Reviewer: ${value}. Click to change.`
-          : "Reviewer: + set ID for the audit trail"
+          ? `Reviewer: ${value}. Select to change.`
+          : "Reviewer: + set ID for your exports"
       }
       title={value ? `Reviewer: ${value}. ${REVIEWER_HINT}` : REVIEWER_HINT}
       className="min-h-[44px] min-w-[44px] rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"

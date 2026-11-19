@@ -131,6 +131,6 @@ test('"Skip — just show what\'s on the label" → ExtractionOnly panel', async
 
   // And there should NOT be a top-level PASS/FAIL Verdict chip — extract
   // mode doesn't produce one.
-  const verdictHeader = page.locator('text=/^Verdict:$/');
+  const verdictHeader = page.getByText("Check result:", { exact: true }).filter({ visible: true });
   await expect(verdictHeader).toHaveCount(0);
 });

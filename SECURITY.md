@@ -1,9 +1,8 @@
 # Security policy
 
-LabelVerify is a prototype, not a production system, but
-treats security as a first-class concern because TTB-regulated label
-data could plausibly contain personally identifying information (the
-producer field is a brewer/distiller and may name an individual).
+Label Verify is an independent label-checking prototype. The producer
+field can contain personally identifying information, such as the
+name of an individual brewer or distiller.
 
 ## Public demo (offline)
 

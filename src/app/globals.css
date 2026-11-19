@@ -170,20 +170,17 @@ html:not([data-demo="offline"]) .demo-offline-only {
 }
 
 /*
- * Print stylesheet for the "Save case file (PDF)" affordance on
- * SingleResult. Triggered by `window.print()`; the browser's native
- * print dialog includes a "Save as PDF" target that produces a
- * portable, regulator-defensible case file artifact.
+ * Print stylesheet for the "Save as PDF" button on SingleResult.
  *
  * Goals on the printed page:
- *   - One coherent case-file document: the label image, verdict,
+ *   - Include the label image, verdict,
  *     per-field comparator results, government-warning subscores,
- *     and the audit-trail expandable (forced open).
+ *     and the result details.
  *   - No prototype chrome: hide the upload zone, sample affordance,
  *     application-upload widget, the "Verify another" / export row
  *     (`.print-hidden`), header toggles, footer.
  *   - Black-on-white: dark-mode colours invert poorly to paper.
- *   - Always print the detailed view (audit trail included), and only
+ *   - Always print the detailed view (including result details), and only
  *     once, whatever the on-screen mode.
  *   - A title block (SingleResult `data-print-title`) heads the page.
  */
@@ -198,14 +195,14 @@ html:not([data-demo="offline"]) .demo-offline-only {
   header, footer {
     display: none !important;
   }
-  /* Chrome we don't want in the printed case file. */
+  /* Chrome we don't want in the printed result. */
   [role="region"][aria-label*="upload"],
   [role="region"][aria-label*="Add more"],
   .print-hidden,
   details:not(.print-hidden) > .print-hidden {
     display: none !important;
   }
-  /* Force-open all <details> so audit-trail and other collapsibles
+  /* Force-open all <details> so result details and other collapsibles
      render their full content in the PDF; their summaries print as
      section labels. `.print-hidden` details (the phone-only duplicate
      of the subscore list) stay hidden. SingleResult also sets `open`
@@ -216,7 +213,7 @@ html:not([data-demo="offline"]) .demo-offline-only {
   details:not(.print-hidden) > * {
     display: block !important;
   }
-  /* The case file always prints the detailed view, once. The screen
+  /* The print view always shows the detailed view, once. The screen
      mode rules above apply to screens only, so `.detailed-only` keeps
      its own layout here; the simple-mode summaries would repeat it
      (the Government Warning block printed twice). */
@@ -239,7 +236,7 @@ html:not([data-demo="offline"]) .demo-offline-only {
     max-height: 4in !important;
     page-break-inside: avoid;
   }
-  /* Tighter spacing so the case file fits one or two pages. */
+  /* Tighter spacing so the result fits one or two pages. */
   section { margin-bottom: 0.5rem; }
 }
 /* Chromium 131+ hides closed <details> content through this
