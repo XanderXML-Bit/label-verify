@@ -26,9 +26,15 @@ interface MockTesseractWord {
 interface MockRecognizeResult {
   data: {
     text: string;
-    words: MockTesseractWord[];
+    blocks: {
+      paragraphs: { lines: { words: MockTesseractWord[] }[] }[];
+    }[] | null;
     confidence: number;
   };
+}
+
+function singleLineBlocks(words: MockTesseractWord[]) {
+  return [{ paragraphs: [{ lines: [{ words }] }] }];
 }
 
 // Fresh module isolation per test so the worker singleton doesn't
@@ -41,9 +47,15 @@ async function loadAdapterWithMock(
     return {
       createWorker: vi.fn(async () => {
         return {
-          async recognize(_image: Buffer) {
+          async recognize(
+            _image: Buffer,
+            _options?: unknown,
+            output?: { blocks?: boolean },
+          ) {
             if (recognizeOutput instanceof Error) throw recognizeOutput;
-            return recognizeOutput;
+            return output?.blocks
+              ? recognizeOutput
+              : { data: { ...recognizeOutput.data, blocks: null } };
           },
         };
       }),
@@ -57,18 +69,68 @@ afterEach(() => {
   vi.resetModules();
 });
 
+it("restores word boxes from a recorded Tesseract.js 7 result", async () => {
+  // Excerpt from recognizing the preprocessed public/samples/pass.jpg.
+  const warningWords = [
+    { text: "OVERNMENT", bbox: { x0: 253, y0: 1374, x1: 461, y1: 1460 }, confidence: 0 },
+    { text: "WARNING:", bbox: { x0: 475, y0: 1395, x1: 660, y1: 1436 }, confidence: 96 },
+  ];
+  const bodyWords = [
+    { text: "cE", bbox: { x0: 253, y0: 1438, x1: 357, y1: 1511 }, confidence: 46 },
+    { text: "women", bbox: { x0: 370, y0: 1451, x1: 476, y1: 1484 }, confidence: 94 },
+  ];
+  const { tesseractEngine } = await loadAdapterWithMock({
+    data: {
+      text: "OVERNMENT WARNING: (1) According to the Surgeon\n" +
+        "cE women should not drink alcoholic beverages\n",
+      confidence: 59,
+      blocks: [
+        { paragraphs: [{ lines: [{ words: warningWords }, { words: bodyWords }] }] },
+      ],
+    },
+  });
+
+  const out = await tesseractEngine.run(Buffer.from("x"));
+  expect(out.words).toStrictEqual([
+    {
+      text: "OVERNMENT",
+      bbox: { x: 253, y: 1374, width: 208, height: 86 },
+      confidence: 0,
+      fontBold: undefined,
+    },
+    {
+      text: "WARNING:",
+      bbox: { x: 475, y: 1395, width: 185, height: 41 },
+      confidence: 0.96,
+      fontBold: undefined,
+    },
+    {
+      text: "cE",
+      bbox: { x: 253, y: 1438, width: 104, height: 73 },
+      confidence: 0.46,
+      fontBold: undefined,
+    },
+    {
+      text: "women",
+      bbox: { x: 370, y: 1451, width: 106, height: 33 },
+      confidence: 0.94,
+      fontBold: undefined,
+    },
+  ]);
+});
+
 describe("tesseractEngine.run — bbox conversion (x0/y0/x1/y1 → x/y/width/height)", () => {
   it("converts a single word's corner-form bbox to offset-form correctly", async () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "GOVERNMENT",
-        words: [
+        blocks: singleLineBlocks([
           {
             text: "GOVERNMENT",
             bbox: { x0: 10, y0: 20, x1: 110, y1: 50 },
             confidence: 92,
           },
-        ],
+        ]),
         confidence: 92,
       },
     });
@@ -85,10 +147,10 @@ describe("tesseractEngine.run — bbox conversion (x0/y0/x1/y1 → x/y/width/hei
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "GOVERNMENT WARNING",
-        words: [
+        blocks: singleLineBlocks([
           { text: "GOVERNMENT", bbox: { x0: 0, y0: 0, x1: 100, y1: 20 }, confidence: 90 },
           { text: "WARNING:", bbox: { x0: 110, y0: 0, x1: 200, y1: 20 }, confidence: 88 },
-        ],
+        ]),
         confidence: 89,
       },
     });
@@ -103,7 +165,7 @@ describe("tesseractEngine.run — bbox conversion (x0/y0/x1/y1 → x/y/width/hei
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "",
-        words: [],
+        blocks: [],
         confidence: 0,
       },
     });
@@ -113,12 +175,11 @@ describe("tesseractEngine.run — bbox conversion (x0/y0/x1/y1 → x/y/width/hei
     expect(out.confidence).toBe(0);
   });
 
-  it("handles missing words array defensively (`?? []`)", async () => {
+  it("returns an empty words array when Tesseract returns null blocks", async () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "no words",
-        // `words` deliberately undefined — adapter must not crash
-        words: undefined as unknown as MockTesseractWord[],
+        blocks: null,
         confidence: 0,
       },
     });
@@ -132,14 +193,14 @@ describe("tesseractEngine.run — defensive `is_bold` typing", () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "BOLD",
-        words: [
+        blocks: singleLineBlocks([
           {
             text: "BOLD",
             bbox: { x0: 0, y0: 0, x1: 50, y1: 20 },
             confidence: 90,
             is_bold: true,
           },
-        ],
+        ]),
         confidence: 90,
       },
     });
@@ -151,14 +212,14 @@ describe("tesseractEngine.run — defensive `is_bold` typing", () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "thin",
-        words: [
+        blocks: singleLineBlocks([
           {
             text: "thin",
             bbox: { x0: 0, y0: 0, x1: 50, y1: 20 },
             confidence: 90,
             is_bold: false,
           },
-        ],
+        ]),
         confidence: 90,
       },
     });
@@ -170,14 +231,14 @@ describe("tesseractEngine.run — defensive `is_bold` typing", () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "x",
-        words: [
+        blocks: singleLineBlocks([
           {
             text: "x",
             bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
             confidence: 90,
             // is_bold omitted
           },
-        ],
+        ]),
         confidence: 90,
       },
     });
@@ -194,14 +255,14 @@ describe("tesseractEngine.run — defensive `is_bold` typing", () => {
       const { tesseractEngine } = await loadAdapterWithMock({
         data: {
           text: "x",
-          words: [
+          blocks: singleLineBlocks([
             {
               text: "x",
               bbox: { x0: 0, y0: 0, x1: 10, y1: 10 },
               confidence: 90,
               is_bold: bad,
             },
-          ],
+          ]),
           confidence: 90,
         },
       });
@@ -216,7 +277,7 @@ describe("tesseractEngine.run — abort signal", () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "x",
-        words: [],
+        blocks: [],
         confidence: 0,
       },
     });
@@ -231,7 +292,7 @@ describe("tesseractEngine.run — abort signal", () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "x",
-        words: [],
+        blocks: [],
         confidence: 0,
       },
     });
@@ -247,13 +308,13 @@ describe("tesseractEngine.run — overall result shape", () => {
     const { tesseractEngine } = await loadAdapterWithMock({
       data: {
         text: "hello",
-        words: [
+        blocks: singleLineBlocks([
           {
             text: "hello",
             bbox: { x0: 0, y0: 0, x1: 50, y1: 20 },
             confidence: 85,
           },
-        ],
+        ]),
         confidence: 85,
       },
     });
@@ -273,7 +334,7 @@ describe("tesseractEngine.run — worker reuse across calls", () => {
     const createWorker = vi.fn(async () => ({
       async recognize() {
         return {
-          data: { text: "", words: [], confidence: 0 },
+          data: { text: "", blocks: [], confidence: 0 },
         };
       },
     }));
@@ -291,7 +352,7 @@ describe("warmupTesseract — eager worker init", () => {
   it("calling warmupTesseract triggers createWorker without invoking recognize", async () => {
     vi.resetModules();
     const recognizeSpy = vi.fn(async () => ({
-      data: { text: "", words: [], confidence: 0 },
+      data: { text: "", blocks: [], confidence: 0 },
     }));
     const createWorker = vi.fn(async () => ({ recognize: recognizeSpy }));
     vi.doMock("tesseract.js", () => ({ createWorker }));

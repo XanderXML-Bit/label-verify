@@ -29,27 +29,28 @@ export const tesseractEngine: OcrEngine = {
       throw new DOMException("aborted", "AbortError");
     }
     const worker = await getWorker();
-    const result = await worker.recognize(image);
-    const data = result.data;
+    const { data } = await worker.recognize(image, {}, { blocks: true });
 
-    const words: OcrWord[] = (data.words ?? []).map((w) => {
-      // tesseract.js types declare `is_bold: boolean` on Word, but at
-      // runtime the LSTM-only engine doesn't populate font-attributes
-      // for every build — read defensively. `undefined` means "engine
-      // didn't tell us" (so downstream code falls back to its stroke-
-      // width proxy instead of trusting a false negative).
-      const tw = w as { is_bold?: unknown };
+    const recognizedWords = (data.blocks ?? []).flatMap((block) =>
+      block.paragraphs.flatMap((paragraph) =>
+        paragraph.lines.flatMap((line) => line.words),
+      ),
+    );
+    const words: OcrWord[] = recognizedWords.map((word) => {
+      // Missing bold metadata lets the validator estimate bold from stroke width.
       const fontBold =
-        typeof tw.is_bold === "boolean" ? tw.is_bold : undefined;
+        "is_bold" in word && typeof word.is_bold === "boolean"
+          ? word.is_bold
+          : undefined;
       return {
-        text: w.text,
+        text: word.text,
         bbox: {
-          x: w.bbox.x0,
-          y: w.bbox.y0,
-          width: w.bbox.x1 - w.bbox.x0,
-          height: w.bbox.y1 - w.bbox.y0,
+          x: word.bbox.x0,
+          y: word.bbox.y0,
+          width: word.bbox.x1 - word.bbox.x0,
+          height: word.bbox.y1 - word.bbox.y0,
         },
-        confidence: w.confidence / 100,
+        confidence: word.confidence / 100,
         fontBold,
       };
     });
