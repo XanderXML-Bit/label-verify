@@ -339,26 +339,22 @@ async function runOfflineSample(
   rl: RateLimitResult,
   requestId?: string,
 ) {
-  const contentType = req.headers.get("content-type") ?? "";
-  if (!contentType.includes("multipart/form-data")) {
+  // Next's Node adapter exposes a stream even for Content-Length: 0.
+  // A sample POST has no payload. Refuse upload requests without reading it.
+  const length = req.headers.get("content-length");
+  if (
+    req.headers.has("content-type") ||
+    req.headers.has("transfer-encoding") ||
+    (length !== null && length !== "0") ||
+    (length === null && req.body !== null)
+  ) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
   }
-  let formData: FormData;
-  try {
-    formData = await req.formData();
-  } catch {
-    return NextResponse.json(
-      { error: "Body must be multipart/form-data." },
-      { status: 400 },
-    );
-  }
-  const sampleId = formData.get("sample");
+  const sampleId = new URL(req.url).searchParams.get("sample");
   const sample = SAMPLES.find((s) => s.id === sampleId);
   if (!sample) {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
   }
-  // Any uploaded bytes are ignored: the bundled sample image is read from
-  // disk, so an unrelated upload can never be shown with a sample verdict.
   let buffer: Buffer;
   try {
     buffer = await readFile(

@@ -436,12 +436,15 @@ export function UploadZone({
             <div className="text-lg font-medium text-slate-800 dark:text-slate-100 sm:text-xl">
               Drop a label image, folder, or application file
             </div>
-            <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <div className="demo-live-only mt-1 text-sm text-slate-500 dark:text-slate-400">
               or use the buttons below · images: JPEG, PNG, WebP, HEIC · applications: PDF, JSON, CSV, MD, TXT, DOCX · folders are scanned recursively
             </div>
-            <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            <div className="demo-live-only mt-1 text-xs text-slate-600 dark:text-slate-400">
               Drop one image to verify single; image + matching application file to pre-fill the form; or N image/application pairs (or a folder of them) for batch. Files we don&apos;t recognise are ignored with a list.
             </div>
+            <p className="demo-offline-only mt-1 text-sm text-slate-600 dark:text-slate-400">
+              The demo checks only the bundled samples.
+            </p>
             {iosHinted ? (
               <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
                 On iPhone or iPad: <span className="font-semibold">Choose files</span> opens a picker chooser — pick <span className="font-semibold">Photos from Camera Roll</span> for multi-select label photos, or <span className="font-semibold">Application document</span> for a PDF / JSON / CSV.
