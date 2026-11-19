@@ -251,8 +251,9 @@ describe("/api/extract — PDF path", () => {
     expect(body.code).toBe("encrypted");
   });
 
-  it("rethrows non-PdfExtractError so it surfaces as a 500", async () => {
-    extractPdfFirstPageMock.mockRejectedValueOnce(new Error("disk full"));
+  it("returns a 500 with the request ID for an unexpected PDF error", async () => {
+    const error = new Error("disk full");
+    extractPdfFirstPageMock.mockRejectedValueOnce(error);
     const fd = new FormData();
     const pdfBlob = new Blob([Buffer.from("%PDF") as unknown as BlobPart], {
       type: "application/pdf",
@@ -261,11 +262,18 @@ describe("/api/extract — PDF path", () => {
     const req = new Request("http://test.local/api/extract", {
       method: "POST",
       body: fd,
-      headers: { "x-forwarded-for": nextCallerIp() },
+      headers: { "x-forwarded-for": nextCallerIp(), "x-request-id": "pdf-error-test" },
     });
-    // The route re-throws — Next.js maps an unhandled throw to a 500.
-    // In the test environment, await POST(...) surfaces the error.
-    await expect(POST(req)).rejects.toThrow(/disk full/);
+    const logError = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const response = await POST(req);
+      expect(response.status).toBe(500);
+      expect(response.headers.get("x-request-id")).toBe("pdf-error-test");
+      expect(await response.text()).toBe("");
+      expect(logError).toHaveBeenCalledWith(expect.stringContaining("pdf-error-test"), error);
+    } finally {
+      logError.mockRestore();
+    }
   });
 });
 
