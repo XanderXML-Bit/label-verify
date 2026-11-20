@@ -72,8 +72,10 @@ each key.
 ## 4. Build & Deploy Pipeline
 
 - **`main` branch** auto-deploys to production.
-- Every PR gets a preview deploy with its own URL — useful for the reviewer
-  if they want to see iterative progress.
+- Pull requests do not get automatic preview deploys. To request one, post
+  `[preview] label-verify <full SHA>` on the pull request, as the workflow
+  comment on each pull request shows. The release operator deploys that exact
+  commit as a preview and posts its URL.
 - Pre-deploy checks (in `package.json`):
   - `npm run typecheck`
   - `npm run lint`
