@@ -165,7 +165,6 @@ pass.
 Once smoke passes, fill in the submission notes with the URLs:
 
 - **Live demo:** https://label-verify-six.vercel.app
-- **GitHub repo:** https://github.com/XanderXML-Bit/label-verify
 - **Walkthrough video:** (record a 2–3 min Loom showing the smoke
   script in real time)
 

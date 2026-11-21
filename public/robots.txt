@@ -1,6 +1,3 @@
-# LabelVerify prototype — not for public indexing.
-# This is a prototype demo; not intended for public indexing. If it
-# ever surfaces in search results, redirect the question to the README
-# at https://github.com/XanderXML-Bit/label-verify .
+# LabelVerify prototype. Do not index.
 User-agent: *
 Disallow: /

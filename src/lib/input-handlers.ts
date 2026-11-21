@@ -73,9 +73,7 @@ export async function fetchUrlImage(input: string): Promise<FetchedUrlImage> {
         redirect: "manual", // we follow ourselves so each hop is re-validated
         signal: controller.signal,
         headers: {
-          // Pretend to be a real browser so CDNs don't 403.
-          "User-Agent":
-            "LabelVerify/0.1 (+https://github.com/XanderXML-Bit/label-verify)",
+          "User-Agent": "LabelVerify/0.1",
           Accept: "image/*",
         },
       });
