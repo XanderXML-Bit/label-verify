@@ -37,7 +37,7 @@
     "labelverify-web": "bin/labelverify-web.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.117.1",
+    "@anthropic-ai/sdk": "^1.11.0",
     "@google/generative-ai": "^0.24.1",
     "@napi-rs/canvas": "^1.1.1",
     "@rollup/rollup-linux-x64-gnu": "^4.68.7",
