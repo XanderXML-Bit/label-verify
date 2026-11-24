@@ -178,7 +178,7 @@ describe("GPT4oMiniExtractor", () => {
 // ─── Anthropic adapter ──────────────────────────────────────────────────────
 
 describe("ClaudeSonnetExtractor", () => {
-  it("sends a base64 image in a content block", async () => {
+  it("preserves the Messages API version and sampling options", async () => {
     anthropicCreate.mockResolvedValueOnce(
       fakeAnthropicResponse(HIGH_CONFIDENCE_FIELDS),
     );
@@ -190,6 +190,9 @@ describe("ClaudeSonnetExtractor", () => {
     expect(callArg).toBeDefined();
     expect(callArg.model).toBe("claude-sonnet-4-6");
     expect(callArg.temperature).toBe(0);
+    expect(anthropicCreate.mock.calls[0]?.[1]).toEqual({
+      headers: { "anthropic-version": "2023-06-01" },
+    });
 
     const content = callArg.messages[0].content;
     const imgBlock = content.find((b: { type: string }) => b.type === "image");
