@@ -4,11 +4,11 @@
   "private": true,
   "description": "Independent prototype that checks beverage labels against TTB labeling rules. The public demo runs offline on three bundled samples and makes no AI model calls.",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint",
+    "lint": "eslint src --ext .js,.mjs,.cjs,.jsx,.ts,.tsx",
     "test": "vitest run",
     "verify:claims": "tsx bin/verify-claims.ts",
     "test:watch": "vitest",
@@ -54,6 +54,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.5",
     "@playwright/test": "^1.65.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.3",
