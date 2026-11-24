@@ -19,16 +19,16 @@
     "isolatedModules": true,
     "incremental": true,
     "allowJs": false,
+    "allowArbitraryExtensions": true,
     "noEmit": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "baseUrl": ".",
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     }
   },

@@ -69,31 +69,34 @@ async function callAnthropic(
 
   const signal = ctx?.signal;
 
-  const response = await Promise.race([
-    cfg.client.messages.create(
+  // Keep the API version that accepts the current sampling parameters.
+  const body: Anthropic.MessageCreateParamsNonStreaming & { temperature: 0 } = {
+    model: cfg.modelVersion,
+    max_tokens: MAX_OUTPUT_TOKENS,
+    temperature: 0,
+    messages: [
       {
-        model: cfg.modelVersion,
-        max_tokens: MAX_OUTPUT_TOKENS,
-        temperature: 0,
-        messages: [
+        role: "user",
+        content: [
           {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: "image/jpeg",
-                  data: image.toString("base64"),
-                },
-              },
-              { type: "text", text: promptText },
-            ],
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: "image/jpeg",
+              data: image.toString("base64"),
+            },
           },
+          { type: "text", text: promptText },
         ],
       },
-      signal ? { signal } : {},
-    ),
+    ],
+  };
+
+  const response = await Promise.race([
+    cfg.client.messages.create(body, {
+      headers: { "anthropic-version": "2023-06-01" },
+      ...(signal ? { signal } : {}),
+    }),
     abortPromise(signal),
   ]);
 

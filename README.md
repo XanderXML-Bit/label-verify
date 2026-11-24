@@ -231,7 +231,7 @@ The scope statements below frame exactly what this prototype is and is not claim
 | **Live production** | <https://label-verify-six.vercel.app> · offline-demo mode since 2026-11-08 (no API keys, no model calls) · `/api/health` returns `{ ok: true, mode: "offline-demo", ready: true, notes: [] }` · the PASS / FAIL / REVIEW samples return their expected verdicts on recorded sample extractions. The earlier live-model walkthrough (4.5–5.2 s per sample, 0 console errors) predates offline mode. |
 | **Tests** | **985 / 985** passing (`vitest`) · 96 test files (~10 s) |
 | **Typecheck** | `tsc --noEmit` clean (TypeScript strict) |
-| **Lint** | `next lint` clean (zero warnings) |
+| **Lint** | `npm run lint` (ESLint) clean (zero warnings) |
 | **Production build** | green |
 | **Last CI run on `main`** | green · post-deploy smoke green |
 | **Branch protection** | `main` requires `Typecheck + Lint + Test (20.x)` + `Production build` to pass · no force pushes · no deletions · required linear history · required conversation resolution |
