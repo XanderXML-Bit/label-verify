@@ -42,7 +42,6 @@ export function buildOcrHintSection(ocrText: string | undefined): string {
   // attempt to inject the closing-tag string so a crafted label can't
   // appear to "end" the untrusted block early.
   const sanitised = ocrText
-    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
     .replace(/<\/?\s*untrusted_ocr\s*>/gi, "[redacted-tag]");
   const truncated =

@@ -9,7 +9,6 @@ class MockEventSource {
   url: string;
   readyState: number = 0;
   onerror: ((this: EventSource, ev: Event) => unknown) | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   addEventListener = vi.fn();
   removeEventListener = vi.fn();
   close = vi.fn();
