@@ -277,7 +277,7 @@ Open <https://label-verify-six.vercel.app>. No install. The public deployment ru
 ### Option B — Local dev (5 minutes)
 
 ```bash
-# Prereqs: Node ≥ 20, git
+# Prereqs: Node ≥ 20.9.0, git
 git clone https://github.com/XanderXML-Bit/label-verify.git
 cd label-verify
 cp .env.example .env.local
@@ -329,7 +329,7 @@ Reviewers reproducing the project locally can lean on any of these:
 
 ```bash
 npm run typecheck         # tsc --noEmit, zero output expected
-npm run lint              # ESLint, only pre-existing warnings allowed
+npm run lint              # ESLint, zero warnings expected
 npm test                  # vitest, ~960 tests across 100 files (~10 s)
 npm run build             # production Next.js build
 npm run bench:routine     # quick 15-label bench (~5 min) → benchmarks/results/<iso>.md
