@@ -43,3 +43,15 @@ The Markdown report includes pairwise McNemar tests for techniques that share sc
 - [Statistics](score.ts) computes confidence intervals, strata, and pairwise tests.
 
 See the [corpus map](../docs/CORPORA.md) for fixture layout, the [protocol](../docs/BENCH-PROTOCOL.md) for scoring, and the [experiment log](../docs/EXPERIMENTS.md) for recorded outcomes.
+
+## Review recorded false passes
+
+In the [recorded cross-pair run](results/wave35-supplemental-crops/baseline-run1.json), each case below expected Fail with correct application data. All three returned Pass.
+
+| Label | Case | Government Warning defect in the ground truth |
+| --- | --- | --- |
+| [`deg-beer-0012.png`](../test-data-combined/ground-truth/deg-beer-0012.json) | B1 | Regular-weight prefix on a perspective-distorted label |
+| [`syn-beer-0016.png`](../test-data-combined/ground-truth/syn-beer-0016.json) | B3 | Medium-weight prefix |
+| [`syn-spirits-0013.png`](../test-data-combined/ground-truth/syn-spirits-0013.json) | S1 | Prefix below the minimum type size |
+
+The run saved declared fields and verdicts. Offline replay of these failures requires the extracted fields and warning measurements from those same calls, which the run did not save.

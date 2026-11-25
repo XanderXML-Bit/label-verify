@@ -24,12 +24,14 @@ The demo takes a sample ID and looks up its recorded extraction. The self-hosted
 
 A recorded live-model cross-pair benchmark evaluated 170 synthetic and AI-generated labels against correct and deliberately altered application data.
 
-| Application data | What the benchmark counted | Result |
-| --- | --- | ---: |
-| Correct | Verdict matched the expected Pass or Fail | 70.41% |
-| Deliberately altered | Verdict was Fail or Review | 100% |
+| Application data | What counts toward the rate | Result | Review verdicts | Excluded errors |
+| --- | --- | ---: | ---: | ---: |
+| Correct | Verdict matched the expected Pass or Fail | 119/169 (70.41%) | 47 | 1 |
+| Deliberately altered | Verdict was Fail or Review | 169/169 (100%) | 0 | 1 |
 
-Two verification errors were excluded from the rates. See the [recorded run](benchmarks/results/wave35-supplemental-crops/baseline-run1.json), [benchmark protocol](docs/BENCH-PROTOCOL.md), and [model selection](docs/MODEL-SELECTION.md).
+Three labels expected to fail received Pass verdicts with correct application data. They were `deg-beer-0012.png`, `syn-beer-0016.png`, and `syn-spirits-0013.png`. See the [false-pass cases](benchmarks/README.md#review-recorded-false-passes).
+
+Both excluded rows are for `ai-label-0048.jpg`. Its ground truth lacked the required net contents, so neither pairing reached the verifier. See the [recorded run](benchmarks/results/wave35-supplemental-crops/baseline-run1.json), [benchmark protocol](docs/BENCH-PROTOCOL.md), and [model selection](docs/MODEL-SELECTION.md).
 
 ## Run it locally
 
@@ -39,15 +41,10 @@ git clone https://github.com/XanderXML-Bit/label-verify.git
 cd label-verify
 ```
 
-Install from the lockfile on Linux x64, the platform used in CI:
+On macOS and Linux, install from the lockfile and start the development server.
 
 ```bash
 npm ci
-```
-
-On macOS, use `npm ci --force` to bypass the Linux-only Rollup package's platform check.
-
-```bash
 npm run dev
 ```
 
