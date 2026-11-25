@@ -21,7 +21,7 @@ import type { PerItemOutcome, PerItemWarningOutcome } from "./score";
 
 // ─── Ground-truth shape ─────────────────────────────────────────────────────
 //
-// Documented in docs/archive/CODEX-HANDOFF.md §3 and enforced by
+// Validated by
 // scripts/validate-corpus.ts. We re-declare the parts we need here so the
 // scorer is self-contained.
 

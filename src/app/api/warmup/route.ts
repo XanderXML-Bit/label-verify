@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 // races OCR against a 1.5s window and falls back to vision-only.
 const WARMUP_BUDGET_MS = 8_000;
 
-// REMAINING-IMPROVEMENTS.md R1: also pull the Gemini SDK into the
+// Warmup also loads the Gemini SDK into the
 // serverless function's module cache during warmup. The SDK is ~150 ms
 // of module-load + client-instantiation cost on cold start; doing it
 // now means the user's first /api/verify avoids paying that tax. We

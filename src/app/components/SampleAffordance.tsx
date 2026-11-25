@@ -80,7 +80,7 @@ export function SampleAffordance({ onPick, disabled }: SampleAffordanceProps) {
             disabled={disabled || pending !== null}
             aria-busy={isPending || undefined}
             // Full expectedNote in the tooltip + on screen below the
-            // short description — REMAINING-IMPROVEMENTS U2: the FAIL
+            // short description. The FAIL
             // sample's defect ("title-case warning prefix") should be
             // readable from the thumbnail without clicking.
             title={s.expectedNote}

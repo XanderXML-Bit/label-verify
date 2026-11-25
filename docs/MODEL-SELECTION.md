@@ -24,7 +24,7 @@ be able to trace it directly back to this document.
 
 ## 2. Candidate set
 
-Per [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) §2, the full bake-off candidate set is:
+The original comparison included these candidates:
 
 | ID | Model | Provider | Pricing (per 1M in / out) |
 |----|-------|----------|---------------------------|
@@ -113,7 +113,7 @@ result. Routine catches regressions; the bake-off picks the winner.
 | | |
 |---|---|
 | **Primary** | **T6 — Gemini 3.1 Flash Lite (Google direct SDK)** |
-| **Borderline-Gov-Warning second-opinion** | **Gemini 2.5 Flash (Google direct SDK)** — wave 22 swap (2026-05-13). Same-provider, materially smarter on borderline cases. See [`WAVE-22-FINDINGS.md`](WAVE-22-FINDINGS.md). |
+| **Borderline-Gov-Warning second-opinion** | **Gemini 2.5 Flash (Google direct SDK)** — wave 22 swap (2026-05-13). Same-provider, materially smarter on borderline cases. See the [second-opinion experiments](EXPERIMENTS.md#model-and-scoring-experiments). |
 | **Cross-provider backup on primary failure** | T7b — GPT-5.4-nano (OpenAI direct SDK) — fires only when primary Gemini itself fails (5xx / timeout / abort). Distinct from the second-opinion path. |
 | Run ID | `benchmarks/results/2026-05-12T05-18-48-405Z.{json,md}` (T1–T12 + C1 main run) + `2026-05-12T05-42-10-912Z.{json,md}` (Anthropic + open-weight rerun via OpenRouter) |
 | Corpus | `test-data-v2` routine subset (12 of 90 curated images covering compliant baselines, Government-Warning failure modes, and degradation classes). See §4.3a for the 170-image combined-corpus rerun that confirmed the winner on the broader set. |
@@ -141,7 +141,7 @@ contenders fail decisive criteria:
 | T10 | Qwen 3.6 Flash (OR) | 38.1 %† | 25.3 s | $0.25 | Below FN-rate floor; 3 timeout failures |
 | T11 | Llama 4 Maverick (OR) | 34.5 % | 3.58 s | $0.15 | Below FN-rate floor; fast but flat-schema model with confidence-coercion gap |
 | T12 | Claude Opus 4.7 (OR) | 51.2 % | 6.39 s | $5.00 | Flat-schema model — coercion-path ceiling ~55 % on this corpus |
-| C1 | OCR + Gemini Flash Lite (T1 + T6 combined) | 89.3 % | 2.89 s | $0.25 | OCR-as-hint provides no accuracy gain — the C1 working hypothesis from `docs/archive/APPROACH.md` §4.1 is **falsified** |
+| C1 | OCR + Gemini Flash Lite (T1 + T6 combined) | 89.3 % | 2.89 s | $0.25 | Adding OCR text reduced accuracy on this run |
 | T1 | Tesseract OCR baseline | 33.3 % | 0.64 s | $0 | Network-blocked fallback; not a serious contender on accuracy |
 | T5b | Claude Haiku 4.5 (OR) | 54.8 % | 4.07 s | $1.00 | Schema-coercion gap; well below floor on this run |
 
@@ -175,7 +175,7 @@ computed across the 5 successful images.
 
 ### 4.3 What the priors got wrong
 
-The pre-registered prediction matrix in `docs/archive/APPROACH.md` §4 expected:
+The table compares the original predictions with the measured results.
 
 | Prediction | Predicted | Measured | Verdict |
 |------------|-----------|----------|---------|
@@ -187,8 +187,7 @@ The pre-registered prediction matrix in `docs/archive/APPROACH.md` §4 expected:
 ### 4.3a Combined-corpus rerun (170 images, 2026-05-12 morning)
 
 After the initial bake-off settled on T6, the corpus was expanded to
-include 50 photo-realistic AI labels + 30 targeted Codex batch-02
-labels for a 170-image combined run. T6 was re-benched alongside T6f
+include 80 AI-generated labels for a 170-image combined run. T6 was re-benched alongside T6f
 (Gemini 3 Flash Preview, the newer/larger Gemini Flash tier) to
 confirm the choice held:
 
@@ -286,6 +285,6 @@ smoke mode it's about 90 seconds.
 - [ ] Pareto frontier table actually includes the winner
 - [ ] Runtime primary path remains pinned; benchmark candidates stay out of `.env.example`
 - [ ] `vercel.json` env block (if present) updated
-- [ ] [`docs/archive/APPROACH.md`](docs/archive/APPROACH.md) §6 Decision Record table updated
+- [ ] Experiment and outcome recorded in the [experiment log](EXPERIMENTS.md)
 - [ ] Markdown report committed to `benchmarks/results/`
 - [ ] One paragraph in this file's §4.2 explaining the choice

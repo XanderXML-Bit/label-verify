@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { POST } from "@/app/api/application/parse/route";
 
-// Per REMAINING-IMPROVEMENTS R4: confirm /api/application/parse
+// Confirm /api/application/parse
 // enforces a per-IP, per-endpoint rate limit distinct from
 // /api/verify. The endpoint accepts file uploads and on the image
 // path calls Gemini (billed), so the bucket has to be its own.

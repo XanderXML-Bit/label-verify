@@ -223,7 +223,6 @@ configured provider. The OpenRouter benchmark uses a separate key.
 
 ## Audit trail
 
-All security-relevant changes are tagged `Security:` in
-`CHANGELOG.md` and have commit messages explaining the threat
-they address. The full security audit ran on 2026-05-14.
+The [changelog](CHANGELOG.md#security) lists notable security changes.
+The full security audit ran on 2026-05-14.
 See [Dependency posture](#dependency-posture) for the 2026-11-05 dependency audit.

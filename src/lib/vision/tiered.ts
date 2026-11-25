@@ -5,7 +5,7 @@ import type {
   ExtractorResult,
 } from "./types";
 
-// ─── Tiered escalation extractor (C5 from APPROACH.md §2.3) ─────────────────
+// Tiered escalation extractor (C5)
 //
 // Always runs the fast tier first. If the minimum per-field confidence is
 // below `confidenceThreshold`, runs the strong tier and returns its result
