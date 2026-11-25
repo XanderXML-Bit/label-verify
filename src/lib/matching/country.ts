@@ -139,10 +139,8 @@ interface Canon {
   subRegion: string | null;
 }
 
-// Exported (wave-33 audit, Sub-agent A bug #14) so the producer
-// string-declared path can re-use the same canonicaliser as the
-// standalone country comparator — keeping the regulator-disqualifying
-// gate consistent across both code paths.
+// The string-declared producer and standalone country comparators
+// share this canonicaliser so both apply the same country mismatch rules.
 export function canonicalizeCountry(s: string): Canon {
   return canonicalize(s);
 }
@@ -185,9 +183,9 @@ function canonicalize(s: string): Canon {
 // §4.39, §5.36). When a US-produced bottle's front label doesn't
 // print "USA" / "Product of USA", the model correctly returns null,
 // and the previous comparator marked that FAIL — the dominant cause
-// of false-FAILs on the photo-realistic OOD corpus (Codex AI labels
-// over-claim country_of_origin="USA" on labels that don't visibly
-// state one). The fix: if declared is USA and extracted is null,
+// of false-FAILs on the photo-realistic OOD corpus. The generated
+// ground truth declared country_of_origin="USA" even where the
+// label shows no country. If declared is USA and extracted is null,
 // REVIEW (let a human confirm it's domestic) rather than hard FAIL.
 // Non-US declared with null extracted stays FAIL — country marking
 // IS required for imports.

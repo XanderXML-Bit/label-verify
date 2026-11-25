@@ -284,10 +284,9 @@ async function runVerify(
   // The route used to thread a `mode` parameter through to the
   // orchestrator. The model picker was retired (single production
   // path) and exposing it on the public API would let an
-  // unauthenticated caller route to a costlier/different tier — a
-  // real abuse surface flagged in the Hermes pre-submission audit
-  // (BLOCKER #3). Any `mode` field in the request body or form is
-  // now silently ignored. Operators running internal A/B tests can
+  // unauthenticated caller select a different, potentially costlier tier.
+  // The API ignores the `mode` field in the request body or form.
+  // Operators running internal A/B tests can
   // still inject an Extractor via the internal `extractor` option.
   try {
     const result = await verifyLabel(buffer, declared, {

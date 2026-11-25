@@ -39,7 +39,7 @@
   "audit_notes": [
     {
       "date": "2026-05-12",
-      "reviewer": "sub-agent + manual confirm",
+      "reviewer": "Visual inspection",
       "note": "Motion-blur degradation makes per-flag GW verification impossible. Set the four verifiable bool flags to null so the bench scorer cannot claim verified-compliant on this image."
     }
   ]

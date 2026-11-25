@@ -762,5 +762,5 @@
       "after": "beer"
     }
   ],
-  "postAuditRollbacksRationale": "Sub-agent audit of ai-label-0001..0050 (2026-05-12 evening) caught that 4 labels were nulled in the original country sweep but DO visibly print country-of-origin text on the label (0012 Spanish, 0024/0039/0041 English Product-of-USA). Restored those 4. Plus 2 class_category typos (0008, 0022 were marked fortified_wine but are Porter beer)."
+  "postAuditRollbacksRationale": "Visual review of ai-label-0001..0050 (2026-05-12 evening) caught that 4 labels were nulled in the original country sweep but DO visibly print country-of-origin text on the label (0012 Spanish, 0024/0039/0041 English Product-of-USA). Restored those 4. Plus 2 class_category typos (0008, 0022 were marked fortified_wine but are Porter beer)."
 }

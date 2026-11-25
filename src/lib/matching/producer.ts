@@ -162,10 +162,9 @@ export function compareProducer(
       .join(" ");
     const r = ratio(decl, normalize(joined));
 
-    // Wave-33 audit (Sub-agent A bug #14): regulator-disqualifying
-    // country gate on the string-declared path. The structured-declared
-    // path already runs `compareCountry` against `declared.country`
-    // and forces FAIL on canonical mismatch; the string path
+    // Apply the country mismatch check to string declarations.
+    // The structured-declared path runs `compareCountry` against
+    // `declared.country` and forces FAIL on canonical mismatch. The string path
     // previously did fuzzy-string-only, so "...San Diego, CA, USA" vs
     // an extracted MEXICO country could PASS at similarity ~0.93
     // because one token-swap is below the threshold. We now extract
@@ -174,10 +173,9 @@ export function compareProducer(
     // of overall similarity. Per 27 CFR §4.39 / §5.36 country marking
     // is a compliance-critical field.
     //
-    // Wave-33 pass 3 (asymmetric-gate fix, Hermes critique): the
-    // gate originally only fired when `extracted.country` was non-null,
-    // which left the symmetric hole open: declared "...Mexico" vs
-    // `extracted.country = null` would skip the gate entirely and fall
+    // The original country check required a non-null `extracted.country`:
+    // a declaration ending in "...Mexico" with `extracted.country = null`
+    // would skip the gate and fall
     // through to fuzzy-only. Mirror `compareCountry` semantics: when
     // declared parses to a non-USA country and extracted prints no
     // country, that's an import-marking FAIL (27 CFR §4.39 / §5.36).
@@ -188,9 +186,8 @@ export function compareProducer(
       // Take up to the last 2 comma-separated segments as country candidates
       // (covers "..., CA, USA" and "..., USA" but not the street/city tail).
       //
-      // Self-audit fix (wave-33, sub-agent pass 2): the previous version
-      // walked `tail` in array order and short-circuited on the FIRST
-      // recognised match. That was wrong because 2-letter tokens like
+      // The previous implementation stopped at the first recognised
+      // match in `tail`. That was wrong because 2-letter tokens like
       // `CA` / `IT` / `IN` / `DE` / `MX` / `IE` / `CH` are simultaneously
       // (a) US state abbreviations and (b) ISO-2 country codes in our
       // SYNONYMS table. On "Stone Brewing Co., San Diego, CA, USA",

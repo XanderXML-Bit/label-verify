@@ -216,8 +216,7 @@ describe("Wave-35e — external abort behaviour in verifyLabel", () => {
     // wiring exists by source inspection.
     const fs = await import("node:fs");
     const src = fs.readFileSync("src/lib/verify.ts", "utf-8");
-    // The two-controller pattern with a shared external-abort listener
-    // is the wave-33 fix (sub-agent A bug #8). Pin it.
+    // OCR and vision use separate controllers and share an external-abort listener.
     expect(src).toMatch(/const ctrl = new AbortController\(\)/);
     expect(src).toMatch(/const ocrCtrl = new AbortController\(\)/);
     expect(src).toMatch(/const onExternalAbort\s*=\s*\(\)\s*=>\s*\{/);

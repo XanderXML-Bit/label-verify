@@ -2,7 +2,7 @@ name: E2E against live deployment
 
 # Manual + nightly. Hits the production URL with Playwright so we
 # catch deployment regressions (broken CSP, missing env var, expired
-# vendor key) that local tests can't see. Per REMAINING-IMPROVEMENTS T1.
+# vendor key) that local tests can't see.
 #
 # Why not on every PR: each run hits the real Gemini API (billed) and
 # the production URL's rate limit. Nightly + on-demand keeps signal

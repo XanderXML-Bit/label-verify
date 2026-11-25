@@ -107,9 +107,8 @@ export const POST = withRequestId(async (req) => {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
   }
   const parsedAppCache = new WeakMap<File, ParsedApplication>();
-  // Wave-33 audit (Sub-agent A bugs #1/#9): defensive Buffer cache so
-  // each File's bytes are read at most once per request. Previously
-  // multiple code paths (inline-manifest detection, content-pairing
+  // Cache each File's bytes to read it at most once per request.
+  // Previously, multiple code paths (inline-manifest detection, content-pairing
   // fingerprint, broadcast, per-pair verify) each independently called
   // `file.arrayBuffer()` on the same File, which is implementation-
   // defined on undici's web-streams-backed File at the edge runtime

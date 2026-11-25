@@ -116,9 +116,8 @@ export function perturb(gt: GtFile): PerturbResult {
     mutated.push("net_contents");
   }
 
-  // GT often has country_of_origin === null (Codex couldn't visually
-  // confirm). Treat null as "USA" for the comparison so we still set a
-  // wrong non-USA country in that case.
+  // Visual review often leaves country_of_origin null. Treat null as
+  // "USA" for the comparison so the altered country is outside the USA.
   const currentCountry = gt.fields.country_of_origin ?? "USA";
   const newCountry = pickDistinct(WRONG_COUNTRIES, currentCountry, `${id}:country`);
   if (newCountry !== currentCountry) {

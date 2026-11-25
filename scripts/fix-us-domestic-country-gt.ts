@@ -1,11 +1,10 @@
 #!/usr/bin/env tsx
 // scripts/fix-us-domestic-country-gt.ts
 //
-// One-shot fix for the OOD ground-truth bug caught by the 2026-05-12
-// multi-agent corpus re-audit:
+// One-shot fix for the OOD ground-truth issue found in the 2026-05-12 corpus review.
 //
 //   • US-domestic AI-generated labels were given GT
-//     `fields.country_of_origin: "USA"` by the Codex generation prompt.
+//     `fields.country_of_origin: "USA"` by the image-generation prompt.
 //   • But TTB regulations only mandate country-of-origin text on
 //     IMPORTS (27 CFR §4.39, §5.36). The model correctly returns
 //     null when no country is printed, and `compareCountry` routes

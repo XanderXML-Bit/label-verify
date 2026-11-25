@@ -1,6 +1,4 @@
-// Wave-33 regression pins: tests that lock in each of the bug fixes
-// surfaced by the Sub-agent A code review. Each test exists so a
-// future refactor cannot silently re-introduce the bug.
+// Regression tests for the Wave-33 bug fixes.
 
 import { describe, expect, it, vi } from "vitest";
 import sharp from "sharp";
@@ -380,7 +378,7 @@ describe("Wave-33 bug #7 pin: extractOnly has separate OCR and vision controller
 });
 
 // ─── batch-capacity: MAX_BATCH_SIZE env honoured ──────────────────
-describe("Wave-33 audit (Sub-agent B #8): MAX_BATCH_SIZE env override", () => {
+describe("MAX_BATCH_SIZE environment override", () => {
   it("configuredMaxBatchHardCap reads MAX_BATCH_SIZE from env (positive int)", async () => {
     const original = process.env.MAX_BATCH_SIZE;
     try {
