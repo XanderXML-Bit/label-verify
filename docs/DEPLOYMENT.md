@@ -21,18 +21,6 @@
   value and would add maintenance burden post-submission.
 - **Region:** `iad1` (us-east-1, low-latency for East Coast users).
 
-### 1.1 Provision-Today Checklist
-
-The provisioning happens *before* the first extractor is written, so
-the URL is live and warm by the time the demo exists. From the
-archived `docs/archive/TODO.md` Phase 1:
-
-- [x] Create Vercel project linked to the GitHub repo
-- [x] First push triggers a deploy; the placeholder home page should
-      respond within minutes
-- [x] Smoke-test from a clean browser
-- [x] Record the `*.vercel.app` URL in the submission
-
 ## 2. Why Vercel
 
 - Next.js is first-class on Vercel — zero-config builds.
@@ -66,8 +54,7 @@ CHECKLIST cover acquisition.
 | `MAX_BATCH_SIZE` | Optional | Hard ceiling on the derived batch capacity (`computeBatchCapacity`). Default: `1000`; capped at `5000` defensively. Consumed by `src/lib/batch-capacity.ts`. |
 | `DEBUG_TOKEN` | Optional | Bearer token gating `/api/debug/last`, `/api/queue`, and the detailed `/api/health` payload. Leave unset to hide those surfaces entirely. |
 
-A `.env.example` documents every var. The README explains how to obtain
-each key.
+See [the environment template](../.env.example) for provider setup links and additional settings.
 
 ## 4. Build & Deploy Pipeline
 

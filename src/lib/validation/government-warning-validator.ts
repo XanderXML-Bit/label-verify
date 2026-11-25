@@ -361,7 +361,7 @@ export function scoreBold(
     // false-fails on visibly-compliant labels (oracle-confirmed)
     // were stuck in this exact code path.
     //
-    // Pre-registered hypothesis (docs/WAVE-13-FINDINGS.md):
+    // The baseline repeatability study in docs/EXPERIMENTS.md proposed this:
     //  - false-fail count drops by >= 5 (operator-cost win).
     //  - false-pass-on-correct count must NOT increase (regulator-
     //    dangerous regression check).
@@ -473,8 +473,7 @@ function scoreSize(
 // conversion over-estimated some labels above the 0.5× floor, AND
 // the degraded-confidence PASS aggregated against high-confidence
 // other subscores produced an overall PASS that bypassed the safety
-// net). Reverted; tighter-floor variant queued as wave-16 in
-// docs/REMAINING-IMPROVEMENTS.md.
+// net). That experiment was reverted.
 export function sizeFromMm(
   prefixMm: number,
   minMm: number,
@@ -485,7 +484,7 @@ export function sizeFromMm(
   }
   // Wave-28b (2026-05-14): degraded-PASS band 0.65–0.80 ×minMm.
   // Re-applies the wave-26 attempt under the new stratified guardrail
-  // (`docs/WAVE-28a-STRATIFIED-GUARDRAIL.md`). The empirical bench in
+  // (`docs/BENCH-PROTOCOL.md`). The empirical bench in
   // wave-26 showed this band moves 11+ real-photo compliant labels
   // from REVIEW → PASS while adding 1 fp-on-correct on a synthetic
   // adversarial S2 case. Pre-wave-28 single-budget criterion rejected

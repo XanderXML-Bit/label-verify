@@ -1,7 +1,7 @@
-// Benchmark runner. Per APPROACH.md §2.1, scope is exactly four contenders:
+// Benchmark runner. The default comparison runs four techniques:
 //   T1 Tesseract OCR baseline (text-only — extracts what it can find)
 //   T4 GPT-4o-mini Vision
-//   T6 Gemini 2.0 Flash Vision
+//   T6 Gemini 3.1 Flash Lite Vision
 //   C1 OCR + Vision combined (T1 + T6)
 //
 // For each (technique, image) pair, the runner preprocesses, runs the
@@ -299,7 +299,7 @@ async function runTechnique(
         });
 
         // Score only the first successful trial. Additional trials are kept
-        // for latency variance only (per APPROACH.md §5 step 3).
+        // for the latency distribution.
         if (!scored) {
           const result = await scoreImage(gt, extracted.fields, {
             width: pre.width,
@@ -684,7 +684,7 @@ async function main(): Promise<void> {
   const perImagePath = join(RESULTS_DIR, `${stamp}-per-image.json`);
   await writeFile(jsonPath, JSON.stringify(summary, null, 2));
   await writeFile(mdPath, renderMarkdown(summary));
-  // Per-image outcome dump for offline re-analysis (REMAINING-IMPROVEMENTS A4).
+  // Per-image outcomes for offline analysis.
   // Lets reviewers (and the threshold calibration script) inspect individual
   // (image, technique, field) outcomes without rerunning the bench.
   await writeFile(

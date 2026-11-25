@@ -13,7 +13,7 @@ function makeReq(headers: Record<string, string> = {}): NextRequest {
   return new NextRequest("http://test.local/api/verify", { headers });
 }
 
-describe("X-Request-Id middleware (REMAINING-IMPROVEMENTS R2)", () => {
+describe("X-Request-Id middleware", () => {
   it("generates a UUID when the client sends nothing", () => {
     const res = middleware(makeReq());
     const id = res.headers.get("X-Request-Id");

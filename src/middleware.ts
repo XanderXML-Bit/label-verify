@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requestIdFor } from "./lib/request-id";
 
-// Per REMAINING-IMPROVEMENTS.md R2 — every request gets an X-Request-Id
+// Every request gets an X-Request-Id
 // (UUID v4) on its way in and the same value echoed back in the response
 // headers. Two purposes:
 //   1. Operators can correlate user-reported failures with server logs

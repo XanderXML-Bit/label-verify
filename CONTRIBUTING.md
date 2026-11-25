@@ -78,8 +78,7 @@ conscious: routine = 15-label subset.
 1. Create `test-data-yourname/labels/` and
    `test-data-yourname/ground-truth/`.
 2. Each label needs a sibling JSON ground-truth file conforming to
-   `GroundTruth` in `benchmarks/scorer.ts` (see
-   `docs/archive/CODEX-HANDOFF.md` §3 for the canonical schema).
+   [`GroundTruth` schema](benchmarks/scorer.ts).
 3. Validate with `npx tsx scripts/validate-corpus.ts test-data-yourname`.
 4. Run a bake-off pass:
    `npm run bench -- --corpus test-data-yourname --technique T6 --trials 1`.
@@ -141,7 +140,7 @@ it via the GitHub Actions UI when a change might affect accuracy.
 - Why the threshold is 0.55: `docs/MODEL-SELECTION.md` §3, plus the
   in-code comment block at `src/lib/verify.ts:108`.
 - What the verifier gets wrong: `docs/FAILURE-MODES.md`.
-- Open items: `docs/REMAINING-IMPROVEMENTS.md`.
+- Experiment results: [Experiment log](docs/EXPERIMENTS.md).
 - Security: `SECURITY.md`.
 
 If those don't answer the question, open a GitHub issue.

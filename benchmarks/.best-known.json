@@ -53,7 +53,7 @@
   },
   "_notes": [
     "Updated 2026-05-15: wave-31j sets 4 new latency/error records (p50_total, p50_vision, p95_vision, errors).",
-    "passRateOnCorrect champion at 76.5% reflects a deprecated pre-wave-28 config that traded stratified guardrail safety for higher headline pass-rate. The current production state (wave-31j, 69.8%) is a deliberate Pareto move: adv.fp-on-correct 6→2 with comp.false-fail 1→0, regulator-critical metrics. See docs/WAVE-31j-UPSCALE-2000-SHIPPABLE.md.",
+    "passRateOnCorrect champion at 76.5% reflects a deprecated pre-wave-28 config that traded stratified guardrail safety for higher headline pass-rate. The current production state (wave-31j, 69.8%) is a deliberate Pareto move: adv.fp-on-correct 6→2 with comp.false-fail 1→0, regulator-critical metrics. See the Lanczos upscaling entry in docs/EXPERIMENTS.md.",
     "p95_total champion at 7317 ms is from a smaller-N early bench; not a fair comparison to the wave-31j 340-task cross-pair bench."
   ]
 }

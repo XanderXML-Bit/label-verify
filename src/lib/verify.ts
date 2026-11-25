@@ -115,7 +115,7 @@ const PRODUCTION_MODE_ID = "default";
  *       · 0.55 is therefore on the Pareto plateau; no change.
  *     Catching the remaining 6 wrong PASSes needs a different
  *     intervention (second-opinion vision call, tighter comparator
- *     gating) — not a threshold tweak. Tracked in REMAINING-IMPROVEMENTS A8.
+ *     gating).
  *
  * Per-field comparators (ABV, net-contents, etc.) still apply their own
  * field-specific thresholds. This is a *second-layer* floor that catches
@@ -212,7 +212,6 @@ export async function verifyLabel(
   // was falsified in the bake-off (text fed in lowered accuracy on
   // stylised fonts). OCR's only role is to supply pixel-tight word
   // bboxes for the Government Warning bold + size subscores below.
-  // Per code-review Hermes CRITICAL #1.
 
   const visionCtx: ExtractorContext = {
     // ocrText intentionally omitted — see comment above.
@@ -464,10 +463,8 @@ export async function verifyLabel(
   // independent vision models without pixel corroboration is a much
   // stronger signal than one model's self-report alone.
   //
-  // See REMAINING-IMPROVEMENTS.md for the corresponding size-subscore
-  // borderline-measurement case (~1 of the 5 Type I errors), which
-  // has a different mechanism (OCR found the prefix but it's just
-  // over the 0.8×min threshold) and is handled separately.
+  // A borderline size measurement uses a separate check. OCR found the
+  // prefix, but its height is just above 0.8 times the minimum.
   const boldFallbackOnlyPass =
     gov.status === "pass" &&
     gov.subscores.bold.status === "pass" &&
@@ -908,11 +905,8 @@ export async function extractOnly(
   const modeUsed = PRODUCTION_MODE_ID;
   const extractor = opts.extractor ?? buildDefaultExtractor();
 
-  // extractOnly mirrors verifyLabel's no-ocr-text-to-vision policy
-  // (Hermes audit, BLOCKER #4 — README said "vision-only" but this
-  // path was still passing ocrText into the vision prompt). OCR's
-  // text is captured for debug-trace below; only ocrWords (bboxes)
-  // feed the Gov-Warning validator AFTER vision returns.
+  // Like verifyLabel, extractOnly keeps OCR text in the debug trace.
+  // Only OCR word boxes feed the warning validator after vision returns.
   //
   // Concurrency: vision and OCR fire in parallel here, matching the
   // verifyLabel path. The legacy 1.5 s pre-vision wait was a remnant

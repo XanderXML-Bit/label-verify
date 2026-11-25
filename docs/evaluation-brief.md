@@ -114,9 +114,9 @@ attempt.** Scope discipline is itself part of the design.
 
 - **Restricted networks** — some managed networks block third-party
   domains. Our deployment must work from a standard browser; our verification
-  pipeline should degrade gracefully if a hosted model is unreachable. See
-  `docs/archive/APPROACH.md` for the local-model fallback plan (the
-  pre-implementation planning doc; never shipped as code).
+  pipeline should degrade gracefully if a hosted model is unreachable. The
+  [model survey](EXPERIMENTS.md#reviews-and-research) lists local candidates. The
+  implemented fallback uses a second hosted provider.
 - **5-second budget is tight** for vision-model calls — multiple round trips
   to a hosted LLM will not fit. See `docs/ARCHITECTURE.md` §4 (Latency budget).
 - **Ground truth is hard** — we need test labels where we *know* every field

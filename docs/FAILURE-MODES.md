@@ -85,10 +85,8 @@ floor markers, and trailing punctuation are not handled.
 **What the orchestrator does.** Returns PASS at component-level for
 the matching components (street prefix, city, state, postal, country)
 and FAIL for the suite/floor mismatch. The aggregated producer status
-is FAIL but the per-component breakdown (auto-expanded on non-PASS as
-of 2026-05-12, REMAINING-IMPROVEMENTS U3) lets a reviewer see at a
-glance which component diverged and decide whether the actual label is
-TTB-compliant despite the formatting drift.
+is FAIL. The per-component breakdown expands on a Fail or Review verdict
+so you can see which part of the address differs.
 
 **Headline impact.** Maybe 4 OOD images on the 170-corpus. Currently
 caught by the producer FAIL → orchestrator FAIL → reviewer dispositions
@@ -241,6 +239,4 @@ fine-tune a CNN as a third opinion on borderline Gov-Warning bold).
 
 ---
 
-_Maintained alongside [`docs/REMAINING-IMPROVEMENTS.md`](REMAINING-IMPROVEMENTS.md)
-and the bench artifacts under `benchmarks/results/`. Last updated 2026-05-16
-after the wave-32 deep-audit pass; bug-fixes documented in CHANGELOG._
+See the [experiment log](EXPERIMENTS.md) for the measured results behind these cases.

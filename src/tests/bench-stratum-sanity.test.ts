@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-// Per REMAINING-IMPROVEMENTS.md T4: sanity check on the most recent
+// Sanity check on the most recent
 // bench result. If any (beverage_type × condition × field) stratum
 // returns 0 % accuracy over n ≥ 20, that's almost certainly a
 // systematic data error (e.g. ground-truth field rename, extractor
@@ -78,7 +78,7 @@ function findLatestSummary(): BenchSummary | null {
   return null;
 }
 
-describe("Bench result stratified sanity (REMAINING-IMPROVEMENTS T4)", () => {
+describe("Benchmark scores by stratum", () => {
   const summary = findLatestSummary();
 
   it.runIf(summary !== null)(

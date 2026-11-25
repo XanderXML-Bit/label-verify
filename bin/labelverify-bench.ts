@@ -166,9 +166,8 @@ interface CallRecord {
 }
 
 function isGtCompliant(gt: GtFile): boolean {
-  // Truth-side compliance comes from the four GW booleans, not from
-  // `gov_warning_case` (overloaded with image-quality tags — see
-  // CHANGELOG 2026-05-13 mid).
+  // The warning flags determine expected compliance.
+  // `gov_warning_case` also contains image-quality tags.
   const w = gt.fields.government_warning;
   if (!w) return true;
   return w.present && w.text_matches_regulation && w.prefix_all_caps && w.prefix_bold && w.meets_size_minimum;

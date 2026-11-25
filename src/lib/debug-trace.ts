@@ -5,9 +5,8 @@ import type { DeclaredFields, VerifyResponse } from "./types";
 // One captured pipeline run. The reviewer needs enough breadcrumbs to answer
 // "why did this label fail for an odd reason?" without re-running the call:
 // the declared inputs, the preprocessed dimensions (so they can spot a
-// rotation / crop bug), the model identity + prompt hash (for reproducibility
-// — see APPROACH.md §7), the raw OCR text, the raw extractor output, and the
-// final VerifyResponse the user actually saw.
+// rotation or crop error), the model identity and prompt hash, the raw OCR
+// text, the raw extractor output, and the final VerifyResponse.
 
 export interface VerifyTrace {
   id: string;
