@@ -1,7 +1,7 @@
 {
   "runAt": "2026-05-12T05:18:48.405Z",
   "mode": "routine",
-  "corpusRoot": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data",
+  "corpusRoot": "test-data",
   "corpusSize": 12,
   "trialsPerImage": 1,
   "techniques": [

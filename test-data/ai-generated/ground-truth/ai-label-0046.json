@@ -4,7 +4,6 @@
   "source": {
     "tool": "built-in image_gen",
     "originalFile": "ig_0d34551f0105b334016a028d9df9b4819592a977523e00178f.png",
-    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028d9df9b4819592a977523e00178f.png",
     "generatedAtLocal": "2026-05-12T02:18:33.452Z",
     "originalWidth": 1254,
     "originalHeight": 1254
@@ -26,7 +25,7 @@
   "visualAudit": {
     "status": "robustnessOnly",
     "usageTier": "robustnessOnly",
-    "reviewer": "Codex + 4 sub-agent chunk audit",
+    "reviewer": "Visual inspection",
     "reviewedAt": "2026-05-12T03:00:34.714Z",
     "notes": [
       "Warning intentionally tiny; primary fields legible but exact warning cannot be certified."

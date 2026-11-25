@@ -13,7 +13,7 @@
 
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { execFileSync } from "node:child_process";
 
 function loadDotenv(path: string): void {
@@ -176,8 +176,8 @@ function isGtCompliant(gt: GtFile): boolean {
 
 function toDeclared(gt: GtFile): import("../src/lib/types").DeclaredFields | null {
   const f = gt.fields;
-  // GT.country_of_origin is null on the `ai-label-*` rows where Codex
-  // couldn't visually confirm a country marking. That's a legitimate
+  // GT.country_of_origin is null on the `ai-label-*` rows where visual
+  // inspection found no readable country marking. That's a legitimate
   // declared value — TTB only requires country marking on imports
   // (27 CFR §4.39 / §5.36) so a US-domestic application that didn't
   // declare a country should still verify. Pass null through to the
@@ -188,7 +188,7 @@ function toDeclared(gt: GtFile): import("../src/lib/types").DeclaredFields | nul
       : null;
   // Wave-13 root-cause fix: GT.net_contents is null on a small number
   // of corpus rows where the label deliberately renders the net
-  // contents in a way Codex flagged as un-machine-readable (e.g.
+  // contents in a way that is hard for OCR to read (e.g.
   // ai-label-0048 prints "5O ml" with a letter-O instead of a zero).
   // The schema rejects null net_contents (it's a COLA-mandatory field
   // per 27 CFR §4.50 / §5.32), so passing it through here lands a Zod
@@ -308,7 +308,7 @@ async function cmdCrossPair(args: Args): Promise<void> {
           elapsedMs: Date.now() - t0,
           govWarningCase: task.govWarningCase,
           declared: declaredForPush,
-          gtPath: task.gtPath,
+          gtPath: relative(root, task.gtPath).split(sep).join("/"),
           ...partial,
           // Re-spread the required actual + imageQuality from `partial`
           // so the spread above doesn't drop them.
