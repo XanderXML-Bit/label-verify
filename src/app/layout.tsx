@@ -108,11 +108,9 @@ export default function RootLayout({
             Script bodies are string literals under our control; no
             user-provided content, so dangerouslySetInnerHTML is safe. */}
         <script
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
         />
         <script
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: MODE_INIT_SCRIPT }}
         />
       </head>

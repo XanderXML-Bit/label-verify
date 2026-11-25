@@ -34,7 +34,7 @@ Two verification errors were excluded from the rates. See the [recorded run](ben
 ## Run it locally
 
 ```bash
-# Prereqs: Node ≥ 20, git
+# Prereqs: Node.js ≥ 20.9.0, git
 git clone https://github.com/XanderXML-Bit/label-verify.git
 cd label-verify
 ```
@@ -57,7 +57,7 @@ Open [localhost:3000](http://localhost:3000) and choose a sample. The default se
 
 ```bash
 npm run typecheck
-npm run lint
+npm run lint -- --max-warnings=0
 npm run verify:claims
 npm test
 npm run build

@@ -135,7 +135,6 @@ export function BatchView({
   // Open SSE on mount; refreshed when the user clicks reconnect. The
   // inline-batch path returns terminal rows in the initial response —
   // skip the SSE entirely in that case (no Vercel-instance race).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (allRowsTerminal) return;
     const es = new EventSource(`/api/verify/batch/${batchId}/stream`);

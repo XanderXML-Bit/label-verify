@@ -113,7 +113,7 @@ Every PR must pass:
 
 ```bash
 npm run typecheck    # tsc --noEmit, zero output expected
-npm run lint         # next lint, only pre-existing warnings allowed
+npm run lint         # ESLint, only pre-existing warnings allowed
 npm run test         # full vitest suite (~960 tests across 100 files, ~10 s)
 ```
 

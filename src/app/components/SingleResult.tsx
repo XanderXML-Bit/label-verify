@@ -87,7 +87,6 @@ export function SingleResult({
   useEffect(() => {
     setReviewerAtVerifyTime(getStoredReviewer());
     // Intentionally only run on mount — see above for why.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Move focus to the verdict when the result appears. On a phone the

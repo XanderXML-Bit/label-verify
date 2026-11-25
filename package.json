@@ -4,11 +4,11 @@
   "private": true,
   "description": "Independent prototype that checks beverage labels against TTB labeling rules. The public demo runs offline on three bundled samples and makes no AI model calls.",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "typecheck": "node node_modules/typescript-native/bin/tsc --noEmit",
-    "lint": "next lint",
+    "lint": "eslint src --ext .js,.mjs,.cjs,.jsx,.ts,.tsx",
     "test": "vitest run",
     "verify:claims": "tsx bin/verify-claims.ts",
     "test:watch": "vitest",
@@ -44,7 +44,7 @@
     "csv-parse": "^5.5.6",
     "fast-fuzzy": "^1.12.0",
     "mammoth": "^1.13.0",
-    "next": "^15.5.28",
+    "next": "^16.4.6",
     "openai": "^4.68.0",
     "pdfjs-dist": "^4.7.76",
     "react": "^19.3.1",
@@ -54,6 +54,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.5",
     "@playwright/test": "^1.65.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.3",
@@ -75,7 +76,7 @@
     "vitest": "^2.1.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.9.0"
   },
   "overrides": {
     "@napi-rs/canvas": "$@napi-rs/canvas",
