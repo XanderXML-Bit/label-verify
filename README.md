@@ -7,11 +7,11 @@
 
 [Open the demo](https://label-verify-six.vercel.app) and choose the Pass, Fail, or Review sample to see the evidence behind its verdict.
 
-![Offline demo showing a passing beer label, the Government Warning checks, and the field comparisons](docs/screenshots/desktop.png)
+![Offline demo showing a beer label, a Pass verdict, and the Government Warning result](docs/screenshots/desktop.png)
 
 ## What it does
 
-- Compares label text with the declared brand, class, alcohol content, net contents, producer, country of origin, and government warning.
+- Compares label text with the declared brand, class, alcohol content, net contents, producer, and country of origin.
 - Checks the Government Warning for required text, capitalization, bold type, and minimum size.
 - Returns Pass, Fail, or Review with reasons by field. Review flags evidence that needs a human check.
 - Accepts single or batch uploads in self-hosted live-model mode. Batch input can pair files by filename or read declared data from a manifest.
