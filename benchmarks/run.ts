@@ -1,7 +1,7 @@
-// Benchmark runner. Per APPROACH.md §2.1, scope is exactly four contenders:
+// Benchmark runner. The default comparison runs four techniques:
 //   T1 Tesseract OCR baseline (text-only — extracts what it can find)
 //   T4 GPT-4o-mini Vision
-//   T6 Gemini 2.0 Flash Vision
+//   T6 Gemini 3.1 Flash Lite Vision
 //   C1 OCR + Vision combined (T1 + T6)
 //
 // For each (technique, image) pair, the runner preprocesses, runs the
@@ -10,13 +10,12 @@
 // (Wilson 95% CI, McNemar's test, stratified reporting, OOD column, FN rate
 // on Gov Warning).
 //
-// The corpus comes from --corpus <dir>/labels + <dir>/ground-truth (default
-// test-data; falls back to test-data-v2 if test-data is empty). See
-// docs/archive/CODEX-HANDOFF.md for the image-generation specification.
+// The corpus contains labels/ and ground-truth/ directories.
+// See docs/CORPORA.md for fixture layout.
 
 import { readFile, readdir, writeFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, relative, sep } from "node:path";
 
 // ─── .env.local loader (no extra deps) ──────────────────────────────────────
 // The bench runs via `tsx benchmarks/run.ts`, which does NOT auto-load
@@ -300,7 +299,7 @@ async function runTechnique(
         });
 
         // Score only the first successful trial. Additional trials are kept
-        // for latency variance only (per APPROACH.md §5 step 3).
+        // for the latency distribution.
         if (!scored) {
           const result = await scoreImage(gt, extracted.fields, {
             width: pre.width,
@@ -671,7 +670,7 @@ async function main(): Promise<void> {
   const summary: BenchmarkSummary = {
     runAt: new Date().toISOString(),
     mode,
-    corpusRoot,
+    corpusRoot: relative(ROOT, corpusRoot).split(sep).join("/") || ".",
     corpusSize: subset.length,
     trialsPerImage: trials,
     techniques: techRuns.map(summarizeRun),
@@ -685,7 +684,7 @@ async function main(): Promise<void> {
   const perImagePath = join(RESULTS_DIR, `${stamp}-per-image.json`);
   await writeFile(jsonPath, JSON.stringify(summary, null, 2));
   await writeFile(mdPath, renderMarkdown(summary));
-  // Per-image outcome dump for offline re-analysis (REMAINING-IMPROVEMENTS A4).
+  // Per-image outcomes for offline analysis.
   // Lets reviewers (and the threshold calibration script) inspect individual
   // (image, technique, field) outcomes without rerunning the bench.
   await writeFile(

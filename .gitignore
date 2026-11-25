@@ -25,10 +25,6 @@ eng.traineddata
 
 .vercel
 
-# Claude Code agent worktrees (live inside the repo but should not be
-# tracked as nested git directories).
-.claude/worktrees/
-
 # Internal review artifacts (AI audit logs, calibration data, audit prompts).
 .review/
 
@@ -47,9 +43,7 @@ benchmarks/results/cross-pair-*.json
 benchmarks/results/cross-pair-*.md
 benchmarks/results/aggregate-*.md
 
-# Wave plan scratchpads (e.g. `.wave-13-plan.md`) — temporary working
-# notes that are deleted before merge. Anything that survives lands
-# in `docs/REMAINING-IMPROVEMENTS.md` or a permanent docs file.
+# Temporary experiment plans
 .wave-*-plan.md
 
 # Playwright test-runner outputs — regenerated on every `test:e2e`

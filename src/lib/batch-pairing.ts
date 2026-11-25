@@ -56,7 +56,7 @@ export type FileKind = "image" | "application" | "other";
  *     relaxed pass needs to strip from both sides. Without this the
  *     documented `123-front.jpg ↔ 123-app.pdf` pairing wouldn't
  *     fire — the image's relaxed stem is `123`, the app's strict
- *     stem is `123-app`, they never match. (Hermes audit finding.)
+ *     stem is `123-app`, so they never match.
  *
  * Callers in the strict pass leave both flags off to lock to exact
  * matches; the relaxed pass enables the right flag per file kind.
@@ -176,9 +176,8 @@ export function pairByFilenameStem(files: File[]): PairingResult {
     appsByStrict.set(stem(app.name), app);
     // The relaxed map strips BOTH face tags AND app-side tags so an
     // application named `123-app.pdf` (image side `123-front.jpg`)
-    // pairs cleanly. (Hermes audit fix.) appsByStrict still keys on
-    // the unstripped stem so an explicit `123-app.pdf` next to
-    // `123-app-back.jpg` won't lose its strict match.
+    // pairs cleanly. `appsByStrict` keeps the full stem so
+    // `123-app.pdf` can still match `123-app-back.jpg` in the strict pass.
     appsByRelaxed.set(
       stem(app.name, { stripFaceTag: true, stripAppTag: true }),
       app,

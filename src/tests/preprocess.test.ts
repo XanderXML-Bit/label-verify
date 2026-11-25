@@ -114,7 +114,6 @@ describe("preprocessImage", () => {
     expect(pre.height).toBe(200);
   });
 
-  // Wave-32 audit (Sub-agent B G6): env-var override paths.
   describe("env-var overrides (wave-31 research escape hatches)", () => {
     it("LV_MAX_EDGE=1600 LV_ENLARGE=0 opts back into wave-28b behaviour", async () => {
       const original = {

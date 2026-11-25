@@ -19,8 +19,8 @@ function standardFontDataUrl(): string {
 }
 
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20 MB
-// Wave-33 audit (Sub-agent A bug #4): match the wave-31j preprocess
-// long-edge target (2000 px). Previously this was 1600 — the downstream
+// Match the image preprocessing target of 2000 px on the long edge.
+// At the previous target of 1600 px, the downstream
 // preprocess step then Lanczos-upscaled to 2000, which is pure resampling
 // noise on already-rasterized content. Native pdfjs rendering at the
 // final target is sharper AND skips an unnecessary upsampling pass.

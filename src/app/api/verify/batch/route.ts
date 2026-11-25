@@ -107,9 +107,8 @@ export const POST = withRequestId(async (req) => {
     return NextResponse.json(offlineDemoBody(), { status: 503 });
   }
   const parsedAppCache = new WeakMap<File, ParsedApplication>();
-  // Wave-33 audit (Sub-agent A bugs #1/#9): defensive Buffer cache so
-  // each File's bytes are read at most once per request. Previously
-  // multiple code paths (inline-manifest detection, content-pairing
+  // Cache each File's bytes to read it at most once per request.
+  // Previously, multiple code paths (inline-manifest detection, content-pairing
   // fingerprint, broadcast, per-pair verify) each independently called
   // `file.arrayBuffer()` on the same File, which is implementation-
   // defined on undici's web-streams-backed File at the edge runtime
@@ -178,7 +177,7 @@ export const POST = withRequestId(async (req) => {
   //
   //   1. EXPLICIT MANIFEST. A `manifest` form field (CSV or JSON) names
   //      each image by `filename` and inlines its declared fields. Use
-  //      when the COLA system can export a structured manifest.
+  //      when an upstream system exports a structured manifest.
   //
   //   2. AUTO-PAIR (no manifest). The upload contains image files
   //      (JPEG/PNG/WebP/HEIC/HEIF) AND application files (PDF / JSON /
@@ -200,7 +199,7 @@ export const POST = withRequestId(async (req) => {
   // parsed via vision OCR fallback at low confidence; verify the
   // declared values for this row." Distinguished from pairingErrors
   // (which gate the pair out) so the reviewer sees the verify proceed
-  // but with the caveat attached. Codex audit finding.
+  // with the caveat attached.
   const pairingWarnings: string[] = [];
   let pairing: PairingSummary;
 
@@ -793,7 +792,7 @@ export const POST = withRequestId(async (req) => {
         );
         continue;
       }
-      // Codex audit fix: when the application was parsed via the
+      // When the application was parsed via the
       // scanned-PDF vision fallback, `parsed.confidence === "low"` and
       // the warnings list explains why. Surface that as a non-fatal
       // note so the operator sees in the response payload that this

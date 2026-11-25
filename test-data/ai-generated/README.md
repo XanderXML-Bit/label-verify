@@ -1,6 +1,6 @@
 # AI-Generated Label Corpus
 
-This folder contains 50 AI-generated raster images created with the Codex built-in image generation tool for LabelVerify testing.
+An image-generation model created these 50 raster images for LabelVerify tests.
 
 - `labels/`: compressed project copies of the generated label images.
 - `ground-truth/`: one JSON metadata file per image.

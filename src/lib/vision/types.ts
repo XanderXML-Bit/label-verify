@@ -6,7 +6,7 @@ export type { OcrWord };
 // A single extracted field plus the model's self-reported confidence.
 // Wrapping every field this way lets the matcher and the UI distinguish
 // "the model is sure it is X" from "the model is guessing it is X."
-// Tiered escalation (APPROACH.md §2.3 C5) keys off these confidences.
+// Tiered escalation (C5) uses these confidences.
 export const FieldWithConfidenceSchema = <T extends z.ZodTypeAny>(inner: T) =>
   z.object({
     value: inner.nullable(),
@@ -77,8 +77,7 @@ export interface ExtractorContext {
   signal?: AbortSignal;
 }
 
-// What the benchmark harness records. Cost, version, and prompt hash are
-// not optional — without them APPROACH.md §7 "reproducibility" is a lie.
+// The benchmark records cost, model version, and prompt hash for comparison.
 export interface ExtractorCost {
   inputTokens: number;
   outputTokens: number;

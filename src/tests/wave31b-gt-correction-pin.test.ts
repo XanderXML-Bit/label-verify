@@ -1,5 +1,3 @@
-// Wave-32 audit pin (Sub-agent B G8 / Hermes-flagged):
-//
 // `ai-label-0031` and `ai-label-0050` have printed-text typos baked into
 // the rendered Government Warning ("defetts" / "youf abilty tc" / etc).
 // Per 27 CFR §16.21's strict literal-text requirement, the wave-31b

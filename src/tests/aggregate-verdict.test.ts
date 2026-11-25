@@ -1,8 +1,4 @@
-// Wave-32 audit pin (Sub-agent B B5): aggregateVerdict is the single
-// mutation point that promotes the worst per-field status into a final
-// verdict. The whole-pipeline behaviour depends on this being correct;
-// the 3-line implementation is trivial, but pinning the truth table
-// is cheap insurance against a refactor flipping precedence.
+// These cases pin the precedence of field statuses in the final verdict.
 
 import { describe, expect, it } from "vitest";
 import { aggregateVerdict } from "@/lib/verify";

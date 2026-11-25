@@ -1,8 +1,6 @@
-// Wave-32 audit fix (Sub-agent B G10): /api/warmup had 0 % coverage on the
-// branch where it actually exposes a public route. The route runs both a
-// Tesseract WASM warmup (with an 8 s timeout race) and an in-process
-// Gemini SDK warmup (cheap; no network call). All three end states are
-// reachable: tesseract={ok|timeout|failed} × gemini={ok|missing-key|failed}.
+// The public /api/warmup route warms up Tesseract WASM with an 8 s
+// timeout and loads the Gemini SDK in process without a network call.
+// Both steps can succeed or fail independently.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -17,9 +17,8 @@ export async function parseApplicationDocx(
   buffer: Buffer,
 ): Promise<ApplicationParseResult> {
   let text: string;
-  // Wave-33 audit (Sub-agent A nit #11): forward mammoth's messages
-  // array as parser warnings so operators see when tracked-changes /
-  // embedded images / unsupported styles were silently dropped.
+  // Forward Mammoth's messages as parser warnings when it drops
+  // tracked changes, embedded images, or unsupported styles.
   const mammothWarnings: string[] = [];
   try {
     const out = await mammoth.extractRawText({ buffer });

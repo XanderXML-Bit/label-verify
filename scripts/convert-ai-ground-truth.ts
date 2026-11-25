@@ -1,7 +1,7 @@
-// Convert test-data/ai-generated/ground-truth/*.json (Codex schema) into
-// the v2 ground-truth shape the bench harness expects. Writes to
-// test-data/ai-generated/ground-truth-v2/. The v2 schema is the
-// authoritative one — see benchmarks/scorer.ts GroundTruthFields.
+// Convert metadata for labels generated with an image-generation model
+// to the benchmark's v2 schema. See GroundTruthFields in benchmarks/scorer.ts.
+// Input: test-data/ai-generated/ground-truth/*.json
+// Output: test-data/ai-generated/ground-truth-v2/
 //
 // Two non-trivial conversions:
 //   - producer: AI has "Mill Creek Beverage Co., Asheville, NC" as a
@@ -9,7 +9,7 @@
 //     it as a string — compareProducer handles both.
 //   - net_contents: AI has "12 FL OZ", "750 mL". Parse to
 //     { value: number, unit: "fl_oz" | "ml" | "L" | "cl" }.
-//   - country_of_origin: Codex's expected field is "USA" for almost
+//   - country_of_origin: the source metadata says "USA" for almost
 //     all labels even when the label doesn't visibly show one. Per
 //     the cross-validation report we set this to null when the
 //     visualAudit notes don't confirm "Country of origin" text is
@@ -94,7 +94,7 @@ function classCategoryFor(beverageType: string | undefined, classType: string): 
 }
 
 function govWarningGroundTruth(ai: AiGt) {
-  // Map Codex's warningCase taxonomy to the v2 booleans the validator
+  // Map the source warningCase categories to the v2 booleans the validator
   // scores against. Default to fully compliant when warningCase is null
   // or C0 (the AI manifest's "compliant" tag).
   const wc = ai.warningCase ?? "C0";

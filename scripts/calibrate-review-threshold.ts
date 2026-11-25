@@ -1,13 +1,12 @@
 // Calibrate REVIEW_CONFIDENCE_THRESHOLD against the 170-image combined
-// corpus. Implements REMAINING-IMPROVEMENTS.md item A2.
+// corpus.
 //
 // The threshold is a second-layer floor: when every per-field comparator
 // returns PASS, the orchestrator downgrades the verdict to REVIEW if any
 // PASS-field's extractor confidence is below the threshold. The current
 // value (0.55) was set by intuition in `src/lib/verify.ts`; this script
-// sweeps τ ∈ [0.30, 0.95] against the real corpus and reports the loss-
-// minimising value under the pre-registered weights in
-// `docs/archive/PROJECT-TODO.md`:
+// sweeps τ ∈ [0.30, 0.95] against the combined corpus and reports the
+// value that minimizes the weighted loss:
 //
 //     loss(τ) = 3 · false_positive_defers + 5 · missed_wrong_passes
 //
@@ -325,7 +324,7 @@ async function main(): Promise<void> {
   const lines: string[] = [];
   lines.push(`# REVIEW_CONFIDENCE_THRESHOLD calibration`, "");
   lines.push(`Corpus: ${truthFiles.length} images. Generated ${new Date().toISOString()}`, "");
-  lines.push(`Loss function (pre-registered in docs/archive/PROJECT-TODO.md):`, "");
+  lines.push(`Weighted loss function:`, "");
   lines.push(`    loss(τ) = 3 · false_positive_defers + 5 · missed_wrong_PASSes`, "");
   lines.push(
     "Only images whose base verdict is PASS (no comparator returned FAIL/REVIEW) are affected by τ; ",

@@ -455,12 +455,9 @@ function checkEnvVarDocs(): void {
 
 // ─── Assertion: size-cap claims in docs vs constants in code ───────────────
 //
-// Wave-35i: the sub-agent docs-drift audit caught SECURITY.md and
-// ARCHITECTURE.md claiming wrong PDF / batch caps (5 MB / 5 GB / 25 MB
-// vs the actual 20 MB / 256 MiB / 20 MB). The drift detector hadn't
-// been checking this class of claim. This check pins the three caps
-// that ship in user-visible docs against the constants in code so a
-// future bump can't silently leave stale numbers in SECURITY.md.
+// SECURITY.md and ARCHITECTURE.md previously listed incorrect PDF
+// and batch caps (5 MB / 5 GB / 25 MB vs 20 MB / 256 MiB / 20 MB).
+// Compare the three documented caps with the constants in code.
 
 interface SizeCapClaim {
   category: string;

@@ -18,8 +18,7 @@ export const runtime = "nodejs";
 // skips the SSE entirely (see BatchView.tsx:45-49). This route is kept
 // only for local-dev convenience on long batches; it returns 404 on
 // production because the batch GET-instance can't see the batch-store
-// populated by the POST-instance. See CHANGELOG 2026-05-13 ("inline
-// batch processing for Vercel serverless").
+// populated by the POST instance. Production processes batches inline.
 export const maxDuration = 300;
 
 const CONCURRENCY = 2;
@@ -50,7 +49,7 @@ const CONCURRENCY = 2;
  * × 2 parallel). CONCURRENCY=2 is deliberately conservative: the
  * Gemini free-tier RPM is 15 and a single batch shares that quota
  * with any concurrent /api/verify calls. Reconnects currently
- * restart from item 0 (tracked in REMAINING-IMPROVEMENTS R6).
+ * restart from item 0.
  */
 export async function GET(
   req: Request,

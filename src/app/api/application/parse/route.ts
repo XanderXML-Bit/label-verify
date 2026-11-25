@@ -22,7 +22,7 @@ export {
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// REMAINING-IMPROVEMENTS R4: separately bucket per-IP for this
+// Use a separate per-IP rate limit for this
 // endpoint so abuse of the image-of-application path (which calls
 // Gemini and bills us) can't piggyback on the user's /api/verify
 // budget. Default 60/min — same as /api/verify. The bucket key is

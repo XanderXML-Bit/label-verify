@@ -365,7 +365,7 @@ export function SingleResult({
               </div>
               {/* Mobile (< sm): collapsed unless the verdict is not PASS,
                   so reviewers don't have to scroll past 4 subscore rows on
-                  every result page. Per REMAINING-IMPROVEMENTS.md U1. */}
+                  every result page. */}
               <details
                 className="print-hidden sm:hidden"
                 {...(gov.status !== "pass" ? { open: true } : {})}

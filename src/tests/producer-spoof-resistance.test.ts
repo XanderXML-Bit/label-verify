@@ -123,7 +123,7 @@ describe("producer comparator — spoof resistance", () => {
     expect(r.components?.country).toBe("fail");
   });
 
-  // Per REMAINING-IMPROVEMENTS.md T2: an edge case where the model
+  // The model
   // hallucinates a US-style state ("ME" / Maine) but every other
   // textual field on the producer points to a Mexican producer.
   // Country MUST fail — the corroborating-component rule is what

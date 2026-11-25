@@ -115,7 +115,7 @@ const PRODUCTION_MODE_ID = "default";
  *       · 0.55 is therefore on the Pareto plateau; no change.
  *     Catching the remaining 6 wrong PASSes needs a different
  *     intervention (second-opinion vision call, tighter comparator
- *     gating) — not a threshold tweak. Tracked in REMAINING-IMPROVEMENTS A8.
+ *     gating).
  *
  * Per-field comparators (ABV, net-contents, etc.) still apply their own
  * field-specific thresholds. This is a *second-layer* floor that catches
@@ -212,7 +212,6 @@ export async function verifyLabel(
   // was falsified in the bake-off (text fed in lowered accuracy on
   // stylised fonts). OCR's only role is to supply pixel-tight word
   // bboxes for the Government Warning bold + size subscores below.
-  // Per code-review Hermes CRITICAL #1.
 
   const visionCtx: ExtractorContext = {
     // ocrText intentionally omitted — see comment above.
@@ -343,9 +342,8 @@ export async function verifyLabel(
   // construction makes the timeout-loser harmless to the rest of the
   // pipeline. See Vercel-deploy postmortem 2026-05-12.
   //
-  // Wave-33 audit (Sub-agent A bug #18): hoist the inner setTimeout
-  // to a named handle so we clear it when OCR wins the race; otherwise
-  // a hot serverless worker accumulates one no-op timer per call.
+  // Clear the timeout when OCR wins the race to avoid leaving
+  // one no-op timer per call on a warm serverless worker.
   let ocrRaceTimer: ReturnType<typeof setTimeout> | null = null;
   const ocrFinal = await Promise.race([
     ocrPromise,
@@ -464,16 +462,13 @@ export async function verifyLabel(
   // independent vision models without pixel corroboration is a much
   // stronger signal than one model's self-report alone.
   //
-  // See REMAINING-IMPROVEMENTS.md for the corresponding size-subscore
-  // borderline-measurement case (~1 of the 5 Type I errors), which
-  // has a different mechanism (OCR found the prefix but it's just
-  // over the 0.8×min threshold) and is handled separately.
+  // A borderline size measurement uses a separate check. OCR found the
+  // prefix, but its height is just above 0.8 times the minimum.
   const boldFallbackOnlyPass =
     gov.status === "pass" &&
     gov.subscores.bold.status === "pass" &&
     gov.subscores.bold.confidence === 0.6;
-  // Wave-33 audit (Sub-agent A bug #13) trialled a symmetric
-  // `sizeFallbackPass` predicate that would route the size-subscore
+  // A trial `sizeFallbackPass` predicate routed the size-subscore
   // degraded-PASS band (confidence 0.4) through the same second-
   // opinion call the bold-fallback path uses. The regression bench
   // flagged this as flipping `syn-beer-0016` (B3 adversarial) from
@@ -658,12 +653,8 @@ export async function verifyLabel(
     // corroboration. Fire a second-opinion call to corroborate or
     // refute. Post-process below restores PASS on agreement.
     boldFallbackOnlyPass;
-  // (Wave-33 audit Sub-agent A bug #13 trialled also routing
-  // size-fallback degraded-PASS through second-opinion symmetrically
-  // with the bold path; the regression bench caught that doing so
-  // changed `syn-beer-0016` from review to false-pass on-correct
-  // — a hard-guardrail violation. Reverted. The asymmetry is
-  // documented in the predicate above. Tracked for a future wave.)
+  // A second opinion on the size fallback produced a false PASS
+  // for `syn-beer-0016`. See the predicate above for the bold-only rule.
   if (
     govReviewBorderline &&
     !fallbackUsed &&
@@ -873,12 +864,8 @@ export async function extractOnly(
   const pre = await preprocessImage(imageBytes, opts.preprocessOpts);
   const preElapsed = performance.now() - preStart;
 
-  // Wave-33 audit (Sub-agent A bug #7): separate AbortControllers for
-  // OCR vs the vision call. Previously a single `ctrl` was shared, so
-  // a vision-timeout fire would abort the still-running Tesseract
-  // worker mid-pixel-pass — degrading the Gov-Warning bold/size
-  // subscores into the model-self-report fallback path. This mirrors
-  // verifyLabel's two-controller split (code-review B2).
+  // Use separate controllers so a vision timeout leaves Tesseract running.
+  // Like `verifyLabel`, this lets OCR supply the warning bold and size scores.
   const ctrl = new AbortController();
   const ocrCtrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
@@ -890,11 +877,8 @@ export async function extractOnly(
     Math.max(visionTimeoutMs, 10_000),
   );
 
-  // Wave-33 audit (Sub-agent A bug #8): forward the external abort
-  // signal into BOTH controllers. Previously `opts.abortSignal` was
-  // declared in VerifyOptions but completely ignored here — a client
-  // disconnect on /api/extract continued to burn the vision call to
-  // completion.
+  // Forward the external abort signal to both controllers so a
+  // disconnect on /api/extract stops the remaining work.
   const externalAbort = opts.abortSignal;
   const onExternalAbort = (): void => {
     ctrl.abort();
@@ -908,11 +892,8 @@ export async function extractOnly(
   const modeUsed = PRODUCTION_MODE_ID;
   const extractor = opts.extractor ?? buildDefaultExtractor();
 
-  // extractOnly mirrors verifyLabel's no-ocr-text-to-vision policy
-  // (Hermes audit, BLOCKER #4 — README said "vision-only" but this
-  // path was still passing ocrText into the vision prompt). OCR's
-  // text is captured for debug-trace below; only ocrWords (bboxes)
-  // feed the Gov-Warning validator AFTER vision returns.
+  // Like verifyLabel, extractOnly keeps OCR text in the debug trace.
+  // Only OCR word boxes feed the warning validator after vision returns.
   //
   // Concurrency: vision and OCR fire in parallel here, matching the
   // verifyLabel path. The legacy 1.5 s pre-vision wait was a remnant
@@ -1010,9 +991,8 @@ export async function extractOnly(
   // construction makes the timeout-loser harmless to the rest of the
   // pipeline. See Vercel-deploy postmortem 2026-05-12.
   //
-  // Wave-33 audit (Sub-agent A bug #18): hoist the inner setTimeout
-  // to a named handle so we clear it when OCR wins the race; otherwise
-  // a hot serverless worker accumulates one no-op timer per call.
+  // Clear the timeout when OCR wins the race to avoid leaving
+  // one no-op timer per call on a warm serverless worker.
   let ocrRaceTimer: ReturnType<typeof setTimeout> | null = null;
   const ocrFinal = await Promise.race([
     ocrPromise,
@@ -1117,9 +1097,7 @@ function makeTraceId(): string {
   return `${Date.now().toString(36)}-${tail}`;
 }
 
-// Exported solely for unit testing (Sub-agent B B5). The function is a
-// load-bearing single-point mutation that decides the final verdict —
-// pinning its semantics protects against subtle refactors.
+// Exported for unit tests covering how field statuses determine the final verdict.
 export function aggregateVerdict(statuses: ("pass" | "fail" | "review")[]): Verdict {
   if (statuses.includes("fail")) return "fail";
   if (statuses.includes("review")) return "review";

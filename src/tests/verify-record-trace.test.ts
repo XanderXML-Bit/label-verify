@@ -1,8 +1,6 @@
-// Wave-32 audit pin (Sub-agent B B6): the `opts.recordTrace` callback is
-// the only mechanism `/api/debug/last`'s ring buffer hears about a
-// completed verify. The call site lives inside a try/catch swallow
-// (so a throwing sink can never break a real verify), but neither the
-// trace-shape nor the swallow has been exercised end-to-end.
+// The `opts.recordTrace` callback is the only way to notify the
+// `/api/debug/last` ring buffer when verification finishes. These tests
+// cover the trace shape and ensure callback errors leave verification running.
 
 import { describe, expect, it, vi } from "vitest";
 import sharp from "sharp";

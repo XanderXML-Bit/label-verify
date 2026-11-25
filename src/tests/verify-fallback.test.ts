@@ -1,7 +1,5 @@
-// Wave-32 audit pin (Sub-agent B G1): cross-provider fallback path
-// (verify.ts lines 222-293) was completely untested. The path is the
-// system's only protection against a full Gemini provider outage and
-// includes three security-relevant branches:
+// The cross-provider fallback handles a full Gemini provider outage.
+// These tests cover three branches:
 //   (a) no `OPENAI_API_KEY` → re-throw primary err
 //   (b) `externalAbort.aborted` before fallback fires → skip and re-throw
 //   (c) fallback also throws → re-throw primary (more diagnostic)
