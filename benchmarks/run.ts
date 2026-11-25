@@ -10,9 +10,8 @@
 // (Wilson 95% CI, McNemar's test, stratified reporting, OOD column, FN rate
 // on Gov Warning).
 //
-// The corpus comes from --corpus <dir>/labels + <dir>/ground-truth (default
-// test-data; falls back to test-data-v2 if test-data is empty). See
-// docs/archive/CODEX-HANDOFF.md for the image-generation specification.
+// The corpus contains labels/ and ground-truth/ directories.
+// See docs/CORPORA.md for fixture layout.
 
 import { readFile, readdir, writeFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
