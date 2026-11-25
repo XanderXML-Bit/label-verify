@@ -109,7 +109,7 @@
         "producer": "Mill Creek Beverage Co., Asheville, NC",
         "country_of_origin": "France"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0001.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0001.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -139,7 +139,7 @@
         "producer": "Mill Creek Beverage Co., Asheville, NC",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0001.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0001.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -169,7 +169,7 @@
         "producer": "Vespera Beverage Co., Santa Rosa, CA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0002.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0002.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -199,7 +199,7 @@
         "producer": "Vespera Beverage Co., Santa Rosa, CA",
         "country_of_origin": "Scotland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0002.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0002.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -229,7 +229,7 @@
         "producer": "Six Foxes Beverage Co., Lexington, KY",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0003.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0003.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -259,7 +259,7 @@
         "producer": "Six Foxes Beverage Co., Lexington, KY",
         "country_of_origin": "Italy"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0003.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0003.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -289,7 +289,7 @@
         "producer": "Hibiscus Salt Beverage Co., Portland, ME",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0004.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0004.json",
       "actual": "review",
       "imageQuality": "good",
       "bucket": "review-on-correct"
@@ -319,7 +319,7 @@
         "producer": "Hibiscus Salt Beverage Co., Portland, ME",
         "country_of_origin": "Japan"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0004.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0004.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -349,7 +349,7 @@
         "producer": "Marbled Hills Beverage Co., Walla Walla, WA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0005.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0005.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -379,7 +379,7 @@
         "producer": "Marbled Hills Beverage Co., Walla Walla, WA",
         "country_of_origin": "Scotland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0005.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0005.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -409,7 +409,7 @@
         "producer": "Cold Iron Beverage Co., Lexington, KY",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0006.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0006.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -439,7 +439,7 @@
         "producer": "Cold Iron Beverage Co., Lexington, KY",
         "country_of_origin": "Mexico"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0006.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0006.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -469,7 +469,7 @@
         "producer": "Solano Reach Beverage Co., San Antonio, TX",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0007.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0007.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -499,7 +499,7 @@
         "producer": "Solano Reach Beverage Co., San Antonio, TX",
         "country_of_origin": "Mexico"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0007.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0007.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -529,7 +529,7 @@
         "producer": "Stones Throw Beverage Co., Asheville, NC",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0008.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0008.json",
       "actual": "review",
       "imageQuality": "good",
       "bucket": "review-on-correct"
@@ -559,7 +559,7 @@
         "producer": "Cote du Soir Beverage Co., Sonoma, CA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0009.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0009.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-fail"
@@ -589,7 +589,7 @@
         "producer": "Stones Throw Beverage Co., Asheville, NC",
         "country_of_origin": "France"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0008.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0008.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -619,7 +619,7 @@
         "producer": "Cote du Soir Beverage Co., Sonoma, CA",
         "country_of_origin": "Scotland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0009.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0009.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -649,7 +649,7 @@
         "producer": "Mercers Reserve Beverage Co., Denver, CO",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0010.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0010.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-fail"
@@ -679,7 +679,7 @@
         "producer": "Mercers Reserve Beverage Co., Denver, CO",
         "country_of_origin": "France"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0010.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0010.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -709,7 +709,7 @@
         "producer": "Tin Roof Beverage Co., Burlington, VT",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0011.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0011.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-fail"
@@ -739,7 +739,7 @@
         "producer": "Tin Roof Beverage Co., Burlington, VT",
         "country_of_origin": "Ireland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0011.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0011.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -769,7 +769,7 @@
         "producer": "Solstice Beverage Co., Walla Walla, WA",
         "country_of_origin": "USA"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0012.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0012.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-fail"
@@ -799,7 +799,7 @@
         "producer": "Solstice Beverage Co., Walla Walla, WA",
         "country_of_origin": "Italy"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0012.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0012.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -829,7 +829,7 @@
         "producer": "Five Sisters Beverage Co., Traverse City, MI",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0013.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0013.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -859,7 +859,7 @@
         "producer": "Five Sisters Beverage Co., Traverse City, MI",
         "country_of_origin": "Germany"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0013.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0013.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -889,7 +889,7 @@
         "producer": "Latitude Seven Beverage Co., 320 In, Denver, CO",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0014.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0014.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "false-fail"
@@ -919,7 +919,7 @@
         "producer": "Latitude Seven Beverage Co., 320 In, Denver, CO",
         "country_of_origin": "France"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0014.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0014.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -949,7 +949,7 @@
         "producer": "Northmast Beverage Co., Portland, ME",
         "country_of_origin": "Germany"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0015.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0015.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -979,7 +979,7 @@
         "producer": "Northmast Beverage Co., Portland, ME",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0015.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0015.json",
       "actual": "review",
       "imageQuality": "good",
       "bucket": "review-on-correct"
@@ -1009,7 +1009,7 @@
         "producer": "Black Cardamom Beverage Co., Walla Walla, WA",
         "country_of_origin": "France"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0016.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0016.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1039,7 +1039,7 @@
         "producer": "Black Cardamom Beverage Co., Walla Walla, WA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0016.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0016.json",
       "actual": "review",
       "imageQuality": "good",
       "bucket": "review-on-correct"
@@ -1069,7 +1069,7 @@
         "producer": "Otter Bay Beverage Co., Portland, ME",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0017.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0017.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1099,7 +1099,7 @@
         "producer": "Otter Bay Beverage Co., Portland, ME",
         "country_of_origin": "Mexico"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0017.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0017.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1129,7 +1129,7 @@
         "producer": "Roan and Stone Beverage Co., Santa Rosa, CA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0018.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0018.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1159,7 +1159,7 @@
         "producer": "Roan and Stone Beverage Co., Santa Rosa, CA",
         "country_of_origin": "Italy"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0018.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0018.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1189,7 +1189,7 @@
         "producer": "Ashby Drake Beverage Co., Denver, CO",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0019.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0019.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1219,7 +1219,7 @@
         "producer": "Ashby Drake Beverage Co., Denver, CO",
         "country_of_origin": "Ireland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0019.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0019.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1249,7 +1249,7 @@
         "producer": "Garden Highball Beverage Co., Burlington, VT",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0020.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0020.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1279,7 +1279,7 @@
         "producer": "Garden Highball Beverage Co., Burlington, VT",
         "country_of_origin": "Scotland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0020.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0020.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1309,7 +1309,7 @@
         "producer": "Saltwood Beverage Co., Traverse City, MI",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0021.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0021.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1339,7 +1339,7 @@
         "producer": "Saltwood Beverage Co., Traverse City, MI",
         "country_of_origin": "Italy"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0021.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0021.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1369,7 +1369,7 @@
         "producer": "Half Note Beverage Co., Asheville, NC",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0022.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0022.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-fail"
@@ -1399,7 +1399,7 @@
         "producer": "Half Note Beverage Co., Asheville, NC",
         "country_of_origin": "Italy"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0022.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0022.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1429,7 +1429,7 @@
         "producer": "Marrow Bone Beverage Co., New Orleans, LA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0023.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0023.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-fail"
@@ -1459,7 +1459,7 @@
         "producer": "Marrow Bone Beverage Co., New Orleans, LA",
         "country_of_origin": "Japan"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0023.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0023.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1489,7 +1489,7 @@
         "producer": "Quiet Bear Beverage Co., 85 Meadow Lane, Asheville, NC 28801",
         "country_of_origin": "USA"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0024.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0024.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-fail"
@@ -1519,7 +1519,7 @@
         "producer": "Quiet Bear Beverage Co., 85 Meadow Lane, Asheville, NC 28801",
         "country_of_origin": "Scotland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0024.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0024.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1549,7 +1549,7 @@
         "producer": "Wandering Coyote Beverage Co., Denver, CO",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0025.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0025.json",
       "actual": "review",
       "imageQuality": "good",
       "bucket": "review-on-correct"
@@ -1579,7 +1579,7 @@
         "producer": "Wandering Coyote Beverage Co., Denver, CO",
         "country_of_origin": "Mexico"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0025.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0025.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1609,7 +1609,7 @@
         "producer": "Mira Vista Beverage Co., Sonoma, CA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0026.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0026.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1639,7 +1639,7 @@
         "producer": "Mira Vista Beverage Co., Sonoma, CA",
         "country_of_origin": "Japan"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0026.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0026.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1669,7 +1669,7 @@
         "producer": "Argenton Beverage Co., Walla Walla, WA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0027.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0027.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1699,7 +1699,7 @@
         "producer": "Argenton Beverage Co., Walla Walla, WA",
         "country_of_origin": "France"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0027.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0027.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1729,7 +1729,7 @@
         "producer": "Citrus Range Beverage Co., Portland, ME",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0028.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0028.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1759,7 +1759,7 @@
         "producer": "Citrus Range Beverage Co., Portland, ME",
         "country_of_origin": "Ireland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0028.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0028.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1789,7 +1789,7 @@
         "producer": "Vagrant Tide Beverage Co., New Orleans, LA",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0029.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0029.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1819,7 +1819,7 @@
         "producer": "Vagrant Tide Beverage Co., New Orleans, LA",
         "country_of_origin": "Scotland"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0029.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0029.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"
@@ -1849,7 +1849,7 @@
         "producer": "Cloister Hill Beverage Co., Burlington, VT",
         "country_of_origin": null
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\ground-truth\\ai-label-0030.json",
+      "gtPath": "test-data-combined/ground-truth/ai-label-0030.json",
       "actual": "pass",
       "imageQuality": "good",
       "bucket": "true-pass"
@@ -1879,7 +1879,7 @@
         "producer": "Cloister Hill Beverage Co., Burlington, VT",
         "country_of_origin": "Mexico"
       },
-      "gtPath": "C:\\Users\\xande\\OneDrive\\Desktop\\Zendren LLC\\LabelVerify\\test-data-combined\\declared-wrong\\ai-label-0030.json",
+      "gtPath": "test-data-combined/declared-wrong/ai-label-0030.json",
       "actual": "fail",
       "imageQuality": "good",
       "bucket": "true-reject"

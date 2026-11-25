@@ -4,7 +4,6 @@
   "source": {
     "tool": "built-in image_gen",
     "originalFile": "ig_0d34551f0105b334016a028c0302d881958caf45015a7a7e7d.png",
-    "originalAbsolutePath": "C:/Users/xande/.codex/generated_images/019e1942-ba7c-7da0-8f59-4c2a3b6ee743/ig_0d34551f0105b334016a028c0302d881958caf45015a7a7e7d.png",
     "generatedAtLocal": "2026-05-12T02:11:12.785Z",
     "originalWidth": 1536,
     "originalHeight": 1024
@@ -26,7 +25,7 @@
   "visualAudit": {
     "status": "accepted",
     "usageTier": "strictBenchmarkReady",
-    "reviewer": "Codex + 4 sub-agent chunk audit",
+    "reviewer": "Visual inspection",
     "reviewedAt": "2026-05-12T03:00:34.714Z",
     "notes": [
       "Missing colon after GOVERNMENT WARNING confirmed."

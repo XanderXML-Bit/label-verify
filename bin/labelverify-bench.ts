@@ -13,7 +13,7 @@
 
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { execFileSync } from "node:child_process";
 
 function loadDotenv(path: string): void {
@@ -307,7 +307,7 @@ async function cmdCrossPair(args: Args): Promise<void> {
           elapsedMs: Date.now() - t0,
           govWarningCase: task.govWarningCase,
           declared: declaredForPush,
-          gtPath: task.gtPath,
+          gtPath: relative(root, task.gtPath).split(sep).join("/"),
           ...partial,
           // Re-spread the required actual + imageQuality from `partial`
           // so the spread above doesn't drop them.

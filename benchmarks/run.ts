@@ -15,7 +15,7 @@
 
 import { readFile, readdir, writeFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, relative, sep } from "node:path";
 
 // ─── .env.local loader (no extra deps) ──────────────────────────────────────
 // The bench runs via `tsx benchmarks/run.ts`, which does NOT auto-load
@@ -670,7 +670,7 @@ async function main(): Promise<void> {
   const summary: BenchmarkSummary = {
     runAt: new Date().toISOString(),
     mode,
-    corpusRoot,
+    corpusRoot: relative(ROOT, corpusRoot).split(sep).join("/") || ".",
     corpusSize: subset.length,
     trialsPerImage: trials,
     techniques: techRuns.map(summarizeRun),
