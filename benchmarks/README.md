@@ -1,60 +1,45 @@
-# Benchmark Harness
+# Benchmark harness
 
-Picks the extractor that ships in production. Four contenders (per
-[`docs/archive/APPROACH.md`](../docs/archive/APPROACH.md) §2.1):
+The harness compares extraction techniques against the same labelled images.
+The [model selection notes](../docs/MODEL-SELECTION.md) describe the full candidate set and decision criteria.
 
-| ID | Technique | What it is |
-|----|-----------|------------|
-| T1 | Tesseract OCR baseline | Pure-OCR text extraction + regex/heuristic field parsing. No network. The honest baseline. |
-| T4 | GPT-4o-mini Vision | Hosted VLM via `src/lib/vision/openai.ts`. Requires `OPENAI_API_KEY`. |
-| T6 | Gemini 3.1 Flash Lite Vision (production primary since wave-27) | Hosted VLM via `src/lib/vision/gemini.ts`. Requires `GOOGLE_API_KEY`. |
-| C1 | OCR + Vision combined | T1 OCR text fed into the T6 prompt via `ExtractorContext.ocrText`. Requires `GOOGLE_API_KEY`. |
+| ID | Technique | Requirement |
+| --- | --- | --- |
+| T1 | Tesseract optical character recognition and field parsing | No model API key |
+| T4 | GPT-4o-mini vision | `OPENAI_API_KEY` |
+| T6 | Gemini 3.1 Flash Lite vision | `GOOGLE_API_KEY` |
+| C1 | Tesseract text passed to the vision extractor | `GOOGLE_API_KEY` |
 
-Out-of-scope candidates (Tesseract+ML classifier, AWS Textract, Claude Vision,
-etc.) are enumerated in `docs/archive/APPROACH.md` §2.2.
+## Run a benchmark
 
-## Running
+Run the local OCR baseline on the same subset as CI. Tesseract may fetch its language data on the first run.
 
 ```sh
-# Smoke run — first 20 images, 1 trial each. T1 has no API-key dependency.
-npx tsx benchmarks/run.ts --smoke --corpus test-data-v2 --technique T1
-
-# Full run, all four techniques, 3 trials per image (per ../docs/archive/APPROACH.md §5 step 3).
-GOOGLE_API_KEY=... OPENAI_API_KEY=... npx tsx benchmarks/run.ts
-
-# Specific technique, against the larger v2 corpus.
-GOOGLE_API_KEY=... npx tsx benchmarks/run.ts --corpus test-data-v2 --technique T6
+npm run bench:routine -- --corpus test-data-v2 --technique T1
 ```
 
-CLI flags:
-- `--smoke` — first 20 images, 1 trial per image.
-- `--corpus <dir>` — root of corpus (must contain `labels/` and `ground-truth/`). Defaults to `test-data`; falls back to `test-data-v2` if `test-data` is empty.
-- `--technique <id>` — restrict to one technique. Repeatable. Defaults to all four.
+Use `npm run bench:smoke -- --corpus test-data-v2 --technique T1` for the first 20 labels instead.
+To compare hosted extractors, configure provider keys as described in the [deployment guide](../docs/DEPLOYMENT.md).
 
-Per-image timeout is 60 s; network failures are logged and counted but do not
-stall the run. A technique whose prerequisite (API key, sibling extractor
-module) is missing is skipped with a warning rather than aborting the run.
+| Flag | Effect |
+| --- | --- |
+| `--corpus <dir>` | Read `labels/` and `ground-truth/` from this directory. The default is `test-data-combined`. |
+| `--technique <id>` | Select a technique. Repeat the flag to select more than one. |
+| `--routine` | Use the curated 15-label subset. |
+| `--smoke` | Use the first 20 labels. |
+| `--trials <n>` | Set the number of trials per image. |
+| `--bake-off` | Include the extended candidate set. |
 
-## Output
+The runner skips a technique if its prerequisites are missing. It reports per-image timeouts as failures and continues.
 
-Two files per run, under `benchmarks/results/<iso-timestamp>.{json,md}`:
+## Read the results
 
-- **`.json`** — full machine-readable summary. Per-technique: Wilson 95% CI
-  on overall accuracy, stratified `beverage_type × condition × field` table,
-  Gov-Warning false-negative rate (the regulator-dangerous direction —
-  predicted PASS on a non-compliant label), OOD split (`source === "real"`
-  vs synthetic/degraded), latency P50/P95 from the per-trial log, image
-  failure count.
-- **`.md`** — reviewer-readable overall-accuracy table, OOD split table, and
-  the pairwise McNemar grid (statistic, p-value, discordant counts) so the
-  significance call lives in the report rather than the JSON.
+The runner writes a Markdown summary, a JSON summary, and per-image JSON to `benchmarks/results/`.
+The reports include per-field accuracy with Wilson 95% confidence intervals, warning false negatives, and latency.
+The Markdown report includes pairwise McNemar tests for techniques that share scored observations.
 
-Console output: one line per technique with accuracy, P50 latency, failure
-count.
+- [Runner](run.ts) selects the corpus, runs the techniques, and writes the reports.
+- [Scorer](scorer.ts) applies the production field comparators and Government Warning validator.
+- [Statistics](score.ts) computes confidence intervals, strata, and pairwise tests.
 
-## Code layout
-
-- `run.ts` — CLI entry point + loop + aggregation + report writing.
-- `techniques.ts` — `BUILTIN_TECHNIQUES`: four factories returning `TechniqueRunner` instances.
-- `scorer.ts` — `scoreImage(gt, extracted, dims)` → per-field `PerItemOutcome[]` + `PerItemWarningOutcome`. Reuses the production comparators in `src/lib/matching/` and the validator in `src/lib/validation/government-warning-validator.ts`.
-- `score.ts` — pure-stats helpers (Wilson, McNemar, stratify, FN-rate, OOD partition).
+See the [corpus map](../docs/CORPORA.md) for fixture layout, the [protocol](../docs/BENCH-PROTOCOL.md) for scoring, and the [experiment log](../docs/EXPERIMENTS.md) for recorded outcomes.

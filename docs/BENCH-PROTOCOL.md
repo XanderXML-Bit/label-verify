@@ -85,7 +85,7 @@ Informational only:
 |---|---|
 | `quality.*` | No hard budget. The quality stratum tests image-quality REVIEW routing, not compliance. Report changes; do not gate on them. |
 
-See `docs/WAVE-28a-STRATIFIED-GUARDRAIL.md` for the retroactive wave-26 re-evaluation that motivated this protocol upgrade.
+See the [stratified guardrail experiment](EXPERIMENTS.md#model-and-scoring-experiments) for the reanalysis that led to these criteria.
 
 ### Step 4 — Per-image consistency analysis
 
@@ -102,7 +102,7 @@ Each cross-pair run is 340 verifier calls × Gemini cost ≈ $0.10 + ~4-7 min wa
 ## What this protocol does NOT defend against
 
 - **Systematic drift in the vision model.** If Gemini's hosted weights change between baseline and experiment runs, the comparison is contaminated. Run baseline + experiment back-to-back on the same day to minimize this.
-- **Ground-truth defects.** If the GT itself is wrong, the verifier's "correct" verdicts get scored as wrong. Wave-13 surfaced examples (see `docs/REMAINING-IMPROVEMENTS.md` wave-13 entry). Oracle-validate suspicious cases before treating bench numbers as truth.
+- **Ground-truth defects.** If the GT itself is wrong, the verifier's "correct" verdicts get scored as wrong. See the [baseline repeatability experiment](EXPERIMENTS.md#model-and-scoring-experiments) for examples. Verify surprising results against the source images.
 
 ## Apex framework anchors
 

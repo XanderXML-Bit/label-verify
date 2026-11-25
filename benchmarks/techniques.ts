@@ -1,4 +1,4 @@
-// Technique factories. Per APPROACH.md §2.1, scope is exactly four contenders:
+// Technique factories. The default comparison runs four techniques:
 //   T1 Tesseract OCR baseline (text-only — regex/heuristic field extraction)
 //   T4 GPT-4o-mini Vision
 //   T6 Gemini 2.0 Flash Vision
@@ -422,7 +422,7 @@ export const BUILTIN_TECHNIQUES: readonly TechniqueFactory[] = [
   },
   // ─── Bake-off extended candidates (T4b / T5b / T6b / T6c) ────────────────
   //
-  // Per APPROACH.md §2.1, the four core contenders (T1, T4, T6, C1) settle
+  // The four core contenders (T1, T4, T6, C1) cover
   // the initial Pareto question. The candidates below feed the *bake-off
   // run* (full-corpus comparison once the final corpus lands) and let us
   // tell "fastest / cheapest / smartest" apart across providers. Each

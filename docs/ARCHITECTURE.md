@@ -32,7 +32,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 | UI primitives | **Tailwind 3** + lightweight bespoke components | Accessible defaults; no design-system dependency. |
 | Image preprocessing | **sharp** (libvips) | EXIF auto-orient, Lanczos-3 resize to **2000 px long edge** (wave-31j upscales sub-target images), JPEG 82 with mozjpeg. Trims oversize payloads while giving the VLM enough resolution to discriminate subtle bold/size perturbations. |
 | Vision extractor (primary) | **Gemini 3.1 Flash Lite** via `@google/generative-ai` | Pareto-dominant on the bake-off (accuracy × latency × cost). See [`MODEL-SELECTION.md`](MODEL-SELECTION.md) §4. |
-| Vision extractor (second-opinion) | **Gemini 2.5 Flash** via `@google/generative-ai` | Smarter same-provider second-opinion fires on borderline-Gov-Warning REVIEW. Wave 22 swap (2026-05-13) — see [`WAVE-22-FINDINGS.md`](WAVE-22-FINDINGS.md). |
+| Vision extractor (second-opinion) | **Gemini 2.5 Flash** via `@google/generative-ai` | Smarter same-provider second-opinion fires on borderline-Gov-Warning REVIEW. See the [second-opinion comparison](EXPERIMENTS.md#model-and-scoring-experiments). |
 | Vision extractor (cross-provider fallback) | **GPT-5.4-nano** via `openai` | Provider-diversity safety net on primary provider failure (5xx / timeout / abort). Distinct from the second-opinion above. |
 | OCR | **tesseract.js 5** | Server-side only. Used for the Government-Warning prefix bbox + pixel-density measurements; not used for text reading (the vision extractor returns the text directly). |
 | Field matching | Hand-written comparators in `src/lib/matching/` | Per-field semantics (ABV tolerance, brand fuzziness, multilingual country, US-state-implies-domestic) are easier to audit as discrete functions than as a single fuzzy-matcher. |
@@ -47,7 +47,7 @@ The UI is the public surface. The three CLIs (`bin/labelverify.ts`, `bin/labelve
 For one POST to `/api/verify`:
 
 1. **Receive**. Multipart upload (`image` + `declared` JSON) or JSON body (`{ url, declared }`). The route validates MIME (image: JPEG / PNG / WebP / HEIC / HEIF / PDF), size (≤ 10 MB image, ≤ 20 MB PDF), and the `declared` payload against `DeclaredFieldsSchema`. Per-IP rate limit applies.
-2. **Preprocess** (`src/lib/preprocess.ts`). `sharp` performs EXIF auto-orient, then Lanczos-3 resize to a 2000-px long edge (wave-31j; aspect ratio preserved). Sub-target images are upscaled (the wave-28b default `withoutEnlargement: true` kept 1024×1536-class corpora at native size, which silently under-resolved subtle bold/size perturbations — see `WAVE-31j-UPSCALE-2000-SHIPPABLE.md`). The pipeline re-encodes JPEG at quality 82 with mozjpeg. PDFs render the first page via `pdfjs-dist` + `@napi-rs/canvas` before entering this step. Env overrides `LV_MAX_EDGE` and `LV_ENLARGE=0` are retained for research/benching.
+2. **Preprocess** (`src/lib/preprocess.ts`). `sharp` performs EXIF auto-orient, then Lanczos-3 resize to a 2000-px long edge and preserves the aspect ratio. Upscaling helps resolve small differences in warning size and weight. See the [resolution experiments](EXPERIMENTS.md#model-and-scoring-experiments). The pipeline re-encodes JPEG at quality 82 with mozjpeg. PDFs render the first page via `pdfjs-dist` + `@napi-rs/canvas` before entering this step. Env overrides `LV_MAX_EDGE` and `LV_ENLARGE=0` are retained for research/benching.
 3. **Extract and OCR in parallel** (`src/lib/verify.ts:verifyLabel`).
    - The vision extractor (`src/lib/vision/gemini.ts`) issues a single structured-output JSON-schema call to Gemini 3.1 Flash Lite. The prompt requests all seven declared fields plus the Government-Warning block (`raw_text`, `prefix_text`, `prefix_bbox`, `prefix_appears_bold`, `prefix_appears_caps`).
    - Concurrently, `tesseract.js` produces word-level bounding boxes and confidences. The OCR text is not passed into the vision prompt; OCR exists for the Government-Warning bold/size measurements only.
@@ -145,5 +145,5 @@ The following are deliberate non-features for the prototype:
 
 - User accounts, SSO, persistent storage. Brief §9 waives persistence.
 - A custom-trained model. The bake-off picks a hosted vision model.
-- A local VLM fallback for offline operation. The configured fallback is a different hosted provider; a local-VLM contingency is documented in [`REMAINING-IMPROVEMENTS.md`](REMAINING-IMPROVEMENTS.md).
+- A local vision-model fallback. The configured live-model fallback uses another hosted provider. The [model survey](EXPERIMENTS.md#reviews-and-research) lists local candidates.
 - Cross-session batch resume. The in-memory batch store is sufficient for the prototype's interactive use; a production deployment would add Postgres + Redis.

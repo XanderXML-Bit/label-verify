@@ -54,7 +54,7 @@ export interface BatchProgressProps {
 // Per-image budget for the verification phase. **4 500 ms** is the
 // measured single-image P50 against production (N=3 probe wave-35j:
 // 5102/5185/7011 ms client, 4498/4667/5965 ms server — see
-// CHANGELOG wave-35j hypothesis matrix). The previous **3 000 ms**
+// commit 15c4f81). The previous **3 000 ms**
 // was anchored on the bench's *vision-call-only* number, which
 // ignored preprocess + OCR + matching + Gov-Warning validation in
 // the full pipeline. The result was the bar racing to 100% well

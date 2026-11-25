@@ -65,7 +65,7 @@ ${truncated}
 
 /**
  * The prompt the vision extractor sends. Kept here so its content is
- * versioned, hash-able (for reproducibility — APPROACH.md §7), and
+ * versioned, hashable, and
  * shared between adapters (T4, T6, C1).
  *
  * Design notes:

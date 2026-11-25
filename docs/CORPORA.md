@@ -28,9 +28,7 @@ the canonical map.
 Pure path-stability for `benchmarks/routine.ts` and the
 `routine-manifest.json` audit trail. The routine subset names 15
 specific IDs; pinning them via a static directory means historical
-routine runs remain reproducible. Moving the routine manifest into
-`test-data-combined/` and deleting `test-data-v2/` is a low-priority
-follow-up — see CHANGELOG 2026-05-13 corpus-consolidation note.
+routine runs remain reproducible. The two directories also support different workflows. CI uses the v2 subset, and cross-pair runs use perturbed declarations from the combined corpus.
 
 ## Why `test-data/` (v1) is kept
 
