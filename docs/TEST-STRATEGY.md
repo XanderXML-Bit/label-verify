@@ -17,7 +17,7 @@ How the project is tested, what corpus the benchmark runs against, what statisti
 170 images on disk in `test-data-combined/`. Two strata:
 
 - **Synthetic SVG (n = 90).** Vector-rendered from deterministic templates. The Government-Warning failure modes are hand-controlled and catalogued in [`government-warning-cases.md`](government-warning-cases.md).
-- **Photo-realistic AI-generated (n = 80).** Codex `image_gen` renders across two batches (50 + 30). Stress-cases include Government-Warning paraphrase, photo-quality degradation (perspective, glare, lowlight, occlusion, motion blur, aged paper, shrink-wrap, curved substrate), bilingual EN/ES warnings, and novel beverage categories (hard cider, sake, hard kombucha, RTD cocktail, mead, malt seltzer).
+- **Photo-realistic AI-generated (n = 80).** An image-generation model rendered two batches (50 + 30). Stress-cases include Government-Warning paraphrase, photo-quality degradation (perspective, glare, lowlight, occlusion, motion blur, aged paper, shrink-wrap, curved substrate), bilingual EN/ES warnings, and novel beverage categories (hard cider, sake, hard kombucha, RTD cocktail, mead, malt seltzer).
 
 Each image has a ground-truth JSON with the seven declared fields and four Government-Warning compliance booleans (`present`, `text_matches_regulation`, `prefix_all_caps`, `prefix_bold`, `meets_size_minimum`). Ground-truth provenance is documented in [`CORPORA.md`](CORPORA.md).
 
@@ -110,7 +110,7 @@ The bench scorer treats a `REVIEW` outcome the same as a `FAIL` when computing a
 
 ## 7. Ground-truth validation
 
-For the photo-realistic stratum (which was not generated from a deterministic template), ground truth was cross-validated by an independent vision-model oracle pass (Gemini 3.1 Pro Preview) and a four-sub-agent visual audit. The cross-validation results were recorded internally during corpus build (2026-05-12) and informed the GT-correction pinned in `src/tests/wave31b-gt-correction-pin.test.ts`. Human-resolved ground truth is the source of truth where automated cross-checks disagree.
+An independent check with Gemini 3.1 Pro Preview and four automated visual reviews cross-validated the photo-realistic ground truth. Results from the corpus build on 2026-05-12 informed the ground-truth correction tested in `src/tests/wave31b-gt-correction-pin.test.ts`. Human reviewers resolve disagreements between automated checks.
 
 Borderline-bold cases are excluded from the bold-detection subscore (they still score on text match, caps, and size). Encoding a confused answer in the ground truth would silently grade a flawed technique as wrong, or a confused technique as right.
 

@@ -136,8 +136,7 @@ describe("export-result — CSV", () => {
     // A malicious filename or model-derived reason that starts with =,
     // +, -, @, tab, or CR auto-executes as a spreadsheet formula on
     // open in Excel/Sheets/LibreOffice. We prefix a leading apostrophe
-    // so the cell is treated as literal text. Regression test for the
-    // multi-audit finding (Hermes + code review + Codex agree).
+    // so the cell is treated as literal text.
     const mal = fakeResult({
       verdict: "review",
       reviewReasons: [

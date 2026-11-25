@@ -47,11 +47,8 @@ export function configuredGeminiRpmLimit(): number {
 }
 
 /**
- * Wave-33 audit (Sub-agent B finding #8): `.env.example` documents
- * `MAX_BATCH_SIZE` as the hard ceiling but the previous version of
- * this module hardcoded the cap. Now properly env-overridable: when
- * `MAX_BATCH_SIZE` is set to a positive integer, it overrides
- * `BATCH_HARD_CAP`. Capped at 5000 defensively to keep memory bounded.
+ * A positive integer in `MAX_BATCH_SIZE` overrides `BATCH_HARD_CAP`.
+ * The override is capped at 5000 to bound memory use.
  */
 export function configuredMaxBatchHardCap(): number {
   const fromEnv = positiveIntFromEnv("MAX_BATCH_SIZE");

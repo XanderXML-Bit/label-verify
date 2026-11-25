@@ -25,9 +25,8 @@ export interface Sample {
 
 export const SAMPLES: readonly Sample[] = [
   {
-    // ai-label-0001 — Mill Creek Pilsner. Compliant photo-quality beer
-    // label. Codex audit notes: "Compliant warning and primary fields
-    // confirmed visually."
+    // Visual inspection confirmed the compliant warning and primary fields on
+    // the Mill Creek Pilsner label (ai-label-0001).
     id: "pass",
     label: "PASS sample",
     shortDescription: "Beer label that matches the application and passes the warning checks.",
@@ -53,9 +52,8 @@ export const SAMPLES: readonly Sample[] = [
     },
   },
   {
-    // ai-label-0010 — Mercer's Reserve Vodka. Title-case "Government
-    // Warning:" prefix instead of all-caps. Codex audit:
-    // "Title-case warning prefix defect confirmed." The label prints
+    // The Mercer's Reserve Vodka label (ai-label-0010) prints the
+    // warning prefix as "Government Warning:" in title case. It prints
     // "Produced by Mercers Reserve Beverage Co., Denver, CO" (no
     // apostrophe), so the application declares that same producer and
     // the warning prefix is the only failing check.

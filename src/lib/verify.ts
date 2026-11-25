@@ -342,9 +342,8 @@ export async function verifyLabel(
   // construction makes the timeout-loser harmless to the rest of the
   // pipeline. See Vercel-deploy postmortem 2026-05-12.
   //
-  // Wave-33 audit (Sub-agent A bug #18): hoist the inner setTimeout
-  // to a named handle so we clear it when OCR wins the race; otherwise
-  // a hot serverless worker accumulates one no-op timer per call.
+  // Clear the timeout when OCR wins the race to avoid leaving
+  // one no-op timer per call on a warm serverless worker.
   let ocrRaceTimer: ReturnType<typeof setTimeout> | null = null;
   const ocrFinal = await Promise.race([
     ocrPromise,
@@ -469,8 +468,7 @@ export async function verifyLabel(
     gov.status === "pass" &&
     gov.subscores.bold.status === "pass" &&
     gov.subscores.bold.confidence === 0.6;
-  // Wave-33 audit (Sub-agent A bug #13) trialled a symmetric
-  // `sizeFallbackPass` predicate that would route the size-subscore
+  // A trial `sizeFallbackPass` predicate routed the size-subscore
   // degraded-PASS band (confidence 0.4) through the same second-
   // opinion call the bold-fallback path uses. The regression bench
   // flagged this as flipping `syn-beer-0016` (B3 adversarial) from
@@ -655,12 +653,8 @@ export async function verifyLabel(
     // corroboration. Fire a second-opinion call to corroborate or
     // refute. Post-process below restores PASS on agreement.
     boldFallbackOnlyPass;
-  // (Wave-33 audit Sub-agent A bug #13 trialled also routing
-  // size-fallback degraded-PASS through second-opinion symmetrically
-  // with the bold path; the regression bench caught that doing so
-  // changed `syn-beer-0016` from review to false-pass on-correct
-  // — a hard-guardrail violation. Reverted. The asymmetry is
-  // documented in the predicate above. Tracked for a future wave.)
+  // A second opinion on the size fallback produced a false PASS
+  // for `syn-beer-0016`. See the predicate above for the bold-only rule.
   if (
     govReviewBorderline &&
     !fallbackUsed &&
@@ -870,12 +864,8 @@ export async function extractOnly(
   const pre = await preprocessImage(imageBytes, opts.preprocessOpts);
   const preElapsed = performance.now() - preStart;
 
-  // Wave-33 audit (Sub-agent A bug #7): separate AbortControllers for
-  // OCR vs the vision call. Previously a single `ctrl` was shared, so
-  // a vision-timeout fire would abort the still-running Tesseract
-  // worker mid-pixel-pass — degrading the Gov-Warning bold/size
-  // subscores into the model-self-report fallback path. This mirrors
-  // verifyLabel's two-controller split (code-review B2).
+  // Use separate controllers so a vision timeout leaves Tesseract running.
+  // Like `verifyLabel`, this lets OCR supply the warning bold and size scores.
   const ctrl = new AbortController();
   const ocrCtrl = new AbortController();
   const timeoutHandle = setTimeout(() => ctrl.abort(), visionTimeoutMs);
@@ -887,11 +877,8 @@ export async function extractOnly(
     Math.max(visionTimeoutMs, 10_000),
   );
 
-  // Wave-33 audit (Sub-agent A bug #8): forward the external abort
-  // signal into BOTH controllers. Previously `opts.abortSignal` was
-  // declared in VerifyOptions but completely ignored here — a client
-  // disconnect on /api/extract continued to burn the vision call to
-  // completion.
+  // Forward the external abort signal to both controllers so a
+  // disconnect on /api/extract stops the remaining work.
   const externalAbort = opts.abortSignal;
   const onExternalAbort = (): void => {
     ctrl.abort();
@@ -1004,9 +991,8 @@ export async function extractOnly(
   // construction makes the timeout-loser harmless to the rest of the
   // pipeline. See Vercel-deploy postmortem 2026-05-12.
   //
-  // Wave-33 audit (Sub-agent A bug #18): hoist the inner setTimeout
-  // to a named handle so we clear it when OCR wins the race; otherwise
-  // a hot serverless worker accumulates one no-op timer per call.
+  // Clear the timeout when OCR wins the race to avoid leaving
+  // one no-op timer per call on a warm serverless worker.
   let ocrRaceTimer: ReturnType<typeof setTimeout> | null = null;
   const ocrFinal = await Promise.race([
     ocrPromise,
@@ -1111,9 +1097,7 @@ function makeTraceId(): string {
   return `${Date.now().toString(36)}-${tail}`;
 }
 
-// Exported solely for unit testing (Sub-agent B B5). The function is a
-// load-bearing single-point mutation that decides the final verdict —
-// pinning its semantics protects against subtle refactors.
+// Exported for unit tests covering how field statuses determine the final verdict.
 export function aggregateVerdict(statuses: ("pass" | "fail" | "review")[]): Verdict {
   if (statuses.includes("fail")) return "fail";
   if (statuses.includes("review")) return "review";

@@ -29,7 +29,7 @@ describe("batch-pairing — stem helper", () => {
     expect(stem("123456-front.jpg")).toBe("123456-front");
   });
 
-  it("optionally strips a trailing app-tag (Hermes audit fix)", () => {
+  it("optionally strips a trailing app tag", () => {
     // App-side suffixes should ALSO be strippable so a file named
     // `123456-app.pdf` reduces to `123456` for the relaxed pass,
     // matching `123456-front.jpg` once both sides are normalized.
@@ -116,11 +116,9 @@ describe("batch-pairing — pairByFilenameStem", () => {
     expect(result.unpairedImages).toHaveLength(0);
   });
 
-  it("pairs an image with an `-app`-tagged application via the relaxed pass (Hermes audit fix)", () => {
-    // Hermes finding: docs claimed `123456-front.jpg ↔ 123456-app.pdf`
-    // worked, but the stem helper only stripped image-side face tags,
-    // so the app's relaxed stem stayed `123456-app` and never matched
-    // the image's relaxed stem `123456`. Fixed by adding stripAppTag.
+  it("pairs an image with an `-app`-tagged application via the relaxed pass", () => {
+    // Stripping the image suffix alone leaves the application stem as
+    // `123456-app`. The relaxed pass strips both suffixes to match `123456`.
     const result = pairByFilenameStem([
       file("123456-front.jpg", "image/jpeg"),
       file("123456-back.jpg", "image/jpeg"),

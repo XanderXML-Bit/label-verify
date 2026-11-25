@@ -25,9 +25,6 @@ eng.traineddata
 
 .vercel
 
-# Nested worktrees
-.claude/worktrees/
-
 # Internal review artifacts (AI audit logs, calibration data, audit prompts).
 .review/
 

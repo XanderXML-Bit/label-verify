@@ -109,7 +109,7 @@ Each cross-pair run is 340 verifier calls × Gemini cost ≈ $0.10 + ~4-7 min wa
 - §2.3 Hypothesis matrix — pre-register the prediction (e.g. "PSM-11 fallback raises passRateOnCorrect mean by ≥ 2 pp").
 - §13.7 Noise characterization — N ≥ 3 baseline samples before claiming any effect.
 - §13.8a Claim ledger — every public claim about accuracy maps to (file, line, evidence, caveat).
-- §12.3 Hypercritical review — when claiming improvement, get a cross-provider sub-agent to verify.
+- §12.3 Hypercritical review. Use a model from another provider to verify any claimed improvement.
 
 ## Why N=3 not N=10
 

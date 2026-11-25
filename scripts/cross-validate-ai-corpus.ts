@@ -69,9 +69,8 @@ interface GroundTruthPromptFields {
   alcoholByVolume: string; // "5.2%"
   netContents: string; // "12 FL OZ", "750 mL", "1 PT 0 FL OZ" etc.
   producerAddress: string;
-  // Some entries deliberately set this to null when no country of origin
-  // is visible on the label (Codex's audit noted these as
-  // "prompt-intended but not visually confirmed").
+  // Some entries use null when visual review cannot confirm the
+  // country specified in the image-generation prompt.
   countryOfOrigin: string | null;
   governmentWarning: string | null;
 }
@@ -399,11 +398,8 @@ function compareToGroundTruth(
     }
   }
 
-  // Country of origin. Ground truth countryOfOrigin may itself be null
-  // for labels where Codex's audit didn't confirm a visible country (the
-  // prompt-intended country was not on the label). In that case, an
-  // extractor null is a match; an extractor value is "extractor saw
-  // something Codex missed" (flag it).
+  // Ground truth can use null when visual review finds no country on
+  // the label. An extracted country in that case needs review.
   const extCountry = extracted.country_of_origin.value;
   if (exp.countryOfOrigin === null) {
     if (extCountry) {
@@ -412,7 +408,7 @@ function compareToGroundTruth(
         expected: null,
         actual: extCountry,
         reason:
-          "Ground truth says no country visible; extractor read one — Codex may have missed it.",
+          "Visual review found no country of origin, but the extractor returned one.",
       });
     }
   } else if (!extCountry) {

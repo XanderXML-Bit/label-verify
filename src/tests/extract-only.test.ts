@@ -1,5 +1,4 @@
-// Wave-32 audit pin (Sub-agent B G3): `extractOnly` duplicates ~190
-// lines of `verifyLabel` orchestration (preprocess + OCR-race + GW
+// `extractOnly` duplicates ~190 lines of `verifyLabel` orchestration (preprocess + OCR-race + GW
 // validator + image-quality formula + fallback + net-contents default).
 // `api-extract.test.ts` mocks `extractOnly` itself, so the function
 // never runs in tests. This pin exercises the no-declared-fields
