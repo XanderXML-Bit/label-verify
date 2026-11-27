@@ -40,11 +40,14 @@ vi.mock("@/lib/ocr/tesseract", () => ({
 // Mock the OpenAI extractor module that the fallback path loads.
 const fallbackExtractMock = vi.fn();
 vi.mock("@/lib/vision/openai", () => ({
-  GPT4oMiniExtractor: vi.fn().mockImplementation(() => ({
-    id: "mock:openai-fallback",
-    networkRequired: true,
-    extract: fallbackExtractMock,
-  })),
+  // Vitest 4+: constructed mocks need a `function` implementation.
+  GPT4oMiniExtractor: vi.fn().mockImplementation(function () {
+    return {
+      id: "mock:openai-fallback",
+      networkRequired: true,
+      extract: fallbackExtractMock,
+    };
+  }),
 }));
 
 async function tinyJpeg(): Promise<Buffer> {
