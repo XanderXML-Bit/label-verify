@@ -14,20 +14,38 @@ export default defineConfig({
     },
   },
   test: {
-    include: [
-      "src/tests/**/*.test.ts",
-      "src/tests/**/*.test.tsx",
-      "benchmarks/**/*.test.ts",
-    ],
     // Node by default — the pre-existing tests are node-environment and
-    // should stay that way. The UI tests under src/tests/ui/** opt into
-    // jsdom via environmentMatchGlobs so we don't pay the jsdom startup
-    // cost for every non-DOM test, and so that node-shaped tests (which
-    // import node:url, sharp, pdfjs, etc.) aren't polluted by the jsdom
-    // global window.
-    environment: "node",
-    environmentMatchGlobs: [["src/tests/ui/**", "jsdom"]],
+    // should stay that way. The UI tests under src/tests/ui/** run under
+    // jsdom via a separate project so we don't pay the jsdom startup cost
+    // for every non-DOM test, and so that node-shaped tests (which import
+    // node:url, sharp, pdfjs, etc.) aren't polluted by the jsdom global
+    // window. (`environmentMatchGlobs` was removed in Vitest 3; `projects`
+    // is its replacement.) Both projects inherit setupFiles, esbuild and
+    // resolve from this root config via `extends: true`.
     setupFiles: ["src/tests/setup.ts"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "node",
+          environment: "node",
+          include: [
+            "src/tests/**/*.test.ts",
+            "src/tests/**/*.test.tsx",
+            "benchmarks/**/*.test.ts",
+          ],
+          exclude: ["src/tests/ui/**", "**/node_modules/**"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "jsdom",
+          environment: "jsdom",
+          include: ["src/tests/ui/**/*.test.ts", "src/tests/ui/**/*.test.tsx"],
+        },
+      },
+    ],
     // v8 coverage with realistic include/exclude. CLIs in bin/ are
     // tested via subprocess spawn (`execFileSync npx tsx bin/...`), so
     // their statements don't register through the in-process v8 hooks

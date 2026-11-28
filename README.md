@@ -36,7 +36,7 @@ Both excluded rows are for `ai-label-0048.jpg`. Its ground truth lacked the requ
 ## Run it locally
 
 ```bash
-# Prereqs: Node.js ≥ 20.9.0, git
+# Prereqs: Node.js ≥ 22.12.0, git
 git clone https://github.com/XanderXML-Bit/label-verify.git
 cd label-verify
 ```

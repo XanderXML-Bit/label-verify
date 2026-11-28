@@ -22,11 +22,15 @@ async function loadHelperWithMock(
   vi.resetModules();
   vi.doMock("@google/generative-ai", () => {
     return {
-      GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
-        getGenerativeModel: vi.fn().mockReturnValue({
-          generateContent,
-        }),
-      })),
+      // Vitest 4+: a mock invoked with `new` needs a `function`/class
+      // implementation; arrow functions are not constructible.
+      GoogleGenerativeAI: vi.fn().mockImplementation(function () {
+        return {
+          getGenerativeModel: vi.fn().mockReturnValue({
+            generateContent,
+          }),
+        };
+      }),
       // The real SDK ships SchemaType but parse-image doesn't import it.
       SchemaType: {
         OBJECT: "object",
@@ -108,18 +112,20 @@ describe("parseApplicationImage — happy path", () => {
     let capturedModelName: string | null = null;
     vi.resetModules();
     vi.doMock("@google/generative-ai", () => ({
-      GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
-        getGenerativeModel: vi.fn().mockImplementation((cfg: { model: string }) => {
-          capturedModelName = cfg.model;
-          return {
-            async generateContent() {
-              return {
-                response: { text: () => JSON.stringify({ brand_name: "X" }) },
-              };
-            },
-          };
-        }),
-      })),
+      GoogleGenerativeAI: vi.fn().mockImplementation(function () {
+        return {
+          getGenerativeModel: vi.fn().mockImplementation((cfg: { model: string }) => {
+            capturedModelName = cfg.model;
+            return {
+              async generateContent() {
+                return {
+                  response: { text: () => JSON.stringify({ brand_name: "X" }) },
+                };
+              },
+            };
+          }),
+        };
+      }),
       SchemaType: {},
     }));
     const { parseApplicationImage } = await import(
